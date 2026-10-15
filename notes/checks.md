@@ -596,3 +596,23 @@ Check 52 done. Next: confirm per-mode perf + replay, then polish the modes.
 - Tests: functest, r12test, up16test, reducedtest pass.
 
 Check 53 done. Next: polish the modes further.
+
+## Check 54 (v22a) – Android app "Imran Typer"
+- android/: a small native wrapper (one Activity, a full-screen WebView loading the page from the APK's assets),
+  built without Gradle by android/build.sh (aapt2 + javac + d8 + zipalign + apksigner; minSdk 24, target 34).
+  The page talks to the phone through window.ImranApp: Save .txt / backups → Download/Imran Typer, pictures →
+  Pictures/Imran Typer, Share text / Share as image → the Android share sheet, Print / PDF → Android printing,
+  Restore → the file picker; the back button closes open menus first. The typewriter font is bundled (works offline,
+  no network permission); vibration permission only.
+- Icon: the user's logo (legacy rounded + round icons, and an adaptive icon whose foreground fades into the logo's
+  green); splash and window background in the same green.
+- Opening animation (app only, or ?intro on the web): the logo itself is animated – its sheet (taken out of the
+  picture and redrawn) rolls up out of the platen, "IMRAN TYPER" is typed letter by letter with the real keys going
+  down, gold type bars flicking up and a little jolt of the sheet on each strike, typewriter clacks, the bell rings
+  (a glint on the gold knob), the line feeds with a ratchet, then the paper rolls up and away while the view zooms
+  into it and fades into the app. Tap to skip. Without the picture (plain web page) a drawn version plays.
+- Checked: packaged page in a phone browser with the app's user agent (intro from the picture, bundled font, no
+  network requests, no errors), APK signature (v2+v3), badging (label, icon, permissions); functest, r12test,
+  up16test, skintest, focustest pass; ?still replay unchanged.
+
+Check 54 done.

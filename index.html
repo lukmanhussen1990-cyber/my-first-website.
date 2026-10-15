@@ -443,6 +443,9 @@ const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 
 const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);   // no flashes, bats or flying paper
 const STILL = /[?&]still\b/.test(location.search);   // test switch: only the recorded machine (no dust, sparks, flicker, creatures)
 if (STILL) prefs.mode = 'normal';
+// inside the Android app (Imran Typer) the page talks to the phone through window.ImranApp
+const NATIVE = window.ImranApp || null, IN_APP = !!NATIVE || /ImranTyper/.test(navigator.userAgent);
+const APP_BRAND = IN_APP || /[?&]intro\b/.test(location.search) ? 'IMRAN TYPER' : 'FRANKENWRITER';
 
 function measure() {
   const iw = Math.max(1, window.innerWidth), ih = Math.max(1, window.innerHeight);
@@ -2280,6 +2283,7 @@ document.addEventListener('keydown', (e) => {
 /* ------------------------------------------------------------ top bar -- */
 async function shareText() {
   const text = allText();
+  if (NATIVE) { NATIVE.shareText(text); return; }
   try {
     if (navigator.share) { await navigator.share({ title: 'Frankenwriter', text }); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
@@ -3935,6 +3939,7 @@ function updateTip(t) {
 const shareBtn = $('#share'), shareMenu = $('#shareMenu');
 let menuOpen = false, cardJob = null, cardTimer = 0;
 function canShareFiles() {
+  if (NATIVE) return true;
   try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'])], 'x.png', { type: 'image/png' })] })); }
   catch (e) { return false; }
 }
@@ -3996,9 +4001,16 @@ input.addEventListener('input', () => closeMenu());
 
 function fileName(ext) {
   const d = new Date(), p = (n) => String(n).padStart(2, '0');
-  return `frankenwriter-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.${ext}`;
+  return `${IN_APP ? 'imran-typer' : 'frankenwriter'}-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.${ext}`;
 }
+// in the app a file is handed to the phone (Downloads / Pictures) as base64
+function blobB64(blob) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(blob); }); }
 function download(blob, name) {
+  if (NATIVE) {
+    blobB64(blob).then((b64) => { const where = NATIVE.saveFile(name, blob.type || 'application/octet-stream', b64); toast(where ? 'Saved to ' + where : 'Could not save', 2.4); })
+      .catch(() => toast('Could not save'));
+    return;
+  }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -4037,6 +4049,7 @@ async function shareImage() {
   const blob = job.blob || await job.promise;
   if (!blob) { if (cardJob === job) cardJob = null; toast('Could not make the picture'); return; }
   const name = fileName('png'), file = new File([blob], name, { type: 'image/png' });
+  if (NATIVE) { NATIVE.shareFile(name, 'image/png', await blobB64(blob)); return; }
   if (canShareFiles()) {
     try { await navigator.share({ files: [file], title: 'Frankenwriter' }); return; }
     catch (e) { if (e && e.name === 'AbortError') return; }
@@ -4105,7 +4118,7 @@ async function renderCard() {
   const c = cv.getContext('2d');
   c.fillStyle = '#181818'; c.fillRect(0, 0, CW, CH);
   c.font = `700 ${Math.round(15 * kc)}px "Courier Prime", "Courier New", monospace`; c.fillStyle = '#d4d4d4'; c.textBaseline = 'alphabetic';
-  spacedText(c, 'FRANKENWRITER', CW / 2, 37.5 * kc, 0.35 * kc);
+  spacedText(c, APP_BRAND, CW / 2, 37.5 * kc, 0.35 * kc);
   // the paper, with the app's rounded top and grain
   const rx = 53.3 * kc, ry = 160 * kc;
   c.save();
@@ -5228,12 +5241,20 @@ function printDraft() {
   const d = DR.cur, pages = d ? [...d.pages, text + pending] : [text];
   pages.forEach((p, i) => {
     const pg = el('div', 'pg');
-    if (i === 0) pg.appendChild(el('h1', '', 'FRANKENWRITER · ' + (d ? draftTitle(d) : '')));
+    if (i === 0) pg.appendChild(el('h1', '', APP_BRAND + ' · ' + (d ? draftTitle(d) : '')));
     pg.appendChild(document.createTextNode(p));
     pr.appendChild(pg);
   });
-  setTimeout(() => window.print(), 50);
+  setTimeout(() => (NATIVE ? NATIVE.print(APP_BRAND === 'IMRAN TYPER' ? 'Imran Typer' : 'Frankenwriter') : window.print()), 50);
 }
+// the phone's back button: close whatever is open first; only then leave the app
+window.__appBack = () => {
+  if (sheetOpen) { closeSheet(false); return true; }
+  if (menuOpen) { closeMenu(); return true; }
+  if (trayOpen) { closeTray(); return true; }
+  if (scrollBack.to > 0) { scrollBack.to = 0; return true; }
+  return false;
+};
 
 /* ------------------------------------------------------------ shortcuts -- */
 document.addEventListener('keydown', (e) => {
@@ -5769,6 +5790,359 @@ function tick() {
   draw(t);
   drawBats(t);
 }
+/* ---------------------------------------------------------------- intro -- */
+// The Android app (Imran Typer) opens with its logo's typewriter – green and gold – typing the app's name: keys go
+// down, type bars fly up, the carriage steps along, the bell rings, the carriage returns and the paper rolls up
+// into the page. Also shown on the web with ?intro. Tap to skip.
+// The app ships its logo (intro.jpg: the green typewriter with its sheet taken out); the intro animates that very
+// picture. Without the picture (the plain web page) a drawn version of the same machine plays instead.
+function playIntro() {
+  if (STILL) return;
+  const img = new Image();
+  let started = false;
+  const go = (ok) => { if (started) return; started = true; if (ok) playIntroImage(img); else playIntroDrawn(); };
+  img.onload = () => go(img.naturalWidth > 0); img.onerror = () => go(false);
+  setTimeout(() => go(img.complete && img.naturalWidth > 0), 700);
+  img.src = 'intro.jpg';
+}
+// the sound of the intro (its own context: it plays before the app's own audio has started)
+function introSound(T0, plan) {
+  let ac = null, out = null, nb = null;
+  try {
+    if (AU.mode === 'off') return null;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    out = ac.createGain(); out.gain.value = 0.8 * prefs.vol; out.connect(ac.destination);
+    nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const ch = nb.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  } catch (e) { return null; }
+  const at = (tt) => ac.currentTime + Math.max(0, tt - (performance.now() / 1000 - T0)) + 0.005;
+  const burst = (t, f, type, q, g, dur) => { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(g, t + 0.001); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(fl); fl.connect(gn); gn.connect(out); s.start(t, Math.random() * 0.5, dur + 0.05); };
+  const tone = (t, f, f2, g, dur, type = 'sine') => { const o = ac.createOscillator(), gn = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(g, t + 0.002); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(gn); gn.connect(out); o.start(t); o.stop(t + dur + 0.05); };
+  const S = {
+    clack(t, sp) { const p = 0.92 + Math.random() * 0.16;
+      burst(t, 3600 * p, 'highpass', 0.7, 0.5, 0.009); burst(t, 2400 * p, 'bandpass', 1.3, 0.28, 0.02);
+      tone(t, (sp ? 90 : 125) * p, 65, sp ? 0.3 : 0.22, sp ? 0.07 : 0.045); burst(t + 0.022, 5200, 'highpass', 0.7, 0.12, 0.005); },
+    ratchet(t0, dur, nClicks) { for (let i = 0; i < nClicks; i++) { const t = t0 + dur * (i / nClicks); burst(t, 3300 + Math.random() * 500, 'bandpass', 2.2, 0.09, 0.008); tone(t, 900, 0, 0.012, 0.008, 'triangle'); } },
+    ding(t) { for (const [m, g, dd] of [[1, 0.09, 1.4], [2.71, 0.035, 0.7], [5.15, 0.015, 0.3], [1.006, 0.05, 1.2]]) tone(t, 2580 * m, 0, g, dd); burst(t, 6000, 'highpass', 0.7, 0.08, 0.006); },
+    slide(t, dur) { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; fl.type = 'bandpass'; fl.Q.value = 0.8;
+      fl.frequency.setValueAtTime(1600, t); fl.frequency.exponentialRampToValueAtTime(600, t + dur); gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.07, t + 0.03); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+      s.connect(fl); fl.connect(gn); gn.connect(out); s.start(t, 0, dur + 0.1); burst(t + dur, 620, 'bandpass', 1.4, 1.2, 0.06); burst(t + dur + 0.04, 1100, 'bandpass', 1.4, 0.7, 0.05); },
+  };
+  try {
+    if (ac.state === 'suspended') ac.resume();
+    S.ratchet(at(plan.feedIn[0]), plan.feedIn[1] - plan.feedIn[0], 14);
+    plan.typeAt.forEach((tt, i) => S.clack(at(tt), plan.word[i] === ' '));
+    S.ding(at(plan.ding)); S.slide(at(plan.ret[0]), plan.ret[1] - plan.ret[0]); S.ratchet(at(plan.feed[0]), plan.feed[1] - plan.feed[0] - 0.2, 22);
+  } catch (e) {}
+  return ac;
+}
+function introTimes(word, start) {
+  const typeAt = []; let tt = start;
+  for (let i = 0; i < word.length; i++) { typeAt.push(tt); tt += 0.155 * (word[i] === ' ' ? 1.6 : 0.85 + ((i * 37) % 7) / 20); }
+  const ding = typeAt[word.length - 1] + 0.28, ret = [ding + 0.12, ding + 0.5], feed = [ret[1] + 0.12, ret[1] + 1.05];
+  return { word, typeAt, ding, ret, feed, fade: [feed[1] - 0.3, feed[1] + 0.35] };
+}
+const introEase = (x) => 1 - Math.pow(1 - clamp(x, 0, 1), 3), introEaseIO = (x) => { x = clamp(x, 0, 1); return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+function introCanvas() {
+  const cv = document.createElement('canvas');
+  cv.id = 'intro';
+  cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:50;touch-action:none;background:#056d4b';
+  document.body.appendChild(cv);
+  return cv;
+}
+// ---- the logo itself, animated: its sheet rolls up out of the platen, its keys go down, type bars flick up,
+// the name is typed letter by letter, the bell rings, the line feeds and the paper rolls up into the app
+function playIntroImage(img) {
+  const cv = introCanvas(), c = cv.getContext('2d'), d = Math.min(window.devicePixelRatio || 1, 2);
+  let vw = 0, vh = 0;
+  const size = () => { vw = window.innerWidth; vh = window.innerHeight; cv.width = Math.round(vw * d); cv.height = Math.round(vh * d); };
+  size(); window.addEventListener('resize', size);
+  const IW = img.naturalWidth, sc0 = IW / 1254;   // geometry below is measured on the 1254 px logo
+  const T0 = performance.now() / 1000, P = introTimes(APP_BRAND, 1.15), n = P.word.length;
+  P.feedIn = [0.25, 1.0];
+  const ac = introSound(T0, P);
+  // the logo with softly faded edges, laid on a background that continues its corner colours
+  const lay = document.createElement('canvas'); lay.width = lay.height = 1254;
+  { const g = lay.getContext('2d'); g.drawImage(img, 0, 0, 1254, 1254); g.globalCompositeOperation = 'destination-in';
+    for (const [x0, y0, x1, y1] of [[0, 0, 70, 0], [1254, 0, 1184, 0], [0, 0, 0, 70], [0, 1254, 0, 1184]]) {
+      const m = g.createLinearGradient(x0, y0, x1, y1); m.addColorStop(0, 'rgba(0,0,0,0)'); m.addColorStop(1, 'rgba(0,0,0,1)');
+      g.fillStyle = m; g.fillRect(0, 0, 1254, 1254);
+    } }
+  // a 4x4 swatch: its inner 2x2 are the logo's corner colours, the ring repeats them, so drawn with smoothing it
+  // blends exactly between the corners over the logo and simply continues them beyond it
+  const corners = document.createElement('canvas'); corners.width = corners.height = 4;
+  { const g = corners.getContext('2d'), id = g.createImageData(4, 4), C = [[5, 109, 75], [19, 136, 98], [0, 94, 63], [4, 105, 72]];
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) id.data.set([...C[(y < 2 ? 0 : 2) + (x < 2 ? 0 : 1)], 255], (y * 4 + x) * 4);
+    g.putImageData(id, 0, 0); }
+  const KEYS = [
+    [[278, 678], [364, 678], [451, 678], [538, 678], [626, 678], [714, 678], [800, 678], [885, 678], [971, 678]],
+    [[239, 763], [324, 763], [411, 763], [497, 763], [584, 763], [671, 763], [757, 763], [843, 763], [929, 763], [1014, 763]],
+    [[258, 852], [359, 852], [448, 852], [538, 852], [627, 852], [716, 852], [807, 852], [896, 851], [995, 853]],
+  ];
+  const ROWS = ['QWERTYUIO', 'ASDFGHJKLP', 'ZXCVBNM,.'];
+  const keyFor = (ch) => { ch = ch.toUpperCase(); for (let r = 0; r < 3; r++) { const i = ROWS[r].indexOf(ch); if (i >= 0) return KEYS[r][i]; } return null; };
+  const CW = 48, LINE = 338, PX0 = 289, PX1 = 965, PBOT = 369;   // letter pitch, typing line, the sheet's sides and where it goes under the clips
+  let skipAt = 0, done = false;
+  function frame() {
+    if (done) return;
+    requestAnimationFrame(frame);
+    let t = performance.now() / 1000 - T0;
+    if (skipAt) t = Math.max(t, P.fade[0] + (t - skipAt));
+    const fade = clamp((t - P.fade[0]) / (P.fade[1] - P.fade[0]), 0, 1);
+    if (fade >= 1) { finish(); return; }
+    const S = Math.min(vw * 0.96, vh * 0.62, 560), x0 = (vw - S) / 2, y0 = vh * 0.5 - S * 0.46, k = S / 1254;
+    c.setTransform(d, 0, 0, d, 0, 0);
+    c.imageSmoothingEnabled = true;
+    c.drawImage(corners, x0 - S * 1.5, y0 - S * 1.5, S * 4, S * 4);   // pixel centres 1 and 2 land on the logo's corners
+    c.save();
+    // zoom toward the sheet as it rolls away
+    const zoom = 1 + 0.35 * introEaseIO((t - P.feed[0]) / (P.fade[1] - P.feed[0]));
+    const fx = x0 + 627 * k, fy = y0 + 250 * k;
+    c.translate(fx, fy); c.scale(zoom, zoom); c.translate(-fx, -fy);
+    c.globalAlpha = Math.min(1, t / 0.3);
+    c.drawImage(lay, x0, y0, S, S);
+    c.translate(x0, y0); c.scale(k, k);   // from here on: logo pixels
+    // keys: the one being struck goes down
+    const typed = P.typeAt.filter((tt) => t >= tt).length, cur = typed ? P.word[typed - 1] : '', down = typed && t - P.typeAt[typed - 1] < 0.1;
+    if (down) {
+      const ph = Math.sin(Math.PI * clamp((t - P.typeAt[typed - 1]) / 0.1, 0, 1)), dy = 6 * ph;
+      if (cur === ' ') { c.fillStyle = '#0b0b0c'; c.fillRect(352, 905, 552, 10 + dy); c.drawImage(img, 352 * sc0, 905 * sc0, 552 * sc0, 80 * sc0, 352, 905 + dy, 552, 80); }
+      else { const kk = keyFor(cur); if (kk) { const [kx, ky] = kk;
+        c.fillStyle = '#0b0b0c'; c.beginPath(); c.ellipse(kx, ky + 4, 34, 24, 0, 0, 7); c.fill();
+        c.drawImage(img, (kx - 36) * sc0, (ky - 22) * sc0, 72 * sc0, 58 * sc0, kx - 36, ky - 22 + dy, 72, 58);
+        c.fillStyle = `rgba(0,0,0,${0.18 * ph})`; c.beginPath(); c.ellipse(kx, ky + dy, 28, 15, 0, 0, 7); c.fill(); } }
+    }
+    // the sheet: rolls up out of the platen, jolts on each strike, feeds a line, then rolls up and away
+    let lift = 0;
+    lift += (PBOT - 24 - 130) * introEase((t - P.feedIn[0]) / (P.feedIn[1] - P.feedIn[0]));
+    if (t > P.ret[0]) lift += 92 * introEase((t - P.ret[0]) / (P.ret[1] - P.ret[0]));
+    if (t > P.feed[0]) lift += 1500 * introEaseIO((t - P.feed[0]) / (P.feed[1] - P.feed[0]));
+    const jolt = down ? 2.5 : 0, top = PBOT - 24 - lift + jolt;
+    c.save(); c.beginPath(); c.rect(PX0 - 40, -4000, PX1 - PX0 + 80, 4000 + PBOT); c.clip();
+    const pg = c.createLinearGradient(0, 130, 0, PBOT);
+    pg.addColorStop(0, 'rgb(254,251,241)'); pg.addColorStop(0.4, 'rgb(253,245,230)'); pg.addColorStop(0.62, 'rgb(252,240,220)'); pg.addColorStop(1, 'rgb(249,237,216)');
+    c.shadowColor = 'rgba(0,30,15,0.35)'; c.shadowBlur = 10 * k * d; c.shadowOffsetY = -2 * k * d;
+    c.fillStyle = pg; c.beginPath();
+    const r = 26; c.moveTo(PX0, PBOT + 10); c.lineTo(PX0, top + r); c.quadraticCurveTo(PX0, top, PX0 + r, top); c.lineTo(PX1 - r, top); c.quadraticCurveTo(PX1, top, PX1, top + r); c.lineTo(PX1, PBOT + 10); c.closePath(); c.fill();
+    c.shadowColor = 'transparent';
+    // the typed name rides on the sheet
+    const textY = LINE + jolt - (lift - (PBOT - 24 - 130));
+    c.font = `700 80px "Courier Prime", "Courier New", monospace`; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    for (let i = 0; i < typed; i++) {
+      if (P.word[i] === ' ') continue;
+      const a = clamp((t - P.typeAt[i]) / 0.04, 0, 1), x = 627 - (n - 1) / 2 * CW + i * CW;
+      c.fillStyle = `rgba(30,24,18,${(0.84 + ((i * 53) % 10) / 70) * a})`;
+      c.save(); c.translate(x, textY + (((i * 17) % 5) - 2) * 0.6); c.rotate((((i * 29) % 7) - 3) * 0.006); c.fillText(P.word[i], 0, 0); c.restore();
+    }
+    c.restore();
+    // the type bar of the struck letter flicks up out of the fan to the line
+    if (typed && cur !== ' ' && t - P.typeAt[typed - 1] < 0.09) {
+      const ph = Math.sin(Math.PI * (t - P.typeAt[typed - 1]) / 0.09), i = typed - 1, lx = 627 - (n - 1) / 2 * CW + i * CW;
+      const bx = 627 + (i - (n - 1) / 2) * 16, by = 560, ex = lerp(bx, lx, ph), ey = lerp(by, LINE - 30, ph);
+      c.strokeStyle = 'rgba(247,206,133,0.95)'; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(bx, by); c.lineTo(ex, ey); c.stroke();
+      c.strokeStyle = 'rgba(255,240,200,0.8)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(bx, by); c.lineTo(ex, ey); c.stroke();
+    }
+    // the bell: a glint on the big gold knob
+    const gs = (t - P.ding) / 0.45;
+    if (gs > 0 && gs < 1) {
+      const a = Math.sin(Math.PI * gs), gx = 1127, gy = 440, rr2 = 70 * a;
+      c.globalCompositeOperation = 'lighter';
+      const gl = c.createRadialGradient(gx, gy, 0, gx, gy, rr2 + 1); gl.addColorStop(0, `rgba(255,240,190,${0.8 * a})`); gl.addColorStop(1, 'rgba(255,240,190,0)');
+      c.fillStyle = gl; c.fillRect(gx - rr2, gy - rr2, rr2 * 2, rr2 * 2);
+      c.strokeStyle = `rgba(255,250,225,${a})`; c.lineWidth = 3;
+      c.beginPath(); c.moveTo(gx - rr2 * 1.1, gy); c.lineTo(gx + rr2 * 1.1, gy); c.moveTo(gx, gy - rr2 * 1.1); c.lineTo(gx, gy + rr2 * 1.1); c.stroke();
+      c.globalCompositeOperation = 'source-over';
+    }
+    c.restore();
+    if (fade > 0) cv.style.opacity = String(1 - introEaseIO(fade));
+  }
+  function finish() {
+    done = true; cv.remove(); window.removeEventListener('resize', size);
+    if (ac) setTimeout(() => { try { ac.close(); } catch (e) {} }, 1500);
+    if (!TOUCH) focusInput();
+  }
+  cv.addEventListener('pointerdown', () => { if (!skipAt) skipAt = performance.now() / 1000 - T0; });
+  requestAnimationFrame(frame);
+}
+function playIntroDrawn() {
+  const cv = document.createElement('canvas'), c = cv.getContext('2d');
+  cv.id = 'intro';
+  cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:50;touch-action:none;background:#056d4b';
+  document.body.appendChild(cv);
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  let vw = 0, vh = 0;
+  const size = () => { vw = window.innerWidth; vh = window.innerHeight; cv.width = Math.round(vw * d); cv.height = Math.round(vh * d); };
+  size(); window.addEventListener('resize', size);
+  const WORD = APP_BRAND, n = WORD.length, T0 = performance.now() / 1000;
+  // timeline (s)
+  const FEED_IN = [0.15, 0.85], TYPE0 = 1.0, GAP = 0.155, typeAt = [];
+  { let tt = TYPE0; for (let i = 0; i < n; i++) { typeAt.push(tt); tt += GAP * (WORD[i] === ' ' ? 1.6 : 0.85 + ((i * 37) % 7) / 20); } }
+  const tDone = typeAt[n - 1], DING = tDone + 0.28, RET = [DING + 0.12, DING + 0.5], FEED = [RET[1] + 0.12, RET[1] + 1.05], FADE = [FEED[1] - 0.25, FEED[1] + 0.35];
+  let skipAt = 0, done = false;
+  // ---- sound (its own context: plays before the app's own audio has started)
+  let ac = null, out = null, nb = null;
+  try {
+    if (AU.mode !== 'off') {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      out = ac.createGain(); out.gain.value = 0.8 * prefs.vol; out.connect(ac.destination);
+      nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const ch = nb.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    }
+  } catch (e) { ac = null; }
+  const at = (tt) => ac.currentTime + Math.max(0, tt - (performance.now() / 1000 - T0)) + 0.005;
+  const burst = (t, f, type, q, g, dur) => { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(g, t + 0.001); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(fl); fl.connect(gn); gn.connect(out); s.start(t, Math.random() * 0.5, dur + 0.05); };
+  const tone = (t, f, f2, g, dur, type = 'sine') => { const o = ac.createOscillator(), gn = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(g, t + 0.002); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(gn); gn.connect(out); o.start(t); o.stop(t + dur + 0.05); };
+  const S = {
+    clack(t, sp) { const p = 0.92 + Math.random() * 0.16;
+      burst(t, 3600 * p, 'highpass', 0.7, 0.5, 0.009); burst(t, 2400 * p, 'bandpass', 1.3, 0.28, 0.02);
+      tone(t, (sp ? 90 : 125) * p, 65, sp ? 0.3 : 0.22, sp ? 0.07 : 0.045); burst(t + 0.022, 5200, 'highpass', 0.7, 0.12, 0.005); },
+    ratchet(t0, dur, nClicks) { for (let i = 0; i < nClicks; i++) { const t = t0 + dur * (i / nClicks); burst(t, 3300 + Math.random() * 500, 'bandpass', 2.2, 0.09, 0.008); tone(t, 900, 0, 0.012, 0.008, 'triangle'); } },
+    ding(t) { for (const [m, g, dd] of [[1, 0.09, 1.4], [2.71, 0.035, 0.7], [5.15, 0.015, 0.3], [1.006, 0.05, 1.2]]) tone(t, 2580 * m, 0, g, dd); burst(t, 6000, 'highpass', 0.7, 0.08, 0.006); },
+    slide(t, dur) { const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), gn = ac.createGain(); s.buffer = nb; fl.type = 'bandpass'; fl.Q.value = 0.8;
+      fl.frequency.setValueAtTime(1600, t); fl.frequency.exponentialRampToValueAtTime(600, t + dur); gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.07, t + 0.03); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+      s.connect(fl); fl.connect(gn); gn.connect(out); s.start(t, 0, dur + 0.1); burst(t + dur, 620, 'bandpass', 1.4, 1.2, 0.06); burst(t + dur + 0.04, 1100, 'bandpass', 1.4, 0.7, 0.05); },
+  };
+  if (ac) {
+    try {
+      if (ac.state === 'suspended') ac.resume();
+      S.ratchet(at(FEED_IN[0]), FEED_IN[1] - FEED_IN[0], 14);
+      typeAt.forEach((tt, i) => S.clack(at(tt), WORD[i] === ' '));
+      S.ding(at(DING)); S.slide(at(RET[0]), RET[1] - RET[0]); S.ratchet(at(FEED[0]), FEED[1] - FEED[0] - 0.2, 22);
+    } catch (e) {}
+  }
+  // ---- the machine, drawn in the logo's colours; u is one hundredth of its width
+  const G2 = { bg0: '#138862', bg1: '#056d4b', bg2: '#004a33', body: '#0f6b47', bodyHi: '#4eae89', bodyLo: '#013f29', gold: '#f2c784', goldD: '#ba7d36', goldM: '#db9e4c', cream: '#fffcef', paper: '#fdf2e1', platen: '#121317', well: '#0b0c0e' };
+  const KEYROWS = ['QWERTYUIO', 'ASDFGHJKLP', 'ZXCVBNM,.'];
+  const keyOf = (ch) => { ch = ch.toUpperCase(); for (let r = 0; r < 3; r++) { const i = KEYROWS[r].indexOf(ch); if (i >= 0) return [r, i]; } return ch === ' ' ? [3, 0] : [0, 4]; };
+  const ease = (x) => 1 - Math.pow(1 - clamp(x, 0, 1), 3), easeIO = (x) => { x = clamp(x, 0, 1); return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+  function rr(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function frameIntro() {
+    if (done) return;
+    requestAnimationFrame(frameIntro);
+    let t = performance.now() / 1000 - T0;
+    if (skipAt) t = Math.max(t, FADE[0] + (t - skipAt) * 1.0);
+    c.setTransform(d, 0, 0, d, 0, 0);
+    // background: the logo's green, lighter toward the upper right
+    const bg = c.createRadialGradient(vw * 0.75, vh * 0.1, 0, vw * 0.5, vh * 0.5, Math.max(vw, vh) * 0.9);
+    bg.addColorStop(0, G2.bg0); bg.addColorStop(0.55, G2.bg1); bg.addColorStop(1, G2.bg2);
+    c.fillStyle = bg; c.fillRect(0, 0, vw, vh);
+    const fade = clamp((t - FADE[0]) / (FADE[1] - FADE[0]), 0, 1);
+    if (fade >= 1) { finish(); return; }
+    const MW = Math.min(vw * 0.88, 460, vh * 0.62), u = MW / 100, ox = (vw - MW) / 2, oy = vh * 0.5 - 18 * u + (1 - ease(t / 0.6)) * 30 * u;
+    c.save();
+    c.globalAlpha = Math.min(1, t / 0.35);
+    const zoom = 1 + 0.12 * easeIO(fade);
+    c.translate(vw / 2, vh / 2); c.scale(zoom, zoom); c.translate(-vw / 2, -vh / 2);
+    c.translate(ox, oy);
+    // carriage position: steps left as letters are struck, slides back on the return
+    // the line is centred on the sheet: the carriage starts half a line to the right and steps left past the guide
+    const cw = 5.1, half = cw * (n - 1) / 2, typed = typeAt.filter((tt) => t >= tt).length;
+    let shift = half;
+    for (let i = 0; i < n - 1; i++) if (t >= typeAt[i]) shift -= cw * ease((t - typeAt[i]) / 0.06);
+    if (t > RET[0]) shift *= 1 - easeIO((t - RET[0]) / (RET[1] - RET[0]));   // the return brings the line back to the middle
+    // paper: rolls up out of the platen at the start, a line feed on the return, then rolls up and away
+    const lineY = 28.3;
+    let feed = 0;
+    feed += 44 * ease((t - FEED_IN[0]) / (FEED_IN[1] - FEED_IN[0]));
+    if (t > RET[0]) feed += 7 * ease((t - RET[0]) / (RET[1] - RET[0]));
+    if (t > FEED[0]) feed += 120 * easeIO((t - FEED[0]) / (FEED[1] - FEED[0]));
+    const jolt = typed && t - typeAt[typed - 1] < 0.05 ? 0.35 : 0;
+    // shadow under the machine
+    const sh = c.createRadialGradient(50 * u, 100 * u, 0, 50 * u, 100 * u, 55 * u);
+    sh.addColorStop(0, 'rgba(0,0,0,0.35)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    c.save(); c.translate(0, 100 * u); c.scale(1, 0.12); c.translate(0, -100 * u); c.fillStyle = sh; c.fillRect(-10 * u, 40 * u, 120 * u, 120 * u); c.restore();
+    // --- carriage group (paper, platen, knobs, lever) shifted by the carriage
+    c.save(); c.translate(shift * u, 0);
+    // paper (behind the platen), clipped so it emerges from the roller
+    c.save(); c.beginPath(); c.rect(-200 * u, -400 * u, 500 * u, 431 * u); c.clip();
+    const pTop = 31 - feed + jolt, pX = 15;
+    c.shadowColor = 'rgba(0,0,0,0.25)'; c.shadowBlur = 3 * u * d;
+    c.fillStyle = G2.paper; rr(pX * u, pTop * u, 70 * u, 300 * u, 1.2 * u); c.fill(); c.shadowColor = 'transparent';
+    // typed letters ride with the paper (the line was typed 9 units above the paper's top + feed-in)
+    const textY = lineY + jolt - (feed - 44);
+    c.font = `700 ${(cw * 1.62 * u).toFixed(2)}px "Courier Prime", "Courier New", monospace`; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    for (let i = 0; i < typed; i++) {
+      if (WORD[i] === ' ') continue;
+      const k2 = clamp((t - typeAt[i]) / 0.05, 0, 1);
+      c.fillStyle = `rgba(30,24,18,${(0.82 + ((i * 53) % 10) / 60) * k2})`;
+      c.save(); c.translate((50 - half + i * cw) * u, textY * u);   // struck at the guide (x 50) as the carriage passed
+      c.rotate((((i * 29) % 7) - 3) * 0.006); c.fillText(WORD[i], 0, 0); c.restore();
+    }
+    c.restore();
+    // platen roller and paper bail
+    const pg = c.createLinearGradient(0, 29 * u, 0, 37 * u);
+    pg.addColorStop(0, '#3a3d44'); pg.addColorStop(0.35, G2.platen); pg.addColorStop(1, '#050506');
+    c.fillStyle = pg; rr(14 * u, 29 * u, 72 * u, 8 * u, 3.5 * u); c.fill();
+    c.fillStyle = G2.goldM; c.fillRect(16 * u, 31.2 * u, 68 * u, 0.9 * u);   // the bail rod
+    c.fillStyle = '#1b1c20'; for (const bx of [26, 74]) { rr((bx - 2.4) * u, 30.2 * u, 4.8 * u, 3 * u, 0.8 * u); c.fill(); }
+    // knobs and the return lever
+    const knob = (x, w, h) => { const kg = c.createLinearGradient(0, (33 - h / 2) * u, 0, (33 + h / 2) * u); kg.addColorStop(0, G2.gold); kg.addColorStop(0.5, G2.goldM); kg.addColorStop(1, G2.goldD); c.fillStyle = kg; rr(x * u, (33 - h / 2) * u, w * u, h * u, 1.2 * u); c.fill(); };
+    knob(10.5, 4, 10); knob(85.5, 4, 10); knob(89.5, 5, 7);
+    c.strokeStyle = G2.goldM; c.lineWidth = 2.2 * u; c.lineCap = 'round';
+    const lev = t > RET[0] && t < RET[1] ? -0.5 * Math.sin(Math.PI * (t - RET[0]) / (RET[1] - RET[0])) : 0;
+    c.save(); c.translate(11 * u, 30 * u); c.rotate(lev); c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-5 * u, -3 * u, -8 * u, 2 * u); c.stroke(); c.restore();
+    c.restore();
+    // --- the body
+    const bodyPath = () => { c.beginPath(); c.moveTo(16 * u, 38 * u); c.lineTo(36 * u, 38 * u); c.quadraticCurveTo(38 * u, 48 * u, 50 * u, 48.5 * u); c.quadraticCurveTo(62 * u, 48 * u, 64 * u, 38 * u); c.lineTo(84 * u, 38 * u);
+      c.quadraticCurveTo(90 * u, 38 * u, 91 * u, 46 * u); c.lineTo(95 * u, 88 * u); c.quadraticCurveTo(96 * u, 95 * u, 89 * u, 95 * u); c.lineTo(11 * u, 95 * u); c.quadraticCurveTo(4 * u, 95 * u, 5 * u, 88 * u); c.lineTo(9 * u, 46 * u); c.quadraticCurveTo(10 * u, 38 * u, 16 * u, 38 * u); c.closePath(); };
+    const bgr = c.createLinearGradient(0, 38 * u, 0, 95 * u);
+    bgr.addColorStop(0, G2.bodyHi); bgr.addColorStop(0.12, G2.body); bgr.addColorStop(0.85, G2.body); bgr.addColorStop(1, G2.bodyLo);
+    // the type basket behind the body's cut-out: dark, with a fan of gold type bars
+    c.fillStyle = G2.well; c.beginPath(); c.ellipse(50 * u, 40 * u, 15 * u, 9 * u, 0, 0, 7); c.fill();
+    c.strokeStyle = G2.goldD; c.lineWidth = 0.45 * u;
+    for (let i = 0; i < 26; i++) { const a = Math.PI * (0.06 + 0.88 * i / 25); c.beginPath(); c.moveTo(50 * u - Math.cos(a) * 6 * u, 46 * u - Math.sin(a) * 2.5 * u); c.lineTo(50 * u - Math.cos(a) * 13 * u, 46 * u - Math.sin(a) * 6 * u); c.stroke(); }
+    // the bar of the letter being struck flies up to the paper
+    if (typed && WORD[typed - 1] !== ' ') {
+      const ph = (t - typeAt[typed - 1]) / 0.11;
+      if (ph < 1) {
+        const [r, kx] = keyOf(WORD[typed - 1]), a = Math.PI * (0.12 + 0.76 * ((r * 10 + kx) % 26) / 25), sw = Math.sin(Math.PI * ph);
+        const bx0 = 50 * u - Math.cos(a) * 12 * u, by0 = 46 * u - Math.sin(a) * 5.5 * u, bx1 = 50 * u, by1 = 29.5 * u;
+        c.strokeStyle = G2.gold; c.lineWidth = 0.9 * u; c.beginPath(); c.moveTo(bx0, by0); c.lineTo(lerp(bx0, bx1, sw), lerp(by0, by1, sw)); c.stroke();
+      }
+    }
+    c.fillStyle = bgr; bodyPath(); c.fill();
+    c.save(); bodyPath(); c.clip();   // a glossy highlight along the top
+    const gl = c.createLinearGradient(0, 38 * u, 0, 52 * u); gl.addColorStop(0, 'rgba(255,255,255,0.28)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = gl; c.fillRect(0, 38 * u, 100 * u, 14 * u); c.restore();
+    // the type guide, in gold
+    c.fillStyle = G2.goldM; c.beginPath(); c.moveTo(45 * u, 44 * u); c.lineTo(55 * u, 44 * u); c.lineTo(53 * u, 47.5 * u); c.lineTo(47 * u, 47.5 * u); c.closePath(); c.fill();
+    c.fillStyle = G2.gold; rr(48.6 * u, 36.5 * u, 2.8 * u, 8 * u, 0.6 * u); c.fill();
+    // keyboard well and keys
+    c.fillStyle = G2.well; rr(12 * u, 54 * u, 76 * u, 34 * u, 4 * u); c.fill();
+    const pressed = typed && t - typeAt[typed - 1] < 0.1 ? keyOf(WORD[typed - 1]) : null;
+    const rows = [[9, 59.5, 15.5], [10, 68.5, 11], [9, 77.5, 15.5]];
+    rows.forEach(([cnt, ky, x0], r) => {
+      for (let i = 0; i < cnt; i++) {
+        const kx = x0 + i * ((100 - 2 * x0) / (cnt - 1)), down = pressed && pressed[0] === r && pressed[1] === i ? 1.2 : 0, kr = 3.5;
+        c.fillStyle = '#000'; c.fillRect((kx - 0.4) * u, (ky + 2) * u, 0.8 * u, 6 * u);   // the stem
+        c.fillStyle = G2.goldD; c.beginPath(); c.ellipse(kx * u, (ky + 0.9 + down) * u, kr * u, kr * 0.62 * u, 0, 0, 7); c.fill();
+        c.fillStyle = G2.goldM; c.beginPath(); c.ellipse(kx * u, (ky + 0.4 + down) * u, kr * u, kr * 0.62 * u, 0, 0, 7); c.fill();
+        c.fillStyle = down ? '#efe6cf' : G2.cream; c.beginPath(); c.ellipse(kx * u, (ky - 0.1 + down) * u, kr * 0.84 * u, kr * 0.5 * u, 0, 0, 7); c.fill();
+      }
+    });
+    const spDown = pressed && pressed[0] === 3 ? 1 : 0;
+    c.fillStyle = G2.goldM; rr(28 * u, (83.2 + spDown) * u, 44 * u, 3.6 * u, 1.8 * u); c.fill();
+    c.fillStyle = G2.cream; rr(28.5 * u, (82.8 + spDown) * u, 43 * u, 2.8 * u, 1.4 * u); c.fill();
+    // the gold base strip
+    const gb = c.createLinearGradient(0, 94 * u, 0, 97.5 * u); gb.addColorStop(0, G2.gold); gb.addColorStop(1, G2.goldD);
+    c.fillStyle = gb; rr(6 * u, 94.5 * u, 88 * u, 2.6 * u, 1.3 * u); c.fill();
+    c.restore();
+    // fade into the app
+    if (fade > 0) { c.globalAlpha = 1; cv.style.opacity = String(1 - easeIO(fade)); }
+  }
+  function finish() {
+    done = true; cv.remove(); window.removeEventListener('resize', size);
+    if (ac) setTimeout(() => { try { ac.close(); } catch (e) {} }, 1500);
+    if (!TOUCH) focusInput();
+  }
+  cv.addEventListener('pointerdown', () => { if (!skipAt) skipAt = performance.now() / 1000 - T0; });
+  requestAnimationFrame(frameIntro);
+}
+
 /* ---------------------------------------------------------------- debug -- */
 if (/[?&]debug\b/.test(location.search)) {
   window.__fw = {
@@ -5799,10 +6173,11 @@ function boot() {
   if (document.fonts && document.fonts.load) {
     Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); buildCapsules(); buildPaperFx(); trayKey = ''; tabKey = ''; });
   }
-  if (!TOUCH) focusInput();
+  if (!TOUCH && !(IN_APP || /[?&]intro\b/.test(location.search))) focusInput();
   lastActivity = now();
   blinkT0 = now() + 0.34;
   requestAnimationFrame(frame);
+  if ((IN_APP || /[?&]intro\b/.test(location.search)) && !STILL) playIntro();
 }
 boot();
 })();
