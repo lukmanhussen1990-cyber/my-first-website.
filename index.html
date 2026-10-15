@@ -4861,17 +4861,16 @@ function drawParts(c) {
   // drawn as glowing colour (a soft halo, then the streak), under the lamp as light like the others
   const lightSheet = CH.paper.v < 0.5 && !paperTheme().lightInk;
   c.save(); c.lineCap = 'round';
-  if (lightSheet) for (const p of PARTS) {
-    if (!p.fw) continue;
-    const a = 1 - p.t / p.life, tx = p.x - p.vx * 0.05, ty = p.y - p.vy * 0.05;
+  if (lightSheet) for (const p of PARTS) {   // (all sparks: the ones flying off the bolts land on the paper too)
+    if (!p.cd) p.cd = rgba(mix(p.c, [60, 20, 0], 0.3));
+    const a = 1 - p.t / p.life, d = p.fw ? 0.05 : 0.026, tx = p.x - p.vx * d, ty = p.y - p.vy * d;
     c.globalAlpha = a * 0.25; c.strokeStyle = p.cs; c.lineWidth = p.w * 3.2;
     c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
     c.globalAlpha = a; c.strokeStyle = p.cd; c.lineWidth = p.w;
     c.beginPath(); c.moveTo(tx, ty); c.lineTo(p.x, p.y); c.stroke();
   }
   c.globalCompositeOperation = 'lighter';
-  for (const p of PARTS) {
-    if (p.fw && lightSheet) continue;
+  if (!lightSheet) for (const p of PARTS) {
     const a = 1 - p.t / p.life;
     const tx = p.x - p.vx * 0.022, ty = p.y - p.vy * 0.022;   // a short hot streak along the flight
     c.globalAlpha = a; c.strokeStyle = p.cs; c.lineWidth = p.w * 1.3;

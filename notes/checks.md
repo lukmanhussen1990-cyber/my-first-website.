@@ -418,3 +418,11 @@ Check 35 done. Next: graphics – a pass over every toast/HUD/pill for consisten
 - Tests: functest, reviewfix pass.
 
 Check 36 done. Next: graphics – the scroll-back view and page pill, then the spark particles' colours per skin in light mode.
+
+## Check 37 (v19s) – graphics
+- Flying sparks on a light sheet: like the fireworks, every spark that flies off the bolts is now drawn as glowing
+  colour (soft halo + darker streak in the skin's spark colour) instead of added light, which vanished on cream.
+  Under the lamp / on dark paper they stay additive.
+- Tests: functest, reducedtest, skintest pass; perf p50 4.2–4.6 ms, p90 7–7.4 ms; ?still replay unchanged.
+
+Check 37 done. Next: graphics – scroll-back view and page pill, then a fresh full-screen pass of every skin on dark papers.
