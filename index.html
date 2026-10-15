@@ -4370,8 +4370,11 @@ function renderArchLine(al, ai, ink) {
   const by = h * 0.68;
   if (al.mark) {   // a small page mark between pages
     c.font = FONT(G.font * 0.5); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-    c.fillStyle = rgba(hex(ink), 0.55);
-    c.fillText('— page ' + (al.page + 1) + ' —', pad + COLS * G.cell / 2, by - 4 * k);
+    const lbl = 'page ' + (al.page + 1), mid = pad + COLS * G.cell / 2, y = by - 4 * k, half = c.measureText(lbl).width / 2 + 7 * k;
+    c.fillStyle = rgba(hex(ink), 0.55); c.fillText(lbl, mid, y);
+    // where the sheet was torn off: a faint perforation across the page, broken around the label
+    c.fillStyle = rgba(hex(ink), 0.28);
+    for (let x = pad; x < pad + COLS * G.cell; x += 4.2 * k) if (Math.abs(x - mid) > half) c.fillRect(x, y - 3.2 * k, 1.8 * k, 0.9 * k);
   } else {
     c.font = FONT(G.font); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
     const S = { k, dpr, cell: G.cell, font: G.font, text: al.src, press: null }, rgb = hex(ink);

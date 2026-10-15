@@ -426,3 +426,10 @@ Check 36 done. Next: graphics – the scroll-back view and page pill, then the s
 - Tests: functest, reducedtest, skintest pass; perf p50 4.2–4.6 ms, p90 7–7.4 ms; ?still replay unchanged.
 
 Check 37 done. Next: graphics – scroll-back view and page pill, then a fresh full-screen pass of every skin on dark papers.
+
+## Check 38 (v19t) – graphics
+- Scroll-back: the break between pages is a faint perforation across the sheet, broken around a small "page N"
+  label (was a bare "— page N —").
+- Tests: up16test, mobile18, functest pass.
+
+Check 38 done. Next: graphics – every skin on Blueprint and Black paper, light and lamp.
