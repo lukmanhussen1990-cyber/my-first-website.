@@ -48,16 +48,17 @@
   #dial svg .ln { stroke: #e9e4d6; }
   #capBtn { position: absolute; left: 0; top: 0; z-index: 1; border-radius: 45%; -webkit-tap-highlight-color: transparent; }
   #skinTray { position: absolute; left: 50%; top: 0; z-index: 5; display: grid; gap: 2px; padding: 5px; border-radius: 15px;
-              background: rgba(24,24,22,.9); box-shadow: 0 8px 26px rgba(0,0,0,.5), inset 0 0 0 .5px rgba(255,255,255,.13);
+              background: linear-gradient(180deg, rgba(46,41,36,.96), rgba(23,21,19,.96)); border: 1px solid rgba(205,176,122,.35);
+              box-shadow: 0 8px 26px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,226,170,.2);
               -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; visibility: hidden;
               transform: translate(-50%, 8px) scale(.96); transform-origin: 50% 0;
               transition: opacity .18s ease, transform .2s ease, visibility 0s linear .2s; }
   #skinTray.open { opacity: 1; pointer-events: auto; visibility: visible; transform: translate(-50%, 0) scale(1);
                    transition: opacity .18s ease, transform .2s ease, visibility 0s; }
   .skin { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px 5px; min-width: 47px;
-          border-radius: 11px; color: #a9a9a0; font-size: 9px; letter-spacing: .03em; line-height: 1; text-transform: uppercase; }
+          border-radius: 11px; color: #b8ad98; font-size: 9px; letter-spacing: .03em; line-height: 1; text-transform: uppercase; }
   .skin canvas { display: block; }
-  .skin[aria-checked="true"] { background: rgba(255,255,255,.09); color: #f1efe6; box-shadow: inset 0 0 0 1px rgba(255,255,255,.17); }
+  .skin[aria-checked="true"] { background: rgba(255,215,140,.1); color: #f6e6c4; box-shadow: inset 0 0 0 1px rgba(226,179,92,.6); }
   .skin:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 1px; }
   #shareMenu { position: absolute; top: 0; right: 0; z-index: 6; display: flex; flex-direction: column; min-width: 172px; padding: 5px;
                border-radius: 14px; background: linear-gradient(180deg, rgba(46,41,36,.97), rgba(23,21,19,.97)); border: 1px solid rgba(205,176,122,.35);
@@ -3560,7 +3561,7 @@ function buildTray() {
   if (!skinTray.children.length) {
     for (const id of SKIN_IDS) {
       const b = document.createElement('button');
-      b.className = 'skin'; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', SKINS[id].name); b.dataset.id = id;
+      b.className = 'skin'; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', SKINS[id].name); b.title = SKINS[id].name; b.dataset.id = id;
       b.innerHTML = `<canvas aria-hidden="true"></canvas><span>${SKINS[id].short}</span>`;
       b.addEventListener('mousedown', (e) => e.preventDefault());
       b.addEventListener('click', (e) => pickSkin(id, e.detail === 0));
@@ -4094,6 +4095,19 @@ function paintBackdrop(c, ww, wh, d, lit) {
       if (cross) { c.fillRect(gx - 1.8 * s, gy - h * s, 3.6 * s, h * s); c.fillRect(gx - 6 * s, gy - h * 0.72 * s, 12 * s, 3.2 * s); }
       else { c.beginPath(); c.moveTo(gx - 6 * s, gy); c.lineTo(gx - 6 * s, gy - h * 0.62 * s); c.arc(gx, gy - h * 0.62 * s, 6 * s, Math.PI, 0); c.lineTo(gx + 6 * s, gy); c.closePath(); c.fill(); }
     }
+    if (!lit) for (const [ox, r] of [[-0.36, 5.2], [0.12, 4.2]]) {   // two jack-o'-lanterns glowing among the graves
+      const px = colR + side * (0.58 + ox), py = nearY(px) - r * 0.7 * s;
+      if (px < colR + 12 || px > ww - 10) continue;
+      const gl = c.createRadialGradient(px, py, 0, px, py, r * 5 * s);
+      gl.addColorStop(0, 'rgba(255,140,30,0.16)'); gl.addColorStop(1, 'rgba(255,140,30,0)');
+      c.fillStyle = gl; c.fillRect(px - r * 5 * s, py - r * 5 * s, r * 10 * s, r * 10 * s);
+      c.fillStyle = '#3a1d08'; c.beginPath(); c.ellipse(px, py, r * 1.25 * s, r * s, 0, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,170,60,0.85)';   // the carved face lit from inside
+      for (const ex of [-0.45, 0.45]) { c.beginPath(); c.moveTo(px + (ex - 0.2) * r * s, py - 0.1 * r * s); c.lineTo(px + ex * r * s, py - 0.5 * r * s); c.lineTo(px + (ex + 0.2) * r * s, py - 0.1 * r * s); c.fill(); }
+      c.beginPath(); c.moveTo(px - 0.6 * r * s, py + 0.2 * r * s); c.quadraticCurveTo(px, py + 0.75 * r * s, px + 0.6 * r * s, py + 0.2 * r * s); c.quadraticCurveTo(px, py + 0.45 * r * s, px - 0.6 * r * s, py + 0.2 * r * s); c.fill();
+      c.fillStyle = nearCol; c.fillRect(px - 0.6 * s, py - r * 1.35 * s, 1.4 * s, r * 0.45 * s);   // stalk
+    }
+    c.fillStyle = nearCol;
     // a crooked little fence on the left
     const fx0 = side * 0.12, fx1 = side * 0.62;
     c.lineWidth = 1.6 * s;

@@ -288,3 +288,11 @@ Check 20 done. Next: performance re-profile after the review fixes, then more la
 - Tests: functest, skintest, r12test, up16test, reducedtest, mobile18, ctrls, backup, imetest, reviewfix all pass.
 
 Check 21 done. Next: finish the ?still replay + perf check for v19c, then skin-picker naming and more Halloween details.
+
+## Check 22 (v19d)
+- Capsule tray restyled in the panel's brass and walnut (gold ring on the chosen skin); each tray button shows the
+  skin's full name as a tooltip (the tray keeps the short labels, the panel the full names; screen readers get the full name).
+- Halloween: two carved jack-o'-lanterns glow among the graves in the wide-screen night backdrop.
+- Tests: full suite and ?still replay re-run for this version (results in Check 23).
+
+Check 22 done. Next: confirm the suite for v19d, then another look at sound packs and the celebration burst.
