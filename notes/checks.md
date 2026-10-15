@@ -653,3 +653,14 @@ Check 55 done. Next: keep polishing until the session ends, then the final singl
   audio running, no network requests, no errors or warnings), ?intro fallback, APK badging 1.2 (code 3).
 
 Check 56 done. Next: final single-file delivery and the full list of features.
+
+## Check 57 – opening film: depth of field, lighter rendering (app v1.3)
+- Depth of field: in the close shots the keyboard goes softly out of focus (a pre-blurred copy of the keys,
+  faded in with the camera) while the sheet, guide and type bars stay sharp; pressed keys blur with it.
+- Lamp light and lens falloff are made once per screen size instead of every frame; grain comes from three
+  pre-made frames. The film watches its own frame rate and drops grain, smear and the key blur on a phone that
+  can't keep up (software rendering here: 20 fps -> 60 fps median).
+- Checked: phone frames, packaged page with the app's user agent (no errors, no network, audio running, haptics
+  firing), ?intro fallback, functest, ?still replay pixel-identical; APK 1.3 (code 4).
+
+Check 57 done. Next: final single-file delivery and the full list of features.

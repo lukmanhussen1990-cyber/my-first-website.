@@ -30,7 +30,7 @@ open('build/assets/index.html', 'w', encoding='utf-8').write(s)
 PY
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/base.apk -I "$PLAT" --manifest AndroidManifest.xml \
-  --min-sdk-version 24 --target-sdk-version 34 --version-code 3 --version-name 1.2 \
+  --min-sdk-version 24 --target-sdk-version 34 --version-code 4 --version-name 1.3 \
   -A build/assets build/res.zip --java build/gen
 javac -nowarn -source 8 -target 8 -bootclasspath "$PLAT" -cp "$PLAT" -d build/classes \
   $(find src build/gen -name '*.java') 2>&1 | grep -v "bootstrap class path\|^warning\|^1 warning\|^Note:" || true
