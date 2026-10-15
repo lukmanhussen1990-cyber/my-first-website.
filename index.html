@@ -4153,22 +4153,36 @@ function flyTorn(T, from) {
 // enough; let go early and it springs back into place. A tap or Enter on it tears the page straight off.
 const tabEl = $('#tearTab');
 const TAB = { a: 0, x: 0, y: 0, drag: null, wig: -9 };
-function drawTearTab(c, a, t = 0) {
-  if (a < 0.01) return;
-  const w = 54 * k, h = 15 * k, x = TAB.x, y = G.paperTop + 1 * k, wig = t - TAB.wig < 0.4 ? Math.sin((t - TAB.wig) * 40) * 2 * k * (1 - (t - TAB.wig) / 0.4) : 0;
-  c.save(); c.globalAlpha = a; c.translate(x + wig, y);
+// the tab is drawn once into a small sprite (the soft shadow is costly) and redrawn only when the paper colour changes
+const tabCv = document.createElement('canvas');
+let tabKey = '';
+function tabSprite() {
+  const inkc = hex(inkFor(CH.paper.v > 0.5)), key = paperRGB.map(Math.round).join() + inkc.join() + k.toFixed(3) + dpr;
+  if (key === tabKey) return tabCv;
+  tabKey = key;
+  const w = 54 * k, h = 15 * k, pw = w + 14 * k, ph = h + 10 * k;
+  tabCv.width = Math.ceil(pw * dpr); tabCv.height = Math.ceil(ph * dpr);
+  const c = tabCv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, pw / 2 * dpr, (h + 6 * k) * dpr);
   c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 4 * k * dpr; c.shadowOffsetY = -1 * k * dpr;
   c.fillStyle = rgba(paperRGB); c.beginPath();
   c.moveTo(-w / 2 - 4 * k, 2 * k); c.quadraticCurveTo(-w / 2, 2 * k, -w / 2, -h + 5 * k); c.quadraticCurveTo(-w / 2, -h, -w / 2 + 5 * k, -h);
   c.lineTo(w / 2 - 5 * k, -h); c.quadraticCurveTo(w / 2, -h, w / 2, -h + 5 * k); c.quadraticCurveTo(w / 2, 2 * k, w / 2 + 4 * k, 2 * k); c.closePath(); c.fill();
   c.shadowColor = 'transparent';
-  const inkc = hex(inkFor(CH.paper.v > 0.5));   // a small arrow, the word TEAR, and ribbed grips either side
+  // a small arrow, the word TEAR, and ribbed grips either side
   c.strokeStyle = rgba(inkc, 0.5); c.lineWidth = 0.8 * k; c.lineCap = 'round'; c.beginPath();
   for (const gx of [-22, -19, 19, 22]) { c.moveTo(gx * k, -h + 5 * k); c.lineTo(gx * k, -2.5 * k); }
   c.moveTo(-2.4 * k, -h + 5.2 * k); c.lineTo(0, -h + 2.6 * k); c.lineTo(2.4 * k, -h + 5.2 * k);
   c.stroke();
   c.fillStyle = rgba(inkc, 0.6); c.font = `700 ${Math.round(6.4 * k * 10) / 10}px "Courier Prime", "Courier New", monospace`;
   c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText('TEAR', 0, -2.4 * k);
+  return tabCv;
+}
+function drawTearTab(c, a, t = 0) {
+  if (a < 0.01) return;
+  const sp = tabSprite(), h = 15 * k, pw = sp.width / dpr, ph = sp.height / dpr;
+  const wig = t - TAB.wig < 0.4 ? Math.sin((t - TAB.wig) * 40) * 2 * k * (1 - (t - TAB.wig) / 0.4) : 0;
+  c.save(); c.globalAlpha = a;
+  c.drawImage(sp, TAB.x + wig - pw / 2, G.paperTop + 1 * k - (h + 6 * k), pw, ph);
   c.restore();
 }
 function updateTab(t) {
@@ -5376,7 +5390,7 @@ function boot() {
   setLamp(store.get(LS.lamp, '0') === '1', true);
   onTextChanged();
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); buildCapsules(); buildPaperFx(); trayKey = ''; });
+    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); buildCapsules(); buildPaperFx(); trayKey = ''; tabKey = ''; });
   }
   if (!TOUCH) focusInput();
   lastActivity = now();

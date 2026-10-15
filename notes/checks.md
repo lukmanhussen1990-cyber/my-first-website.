@@ -518,3 +518,10 @@ Check 46 done. Next: confirm the suite/replay, then a phone-touch test of the pu
   nothing).
 
 Check 47 done. Next: graphics rounds continue.
+
+## Check 48 (v20b)
+- Perf: the pull tab is drawn once into a cached sprite (its soft shadow was redrawn every frame) and refreshed only
+  when the paper/ink colour or scale changes; look unchanged. p50 back to 4.6–5.0 ms.
+- Tests: functest, r12test, up16test, reducedtest, mobile18, tear drag (mouse + touch) pass.
+
+Check 48 done. Next: graphics rounds continue.
