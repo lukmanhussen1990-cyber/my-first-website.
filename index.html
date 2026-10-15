@@ -60,17 +60,18 @@
   .skin[aria-checked="true"] { background: rgba(255,255,255,.09); color: #f1efe6; box-shadow: inset 0 0 0 1px rgba(255,255,255,.17); }
   .skin:focus-visible { outline: 1px dashed rgba(200,200,190,.5); outline-offset: 1px; }
   #shareMenu { position: absolute; top: 0; right: 0; z-index: 6; display: flex; flex-direction: column; min-width: 172px; padding: 5px;
-               border-radius: 14px; background: rgba(24,24,22,.92); box-shadow: 0 10px 30px rgba(0,0,0,.55), inset 0 0 0 .5px rgba(255,255,255,.13);
+               border-radius: 14px; background: linear-gradient(180deg, rgba(46,41,36,.97), rgba(23,21,19,.97)); border: 1px solid rgba(205,176,122,.35);
+               box-shadow: 0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,226,170,.2);
                -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; visibility: hidden;
                transform: translateY(-6px) scale(.96); transform-origin: 88% 0;
                transition: opacity .16s ease, transform .18s ease, visibility 0s linear .18s; }
   #shareMenu.open { opacity: 1; pointer-events: auto; visibility: visible; transform: none;
                     transition: opacity .16s ease, transform .18s ease, visibility 0s; }
   #shareMenu [role="menuitem"] { display: flex; align-items: center; gap: 11px; padding: 10px 14px 10px 10px; border-radius: 9px;
-               color: #d6d5cd; font-size: 13px; letter-spacing: .02em; text-align: left; white-space: nowrap; }
-  #shareMenu [role="menuitem"] svg { flex: none; color: #a9a9a0; }
-  #shareMenu [role="menuitem"]:hover, #shareMenu [role="menuitem"]:focus-visible { background: rgba(255,255,255,.08); outline: none; }
-  #shareMenu .sep { height: 1px; margin: 4px 8px; background: rgba(255,255,255,.1); }
+               color: #e8dfcc; font-size: 13px; letter-spacing: .02em; text-align: left; white-space: nowrap; }
+  #shareMenu [role="menuitem"] svg { flex: none; color: #cdb07a; }
+  #shareMenu [role="menuitem"]:hover, #shareMenu [role="menuitem"]:focus-visible { background: rgba(255,215,140,.1); outline: none; }
+  #shareMenu .sep { height: 1px; margin: 4px 8px; background: linear-gradient(90deg, rgba(205,176,122,.4), rgba(205,176,122,.05)); }
   .torn { position: absolute; left: 0; z-index: 4; pointer-events: none; transform-origin: 55% 100%;
           filter: drop-shadow(0 5px 9px rgba(0,0,0,.32)); will-change: transform; }
   #controls { position: absolute; left: 0; top: 0; width: 100%; opacity: 0; pointer-events: none; }
@@ -141,7 +142,7 @@
   .plate::before, .plate::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%;
            background: radial-gradient(circle at 35% 35%, #fff4cf, #8a6424 72%); box-shadow: 0 0 0 .5px rgba(0,0,0,.45); }
   .plate::before { left: 9px; } .plate::after { right: 9px; }
-  .sheet .x { position: absolute; right: 12px; top: 10px; width: 30px; height: 30px; border-radius: 50%; font-size: 13px; color: #2a231a;
+  .sheet .x { position: absolute; right: 10px; top: 6px; width: 38px; height: 38px; border-radius: 50%; font-size: 13px; color: #2a231a;
            background: radial-gradient(circle at 50% 30%, #fbf5e8, #d9cfba 62%, #b3a68b); border: 1.5px solid #3b342b;
            box-shadow: 0 2px 0 #574c3e, 0 3px 7px rgba(0,0,0,.5); }
   .sheet .body { position: relative; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 16px 22px; }
@@ -158,6 +159,10 @@
          box-shadow: 0 1px 0 #574c3e, 0 2px 6px rgba(0,0,0,.45), 0 0 12px rgba(255,190,90,.28); }
   .key.wide { width: 100%; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 12px; color: #d9cfbb; }
+  @media (max-width: 360px) {   /* small phones: keys drop under their label instead of orphaning one */
+    .row:has(.keys) { flex-wrap: wrap; } .row:has(.keys) > .keys { width: 100%; }
+    .key { min-width: 34px; padding: 7px 9px 8px; flex-grow: 1; } .keys { gap: 9px 6px; }
+  }
   .row + .row { border-top: 1px solid rgba(255,235,200,.06); }
   .row small { display: block; font-size: 9.5px; color: #988f7e; margin-top: 2px; }
   .sw { flex: none; width: 46px; height: 24px; border-radius: 12px; position: relative;
@@ -207,9 +212,10 @@
   .draft .t b { display: block; font-size: 13px; color: #efe6d3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .draft .t small { display: block; font-size: 10px; color: #a99f8c; margin-top: 3px; }
   .draft input { width: 100%; font: inherit; font-size: 13px; background: #f3ecdc; color: #2a231a; border: 0; border-radius: 4px; padding: 4px 6px; outline: none; -webkit-user-select: text; user-select: text; }
-  .ib { flex: none; width: 32px; height: 32px; border-radius: 50%; color: #cdb07a; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .ib { flex: none; width: 40px; height: 40px; border-radius: 50%; color: #cdb07a; display: flex; align-items: center; justify-content: center; font-size: 11px; }
   .ib:hover { background: rgba(255,255,255,.06); }
-  .ib.danger { width: auto; padding: 0 10px; border-radius: 16px; color: #2b0b05; font-weight: 700; background: #ff8a70; }
+  .ib.danger { width: auto; padding: 0 12px; border-radius: 16px; color: #ffe6d8; font-weight: 700; background: linear-gradient(180deg, #9c2a1c, #6e1a10);
+         box-shadow: inset 0 0 0 1px rgba(242,200,120,.55), 0 2px 5px rgba(0,0,0,.45); }
   .pages { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   #goalHud { position: absolute; z-index: 2; left: 50%; top: 0; transform: translateX(-50%); padding: 3px 11px 4px; border-radius: 999px;
              font-size: 10.5px; letter-spacing: .05em; color: #e6dcc8; background: rgba(36,32,29,.88); white-space: nowrap; pointer-events: none;
@@ -247,7 +253,7 @@
   <canvas id="scene"></canvas>
   <div id="glow"></div>
   <textarea id="input" autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off"
-            maxlength="3000" rows="1" aria-label="Typewriter text"></textarea>
+            maxlength="12000" rows="1" aria-label="Typewriter text"></textarea>
 
   <button id="back" class="icon" aria-label="Drafts" aria-haspopup="dialog" aria-expanded="false">
     <svg viewBox="0 0 24 24" width="24" height="24"><path d="M19.6 12H4.6M10.9 5.6 4.5 12l6.4 6.4" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -308,7 +314,8 @@
    ========================================================================== */
 
 const COLS = 19;            // characters per line
-const MAX = 3000;           // character limit
+const MAX = 3000;           // characters per sheet
+const MAX_IN = MAX * 4;     // a paste may run on over a few sheets
 const LS = { text: 'fw.text', sound: 'fw.sound', lamp: 'fw.lamp', sliders: 'fw.sliders', skin: 'fw.skin', tip: 'fw.tip' };
 
 const $ = (s) => document.querySelector(s);
@@ -584,6 +591,12 @@ function paintPaperFx(g, w, h, k, id) {
     v.addColorStop(0, 'rgba(0,10,30,0)'); v.addColorStop(1, 'rgba(0,10,30,0.35)'); g.fillStyle = v; g.fillRect(0, 0, w, h);
     g.strokeStyle = 'rgba(220,235,255,0.22)'; g.lineWidth = 0.7 * k;   // a title block in the corner
     g.strokeRect(w - 118 * k, h - 64 * k, 104 * k, 46 * k); g.beginPath(); g.moveTo(w - 118 * k, h - 46 * k); g.lineTo(w - 14 * k, h - 46 * k); g.stroke();
+    g.beginPath(); g.moveTo(w - 66 * k, h - 46 * k); g.lineTo(w - 66 * k, h - 18 * k); g.stroke();
+    g.fillStyle = 'rgba(220,235,255,0.3)'; g.textBaseline = 'middle';
+    g.font = `bold ${7.5 * k}px "Courier Prime", "Courier New", monospace`; g.fillText('FRANKENWRITER MK I', w - 114 * k, h - 55 * k);
+    g.font = `${6 * k}px "Courier Prime", "Courier New", monospace`;
+    g.fillText('DWG. 31-10', w - 114 * k, h - 37 * k); g.fillText('SCALE 1:1', w - 114 * k, h - 27 * k);
+    g.fillText('DRAWN: IGOR', w - 62 * k, h - 37 * k); g.fillText('SHEET 1', w - 62 * k, h - 27 * k);
   } else if (id === 'black') {
     g.lineCap = 'round';
     for (let i = 0; i < 260; i++) {
@@ -1709,9 +1722,9 @@ function drawGlyph(c, i, x, by, inkRgb, s) {
   c.fillText(ch, 0, 0);
   if (rnd(i, 5) < 0.35) { c.fillStyle = rgba(inkRgb, dark * 0.45); c.fillText(ch, -0.3 * kk, -0.15 * kk); }
   const clog = CLOG[ch];   // now and then a letter's eye is clogged with ink
-  if (clog && !STILL && rnd(i, 6) < 0.07) {
-    c.fillStyle = rgba(inkRgb, dark); c.beginPath();
-    c.ellipse(clog[0] * font, clog[1] * font, 0.17 * font, 0.15 * font, rnd(i, 7) - 0.5, 0, 7); c.fill();
+  if (clog && !STILL && rnd(i, 6) < 0.035) {
+    c.fillStyle = rgba(inkRgb, dark * 0.8); c.beginPath();   // a filled eye, not a blot: the letter stays readable
+    c.ellipse(clog[0] * font, clog[1] * font, 0.12 * font, 0.1 * font, rnd(i, 7) - 0.5, 0, 7); c.fill();
   }
   c.restore();
   // dry-ink speckle: knock tiny holes out of this glyph
@@ -2000,8 +2013,8 @@ function typeChar(ch) {
   return true;
 }
 // the sheet is full: it is torn off (kept with the draft) and a fresh one rolls in
-function autoPage() {
-  if (text.length < MAX) return;
+function autoPage(force) {
+  if (text.length < MAX && !(force && text.length)) return;
   const t = now(), cols = caretCol();
   if (DR.cur) { DR.cur.pages.push(text); archKey = ''; }
   tearOff(t);
@@ -2013,7 +2026,10 @@ function autoPage() {
   retract.t0 = t + 0.24;
   setTimeout(() => { fx.zap(true); flingWebs(); AU.carriageReturn(Math.max(3, cols)); }, 240);
   saveNow(); AU.tear();
+  onTextChanged();
   toast('Page ' + (DR.cur ? DR.cur.pages.length : 1) + ' is full – here is a fresh sheet', 2.6);
+  // the rest of a long paste lands on the new sheet once it has rolled in
+  if (pending.length > 24) setTimeout(() => { if (pending.length > 24) flushPending(); }, 700);
 }
 function deleteChar(quiet) {
   if (!text.length) return false;
@@ -2061,7 +2077,7 @@ input.addEventListener('compositionend', () => { composing = false; syncInput();
 const UNTYPEABLE = /[\uD800-\uDFFF\uFE00-\uFE0F\u200B-\u200D\u2060\uFEFF]/g;
 function syncInput() {
   let v = input.value.replace(/\r/g, '').replace(/\t/g, ' ').replace(UNTYPEABLE, '');
-  if (v.length > MAX) v = v.slice(0, MAX);
+  if (v.length > MAX_IN) v = v.slice(0, MAX_IN);
   const cur = text + pending;
   if (v === cur) {   // nothing typeable changed (e.g. an emoji was filtered): tidy the textarea anyway
     if (!composing && input.value !== v) { input.value = v; keepCaretAtEnd(); }
@@ -2091,8 +2107,14 @@ function pumpPending(t) {
 }
 function flushPending() {
   // large paste: everything lands at once with a single carriage return
-  const add = pending.slice(0, MAX - text.length); pending = '';
-  if (!add) return;
+  const room = MAX - text.length;
+  let add = pending.slice(0, room), rest = pending.slice(room);
+  if (rest && !/\s/.test(rest[0])) {   // the sheet fills mid-word: carry the whole word over
+    const k = Math.max(add.lastIndexOf(' '), add.lastIndexOf('\n'));
+    if (k >= 0 && room - k < 40) { rest = add.slice(k + 1) + rest; add = add.slice(0, k + 1); }
+  }
+  pending = rest;
+  if (!add) { if (rest) queueMicrotask(() => autoPage(true)); return; }
   const t = now(), before = lines.length;
   snapCarriage();
   text += add; lines = wrap(text); lastKey = t;
@@ -2102,7 +2124,7 @@ function flushPending() {
   else AU.clack();
   slideTo(carriageTarget(), 0.267, E.outSine, 0);
   onTextChanged();
-  if (text.length >= MAX) queueMicrotask(autoPage);   // a paste that fills the sheet
+  if (text.length >= MAX || rest) queueMicrotask(() => autoPage(!!rest));   // a paste that fills the sheet
 }
 function keepCaretAtEnd() {
   const n = input.value.length;
@@ -2137,6 +2159,7 @@ document.addEventListener('keydown', (e) => {
 
 /* ------------------------------------------------------------ top bar -- */
 async function shareText() {
+  const text = allText();
   try {
     if (navigator.share) { await navigator.share({ title: 'Frankenwriter', text }); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
@@ -2208,7 +2231,8 @@ function layoutSliders() {
     el.style.left = x0 + 'px'; el.style.width = w + 'px';
     el.style.top = (labelY - 8 * k) + 'px'; el.style.height = (trackY - labelY + 22 * k) + 'px';
     const lbl = el.querySelector('.sl-lbl');
-    lbl.style.fontSize = (10.6 * k) + 'px'; lbl.style.paddingLeft = ((key === 'light' ? 4.3 : 0.9) * k) + 'px';
+    lbl.style.fontSize = Math.max(10.6 * k, 10) + 'px';   // the recording's size, but never below legible
+    lbl.style.paddingLeft = ((key === 'light' ? 4.3 : 0.9) * k) + 'px';
     lbl.style.letterSpacing = (0.15 * k) + 'px';
     const tr = el.querySelector('.sl-track');
     tr.style.top = (trackY - labelY + 8 * k - 11 * k) + 'px'; tr.style.height = (22 * k) + 'px';
@@ -2328,8 +2352,10 @@ function draw(t) {
   setStyle(grainCv, 'opacity', ((1 - pP * 0.45) * paperTheme().grainA).toFixed(3));
   setStyle(reliefCv, 'opacity', STILL ? '0' : (pP * 0.8).toFixed(3));
   setStyle(controlsEl, 'opacity', pP.toFixed(3));
-  setStyle(dialEl, 'color', rgba(mix(DIAL_A, DIAL_B, cP)));
-  setStyle(dialLine, 'stroke', rgba(mix(DIAL_LA, DIAL_LB, pP)));   // the line follows the paper, the disc switches at once
+  // on a dark sheet (Black, Blueprint) the dial turns light so it never disappears into the paper
+  const dkP = (PAPER_LIGHT[0] + PAPER_LIGHT[1] + PAPER_LIGHT[2]) < 300;
+  setStyle(dialEl, 'color', rgba(mix(dkP ? DIAL_B : DIAL_A, DIAL_B, cP)));
+  setStyle(dialLine, 'stroke', rgba(mix(dkP ? DIAL_LB : DIAL_LA, DIAL_LB, pP)));   // the line follows the paper, the disc switches at once
 
   c.setTransform(dpr, 0, 0, dpr, 0, -G.sceneTop * dpr);
   c.clearRect(0, G.sceneTop, W, G.sceneBot - G.sceneTop);
@@ -2419,14 +2445,19 @@ function drawText(c, t, ink) {
   const off = scrollOffset(t) + scrollBack.v, lastY = G.base + baseShift(t);
   const n = lines.length;
   let minLi = n;
+  // reading back, the sheet runs down behind the platen: lines below the typing line fade out
+  // before they reach the rod instead of being drawn over it
+  const sbk = Math.min(1, scrollBack.v), under = (y) => (sbk ? 1 - sbk * clamp((y - lastY) / (0.75 * G.lineH), 0, 1) : 1);
   if (scrollBack.v > 0.01) {   // reading back: the pages already torn off this draft sit above this one
     const A = archive();
     for (let ai = A.length - 1; ai >= 0; ai--) {
       const y = lastY - (n - 1 + A.length - ai - off) * G.lineH;
       if (y < G.paperTop - G.lineH) break;
       if (y > G.sceneBot + G.lineH || (!A[ai].mark && !A[ai].idx.length)) continue;
+      const a = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1) * under(y);
+      if (a <= 0) continue;
       const e = renderArchLine(A[ai], ai, ink);
-      c.globalAlpha = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
+      c.globalAlpha = a;
       c.drawImage(e.cv, G.textLeft - e.pad, y - e.by, e.cv.width / dpr, e.cv.height / dpr);
     }
     c.globalAlpha = 1;
@@ -2439,7 +2470,7 @@ function drawText(c, t, ink) {
     minLi = li;
     if (y > G.sceneBot + G.lineH) continue;   // still below the visible strip (e.g. mid-feed after a paste)
     if (!lines[li].idx.length) continue;
-    const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1);
+    const fade = clamp((y - G.paperTop - 6 * k) / (34 * k), 0, 1) * under(y);
     if (fade <= 0) continue;
     const e = renderLine(lines[li], li, ink, t);
     c.globalAlpha = fade;
@@ -3644,7 +3675,7 @@ function buildMenu() {
 }
 function menuItems() { return [...shareMenu.querySelectorAll('[data-act]')]; }
 function openMenu(kb) {
-  if (!text.length) { toast('Nothing to share yet'); return; }
+  if (!allText()) { toast('Nothing to share yet'); return; }
   closeTray();
   buildMenu();
   menuOpen = true; shareMenu.classList.add('open'); shareBtn.setAttribute('aria-expanded', 'true');
@@ -3664,7 +3695,7 @@ shareMenu.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') j = (i + 1) % items.length;
   else if (e.key === 'ArrowUp') j = (i + items.length - 1) % items.length;
   else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = items.length - 1;
-  else if (e.key === 'Tab') { closeMenu(); return; }
+  else if (e.key === 'Tab') { e.preventDefault(); closeMenu(true); return; }
   if (j < 0) return;
   e.preventDefault(); items[j].focus();
 });
@@ -3681,9 +3712,11 @@ function download(blob, name) {
   a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
+function allText() { return (DR.cur ? draftText(DR.cur, true) : text + pending).trim(); }
 function saveTxt() {
-  if (!text.trim()) { toast('Nothing to save yet'); return; }
-  download(new Blob([text], { type: 'text/plain;charset=utf-8' }), fileName('txt')); toast('Text saved');
+  const all = allText();
+  if (!all) { toast('Nothing to save yet'); return; }
+  download(new Blob([all], { type: 'text/plain;charset=utf-8' }), fileName('txt')); toast('Text saved');
 }
 // Ctrl/Cmd+S saves the page as a .txt instead of the browser's "save page"
 document.addEventListener('keydown', (e) => {
@@ -3692,9 +3725,9 @@ document.addEventListener('keydown', (e) => {
 function menuAction(act, kb) {
   closeMenu(kb);
   lastActivity = now();
-  if (act !== 'new' && !text.trim()) { toast('Nothing to share yet'); return; }
+  if (act !== 'new' && !allText()) { toast('Nothing to share yet'); return; }
   if (act === 'text') shareText();
-  else if (act === 'image') shareImage();
+  else if (act === 'image') { if (text.trim()) shareImage(); else toast('This sheet is still blank'); }
   else if (act === 'txt') saveTxt();
   else if (act === 'print') printDraft();
   else if (act === 'new') newPage();
@@ -4333,7 +4366,7 @@ function layoutSheets() {
   const mh = Math.max(320, H - (G.capCY + G.capHH + 26 * k));
   panelEl.style.maxHeight = draftsEl.style.maxHeight = Math.min(H - 20, mh) + 'px';
   goalHud.style.top = (H * 0.0918 + 24 * k) + 'px';   // under the top bar, clear of the toasts
-  pageTag.style.top = (G.paperTop + 8 * k) + 'px';
+  pageTag.style.top = (G.railY + 44 * k) + 'px';   // under the rod, where the paper is bare while reading back
 }
 function openSheet(el, kb) {
   if (sheetOpen === el) return;
@@ -4346,7 +4379,8 @@ function openSheet(el, kb) {
   el.classList.add('open'); scrimEl.classList.add('on');
   (el === panelEl ? gearBtn : backBtn).setAttribute('aria-expanded', 'true');
   AU.trayClick();
-  if (kb) { const f = el.querySelector('.body button, .body input'); if (f) f.focus(); }
+  if (kb) { const f = el.querySelector('.body button, .body input'); if (f) f.focus({ preventScroll: true }); }
+  app.scrollTop = 0;
 }
 function closeSheet(refocus = true) {
   const el = sheetOpen;
@@ -4355,6 +4389,7 @@ function closeSheet(refocus = true) {
   el.classList.remove('open'); scrimEl.classList.remove('on');
   (el === panelEl ? gearBtn : backBtn).setAttribute('aria-expanded', 'false');
   if (el.contains(document.activeElement)) document.activeElement.blur();
+  app.scrollTop = 0; document.scrollingElement.scrollTop = 0;
   if (refocus && (sheetRefocus || !TOUCH)) focusInput();
 }
 scrimEl.addEventListener('click', () => closeSheet());
@@ -4455,7 +4490,7 @@ function buildPanel() {
   mr.appendChild(keyGroup([['all', 'On'], ['fx', 'Off'], ['off', 'Mute all']], AU.mode, (v) => { AU.setMode(v); paintSound(); }, 'Music'));
   mr.lastChild.classList.add('modekeys'); s4.appendChild(mr);
   s4.appendChild(sw('Margin bell', 'Rings 4 letters before the end of a line', prefs.bell, (v) => { prefs.bell = v; savePrefs(); if (v) { AU.resume(); AU.bell(); } }));
-  s4.appendChild(sw('Night ambience', 'Wind, creaks and far thunder (Spooky pack)', prefs.ambience, (v) => { prefs.ambience = v; savePrefs(); AU.ambSync(); }));
+  s4.appendChild(sw('Night ambience', 'Wind, creaks and far thunder – plays with the Halloween sound pack', prefs.ambience, (v) => { prefs.ambience = v; savePrefs(); AU.ambSync(); }));
   if (CAN_BUZZ) s4.appendChild(sw('Vibration', 'A light tap on each key', prefs.haptics, (v) => { prefs.haptics = v; savePrefs(); haptic(20); }));
   body.appendChild(s4);
   // lamp
@@ -4521,12 +4556,12 @@ function renderDrafts() {
     const all = draftText(d, d === DR.cur), np = d.pages.length + 1;
     t.innerHTML = '<b></b><small></small>';
     t.querySelector('b').textContent = draftTitle(d);
-    t.querySelector('small').textContent = (d === DR.cur ? 'in the machine · ' : '') + words(all) + ' words · ' + np + ' page' + (np > 1 ? 's' : '') + ' · ' + ago(d.updated);
+    t.querySelector('small').textContent = (d === DR.cur ? 'open · ' : '') + words(all) + ' words · ' + np + ' page' + (np > 1 ? 's' : '') + ' · ' + ago(d.updated);
     t.addEventListener('click', () => { if (d !== DR.cur) openDraft(d.id); closeSheet(); });
     const rn = el('button', 'ib', '✎'); rn.setAttribute('aria-label', 'Rename');
     rn.addEventListener('click', () => {
-      const inp = document.createElement('input'); inp.value = draftTitle(d); inp.maxLength = 40; inp.setAttribute('aria-label', 'Draft name');
-      t.replaceWith(inp); inp.focus(); inp.select();
+      const inp = document.createElement('input'); inp.value = draftTitle(d); inp.maxLength = 60; inp.setAttribute('aria-label', 'Draft name');
+      t.replaceWith(inp); inp.focus({ preventScroll: true }); inp.select();
       let fin = false;
       const done = () => { if (fin) return; fin = true; const v = inp.value.trim(); d.name = v === draftTitle(Object.assign({}, d, { name: '' })) ? '' : v; saveDrafts(); renderDrafts(); };
       inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } else if (e.key === 'Escape') { e.stopPropagation(); fin = true; renderDrafts(); } });
@@ -4543,7 +4578,7 @@ function renderDrafts() {
   }
   const ex = el('div', 'sec'); ex.appendChild(el('h3', '', 'THIS DRAFT'));
   const g = el('div', 'keys');
-  for (const [lbl, fn] of [['Save .txt', () => saveTxt()], ['Picture', () => shareImage()], ['Print / PDF', () => printDraft()], ['Share', () => shareText()]]) {
+  for (const [lbl, fn] of [['Save .txt', () => saveTxt()], ['Image', () => (text.trim() ? shareImage() : toast('This sheet is still blank'))], ['Print / PDF', () => printDraft()], ['Share', () => shareText()]]) {
     const b = el('button', 'key', lbl); b.addEventListener('click', () => { closeSheet(false); fn(); }); g.appendChild(b);
   }
   ex.appendChild(g); body.appendChild(ex);
@@ -4575,7 +4610,7 @@ restoreInput.addEventListener('change', () => {
     for (const d of list) {
       if (!d || typeof d.text !== 'string') continue;
       const pages = Array.isArray(d.pages) ? d.pages.filter((p) => typeof p === 'string').map((p) => p.slice(0, MAX)) : [];
-      const item = { id: String(d.id || newId()), name: String(d.name || '').slice(0, 40), text: d.text.slice(0, MAX), pages, created: +d.created || Date.now(), updated: +d.updated || Date.now() };
+      const item = { id: String(d.id || newId()), name: String(d.name || '').slice(0, 60), text: d.text.slice(0, MAX), pages, created: +d.created || Date.now(), updated: +d.updated || Date.now() };
       if (DR.list.some((x) => x.text === item.text && x.pages.join('\f') === item.pages.join('\f'))) continue;   // already here
       if (DR.list.some((x) => x.id === item.id)) item.id = newId();
       DR.list.push(item); added++;
@@ -4862,7 +4897,8 @@ function tick() {
     const ax = lightX, ay = G.capCY - G.capHH - G.paperTop;
     setStyle(lightCv, 'transform', `translate(${(ax - L.ax).toFixed(2)}px, ${(ay - L.ay).toFixed(2)}px) translate(${L.ax}px, ${L.ay}px) scale(${grow.toFixed(4)}) translate(${-L.ax}px, ${-L.ay}px)`);
     // intensity comes up fast near the slot (≈0.1 s) while the reach keeps growing (measured)
-    const inten = (lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.28), 2) : lv) * surge;
+    // on dark sheets the light ink would wash out in a full-strength beam: the lamp burns a little lower there
+    const inten = (lampOn ? 1 - Math.pow(1 - Math.min(1, lv / 0.28), 2) : lv) * surge * (paperTheme().lightInk ? 0.6 : 1);
     setStyle(lightCv, 'opacity', inten.toFixed(3));
     lightXf.tx = ax - L.ax; lightXf.ty = ay - L.ay; lightXf.g = grow; lightXf.a = inten;
   } else { setStyle(lightCv, 'opacity', '0'); lightXf.a = 0; }
@@ -4876,7 +4912,7 @@ if (/[?&]debug\b/.test(location.search)) {
     get text() { return text; }, get lines() { return lines.map((l) => l.idx.map((i) => text[i]).join('')); },
     get carX() { return car.x; }, get target() { return carriageTarget(); }, get col() { return caretCol(); },
     get lamp() { return lampOn; }, get lift() { const t = now(); return strikeLift(t) - retractDrop(t); }, get lightX() { return lightX; }, colX, G, AU, fx, WEB,
-    SPIDERS, MOTH, spawnSpider: () => { nextSpider = 1; }, spawnMoth: () => { MOTH.next = 1; },
+    get DR() { return DR; }, draftText, SPIDERS, MOTH, spawnSpider: () => { nextSpider = 1; }, spawnMoth: () => { MOTH.next = 1; },
     renderCard, newPage, strikeLightning: (d) => strikeLightning(now(), d), launchBats: () => launchBats(now()), AMB,
     renderLightForTest(scale, spread) { const s0 = L.scale; L.scale = scale; sliders.spread = spread; renderLight(); L.scale = s0; },
   };
@@ -4896,7 +4932,7 @@ function boot() {
   setLamp(store.get(LS.lamp, '0') === '1', true);
   onTextChanged();
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); buildCapsules(); trayKey = ''; });
+    Promise.all([document.fonts.load(FONT(22)), document.fonts.load('700 22px "Courier Prime"')]).then(() => { invalidateText(); buildCaptions(); buildCapsules(); buildPaperFx(); trayKey = ''; });
   }
   if (!TOUCH) focusInput();
   lastActivity = now();

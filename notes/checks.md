@@ -262,3 +262,21 @@ dots (now filled eyes); fibres showed in the dark too (now multiplied, so only l
 New: breathing light shafts in the beam, fibre relief under the lamp, see-through ghost, first lightning
 after ~1 min, three web substeps for steadier silk, Print in the share menu.
 Check 19 done. Next: another independent review, then a fresh full-quality look at every screen.
+
+## Check 20 (v19a)
+Independent review pass 2, all findings verified and handled:
+- Bugs fixed: keyboard-opened sheets left the app scrolled up (focus now uses preventScroll, scroll reset on close);
+  a paste that overflows a sheet now carries the rest onto the next sheet, breaking at a word; counter refreshes
+  after a tear-off; Save .txt / Copy / Share now export the whole draft (all pages); Tab in the share menu returns
+  focus to the share button; draft names up to 60 chars.
+- Scroll-back: earlier pages fade out before the rod instead of running over the capsule; page pill sits under the rod.
+- Design: lamp dial turns light on Black/Blueprint paper; beam burns lower on dark papers so light ink stays readable;
+  Blueprint title block filled (FRANKENWRITER MK I, drawing no., sheet); ink-clogged eyes rarer and smaller;
+  share menu restyled in the panel's brass and walnut; darker red Delete? pill; bigger tap targets (✕ 38px, ✎/✕ 40px);
+  320px layout: key rows drop under their label and fill the width; slider labels never below 10px;
+  "Picture" renamed "Image"; ambience note says it plays with the Halloween pack.
+- Tests: functest (updated for paste carry-over), imetest, hinttest, focustest, reviewfix, skintest, tiptest, r12test,
+  reducedtest, ctrls, up16test, backup, mobile18 all pass, no console errors. ?still replay: identical to the reference
+  except the gear icon.
+
+Check 20 done. Next: performance re-profile after the review fixes, then more lamp-scene and skin polish.
