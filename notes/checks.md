@@ -280,3 +280,11 @@ Independent review pass 2, all findings verified and handled:
   except the gear icon.
 
 Check 20 done. Next: performance re-profile after the review fixes, then more lamp-scene and skin polish.
+
+## Check 21 (v19c)
+- Sound: each skin's carriage-return ding is tuned to its own note (Frankenstein keeps the recorded C7; pumpkin lower
+  and woodier, mummy lowest, ghost and space higher, witch a high tinkle). Checked with audio running on four skins, no errors.
+- Lamp scene: the lamp's warm spill now catches the top of the rod beside the capsule (off in ?still).
+- Tests: functest, skintest, r12test, up16test, reducedtest, mobile18, ctrls, backup, imetest, reviewfix all pass.
+
+Check 21 done. Next: finish the ?still replay + perf check for v19c, then skin-picker naming and more Halloween details.

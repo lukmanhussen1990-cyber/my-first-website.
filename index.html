@@ -1031,6 +1031,8 @@ const SKINS = {
     flood: [[32, 50, 84], [26, 42, 70], [16, 25, 42], [6, 10, 17]], halo: [150, 200, 255], steam: null, pitch: 1.9 },
 };
 const SKIN_IDS = Object.keys(SKINS);
+// the carriage-return ding per skin (ratio to the recorded C7): a pumpkin's is lower and woodier, a witch's a high tinkle
+const DING = { frank: 1, pumpkin: 0.841, vampire: 0.749, mummy: 0.667, ghost: 1.26, witch: 1.498, claude: 1.122, brass: 1, copper: 0.891, space: 1.189 };
 for (const id of SKIN_IDS) SKINS[id].id = id;
 let skin = SKINS[store.get(LS.skin, 'frank')] || SKINS.frank;
 const KK = (v) => v * k;   // css px → current scale
@@ -2401,6 +2403,16 @@ function draw(t) {
   if (pP < 1) { c.globalAlpha = 1; c.drawImage(railCv[0], 0, G.railSpriteTop, W, rh); }
   if (pP > 0) { c.globalAlpha = pP; c.drawImage(railCv[1], 0, G.railSpriteTop, W, rh); }
   c.globalAlpha = 1;
+  // the lamp's warm spill catches the top of the pipe on either side of the capsule
+  if (!STILL && pP > 0 && lightXf.a > 0.02) {
+    const gx = lightX, hy = G.railT + (G.railB - G.railT) * 0.33, sp = 70 * k * sliders.reach / 210;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const g = c.createRadialGradient(gx, hy, 0, gx, hy, sp);
+    const a = 0.3 * pP * Math.min(1, lightXf.a);
+    g.addColorStop(0, `rgba(255,214,150,${a})`); g.addColorStop(0.45, `rgba(255,200,130,${a * 0.35})`); g.addColorStop(1, 'rgba(255,200,130,0)');
+    c.fillStyle = g; c.fillRect(gx - sp, hy - 3.2 * k, sp * 2, 4.4 * k);
+    c.restore();
+  }
 
   // ----- webs -----
   drawWebs(c, t, pP);
@@ -3257,7 +3269,7 @@ const AU = {
     this.burst(t, { f: 6000, type: 'highpass', q: 0.7, gain: 0.08 * v, d: 0.006 });   // the hammer
   },
   ding(t) {
-    const f = 2093 * (0.995 + Math.random() * 0.01);
+    const f = 2093 * DING[skin.id in DING ? skin.id : 'frank'] * (0.995 + Math.random() * 0.01);   // each skin's return bell is tuned to its own note
     // kept soft: the brief asks for a ding, the recording's return has none audible over the music
     for (const [mul, gn, d] of [[1, 0.042, 1.2], [2.76, 0.017, 0.55], [5.4, 0.009, 0.3], [1.004, 0.025, 1]]) {
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
