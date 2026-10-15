@@ -664,3 +664,11 @@ Check 56 done. Next: final single-file delivery and the full list of features.
   firing), ?intro fallback, functest, ?still replay pixel-identical; APK 1.3 (code 4).
 
 Check 57 done. Next: final single-file delivery and the full list of features.
+
+## Check 58 – final delivery
+- Final single file: index.html (= versions/v23c.html), the Android app ImranTyper.apk 1.3, and the full feature
+  list in notes/FEATURES.md.
+- Last runs on this version: functest, intro (phone, desktop, fallback), packaged-app check, ?still replay
+  pixel-identical to the previous app version; no console errors.
+
+Check 58 done.
