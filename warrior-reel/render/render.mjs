@@ -1,8 +1,11 @@
 // Render the film (or a frame range) to video by streaming raw RGBA frames into ffmpeg.
 // Usage:
-//   node render/render.mjs --out out/video/film_raw.mp4 [--workers 2] [--start 0 --end 1811] [--w 1080 --h 1920] [--step 1]
-// With several workers the range is split into contiguous chunks rendered in parallel (one headless
-// browser each), encoded to near-lossless segments, then concatenated without re-encoding.
+//   node render/render.mjs --out out/video/film_raw.mp4 [--workers 3] [--start 0 --end 1811] [--w 1080 --h 1920]
+//                          [--step 1] [--crf 14] [--seg 90]
+// The range is cut into short segments (default 90 frames = 3 s) that the workers (one headless browser
+// each) pull from a shared queue. Every finished segment is kept on disk under <out>.segs/, so an
+// interrupted render resumes where it stopped. When all segments exist they are concatenated without
+// re-encoding. Delete <out>.segs/ to force a full re-render (or delete single segments to redo them).
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
@@ -18,9 +21,11 @@ const FPS = tl.fps;
 const start = +(args.start || 0), end = +(args.end || tl.frames);
 const workers = Math.max(1, +(args.workers || 1));
 const step = Math.max(1, +(args.step || 1));
+const segLen = Math.max(step, +(args.seg || 90));
 const out = path.resolve(ROOT, args.out || 'out/video/film_raw.mp4');
-const crf = args.crf || '12';
-fs.mkdirSync(path.dirname(out), { recursive: true });
+const crf = args.crf || '14';
+const segDir = out + '.segs';
+fs.mkdirSync(segDir, { recursive: true });
 
 function encoder(file) {
   const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(FPS / step), '-i', '-',
@@ -29,58 +34,58 @@ function encoder(file) {
   return { ff, done };
 }
 
-async function renderChunk(idx, f0, f1, file) {
-  const enc = encoder(file);
-  let pending = Promise.resolve();
+// segment queue
+const segs = [];
+for (let f = start; f < end; f += segLen) {
+  const f1 = Math.min(end, f + segLen);
+  segs.push({ f0: f, f1, file: path.join(segDir, `seg_${String(f).padStart(5, '0')}_${String(f1).padStart(5, '0')}.mp4`) });
+}
+const todo = segs.filter((s) => !fs.existsSync(s.file));
+console.log(`${segs.length} segments, ${segs.length - todo.length} already done, ${todo.length} to render with ${workers} worker(s)`);
+let next = 0;
+
+async function worker(idx) {
+  let enc = null;
   const { srv, port } = await startServer(ROOT, {
-    onFrame: (buf) => {
-      pending = pending.then(() => new Promise((res) => { if (!enc.ff.stdin.write(buf)) enc.ff.stdin.once('drain', res); else res(); }));
-      return pending;
-    },
+    onFrame: (buf) => new Promise((res) => { if (!enc.ff.stdin.write(buf)) enc.ff.stdin.once('drain', res); else res(); }),
   });
-  const { browser, page } = await openPage(port, `entry=film&w=${W}&h=${H}`, { width: W, height: H });
+  const { browser, page } = await openPage(port, `entry=film&w=${W}&h=${H}`, { width: W, height: H, log: false });
   const t0 = Date.now();
   let n = 0;
   try {
-    for (let f = f0; f < f1; f += step) {
-      await page.evaluate(async (fr) => {
-        window.APP.renderAt(fr / window.APP.fps, fr);
-        const px = window.APP.readPixels();
-        await fetch('/frame?i=' + fr, { method: 'POST', body: px });
-      }, f);
-      n++;
-      if (n % 30 === 0) {
-        const el = (Date.now() - t0) / 1000;
-        console.log(`[w${idx}] frame ${f} (${n}/${Math.ceil((f1 - f0) / step)}) ${(el / n).toFixed(2)} s/frame`);
+    while (next < todo.length) {
+      const seg = todo[next++];
+      const tmp = seg.file.replace(/\.mp4$/, '.tmp.mp4');
+      enc = encoder(tmp);
+      for (let f = seg.f0; f < seg.f1; f += step) {
+        await page.evaluate(async (fr) => {
+          window.APP.renderAt(fr / window.APP.fps, fr);
+          const px = window.APP.readPixels();
+          await fetch('/frame?i=' + fr, { method: 'POST', body: px });
+        }, f);
+        n++;
       }
       const err = await page.evaluate('window.APP.error');
       if (err) throw new Error('page error: ' + err);
+      enc.ff.stdin.end();
+      await enc.done;
+      fs.renameSync(tmp, seg.file);
+      const el = (Date.now() - t0) / 1000;
+      const doneSegs = segs.filter((s) => fs.existsSync(s.file)).length;
+      console.log(`[w${idx}] ${path.basename(seg.file)} done — ${(el / n).toFixed(2)} s/frame, ${doneSegs}/${segs.length} segments complete`);
     }
   } finally {
-    await pending;
-    enc.ff.stdin.end();
     await browser.close();
     srv.close();
   }
-  await enc.done;
-  console.log(`[w${idx}] done ${n} frames in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
 }
 
-const total = end - start;
-const per = Math.ceil(total / workers / step) * step;
-const chunks = [];
-for (let i = 0; i < workers; i++) {
-  const f0 = start + i * per, f1 = Math.min(end, f0 + per);
-  if (f0 < f1) chunks.push([i, f0, f1, workers === 1 ? out : out.replace(/\.mp4$/, `.part${i}.mp4`)]);
-}
 const T = Date.now();
-await Promise.all(chunks.map((c) => renderChunk(...c)));
-if (chunks.length > 1) {
-  const list = out.replace(/\.mp4$/, '.txt');
-  fs.writeFileSync(list, chunks.map((c) => `file '${c[3]}'`).join('\n'));
-  await new Promise((res, rej) => spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', out], { stdio: 'inherit' })
-    .on('close', (c) => (c === 0 ? res() : rej(new Error('concat failed')))));
-  chunks.forEach((c) => fs.unlinkSync(c[3]));
-  fs.unlinkSync(list);
-}
+await Promise.all(Array.from({ length: Math.min(workers, todo.length) }, (_, i) => worker(i)));
+const missing = segs.filter((s) => !fs.existsSync(s.file));
+if (missing.length) { console.log(`ERROR: ${missing.length} segments missing`); process.exit(1); }
+const list = path.join(segDir, 'list.txt');
+fs.writeFileSync(list, segs.map((s) => `file '${s.file}'`).join('\n'));
+await new Promise((res, rej) => spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', out], { stdio: 'inherit' })
+  .on('close', (c) => (c === 0 ? res() : rej(new Error('concat failed')))));
 console.log(`wrote ${path.relative(ROOT, out)} in ${((Date.now() - T) / 1000).toFixed(0)} s`);

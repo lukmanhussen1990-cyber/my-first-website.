@@ -46,8 +46,8 @@ golden ending ~50.2 s · end card ~55.6 s · end ~60.4 s.
 ## Shot list
 1. **Hook** – across the river, low: the armoured knight on his mossy rock gripping his raised sword; slow push-in to the helmet ("When I find him... he will pay.").
 2. **Establishing** – high wide crane over river, hills, misty castle; Jesus walking in along the bank. Title card.
-3. **Two-shot** – Jesus arrives beside the knight ("You've been gripping that sword...").
-4. **Frontal two-shot** – Jesus sits down beside him ("Why do you carry so much anger?").
+3. **Follow shot** – from behind Jesus as he walks up to the knight ("You've been gripping that sword...").
+4. **Frontal wide two-shot** (reference-style, river in the foreground) – Jesus sits down beside him ("Why do you carry so much anger?").
 5. **Knight close-up**, low angle, slow push (betrayal).
 6. **Over Jesus's shoulder** – the knight turns the blade and stares at it ("...I've sharpened this blade for him.").
 7. **Jesus close-up**, slow push-in ("Any man can defeat his enemy... True strength is ruling the anger inside you...").
@@ -57,7 +57,7 @@ golden ending ~50.2 s · end card ~55.6 s · end ~60.4 s.
 11. **Over the knight's shoulder** onto Jesus ("No. Forgiveness doesn't pretend...").
 12. **Jesus close-up** ("It means you refuse to let hatred rule the rest of your life.").
 13. **Knight close-up** – the exhale; the light begins to warm ("I've let him rule me long enough.").
-14. **Golden ending** – dip through warm light; they stand together on the bank, the knight's sword point-down at his side, Jesus's hand on his shoulder ("Then today... you've won the greatest battle of all.").
+14. **Golden ending** – dip through warm light; from the sunlit side, they stand together on the bank, the knight's sword point-down in his right hand, Jesus's hand resting on his shoulder ("Then today... you've won the greatest battle of all.").
 15. **Final** – behind them, rising crane toward the sunlit river and castle; end card.
 
 ## Rebuild
@@ -66,7 +66,7 @@ npm install                                  # three.js + playwright-core
 python3 timeline/build_timeline.py           # timing (only if takes change)
 python3 audio/build_all.py                   # music, ambience, foley, dialogue stems, mix, mouth.json
 python3 render/subtitles.py                  # out/subs/film.ass (+ .srt)
-node render/render.mjs --workers 2 --out out/video/film_raw.mp4   # picture
+render/render_final.sh                       # picture: 1080x1920, 3 headless renderers, resumable 3 s segments (~100 min)
 render/assemble.sh                           # burn subtitles + mux audio -> out/video/the_warrior_who_couldnt_forgive.mp4
 ```
 Preview stills: `node render/shoot.mjs --q "entry=film" --times 1,10,35 --out out/previews/film/x`.
