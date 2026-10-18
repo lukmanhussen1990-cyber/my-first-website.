@@ -1,0 +1,1968 @@
+{
+ "project": "THE PATH - unofficial Duolingo spec advertisement (portfolio only, not affiliated with Duolingo)",
+ "version": "phase1-brief-v1",
+ "fps": 60,
+ "audio_rate": 48000,
+ "samples_per_frame": 800,
+ "total_frames": 1272,
+ "program_end_f": 1152,
+ "frame_rule": "frame = round(t * 60). An event's frame is the first frame on which it is visible; its sound starts at sample = frame * 800.",
+ "scenes": [
+  {
+   "id": "S1",
+   "name": "Hook",
+   "t0": 0.0,
+   "t1": 1.67,
+   "station": "A",
+   "summary": "Duo rushes from depth through green strands and slams in; camera eases back; the line runs under the wordmark and reveals it; Duo blinks and hops out."
+  },
+  {
+   "id": "S2",
+   "name": "The Path",
+   "t0": 1.67,
+   "t1": 2.93,
+   "station": "B",
+   "summary": "The line dives into the dark world, races along an S-curve of five chunky lesson nodes lighting each one, presses START at 2.40 s; a phone rises out of the node."
+  },
+  {
+   "id": "S3",
+   "name": "Lesson",
+   "t0": 2.93,
+   "t1": 4.8,
+   "station": "C",
+   "summary": "Translate this sentence. Duo: Quiero un café, por favor. Five tiles lift into 3D and snap into I want a coffee please. CHECK, then Excellent! at 4.23 s; the line fills the progress bar."
+  },
+  {
+   "id": "S4",
+   "name": "Streak",
+   "t0": 4.8,
+   "t1": 7.2,
+   "station": "D",
+   "summary": "The line leaps out of the phone, curls into a flame, ignites at 5.00 s with one anamorphic streak; counter rolls 1 to 365 (lands 6.13 s); week row fills as the line passes."
+  },
+  {
+   "id": "S5",
+   "name": "League",
+   "t0": 7.2,
+   "t1": 9.33,
+   "station": "E",
+   "summary": "Cinematic drop at 7.20 s into a floating Diamond League card; the user's row lifts out in 3D and climbs from #7 to #1 at 8.70 s; second chime."
+  },
+  {
+   "id": "S6",
+   "name": "Talk",
+   "t0": 9.33,
+   "t1": 11.4,
+   "station": "F",
+   "summary": "Floating video call with Duo. Captions: ¡Hola! ¿Qué tal tu día? / ¡Muy bien! Pedí un café en español. The line becomes the voice waveform of the reply."
+  },
+  {
+   "id": "S7",
+   "name": "Every Skill",
+   "t0": 11.4,
+   "t1": 14.67,
+   "station": "G",
+   "summary": "Rapid pull-back reveals the whole glowing path splitting into four branches; Languages, Math, Music, Chess light exactly on their spoken names."
+  },
+  {
+   "id": "S8",
+   "name": "Tagline",
+   "t0": 14.67,
+   "t1": 16.5,
+   "station": "H",
+   "summary": "Four lines converge into one. The line is the baseline of One path, / every skill. and briefly splits into the four course colors before merging back to Feather Green."
+  },
+  {
+   "id": "S9",
+   "name": "Hero Ending",
+   "t0": 16.5,
+   "t1": 19.2,
+   "station": "I",
+   "summary": "Breath; Duo drops in and lands on the impact at 16.80 s; the line reveals the wordmark (complete 17.33 s); fanfare 18.07 s with a happy wing flap; hero hold."
+  },
+  {
+   "id": "S10",
+   "name": "End Card",
+   "t0": 19.2,
+   "t1": 21.2,
+   "station": "J",
+   "summary": "Minimal near-black end card with the signature and spec disclaimer; final chord rings out."
+  }
+ ],
+ "events": [
+  {
+   "id": "open_frame",
+   "f": 0,
+   "scene": "S1",
+   "kind": "text",
+   "what": "Frame 0 is a designed thumbnail: Duo mid-rush (~120 px tall, motion-blurred) inside converging green strands."
+  },
+  {
+   "id": "slam",
+   "t": 0.17,
+   "scene": "S1",
+   "kind": "hero",
+   "given": true,
+   "what": "SLAM: Duo stops dead at ~540 px tall (half the frame height); squash peaks on the next frame; wings fling out; shake; shards; deep sub hit."
+  },
+  {
+   "id": "slam_rebound",
+   "f": 15,
+   "scene": "S1",
+   "kind": "character",
+   "what": "Stretch peak of the rebound; settles by f24 (spring 4 Hz, damping 0.35)."
+  },
+  {
+   "id": "cam_ease_back",
+   "f": 14,
+   "scene": "S1",
+   "kind": "camera",
+   "what": "Camera eases back from the slam pose to lock-up home A (f14 to f54, quintic ease)."
+  },
+  {
+   "id": "strands_collapse",
+   "f": 24,
+   "scene": "S1",
+   "kind": "path",
+   "what": "The strands collapse into the single line, which ignites at the left end of the underline."
+  },
+  {
+   "id": "vo_open",
+   "t": 0.5,
+   "scene": "S1",
+   "kind": "vo",
+   "given": true,
+   "what": "VO: Five minutes a day, that's all it takes."
+  },
+  {
+   "id": "wordmark_reveal",
+   "f": 28,
+   "scene": "S1",
+   "kind": "path",
+   "what": "Line runs left to right under the wordmark; a soft wipe tied to the head x-position reveals it (f28 to f66)."
+  },
+  {
+   "id": "wordmark_rest_A",
+   "f": 66,
+   "scene": "S1",
+   "kind": "text",
+   "what": "Wordmark fully revealed and pixel-exact at rest (camera still) through f92."
+  },
+  {
+   "id": "duo_blink",
+   "f": 70,
+   "scene": "S1",
+   "kind": "character",
+   "what": "Blink: eye group scales vertically to 8% and back (f70 to f76)."
+  },
+  {
+   "id": "duo_hop",
+   "f": 82,
+   "scene": "S1",
+   "kind": "character",
+   "what": "Hop out: anticipation squash f78 to f82, take-off f82 with stretch and one wing flap, out of frame top-right by f94."
+  },
+  {
+   "id": "dive",
+   "t": 1.67,
+   "scene": "S2",
+   "kind": "camera",
+   "given": true,
+   "what": "The line's head leaves the underline and dives into the world; camera tilts down and chases it."
+  },
+  {
+   "id": "node1",
+   "f": 108,
+   "scene": "S2",
+   "kind": "path",
+   "what": "Node 1 lights green (16th-note grid at 100 BPM)."
+  },
+  {
+   "id": "node2",
+   "f": 117,
+   "scene": "S2",
+   "kind": "path",
+   "what": "Node 2 lights."
+  },
+  {
+   "id": "node3",
+   "f": 126,
+   "scene": "S2",
+   "kind": "path",
+   "what": "Node 3 lights."
+  },
+  {
+   "id": "node4",
+   "f": 135,
+   "scene": "S2",
+   "kind": "path",
+   "what": "Node 4 lights."
+  },
+  {
+   "id": "start_press",
+   "t": 2.4,
+   "scene": "S2",
+   "kind": "hero",
+   "given": true,
+   "what": "The line presses START (bar 2 downbeat): node top depresses into its lip, tooltip pops; node 5 lights at f146."
+  },
+  {
+   "id": "phone_rise",
+   "f": 148,
+   "scene": "S2",
+   "kind": "ui",
+   "what": "Phone rises out of the node (scale 0.15 to 1.0, ease-out-back), turning to face camera; screen on at f172."
+  },
+  {
+   "id": "push_in",
+   "t": 2.93,
+   "scene": "S3",
+   "kind": "camera",
+   "given": true,
+   "what": "Camera pushes toward the floating phone UI (slow, continuous)."
+  },
+  {
+   "id": "vo_one_word",
+   "t": 2.95,
+   "scene": "S3",
+   "kind": "vo",
+   "given": true,
+   "what": "VO: One word at a time,"
+  },
+  {
+   "id": "title_in",
+   "f": 180,
+   "scene": "S3",
+   "kind": "text",
+   "what": "Translate this sentence (header)."
+  },
+  {
+   "id": "duo_bubble",
+   "f": 186,
+   "scene": "S3",
+   "kind": "text",
+   "what": "Duo's speech bubble: Quiero un café, por favor. (beak talks f188 to f206; caption only, no audible line)."
+  },
+  {
+   "id": "bank_in",
+   "f": 192,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "Word bank appears scrambled: coffee / I / please / a / want."
+  },
+  {
+   "id": "tile_I",
+   "f": 198,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "Tile I lifts (f196) and snaps."
+  },
+  {
+   "id": "tile_want",
+   "f": 207,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "Tile want snaps."
+  },
+  {
+   "id": "tile_a",
+   "f": 216,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "Tile a snaps."
+  },
+  {
+   "id": "tile_coffee",
+   "f": 225,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "Tile coffee snaps."
+  },
+  {
+   "id": "tile_please",
+   "f": 234,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "Tile please snaps; answer reads I want a coffee please."
+  },
+  {
+   "id": "check_enable",
+   "f": 238,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "CHECK turns from inactive grey to green."
+  },
+  {
+   "id": "check_press",
+   "f": 243,
+   "scene": "S3",
+   "kind": "ui",
+   "what": "CHECK pressed: top face sinks into its lip (f243 to f249)."
+  },
+  {
+   "id": "excellent",
+   "t": 4.23,
+   "scene": "S3",
+   "kind": "hero",
+   "given": true,
+   "what": "Excellent! banner slides up + correct-answer chime; the line surges along the progress bar 70% to 100% (f254 to f266)."
+  },
+  {
+   "id": "vo_streak",
+   "t": 4.6,
+   "scene": "S3",
+   "kind": "vo",
+   "given": true,
+   "what": "VO: a streak you'll want to keep alive,"
+  },
+  {
+   "id": "leap",
+   "t": 4.8,
+   "scene": "S4",
+   "kind": "path",
+   "given": true,
+   "what": "Line leaps out of the phone from the progress bar's end; camera whips to follow (f288 to f322)."
+  },
+  {
+   "id": "curl",
+   "f": 290,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Line curls into the flame silhouette in one stroke; color ramps green to orange to gold."
+  },
+  {
+   "id": "ignite",
+   "t": 5.0,
+   "scene": "S4",
+   "kind": "hero",
+   "given": true,
+   "what": "Flame ignites; the film's single anamorphic streak (decays over f300 to f324)."
+  },
+  {
+   "id": "counter_in",
+   "f": 312,
+   "scene": "S4",
+   "kind": "text",
+   "what": "Counter shows 1 in fixed 3-digit cells + day streak label."
+  },
+  {
+   "id": "counter_land",
+   "t": 6.13,
+   "scene": "S4",
+   "kind": "hero",
+   "given": true,
+   "what": "Odometer roll (from f318) lands on 365 with a settle bounce (f368 to f378)."
+  },
+  {
+   "id": "day_M",
+   "f": 380,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Week row day 1 fills as the line passes."
+  },
+  {
+   "id": "day_T",
+   "f": 386,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Day 2 fills."
+  },
+  {
+   "id": "day_W",
+   "f": 392,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Day 3 fills."
+  },
+  {
+   "id": "day_Th",
+   "f": 398,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Day 4 fills."
+  },
+  {
+   "id": "day_F",
+   "f": 404,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Day 5 fills."
+  },
+  {
+   "id": "day_Sa",
+   "f": 410,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Day 6 fills."
+  },
+  {
+   "id": "day_Su",
+   "f": 416,
+   "scene": "S4",
+   "kind": "path",
+   "what": "Day 7 fills (accented)."
+  },
+  {
+   "id": "crest",
+   "f": 420,
+   "scene": "S4",
+   "kind": "camera",
+   "what": "Crest: the line turns downward, camera rises slightly and tilts down - anticipation before the drop."
+  },
+  {
+   "id": "drop",
+   "t": 7.2,
+   "scene": "S5",
+   "kind": "hero",
+   "given": true,
+   "what": "THE DROP (bar 4 downbeat): line plunges, camera falls ~2,900 units; kick, claps and shaker enter."
+  },
+  {
+   "id": "vo_league",
+   "t": 7.3,
+   "scene": "S5",
+   "kind": "vo",
+   "what": "VO: a league you'll want to win, (derived anchor; placed just after the drop so the kick never masks the onset)."
+  },
+  {
+   "id": "arrive_league",
+   "f": 455,
+   "scene": "S5",
+   "kind": "camera",
+   "what": "Camera arrives at the league card (air-brake, 3 px bump)."
+  },
+  {
+   "id": "card_in",
+   "f": 456,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "Diamond League card resolves; rows cascade in f460 to f472."
+  },
+  {
+   "id": "row_lift",
+   "f": 466,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "User row (#7) lifts out of the card in 3D (+90 units toward camera, 4 deg tilt)."
+  },
+  {
+   "id": "pass_6",
+   "f": 478,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "Passes #6; that row slides down one slot in perspective."
+  },
+  {
+   "id": "pass_5",
+   "f": 488,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "Passes #5."
+  },
+  {
+   "id": "pass_4",
+   "f": 498,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "Passes #4."
+  },
+  {
+   "id": "pass_3",
+   "f": 507,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "Passes #3."
+  },
+  {
+   "id": "pass_2",
+   "f": 515,
+   "scene": "S5",
+   "kind": "ui",
+   "what": "Passes #2."
+  },
+  {
+   "id": "rank_1",
+   "t": 8.7,
+   "scene": "S5",
+   "kind": "hero",
+   "given": true,
+   "what": "Lands at #1 + correct-answer chime; particle burst; rank cell reads 1."
+  },
+  {
+   "id": "vo_and_then",
+   "t": 9.05,
+   "scene": "S5",
+   "kind": "vo",
+   "given": true,
+   "what": "VO: and then, one day... you just talk."
+  },
+  {
+   "id": "to_call",
+   "t": 9.33,
+   "scene": "S6",
+   "kind": "camera",
+   "given": true,
+   "what": "Line flows from the card to the call UI; camera trucks left and down (f560 to f590)."
+  },
+  {
+   "id": "call_connect",
+   "f": 566,
+   "scene": "S6",
+   "kind": "ui",
+   "what": "Call connects; UI assembles (f566 to f586)."
+  },
+  {
+   "id": "duo_caption",
+   "f": 572,
+   "scene": "S6",
+   "kind": "text",
+   "what": "Duo caption: ¡Hola! ¿Qué tal tu día?; beak talks f574 to f592."
+  },
+  {
+   "id": "reply_caption",
+   "f": 596,
+   "scene": "S6",
+   "kind": "text",
+   "what": "Reply appears word by word (f596, 602, 610, 616, 622, 630): ¡Muy bien! Pedí un café en español. The line becomes the voice waveform under it (f594 to f664)."
+  },
+  {
+   "id": "pull_back",
+   "t": 11.4,
+   "scene": "S7",
+   "kind": "hero",
+   "given": true,
+   "what": "Rapid pull-back + zoom-out (lens 2000 to 1400 px) reveals the whole path splitting into four branches; musical lift."
+  },
+  {
+   "id": "fork",
+   "f": 690,
+   "scene": "S7",
+   "kind": "path",
+   "what": "Path forks into four branch heads racing to the course nodes."
+  },
+  {
+   "id": "languages",
+   "t": 11.67,
+   "scene": "S7",
+   "kind": "hero",
+   "given": true,
+   "what": "Languages node lights (Feather Green); eight flag tiles pop into orbit f702 to f716."
+  },
+  {
+   "id": "math",
+   "t": 12.42,
+   "scene": "S7",
+   "kind": "hero",
+   "given": true,
+   "what": "Math node lights (blue #1CB0F6) with pi."
+  },
+  {
+   "id": "music",
+   "t": 12.98,
+   "scene": "S7",
+   "kind": "hero",
+   "given": true,
+   "what": "Music node lights (purple #CE82FF) with a musical note."
+  },
+  {
+   "id": "chess",
+   "t": 13.7,
+   "scene": "S7",
+   "kind": "hero",
+   "given": true,
+   "what": "Chess node lights (white) and the knight hops (lands f834)."
+  },
+  {
+   "id": "converge",
+   "t": 14.67,
+   "scene": "S8",
+   "kind": "path",
+   "given": true,
+   "what": "Four branch lines braid and converge; camera cranes down and pushes in to the tagline."
+  },
+  {
+   "id": "merge",
+   "f": 892,
+   "scene": "S8",
+   "kind": "path",
+   "what": "Strands merge into one Feather Green line."
+  },
+  {
+   "id": "one_path",
+   "t": 14.93,
+   "scene": "S8",
+   "kind": "text",
+   "given": true,
+   "what": "Line draws the baseline of One path, (f896 to f916); letters rise from it with a 2-frame stagger."
+  },
+  {
+   "id": "baseline_drop",
+   "f": 920,
+   "scene": "S8",
+   "kind": "path",
+   "what": "Baseline drops one line-height to line 2 (f920 to f928)."
+  },
+  {
+   "id": "every_skill",
+   "f": 930,
+   "scene": "S8",
+   "kind": "text",
+   "what": "every skill. rises; the baseline splits into four course-color strands (f930 to f956)."
+  },
+  {
+   "id": "merge_back",
+   "f": 956,
+   "scene": "S8",
+   "kind": "path",
+   "what": "Strands merge back into Feather Green (f956 to f972)."
+  },
+  {
+   "id": "breath",
+   "t": 16.5,
+   "scene": "S9",
+   "kind": "music",
+   "given": true,
+   "what": "Breath: music cuts to a reversed swell; camera pulls back (f990 to f1032); the baseline contracts to a point (inhale)."
+  },
+  {
+   "id": "duo_enters",
+   "f": 998,
+   "scene": "S9",
+   "kind": "character",
+   "what": "Duo falls into frame from the top, stretched."
+  },
+  {
+   "id": "landing",
+   "t": 16.8,
+   "scene": "S9",
+   "kind": "hero",
+   "given": true,
+   "what": "Duo lands on the main impact (bar 8 downbeat): squash peak f1009, contact shadow, light shockwave; tagline (now behind) racks out of focus and fades by f1030."
+  },
+  {
+   "id": "underline_run",
+   "f": 1023,
+   "scene": "S9",
+   "kind": "path",
+   "what": "The point of light draws under the wordmark left to right, revealing it."
+  },
+  {
+   "id": "duolingo_shown",
+   "t": 17.33,
+   "scene": "S9",
+   "kind": "hero",
+   "given": true,
+   "what": "Wordmark fully revealed exactly on VO Duolingo."
+  },
+  {
+   "id": "wordmark_rest_I",
+   "f": 1044,
+   "scene": "S9",
+   "kind": "text",
+   "what": "Wordmark pixel-exact at rest through f1151 (camera at home I since f1032)."
+  },
+  {
+   "id": "fanfare",
+   "t": 18.07,
+   "scene": "S9",
+   "kind": "hero",
+   "given": true,
+   "what": "Lesson-complete fanfare; Duo's happy wing flap (two flaps, f1084 to f1112)."
+  },
+  {
+   "id": "hero_blink",
+   "f": 1128,
+   "scene": "S9",
+   "kind": "character",
+   "what": "Final blink; idle breathing (+/-1% squash) to the end of S9."
+  },
+  {
+   "id": "end_card",
+   "t": 19.2,
+   "scene": "S10",
+   "kind": "text",
+   "given": true,
+   "what": "Scene exposure fades to stage black (f1152 to f1176, the line fades last)."
+  },
+  {
+   "id": "signature_in",
+   "f": 1170,
+   "scene": "S10",
+   "kind": "text",
+   "what": "Signature fades in (f1170 to f1194); spec disclaimer f1182 to f1200; hold to f1271 while the chord rings out."
+  }
+ ],
+ "vo": {
+  "engine": "ElevenLabs eleven_v4 (two full takes of the whole script, same voice, natural speed)",
+  "voice_shortlist": [
+   {
+    "name": "Mira - Bright & Friendly Narrator",
+    "voice_id": "rdEyNni8e60Jlx1RsV9N",
+    "accent": "American",
+    "note": "first choice: warm, youthful, clear articulation"
+   },
+   {
+    "name": "Kristen - upbeat social media influencer",
+    "voice_id": "XZUXLIpE3dqJ9aCZUj2R",
+    "accent": "American",
+    "note": "more creator energy"
+   },
+   {
+    "name": "Lauren B - Gen-Z Influencer, Feels Real",
+    "voice_id": "EQymf553LnGArWPRBol1",
+    "accent": "American",
+    "note": "most casual"
+   }
+  ],
+  "script": "Five minutes a day, that's all it takes. One word at a time, a streak you'll want to keep alive, a league you'll want to win, and then, one day... you just talk. Languages, math, music... even chess. One path, every skill. Duolingo.",
+  "segments": [
+   {
+    "n": 1,
+    "text": "Five minutes a day, that's all it takes.",
+    "anchor_t": 0.5,
+    "anchor_word": "Five",
+    "given": true,
+    "must_end_before_t": 2.9
+   },
+   {
+    "n": 2,
+    "text": "One word at a time,",
+    "anchor_t": 2.95,
+    "anchor_word": "One",
+    "given": true,
+    "must_end_before_t": 4.2
+   },
+   {
+    "n": 3,
+    "text": "a streak you'll want to keep alive,",
+    "anchor_t": 4.6,
+    "anchor_word": "a streak",
+    "given": true,
+    "must_end_before_t": 7.15
+   },
+   {
+    "n": 4,
+    "text": "a league you'll want to win,",
+    "anchor_t": 7.3,
+    "anchor_word": "a league",
+    "given": false,
+    "must_end_before_t": 8.68
+   },
+   {
+    "n": 5,
+    "text": "and then, one day... you just talk.",
+    "anchor_t": 9.05,
+    "anchor_word": "and then",
+    "given": true,
+    "must_end_before_t": 11.6
+   },
+   {
+    "n": 6,
+    "text": "Languages, math, music... even chess.",
+    "anchor_t": 11.67,
+    "anchor_word": "Languages",
+    "given": true,
+    "must_end_before_t": 14.85,
+    "inner_words": {
+     "math": 12.42,
+     "music": 12.98,
+     "chess": 13.7
+    }
+   },
+   {
+    "n": 7,
+    "text": "One path, every skill.",
+    "anchor_t": 14.93,
+    "anchor_word": "One path",
+    "given": true,
+    "must_end_before_t": 16.45
+   },
+   {
+    "n": 8,
+    "text": "Duolingo.",
+    "anchor_t": 17.33,
+    "anchor_word": "Duolingo",
+    "given": true,
+    "must_end_before_t": 18.05
+   }
+  ],
+  "edit_rules": [
+   "Cut only inside the take's own pauses (silences >= 80 ms between words); never time-stretch or pitch-shift speech.",
+   "Segment onsets snap to their anchors; inner words (math, music, chess, win, talk, skill) are measured, and the animation follows the measured onsets.",
+   "Gaps are filled with the take's own room tone, crossfaded over 10 ms at zero crossings.",
+   "Word timings come from ElevenLabs Scribe word timestamps, cross-checked against an energy-onset detector; tolerance +/- 1 frame (16.7 ms)."
+  ]
+ },
+ "music": {
+  "bpm": 100,
+  "key": "D major",
+  "meter": "4/4",
+  "beat_frames": 36,
+  "bar_frames": 144,
+  "sections": [
+   {
+    "bars": "1",
+    "f0": 0,
+    "f1": 143,
+    "name": "Intro",
+    "chords": "Dmaj9",
+    "layers": "marimba riff, mallet plucks, felt keys, rounded sub-bass (all from frame 0)"
+   },
+   {
+    "bars": "2",
+    "f0": 144,
+    "f1": 287,
+    "name": "Lesson",
+    "chords": "Bm7 | Gmaj7",
+    "layers": "intro layers; tile snaps and node ticks are pitched to the scale"
+   },
+   {
+    "bars": "3",
+    "f0": 288,
+    "f1": 431,
+    "name": "Build",
+    "chords": "Em7 | Asus4 - A",
+    "layers": "warmer keys, filtered riser in the last beat, 1/8 rest before the drop"
+   },
+   {
+    "bars": "4-5",
+    "f0": 432,
+    "f1": 683,
+    "name": "Drop",
+    "chords": "D | A/C# | Bm7 | G (G pushed to f684)",
+    "layers": "kick, claps on 2 and 4, swung 16th shaker, side-chained sub, marimba main riff"
+   },
+   {
+    "bars": "5-7",
+    "f0": 684,
+    "f1": 989,
+    "name": "Lift",
+    "chords": "G | A | Bm7 | A/C#",
+    "layers": "lift at f684: octave-up arp, open hats, pad swell; course hits pitched D6, F#6, A6, D7"
+   },
+   {
+    "bars": "7",
+    "f0": 990,
+    "f1": 1007,
+    "name": "Breath",
+    "chords": "reversed D swell only",
+    "layers": "everything cut except a reversed swell rising into f1008"
+   },
+   {
+    "bars": "8+",
+    "f0": 1008,
+    "f1": 1271,
+    "name": "Resolve",
+    "chords": "Dadd9 (full, wide)",
+    "layers": "full chord + low impact at f1008, ringing naturally under the fanfare and end card"
+   }
+  ],
+  "rules": [
+   "Music sits >= 12 dB below every spoken word (per-word K-weighted measurement).",
+   "Music dips 6 dB (30 ms attack, 400 ms release) under the three hero cues."
+  ]
+ },
+ "hero_audio": [
+  {
+   "id": "slam_sub_hit",
+   "f": 10,
+   "note": "deep sub hit with the slam"
+  },
+  {
+   "id": "correct_chime_1",
+   "f": 254,
+   "note": "correct-answer chime (Excellent!)"
+  },
+  {
+   "id": "correct_chime_2",
+   "f": 522,
+   "note": "correct-answer chime (#1)"
+  },
+  {
+   "id": "main_impact",
+   "f": 1008,
+   "note": "landing + full chord + low impact"
+  },
+  {
+   "id": "lesson_complete_fanfare",
+   "f": 1084,
+   "note": "lesson-complete fanfare"
+  }
+ ],
+ "sfx": [
+  {
+   "n": 1,
+   "f": 0,
+   "scene": "S1",
+   "name": "rush_in",
+   "layer": "whoosh",
+   "desc": "Air-rush with Doppler as Duo flies in from depth (10 frames)."
+  },
+  {
+   "n": 2,
+   "f": 0,
+   "scene": "S1",
+   "name": "strand_shimmer",
+   "layer": "texture",
+   "desc": "High airy shimmer for the streaking strands, wide stereo."
+  },
+  {
+   "n": 3,
+   "f": 10,
+   "scene": "S1",
+   "name": "slam_impact",
+   "layer": "impact",
+   "desc": "Body thump + transient crack."
+  },
+  {
+   "n": 4,
+   "f": 10,
+   "scene": "S1",
+   "name": "sub_hit",
+   "layer": "impact",
+   "desc": "38 Hz sine drop, 0.6 s (deep sub hit)."
+  },
+  {
+   "n": 5,
+   "f": 10,
+   "scene": "S1",
+   "name": "shards",
+   "layer": "texture",
+   "desc": "Glassy micro-tinkles, 14 grains over 22 frames."
+  },
+  {
+   "n": 6,
+   "f": 11,
+   "scene": "S1",
+   "name": "wing_fling",
+   "layer": "character",
+   "desc": "Feather whoosh as the wings fling out."
+  },
+  {
+   "n": 7,
+   "f": 12,
+   "scene": "S1",
+   "name": "shake_rumble",
+   "layer": "impact",
+   "desc": "Low rumble tail with the camera shake."
+  },
+  {
+   "n": 8,
+   "f": 15,
+   "scene": "S1",
+   "name": "rebound",
+   "layer": "character",
+   "desc": "Soft rubbery rebound, pitched D."
+  },
+  {
+   "n": 9,
+   "f": 22,
+   "scene": "S1",
+   "name": "wing_fold",
+   "layer": "character",
+   "desc": "Soft feather rustle."
+  },
+  {
+   "n": 10,
+   "f": 24,
+   "scene": "S1",
+   "name": "strands_collapse",
+   "layer": "path",
+   "desc": "Zip as the strands snap into one line."
+  },
+  {
+   "n": 11,
+   "f": 28,
+   "scene": "S1",
+   "name": "line_run_A",
+   "layer": "path",
+   "desc": "Light-run shimmer panned left to right (38 frames)."
+  },
+  {
+   "n": 12,
+   "f": 66,
+   "scene": "S1",
+   "name": "wordmark_settle_A",
+   "layer": "ui",
+   "desc": "Soft glassy ting as the reveal completes."
+  },
+  {
+   "n": 13,
+   "f": 70,
+   "scene": "S1",
+   "name": "blink_A",
+   "layer": "character",
+   "desc": "Tiny tick."
+  },
+  {
+   "n": 14,
+   "f": 78,
+   "scene": "S1",
+   "name": "hop_anticipation",
+   "layer": "character",
+   "desc": "Soft squash creak."
+  },
+  {
+   "n": 15,
+   "f": 82,
+   "scene": "S1",
+   "name": "hop_jump",
+   "layer": "character",
+   "desc": "Upward whoop."
+  },
+  {
+   "n": 16,
+   "f": 85,
+   "scene": "S1",
+   "name": "hop_flap",
+   "layer": "character",
+   "desc": "Single wing-flap flutter."
+  },
+  {
+   "n": 17,
+   "f": 92,
+   "scene": "S1",
+   "name": "duo_exit",
+   "layer": "whoosh",
+   "desc": "Whoosh off-frame, panned right."
+  },
+  {
+   "n": 18,
+   "f": 100,
+   "scene": "S2",
+   "name": "dive_whoosh",
+   "layer": "whoosh",
+   "desc": "Big downward sweep for the dive."
+  },
+  {
+   "n": 19,
+   "f": 108,
+   "scene": "S2",
+   "name": "node1",
+   "layer": "path",
+   "desc": "Pitched pluck-tick D5."
+  },
+  {
+   "n": 20,
+   "f": 117,
+   "scene": "S2",
+   "name": "node2",
+   "layer": "path",
+   "desc": "Pitched pluck-tick E5."
+  },
+  {
+   "n": 21,
+   "f": 126,
+   "scene": "S2",
+   "name": "node3",
+   "layer": "path",
+   "desc": "Pitched pluck-tick F#5."
+  },
+  {
+   "n": 22,
+   "f": 135,
+   "scene": "S2",
+   "name": "node4",
+   "layer": "path",
+   "desc": "Pitched pluck-tick A5."
+  },
+  {
+   "n": 23,
+   "f": 138,
+   "scene": "S2",
+   "name": "start_wobble",
+   "layer": "ui",
+   "desc": "START tooltip wiggle squeak."
+  },
+  {
+   "n": 24,
+   "f": 144,
+   "scene": "S2",
+   "name": "start_press",
+   "layer": "ui",
+   "desc": "Chunky 3D button click (thock)."
+  },
+  {
+   "n": 25,
+   "f": 145,
+   "scene": "S2",
+   "name": "start_pop",
+   "layer": "ui",
+   "desc": "Tooltip pop."
+  },
+  {
+   "n": 26,
+   "f": 146,
+   "scene": "S2",
+   "name": "node5",
+   "layer": "path",
+   "desc": "Bright pluck B5 + sparkle."
+  },
+  {
+   "n": 27,
+   "f": 148,
+   "scene": "S2",
+   "name": "phone_rise",
+   "layer": "whoosh",
+   "desc": "Rising riser-whoosh (0.45 s)."
+  },
+  {
+   "n": 28,
+   "f": 170,
+   "scene": "S2",
+   "name": "phone_settle",
+   "layer": "impact",
+   "desc": "Soft settle thud."
+  },
+  {
+   "n": 29,
+   "f": 172,
+   "scene": "S2",
+   "name": "screen_on",
+   "layer": "ui",
+   "desc": "UI glow-on blip."
+  },
+  {
+   "n": 30,
+   "f": 178,
+   "scene": "S3",
+   "name": "push_air",
+   "layer": "whoosh",
+   "desc": "Soft air on the push-in."
+  },
+  {
+   "n": 31,
+   "f": 180,
+   "scene": "S3",
+   "name": "title_in",
+   "layer": "ui",
+   "desc": "UI swipe-in."
+  },
+  {
+   "n": 32,
+   "f": 184,
+   "scene": "S3",
+   "name": "duo_pop",
+   "layer": "character",
+   "desc": "Pop as Duo appears in the lesson."
+  },
+  {
+   "n": 33,
+   "f": 186,
+   "scene": "S3",
+   "name": "bubble_pop",
+   "layer": "ui",
+   "desc": "Speech-bubble pop."
+  },
+  {
+   "n": 34,
+   "f": 188,
+   "scene": "S3",
+   "name": "duo_chatter",
+   "layer": "character",
+   "desc": "Three tiny syllable blips with the beak (very low; VO stays clear)."
+  },
+  {
+   "n": 35,
+   "f": 192,
+   "scene": "S3",
+   "name": "bank_in",
+   "layer": "ui",
+   "desc": "Word-bank cascade (5 micro-ticks)."
+  },
+  {
+   "n": 36,
+   "f": 196,
+   "scene": "S3",
+   "name": "tile_lift",
+   "layer": "ui",
+   "desc": "Small whoosh-up shared by each tile lift (re-triggered 2 frames before every snap)."
+  },
+  {
+   "n": 37,
+   "f": 198,
+   "scene": "S3",
+   "name": "snap_I",
+   "layer": "ui",
+   "desc": "Snap click pitched D."
+  },
+  {
+   "n": 38,
+   "f": 207,
+   "scene": "S3",
+   "name": "snap_want",
+   "layer": "ui",
+   "desc": "Snap click pitched E."
+  },
+  {
+   "n": 39,
+   "f": 216,
+   "scene": "S3",
+   "name": "snap_a",
+   "layer": "ui",
+   "desc": "Snap click pitched F#."
+  },
+  {
+   "n": 40,
+   "f": 225,
+   "scene": "S3",
+   "name": "snap_coffee",
+   "layer": "ui",
+   "desc": "Snap click pitched A."
+  },
+  {
+   "n": 41,
+   "f": 234,
+   "scene": "S3",
+   "name": "snap_please",
+   "layer": "ui",
+   "desc": "Snap click pitched B."
+  },
+  {
+   "n": 42,
+   "f": 238,
+   "scene": "S3",
+   "name": "check_enable",
+   "layer": "ui",
+   "desc": "Soft state blip."
+  },
+  {
+   "n": 43,
+   "f": 243,
+   "scene": "S3",
+   "name": "check_press",
+   "layer": "ui",
+   "desc": "Button press thock."
+  },
+  {
+   "n": 44,
+   "f": 254,
+   "scene": "S3",
+   "name": "correct_chime_1",
+   "layer": "hero",
+   "desc": "HERO: correct-answer chime."
+  },
+  {
+   "n": 45,
+   "f": 254,
+   "scene": "S3",
+   "name": "banner_slide",
+   "layer": "ui",
+   "desc": "Excellent! banner swipe-up."
+  },
+  {
+   "n": 46,
+   "f": 256,
+   "scene": "S3",
+   "name": "progress_surge",
+   "layer": "path",
+   "desc": "Rising shimmer as the light fills the bar."
+  },
+  {
+   "n": 47,
+   "f": 266,
+   "scene": "S3",
+   "name": "progress_full",
+   "layer": "path",
+   "desc": "Sparkle ping when the bar is full."
+  },
+  {
+   "n": 48,
+   "f": 288,
+   "scene": "S4",
+   "name": "line_leap",
+   "layer": "whoosh",
+   "desc": "Whoosh up-right as the line leaps out."
+  },
+  {
+   "n": 49,
+   "f": 290,
+   "scene": "S4",
+   "name": "camera_whip",
+   "layer": "whoosh",
+   "desc": "Air whip."
+  },
+  {
+   "n": 50,
+   "f": 292,
+   "scene": "S4",
+   "name": "curl_swirl",
+   "layer": "path",
+   "desc": "Spiral swirl, stereo rotation."
+  },
+  {
+   "n": 51,
+   "f": 300,
+   "scene": "S4",
+   "name": "ignite",
+   "layer": "impact",
+   "desc": "Fire whoomp."
+  },
+  {
+   "n": 52,
+   "f": 300,
+   "scene": "S4",
+   "name": "anamorphic_shimmer",
+   "layer": "texture",
+   "desc": "Shimmering horizontal sweep with the streak."
+  },
+  {
+   "n": 53,
+   "f": 304,
+   "scene": "S4",
+   "name": "flame_bed",
+   "layer": "texture",
+   "desc": "Soft crackle bed (low) until f432."
+  },
+  {
+   "n": 54,
+   "f": 312,
+   "scene": "S4",
+   "name": "counter_pop",
+   "layer": "ui",
+   "desc": "Counter appears."
+  },
+  {
+   "n": 55,
+   "f": 318,
+   "scene": "S4",
+   "name": "counter_roll",
+   "layer": "ui",
+   "desc": "Odometer tick train, accelerating then decelerating, until f368."
+  },
+  {
+   "n": 56,
+   "f": 368,
+   "scene": "S4",
+   "name": "counter_land",
+   "layer": "ui",
+   "desc": "365 lands: ding + soft thunk."
+  },
+  {
+   "n": 57,
+   "f": 372,
+   "scene": "S4",
+   "name": "label_pop",
+   "layer": "ui",
+   "desc": "day streak label pulse."
+  },
+  {
+   "n": 58,
+   "f": 380,
+   "scene": "S4",
+   "name": "day_1",
+   "layer": "path",
+   "desc": "Pitched tick D."
+  },
+  {
+   "n": 59,
+   "f": 386,
+   "scene": "S4",
+   "name": "day_2",
+   "layer": "path",
+   "desc": "Pitched tick E."
+  },
+  {
+   "n": 60,
+   "f": 392,
+   "scene": "S4",
+   "name": "day_3",
+   "layer": "path",
+   "desc": "Pitched tick F#."
+  },
+  {
+   "n": 61,
+   "f": 398,
+   "scene": "S4",
+   "name": "day_4",
+   "layer": "path",
+   "desc": "Pitched tick G."
+  },
+  {
+   "n": 62,
+   "f": 404,
+   "scene": "S4",
+   "name": "day_5",
+   "layer": "path",
+   "desc": "Pitched tick A."
+  },
+  {
+   "n": 63,
+   "f": 410,
+   "scene": "S4",
+   "name": "day_6",
+   "layer": "path",
+   "desc": "Pitched tick B."
+  },
+  {
+   "n": 64,
+   "f": 416,
+   "scene": "S4",
+   "name": "day_7",
+   "layer": "path",
+   "desc": "Pitched tick D' + sparkle."
+  },
+  {
+   "n": 65,
+   "f": 422,
+   "scene": "S4",
+   "name": "predrop_suck",
+   "layer": "whoosh",
+   "desc": "Reverse whoosh sucking into the drop."
+  },
+  {
+   "n": 66,
+   "f": 432,
+   "scene": "S5",
+   "name": "drop_whoosh",
+   "layer": "whoosh",
+   "desc": "Big downward plunge."
+  },
+  {
+   "n": 67,
+   "f": 455,
+   "scene": "S5",
+   "name": "arrive_brake",
+   "layer": "impact",
+   "desc": "Air-brake thump on arrival."
+  },
+  {
+   "n": 68,
+   "f": 456,
+   "scene": "S5",
+   "name": "card_reveal",
+   "layer": "ui",
+   "desc": "UI swish as the card resolves."
+  },
+  {
+   "n": 69,
+   "f": 460,
+   "scene": "S5",
+   "name": "rows_cascade",
+   "layer": "ui",
+   "desc": "Seven soft row ticks."
+  },
+  {
+   "n": 70,
+   "f": 466,
+   "scene": "S5",
+   "name": "row_lift",
+   "layer": "ui",
+   "desc": "Whoosh-up + glassy lift."
+  },
+  {
+   "n": 71,
+   "f": 478,
+   "scene": "S5",
+   "name": "pass_6",
+   "layer": "ui",
+   "desc": "Tick + row slide."
+  },
+  {
+   "n": 72,
+   "f": 488,
+   "scene": "S5",
+   "name": "pass_5",
+   "layer": "ui",
+   "desc": "Tick + row slide."
+  },
+  {
+   "n": 73,
+   "f": 498,
+   "scene": "S5",
+   "name": "pass_4",
+   "layer": "ui",
+   "desc": "Tick + row slide."
+  },
+  {
+   "n": 74,
+   "f": 507,
+   "scene": "S5",
+   "name": "pass_3",
+   "layer": "ui",
+   "desc": "Tick + row slide."
+  },
+  {
+   "n": 75,
+   "f": 515,
+   "scene": "S5",
+   "name": "pass_2",
+   "layer": "ui",
+   "desc": "Tick + row slide."
+  },
+  {
+   "n": 76,
+   "f": 522,
+   "scene": "S5",
+   "name": "correct_chime_2",
+   "layer": "hero",
+   "desc": "HERO: correct-answer chime."
+  },
+  {
+   "n": 77,
+   "f": 522,
+   "scene": "S5",
+   "name": "rank1_land",
+   "layer": "impact",
+   "desc": "Soft thump + sparkle burst."
+  },
+  {
+   "n": 78,
+   "f": 526,
+   "scene": "S5",
+   "name": "xp_settle",
+   "layer": "ui",
+   "desc": "XP counter settle tick."
+  },
+  {
+   "n": 79,
+   "f": 560,
+   "scene": "S6",
+   "name": "to_call_whoosh",
+   "layer": "whoosh",
+   "desc": "Transition whoosh."
+  },
+  {
+   "n": 80,
+   "f": 566,
+   "scene": "S6",
+   "name": "call_connect",
+   "layer": "ui",
+   "desc": "Two-tone call-connect chime."
+  },
+  {
+   "n": 81,
+   "f": 570,
+   "scene": "S6",
+   "name": "tile_popin",
+   "layer": "ui",
+   "desc": "Video tile pop-in."
+  },
+  {
+   "n": 82,
+   "f": 572,
+   "scene": "S6",
+   "name": "duo_bubble",
+   "layer": "ui",
+   "desc": "Caption bubble pop."
+  },
+  {
+   "n": 83,
+   "f": 574,
+   "scene": "S6",
+   "name": "duo_talk",
+   "layer": "character",
+   "desc": "Beak blips (very low; VO stays clear)."
+  },
+  {
+   "n": 84,
+   "f": 596,
+   "scene": "S6",
+   "name": "user_bubble",
+   "layer": "ui",
+   "desc": "Caption pop."
+  },
+  {
+   "n": 85,
+   "f": 596,
+   "scene": "S6",
+   "name": "wave_on",
+   "layer": "path",
+   "desc": "Waveform activation shimmer."
+  },
+  {
+   "n": 86,
+   "f": 598,
+   "scene": "S6",
+   "name": "wave_texture",
+   "layer": "path",
+   "desc": "Band-limited voice-like texture following the waveform envelope (very low) until f664."
+  },
+  {
+   "n": 87,
+   "f": 684,
+   "scene": "S7",
+   "name": "pullback_whoosh",
+   "layer": "whoosh",
+   "desc": "Huge reverse-air whoosh + sub swell."
+  },
+  {
+   "n": 88,
+   "f": 690,
+   "scene": "S7",
+   "name": "fork_zing",
+   "layer": "path",
+   "desc": "Four zips panned left to right."
+  },
+  {
+   "n": 89,
+   "f": 700,
+   "scene": "S7",
+   "name": "languages_light",
+   "layer": "hero",
+   "desc": "Node light chime D6 + pop."
+  },
+  {
+   "n": 90,
+   "f": 702,
+   "scene": "S7",
+   "name": "flag_pops",
+   "layer": "ui",
+   "desc": "Eight staggered flag pops (f702 to f716)."
+  },
+  {
+   "n": 91,
+   "f": 745,
+   "scene": "S7",
+   "name": "math_light",
+   "layer": "hero",
+   "desc": "Node light chime F#6 + pi pop."
+  },
+  {
+   "n": 92,
+   "f": 779,
+   "scene": "S7",
+   "name": "music_light",
+   "layer": "hero",
+   "desc": "Node light chime A6 + note pop."
+  },
+  {
+   "n": 93,
+   "f": 822,
+   "scene": "S7",
+   "name": "chess_light",
+   "layer": "hero",
+   "desc": "Node light chime D7 + wooden knock."
+  },
+  {
+   "n": 94,
+   "f": 834,
+   "scene": "S7",
+   "name": "knight_land",
+   "layer": "character",
+   "desc": "Wooden tock as the knight lands."
+  },
+  {
+   "n": 95,
+   "f": 880,
+   "scene": "S8",
+   "name": "converge_whoosh",
+   "layer": "whoosh",
+   "desc": "Four strands zipping together."
+  },
+  {
+   "n": 96,
+   "f": 892,
+   "scene": "S8",
+   "name": "merge_zip",
+   "layer": "path",
+   "desc": "Merge zip."
+  },
+  {
+   "n": 97,
+   "f": 896,
+   "scene": "S8",
+   "name": "line1_reveal",
+   "layer": "text",
+   "desc": "Soft upward swell for One path,"
+  },
+  {
+   "n": 98,
+   "f": 920,
+   "scene": "S8",
+   "name": "baseline_drop",
+   "layer": "path",
+   "desc": "Soft whoop down."
+  },
+  {
+   "n": 99,
+   "f": 930,
+   "scene": "S8",
+   "name": "line2_split",
+   "layer": "text",
+   "desc": "Four-voice stereo shimmer for every skill. and the color split."
+  },
+  {
+   "n": 100,
+   "f": 956,
+   "scene": "S8",
+   "name": "merge_back",
+   "layer": "path",
+   "desc": "Glassy resolve as the strands merge."
+  },
+  {
+   "n": 101,
+   "f": 990,
+   "scene": "S9",
+   "name": "breath_inhale",
+   "layer": "texture",
+   "desc": "Air inhale under the reversed swell."
+  },
+  {
+   "n": 102,
+   "f": 998,
+   "scene": "S9",
+   "name": "duo_fall",
+   "layer": "whoosh",
+   "desc": "Descending whistle-whoosh."
+  },
+  {
+   "n": 103,
+   "f": 1008,
+   "scene": "S9",
+   "name": "landing_impact",
+   "layer": "hero",
+   "desc": "HERO: landing hit, locked with the music impact."
+  },
+  {
+   "n": 104,
+   "f": 1008,
+   "scene": "S9",
+   "name": "shockwave",
+   "layer": "texture",
+   "desc": "Airy burst for the light shockwave."
+  },
+  {
+   "n": 105,
+   "f": 1010,
+   "scene": "S9",
+   "name": "tagline_dissolve",
+   "layer": "texture",
+   "desc": "Granular sparkle out."
+  },
+  {
+   "n": 106,
+   "f": 1013,
+   "scene": "S9",
+   "name": "landing_rebound",
+   "layer": "character",
+   "desc": "Subtle rebound."
+  },
+  {
+   "n": 107,
+   "f": 1023,
+   "scene": "S9",
+   "name": "line_run_B",
+   "layer": "path",
+   "desc": "Shimmer sweep left to right."
+  },
+  {
+   "n": 108,
+   "f": 1040,
+   "scene": "S9",
+   "name": "wordmark_settle_B",
+   "layer": "ui",
+   "desc": "Soft ting on Duolingo."
+  },
+  {
+   "n": 109,
+   "f": 1084,
+   "scene": "S9",
+   "name": "lesson_complete_fanfare",
+   "layer": "hero",
+   "desc": "HERO: lesson-complete fanfare (D major)."
+  },
+  {
+   "n": 110,
+   "f": 1084,
+   "scene": "S9",
+   "name": "wing_flap_1",
+   "layer": "character",
+   "desc": "Flutter."
+  },
+  {
+   "n": 111,
+   "f": 1098,
+   "scene": "S9",
+   "name": "wing_flap_2",
+   "layer": "character",
+   "desc": "Flutter."
+  },
+  {
+   "n": 112,
+   "f": 1128,
+   "scene": "S9",
+   "name": "blink_I",
+   "layer": "character",
+   "desc": "Tick."
+  },
+  {
+   "n": 113,
+   "f": 1152,
+   "scene": "S10",
+   "name": "dim_whoosh",
+   "layer": "whoosh",
+   "desc": "Soft low whoosh down into the end card."
+  },
+  {
+   "n": 114,
+   "f": 1176,
+   "scene": "S10",
+   "name": "signature_reveal",
+   "layer": "ui",
+   "desc": "Soft glass tone."
+  }
+ ],
+ "text_on_screen": [
+  {
+   "text": "duolingo (official wordmark)",
+   "scene": "S1",
+   "readable_f": [
+    66,
+    104
+   ]
+  },
+  {
+   "text": "START",
+   "scene": "S2",
+   "readable_f": [
+    108,
+    145
+   ]
+  },
+  {
+   "text": "Translate this sentence",
+   "scene": "S3",
+   "readable_f": [
+    184,
+    292
+   ]
+  },
+  {
+   "text": "Quiero un café, por favor.",
+   "scene": "S3",
+   "readable_f": [
+    190,
+    292
+   ]
+  },
+  {
+   "text": "I want a coffee please",
+   "scene": "S3",
+   "readable_f": [
+    234,
+    292
+   ]
+  },
+  {
+   "text": "CHECK",
+   "scene": "S3",
+   "readable_f": [
+    192,
+    254
+   ]
+  },
+  {
+   "text": "Excellent!",
+   "scene": "S3",
+   "readable_f": [
+    258,
+    296
+   ]
+  },
+  {
+   "text": "365 / day streak",
+   "scene": "S4",
+   "readable_f": [
+    368,
+    436
+   ]
+  },
+  {
+   "text": "Diamond League + rows",
+   "scene": "S5",
+   "readable_f": [
+    462,
+    566
+   ]
+  },
+  {
+   "text": "#1 (user row)",
+   "scene": "S5",
+   "readable_f": [
+    522,
+    566
+   ]
+  },
+  {
+   "text": "¡Hola! ¿Qué tal tu día?",
+   "scene": "S6",
+   "readable_f": [
+    576,
+    688
+   ]
+  },
+  {
+   "text": "¡Muy bien! Pedí un café en español.",
+   "scene": "S6",
+   "readable_f": [
+    634,
+    688
+   ]
+  },
+  {
+   "text": "Languages",
+   "scene": "S7",
+   "readable_f": [
+    704,
+    884
+   ]
+  },
+  {
+   "text": "Math",
+   "scene": "S7",
+   "readable_f": [
+    749,
+    884
+   ]
+  },
+  {
+   "text": "Music",
+   "scene": "S7",
+   "readable_f": [
+    783,
+    884
+   ]
+  },
+  {
+   "text": "Chess",
+   "scene": "S7",
+   "readable_f": [
+    826,
+    884
+   ]
+  },
+  {
+   "text": "One path,",
+   "scene": "S8",
+   "readable_f": [
+    912,
+    1012
+   ]
+  },
+  {
+   "text": "every skill.",
+   "scene": "S8",
+   "readable_f": [
+    948,
+    1012
+   ]
+  },
+  {
+   "text": "duolingo (official wordmark)",
+   "scene": "S9",
+   "readable_f": [
+    1040,
+    1158
+   ]
+  },
+  {
+   "text": "[signature]",
+   "scene": "S10",
+   "readable_f": [
+    1186,
+    1271
+   ]
+  }
+ ]
+}

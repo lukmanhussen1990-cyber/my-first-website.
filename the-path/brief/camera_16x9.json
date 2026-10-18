@@ -1,0 +1,900 @@
+{
+ "format": "16x9",
+ "resolution": [
+  1920,
+  1080
+ ],
+ "units": "World units. Y up, +Z away from the opening camera. At a home pose (lens f = 2000 px, station plane 2000 units away, fronto-parallel) 1 world unit = 1 screen pixel, so station layouts are authored in pixels and placed exactly.",
+ "lens_note": "f = 2000 px on a 1920-wide frame = 37.5 mm full-frame equivalent (HFOV 51.3 deg). S7 widens to f = 1400 px (26 mm, HFOV 68.9 deg) for the reveal.",
+ "shutter_deg": 180,
+ "stations": {
+  "A": {
+   "name": "Logo lock-up (S1)",
+   "center": [
+    -3600,
+    0,
+    9000
+   ],
+   "home": {
+    "pos": [
+     -3600,
+     0,
+     7000
+    ],
+    "target": [
+     -3600,
+     0,
+     9000
+    ],
+    "f": 2000
+   },
+   "layout_px": {
+    "duo": [
+     817,
+     200,
+     1103,
+     500
+    ],
+    "wordmark": [
+     610,
+     600,
+     1310,
+     787
+    ],
+    "underline_y": 880,
+    "underline_x": [
+     570,
+     1350
+    ]
+   }
+  },
+  "B": {
+   "name": "Lesson path (S2)",
+   "nodes": [
+    [
+     -3000,
+     -900,
+     8950
+    ],
+    [
+     -2450,
+     -1250,
+     8700
+    ],
+    [
+     -2150,
+     -1600,
+     8400
+    ],
+    [
+     -1500,
+     -1950,
+     8050
+    ],
+    [
+     -700,
+     -2350,
+     7650
+    ]
+   ],
+   "node_shape": {
+    "radius": 160,
+    "top_thickness": 46,
+    "lip": 30
+   }
+  },
+  "C": {
+   "name": "Phone (S3)",
+   "center": [
+    -700,
+    -1660,
+    7650
+   ],
+   "home": {
+    "pos": [
+     -700,
+     -1660,
+     5650
+    ],
+    "target": [
+     -700,
+     -1660,
+     7650
+    ],
+    "f": 2000
+   },
+   "phone_size": [
+    600,
+    1240,
+    60
+   ]
+  },
+  "D": {
+   "name": "Streak (S4)",
+   "center": [
+    1700,
+    -1000,
+    7300
+   ],
+   "home": {
+    "pos": [
+     1700,
+     -1000,
+     5300
+    ],
+    "target": [
+     1700,
+     -1000,
+     7300
+    ],
+    "f": 2000
+   },
+   "layout_px": {
+    "flame": [
+     500,
+     260,
+     880,
+     640
+    ],
+    "counter": [
+     1000,
+     300,
+     1420,
+     540
+    ],
+    "label": [
+     1000,
+     560,
+     1420,
+     620
+    ],
+    "week_row_y": 820
+   }
+  },
+  "E": {
+   "name": "Diamond League (S5)",
+   "center": [
+    1500,
+    -3900,
+    6600
+   ],
+   "home": {
+    "pos": [
+     1500,
+     -3900,
+     4600
+    ],
+    "target": [
+     1500,
+     -3900,
+     6600
+    ],
+    "f": 2000
+   },
+   "layout_px": {
+    "card": [
+     550,
+     90,
+     1370,
+     990
+    ],
+    "rows": 7,
+    "row_h": 104
+   }
+  },
+  "F": {
+   "name": "Video call (S6)",
+   "center": [
+    -1100,
+    -4800,
+    6200
+   ],
+   "home": {
+    "pos": [
+     -1100,
+     -4800,
+     4200
+    ],
+    "target": [
+     -1100,
+     -4800,
+     6200
+    ],
+    "f": 2000
+   },
+   "layout_px": {
+    "duo_tile": [
+     460,
+     110,
+     1460,
+     710
+    ],
+    "pip": [
+     1230,
+     140,
+     1430,
+     400
+    ],
+    "duo_caption_y": 170,
+    "reply_caption_y": 800,
+    "waveform_y": 930
+   }
+  },
+  "G": {
+   "name": "Every skill (S7)",
+   "fork": [
+    -300,
+    -5300,
+    2600
+   ],
+   "course_nodes": {
+    "languages": [
+     -2850,
+     -5600,
+     0
+    ],
+    "math": [
+     -1150,
+     -5600,
+     0
+    ],
+    "music": [
+     550,
+     -5600,
+     0
+    ],
+    "chess": [
+     2250,
+     -5600,
+     0
+    ]
+   },
+   "node_shape": {
+    "radius": 520,
+    "top_thickness": 150,
+    "lip": 110
+   },
+   "vantage": {
+    "pos": [
+     -300,
+     -3900,
+     -5000
+    ],
+    "target": [
+     -300,
+     -5500,
+     9000
+    ],
+    "f": 1300
+   },
+   "glyphs": "pi, note and knight stand on their node tops as chunky camera-facing 3D glyphs; flags orbit the Languages node"
+  },
+  "H": {
+   "name": "Tagline (S8)",
+   "center": [
+    -300,
+    -6900,
+    -3200
+   ],
+   "home": {
+    "pos": [
+     -300,
+     -6900,
+     -5200
+    ],
+    "target": [
+     -300,
+     -6900,
+     -3200
+    ],
+    "f": 2000
+   },
+   "layout_px": {
+    "line1_baseline_y": 470,
+    "line2_baseline_y": 640,
+    "cap_height": 112
+   }
+  },
+  "I": {
+   "name": "Hero lock-up (S9)",
+   "center": [
+    -300,
+    -6900,
+    -4700
+   ],
+   "home": {
+    "pos": [
+     -300,
+     -6900,
+     -6700
+    ],
+    "target": [
+     -300,
+     -6900,
+     -4700
+    ],
+    "f": 2000
+   },
+   "layout_px": {
+    "duo": [
+     817,
+     200,
+     1103,
+     500
+    ],
+    "wordmark": [
+     610,
+     600,
+     1310,
+     787
+    ],
+    "underline_y": 880,
+    "underline_x": [
+     570,
+     1350
+    ]
+   }
+  },
+  "J": {
+   "name": "End card (S10)",
+   "center": [
+    -300,
+    -6900,
+    -4700
+   ],
+   "home": {
+    "pos": [
+     -300,
+     -6900,
+     -6700
+    ],
+    "target": [
+     -300,
+     -6900,
+     -4700
+    ],
+    "f": 2000
+   }
+  }
+ },
+ "keys": [
+  {
+   "f": 0,
+   "type": "pass",
+   "pos": [
+    -3600,
+    205,
+    7790
+   ],
+   "target": [
+    -3600,
+    190,
+    9000
+   ],
+   "f_px": 2000,
+   "focus": 1210,
+   "aperture": 40,
+   "note": "S1 anticipation drift toward the slam pose"
+  },
+  {
+   "f": 10,
+   "type": "hold",
+   "pos": [
+    -3600,
+    190,
+    7889
+   ],
+   "target": [
+    -3600,
+    190,
+    9000
+   ],
+   "f_px": 2000,
+   "focus": 1111,
+   "aperture": 40,
+   "note": "SLAM pose: Duo = 540 px tall; impact shake is additive"
+  },
+  {
+   "f": 14,
+   "type": "hold",
+   "pos": [
+    -3600,
+    190,
+    7889
+   ],
+   "target": [
+    -3600,
+    190,
+    9000
+   ],
+   "f_px": 2000,
+   "focus": 1111,
+   "aperture": 40,
+   "note": "camera recoils, then eases back"
+  },
+  {
+   "f": 54,
+   "type": "hold",
+   "pos": [
+    -3600,
+    0,
+    7000
+   ],
+   "target": [
+    -3600,
+    0,
+    9000
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 24,
+   "note": "home A (lock-up); rest window f54 to f92"
+  },
+  {
+   "f": 92,
+   "type": "hold",
+   "pos": [
+    -3600,
+    0,
+    7000
+   ],
+   "target": [
+    -3600,
+    0,
+    9000
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 24,
+   "note": "end of rest; dive begins"
+  },
+  {
+   "f": 112,
+   "type": "pass",
+   "pos": [
+    -3180,
+    -360,
+    6980
+   ],
+   "target": [
+    -2700,
+    -1150,
+    8850
+   ],
+   "f_px": 2000,
+   "focus": 1950,
+   "aperture": 30,
+   "note": "S2 dive: tilt down, truck right"
+  },
+  {
+   "f": 128,
+   "type": "pass",
+   "pos": [
+    -2380,
+    -760,
+    6880
+   ],
+   "target": [
+    -1950,
+    -1700,
+    8400
+   ],
+   "f_px": 2000,
+   "focus": 1900,
+   "aperture": 30,
+   "note": "chasing the head over nodes 2-3"
+  },
+  {
+   "f": 144,
+   "type": "pass",
+   "pos": [
+    -1380,
+    -1200,
+    6620
+   ],
+   "target": [
+    -760,
+    -2250,
+    7650
+   ],
+   "f_px": 2000,
+   "focus": 1650,
+   "aperture": 30,
+   "note": "START press framed from above-front"
+  },
+  {
+   "f": 162,
+   "type": "pass",
+   "pos": [
+    -830,
+    -1520,
+    6080
+   ],
+   "target": [
+    -700,
+    -1780,
+    7650
+   ],
+   "f_px": 2000,
+   "focus": 1700,
+   "aperture": 32,
+   "note": "descending and levelling as the phone rises"
+  },
+  {
+   "f": 182,
+   "type": "pass",
+   "pos": [
+    -700,
+    -1660,
+    5660
+   ],
+   "target": [
+    -700,
+    -1660,
+    7650
+   ],
+   "f_px": 2000,
+   "focus": 1990,
+   "aperture": 34,
+   "note": "home C reached; slow push continues"
+  },
+  {
+   "f": 282,
+   "type": "pass",
+   "pos": [
+    -700,
+    -1660,
+    5800
+   ],
+   "target": [
+    -700,
+    -1660,
+    7650
+   ],
+   "f_px": 2000,
+   "focus": 1850,
+   "aperture": 34,
+   "note": "end of S3 push-in (150 units)"
+  },
+  {
+   "f": 302,
+   "type": "pass",
+   "pos": [
+    1120,
+    -1070,
+    5260
+   ],
+   "target": [
+    1700,
+    -1000,
+    7300
+   ],
+   "f_px": 2000,
+   "focus": 2100,
+   "aperture": 28,
+   "note": "S4 whip following the leap"
+  },
+  {
+   "f": 324,
+   "type": "pass",
+   "pos": [
+    1700,
+    -1000,
+    5300
+   ],
+   "target": [
+    1700,
+    -1000,
+    7300
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 28,
+   "note": "home D"
+  },
+  {
+   "f": 414,
+   "type": "pass",
+   "pos": [
+    1700,
+    -990,
+    5380
+   ],
+   "target": [
+    1700,
+    -1000,
+    7300
+   ],
+   "f_px": 2000,
+   "focus": 1920,
+   "aperture": 28,
+   "note": "slow push"
+  },
+  {
+   "f": 430,
+   "type": "pass",
+   "pos": [
+    1700,
+    -930,
+    5370
+   ],
+   "target": [
+    1690,
+    -1300,
+    7300
+   ],
+   "f_px": 2000,
+   "focus": 1950,
+   "aperture": 28,
+   "note": "crest: small rise, tilt down"
+  },
+  {
+   "f": 444,
+   "type": "pass",
+   "pos": [
+    1620,
+    -2480,
+    5050
+   ],
+   "target": [
+    1560,
+    -3700,
+    6900
+   ],
+   "f_px": 2000,
+   "focus": 2100,
+   "aperture": 26,
+   "note": "S5 falling (pitch about -33 deg)"
+  },
+  {
+   "f": 460,
+   "type": "pass",
+   "pos": [
+    1500,
+    -3900,
+    4610
+   ],
+   "target": [
+    1500,
+    -3900,
+    6600
+   ],
+   "f_px": 2000,
+   "focus": 1990,
+   "aperture": 26,
+   "note": "home E (arrival)"
+  },
+  {
+   "f": 548,
+   "type": "pass",
+   "pos": [
+    1500,
+    -3900,
+    4730
+   ],
+   "target": [
+    1500,
+    -3900,
+    6600
+   ],
+   "f_px": 2000,
+   "focus": 1870,
+   "aperture": 26,
+   "note": "slow push during the climb"
+  },
+  {
+   "f": 574,
+   "type": "pass",
+   "pos": [
+    -280,
+    -4600,
+    4300
+   ],
+   "target": [
+    -980,
+    -4780,
+    6200
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 30,
+   "note": "S6 move to the call"
+  },
+  {
+   "f": 592,
+   "type": "pass",
+   "pos": [
+    -1100,
+    -4800,
+    4210
+   ],
+   "target": [
+    -1100,
+    -4800,
+    6200
+   ],
+   "f_px": 2000,
+   "focus": 1990,
+   "aperture": 30,
+   "note": "home F"
+  },
+  {
+   "f": 684,
+   "type": "hold",
+   "pos": [
+    -1100,
+    -4800,
+    4330
+   ],
+   "target": [
+    -1100,
+    -4800,
+    6200
+   ],
+   "f_px": 2000,
+   "focus": 1870,
+   "aperture": 30,
+   "note": "push settles to zero velocity; pull-back starts"
+  },
+  {
+   "f": 700,
+   "type": "pass",
+   "pos": [
+    -330,
+    -3950,
+    -4300
+   ],
+   "target": [
+    -300,
+    -5500,
+    9000
+   ],
+   "f_px": 1340,
+   "focus": 5600,
+   "aperture": 22,
+   "note": "S7 vantage: minimum-jerk snap pull-back + zoom-out from f684, settled as Languages lights"
+  },
+  {
+   "f": 866,
+   "type": "pass",
+   "pos": [
+    -300,
+    -3900,
+    -5000
+   ],
+   "target": [
+    -300,
+    -5500,
+    9000
+   ],
+   "f_px": 1300,
+   "focus": 6200,
+   "aperture": 22,
+   "note": "slow drift back while Math, Music, Chess light"
+  },
+  {
+   "f": 902,
+   "type": "pass",
+   "pos": [
+    -300,
+    -6900,
+    -5200
+   ],
+   "target": [
+    -300,
+    -6900,
+    -3200
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 26,
+   "note": "S8 home H after crane-down + push"
+  },
+  {
+   "f": 990,
+   "type": "hold",
+   "pos": [
+    -300,
+    -6900,
+    -5130
+   ],
+   "target": [
+    -300,
+    -6900,
+    -3200
+   ],
+   "f_px": 2000,
+   "focus": 1930,
+   "aperture": 26,
+   "note": "slow push ends; the breath begins"
+  },
+  {
+   "f": 1032,
+   "type": "hold",
+   "pos": [
+    -300,
+    -6900,
+    -6700
+   ],
+   "target": [
+    -300,
+    -6900,
+    -4700
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 30,
+   "note": "home I: breath pull-back complete; rest from here"
+  },
+  {
+   "f": 1271,
+   "type": "hold",
+   "pos": [
+    -300,
+    -6900,
+    -6700
+   ],
+   "target": [
+    -300,
+    -6900,
+    -4700
+   ],
+   "f_px": 2000,
+   "focus": 2000,
+   "aperture": 30,
+   "note": "end card held at home I"
+  }
+ ],
+ "shakes": [
+  {
+   "f": 10,
+   "amp_px": 12,
+   "roll_deg": 0.35,
+   "freq_hz": 18,
+   "decay_ms": 85,
+   "cutoff_f": 40,
+   "note": "slam"
+  },
+  {
+   "f": 300,
+   "amp_px": 2,
+   "roll_deg": 0.05,
+   "freq_hz": 14,
+   "decay_ms": 70,
+   "cutoff_f": 320,
+   "note": "ignite"
+  },
+  {
+   "f": 455,
+   "amp_px": 3,
+   "roll_deg": 0.1,
+   "freq_hz": 12,
+   "decay_ms": 90,
+   "cutoff_f": 480,
+   "note": "drop arrival"
+  },
+  {
+   "f": 522,
+   "amp_px": 2,
+   "roll_deg": 0.05,
+   "freq_hz": 14,
+   "decay_ms": 60,
+   "cutoff_f": 540,
+   "note": "#1 landing"
+  },
+  {
+   "f": 1008,
+   "amp_px": 8,
+   "roll_deg": 0.25,
+   "freq_hz": 16,
+   "decay_ms": 80,
+   "cutoff_f": 1030,
+   "note": "Duo landing (zeroed before the f1032 rest)"
+  }
+ ],
+ "auto_bank": {
+  "gain_deg_per_g": 2.0,
+  "max_deg": 4.0,
+  "disabled_within_f_of_hold": 12
+ }
+}
