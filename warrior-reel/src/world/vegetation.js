@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { rng, smoothstep, clamp, lerp } from '../core/util.js';
 import { limb, merge, flatten, patchSway, noise2, hash2 } from './wutil.js';
 import { leafTexture, barkTexture } from './textures.js';
+import { litMaterial } from './litmat.js';
 import { groundHeight, riverCenter, riverHalfWidth, RIVER } from './terrain.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -25,6 +26,7 @@ function tree(rand, o) {
   const y0 = groundHeight(x, z) - 0.15;
   const trunk = [];
   const leaves = [];
+  const shadowBoxes = []; // coarse canopy boxes used only for the sun shadow map
   const colors = PALETTES[pal];
   const pick = () => new THREE.Color(colors[Math.floor(rand() * colors.length)]);
   const forkY = h * (o.fork ?? (0.4 + rand() * 0.06));
@@ -33,19 +35,21 @@ function tree(rand, o) {
   const fork = V(x, y0 + forkY, z).add(leanDir);
   const r1 = trunkR * 0.7;
   trunk.push(limb(base, fork, trunkR, r1, 8, 2.2, rand()));
-  // root flares
+  // flared base (a short faceted frustum) + a few low root humps, mostly buried
+  trunk.push(limb(V(x, y0 - 0.05, z), V(x, y0 + 0.15 + trunkR * 1.6, z).add(leanDir.clone().multiplyScalar(0.12)), trunkR * 1.65, trunkR * 1.02, 8, 2.2, rand()));
   const nRoots = trunkR > 0.3 ? 5 : 3;
   for (let i = 0; i < nRoots; i++) {
     const a = (i / nRoots) * Math.PI * 2 + rand() * 0.6;
-    const out = V(x + Math.cos(a) * trunkR * 1.75, y0 + 0.13, z + Math.sin(a) * trunkR * 1.75);
-    trunk.push(limb(out, V(x + Math.cos(a) * trunkR * 0.55, y0 + trunkR * 1.25, z + Math.sin(a) * trunkR * 0.55), trunkR * 0.2, trunkR * 0.42, 5, 2.2));
+    const out = V(x + Math.cos(a) * trunkR * 2.5, y0 + 0.08, z + Math.sin(a) * trunkR * 2.5);
+    trunk.push(limb(out, V(x + Math.cos(a) * trunkR * 1.0, y0 + 0.15 + trunkR * 0.5, z + Math.sin(a) * trunkR * 1.0), trunkR * 0.16, trunkR * 0.32, 5, 2.2));
   }
   // cluster helper: shell-weighted ellipsoid of cubes
   const cluster = (c, rx, ry, rz, n) => {
+    shadowBoxes.push({ p: c.clone(), s: [rx * 1.35, ry * 1.25, rz * 1.35], rot: [0, rand() * Math.PI, 0] });
     for (let i = 0; i < n; i++) {
       const u = rand() * 2 - 1, th = rand() * Math.PI * 2;
       const sq = Math.sqrt(1 - u * u);
-      const rr = 0.25 + 0.75 * Math.pow(rand(), 0.5);
+      const rr = 0.62 + 0.38 * Math.pow(rand(), 0.5);
       const p = V(c.x + Math.cos(th) * sq * rx * rr, c.y + u * ry * rr * (u < 0 ? 0.75 : 1), c.z + Math.sin(th) * sq * rz * rr);
       const s = cube * (0.75 + rand() * 0.45);
       const col = pick();
@@ -75,18 +79,20 @@ function tree(rand, o) {
   trunk.push(limb(fork, top, r1 * 0.6, r1 * 0.2, 6, 2.2));
   cluster(top, R * 0.66, R * 0.46, R * 0.66, Math.round(34 * density * (R / (cube * 4.5)) ** 2 + 8));
   cluster(V(fork.x, canopyY - h * 0.03, fork.z), R * 0.85, R * 0.34, R * 0.85, Math.round(30 * density * (R / (cube * 4.5)) ** 2 + 6));
-  return { trunk, leaves, barkCol };
+  return { trunk, leaves, barkCol, shadowBoxes };
 }
 
-function bush(rand, x, z, size = 0.6, pal = 'green') {
+function bush(rand, x, z, size = 0.6, pal = 'green', shadowBoxes = null) {
   const leaves = [];
+  if (shadowBoxes) shadowBoxes.push({ p: V(x, groundHeight(x, z) + size * 0.35, z), s: [size * 1.1, size * 0.7, size * 1.1], rot: [0, rand() * 3, 0] });
   const colors = PALETTES[pal];
   const y0 = groundHeight(x, z);
-  const n = Math.round(8 + size * 16);
+  const n = Math.round(7 + size * 12);
   for (let i = 0; i < n; i++) {
-    const a = rand() * Math.PI * 2, r = Math.sqrt(rand()) * size * 0.7;
-    const s = size * (0.26 + rand() * 0.24);
-    const p = V(x + Math.cos(a) * r, y0 + s * 0.4 + rand() * size * 0.45 * (1 - r / size), z + Math.sin(a) * r);
+    const a = rand() * Math.PI * 2, u = rand();
+    const r = Math.sqrt(1 - u * u) * size * 0.62, hy = u * size * 0.55;
+    const s = size * (0.3 + rand() * 0.2);
+    const p = V(x + Math.cos(a) * r, y0 + s * 0.3 + hy, z + Math.sin(a) * r);
     const col = new THREE.Color(colors[Math.floor(rand() * colors.length)]);
     leaves.push({ p, s: [s, s * 0.8, s], rot: [(rand() - 0.5) * 0.3, rand() * Math.PI, (rand() - 0.5) * 0.3], color: col });
   }
@@ -97,8 +103,9 @@ function bush(rand, x, z, size = 0.6, pal = 'green') {
 export function buildTrees() {
   const rand = rng(1234);
   const trunks = [];
-  const leaves = [];
-  const add = (t) => {
+  const groups = []; // leaf groups -> one InstancedMesh each (frustum culled separately)
+  const proxies = []; // shadow-only canopy boxes
+  const add = (t, name, castShadow) => {
     const c = new THREE.Color(t.barkCol);
     for (const g of t.trunk) {
       const n = g.attributes.position.count;
@@ -107,10 +114,11 @@ export function buildTrees() {
       g.setAttribute('color', new THREE.BufferAttribute(col, 3));
       trunks.push(g);
     }
-    leaves.push(...t.leaves);
+    groups.push({ name, leaves: t.leaves, castShadow });
+    if (castShadow) proxies.push(...t.shadowBoxes);
   };
   // THE big autumn tree behind the seats
-  add(tree(rand, { x: 0.6, z: -2.6, h: 7.6, trunkR: 0.42, pal: 'autumn', spread: 1.05, cube: 0.46, density: 1.5, limbs: 5, fork: 0.34, barkCol: 0xb8aeb0 }));
+  add(tree(rand, { x: 0.6, z: -2.6, h: 7.6, trunkR: 0.42, pal: 'autumn', spread: 1.05, cube: 0.6, density: 1.0, limbs: 5, fork: 0.34, barkCol: 0xb8aeb0 }), 'bigTree', true);
   // scattered trees (none within 1.2 m of the seats, sight-lines across the river kept clear)
   const spots = [
     [-5.2, -4.8, 5.2, 'golden'], [5.8, -5.4, 5.6, 'orange'], [-9.5, -2.0, 6.0, 'green'], [10.5, -3.2, 5.4, 'autumn'],
@@ -122,48 +130,84 @@ export function buildTrees() {
     [23, 20, 7.0, 'green'], [-22, 24, 7.0, 'golden'], [-28, 10, 6.5, 'olive'], [28, 6, 6.0, 'autumn'],
     [-6, 30, 6.5, 'green'], [-14, 38, 7.5, 'autumn'], [30, 34, 7.0, 'golden'], [-30, -18, 7.5, 'orange'], [26, -22, 7.5, 'autumn'],
   ];
-  for (const [x, z, h, pal] of spots) {
-    const far = Math.hypot(x, z) > 14;
-    add(tree(rand, { x, z, h, trunkR: 0.16 + h * 0.022, pal, spread: 0.85 + rand() * 0.25, cube: (far ? 0.62 : 0.48) + h * 0.03, density: far ? 0.75 : 0.9, limbs: 3 + Math.floor(rand() * 2), lean: rand() * 6.28, barkCol: rand() < 0.5 ? 0xa0948e : 0x988a80 }));
-  }
-  // bushes / small blocky plants
+  spots.forEach(([x, z, h, pal], i) => {
+    const d = Math.hypot(x, z);
+    const far = d > 14;
+    add(tree(rand, { x, z, h, trunkR: 0.16 + h * 0.022, pal, spread: 0.85 + rand() * 0.25, cube: (far ? 0.7 : 0.52) + h * 0.03, density: far ? 0.6 : 0.8, limbs: 3 + Math.floor(rand() * 2), lean: rand() * 6.28, barkCol: rand() < 0.5 ? 0xa0948e : 0x988a80 }),
+      'tree' + i, d < 9);
+  });
+  // bushes / small blocky plants, grouped by side for culling
   const bushSpots = [
-    [-1.9, -2.3, 0.55, 'green'], [2.3, -2.9, 0.7, 'olive'], [-0.9, -3.4, 0.5, 'golden'], [3.4, -1.9, 0.45, 'green'],
-    [-3.6, -3.0, 0.75, 'olive'], [4.9, -3.4, 0.6, 'autumn'], [-4.9, -1.0, 0.5, 'green'], [-6.5, -3.6, 0.8, 'green'],
-    [7.0, -2.0, 0.7, 'olive'], [-7.2, 1.0, 0.55, 'golden'], [8.2, 0.8, 0.6, 'green'], [-4.6, 4.9, 0.5, 'olive'],
+    [-1.9, -2.3, 0.55, 'green'], [2.3, -2.9, 0.7, 'green'], [-0.9, -3.4, 0.5, 'olive'], [3.4, -1.9, 0.45, 'green'],
+    [-3.6, -3.0, 0.75, 'green'], [4.9, -3.4, 0.6, 'olive'], [-4.9, -1.0, 0.5, 'green'], [-6.5, -3.6, 0.8, 'green'],
+    [7.0, -2.0, 0.7, 'olive'], [-7.2, 1.0, 0.55, 'green'], [8.2, 0.8, 0.6, 'green'], [-4.6, 4.9, 0.5, 'olive'],
     [5.6, 5.2, 0.55, 'green'], [-8.0, 5.5, 0.7, 'green'], [9.5, 6.0, 0.7, 'olive'], [-2.6, -6.5, 0.8, 'green'],
     [6.5, -7.2, 0.9, 'olive'], [-11, -4.5, 0.9, 'green'], [12, 3, 0.8, 'green'], [-12, 4, 0.8, 'olive'],
   ];
-  for (const [x, z, s, pal] of bushSpots) leaves.push(...bush(rand, x, z, s, pal));
+  const bushGroups = { bushesNear: [], bushesLeft: [], bushesRight: [], bushesFar: [] };
+  for (const [x, z, sz, pal] of bushSpots) {
+    const key = z > 3.6 ? 'bushesFar' : Math.abs(x) < 5 ? 'bushesNear' : x < 0 ? 'bushesLeft' : 'bushesRight';
+    bushGroups[key].push(...bush(rand, x, z, sz, pal, key === 'bushesNear' ? proxies : null));
+  }
+  for (const [k, list] of Object.entries(bushGroups)) groups.push({ name: k, leaves: list, castShadow: false });
 
   // ---- trunk mesh
   const trunkGeo = merge(trunks);
-  const trunkMat = new THREE.MeshLambertMaterial({ map: barkTexture(), vertexColors: true, flatShading: true });
+  const trunkMat = litMaterial({ map: barkTexture(), vertexColors: true });
   const trunkMesh = new THREE.Mesh(trunkGeo, trunkMat);
   trunkMesh.name = 'trunks';
   trunkMesh.castShadow = true; trunkMesh.receiveShadow = false;
 
-  // ---- leaf cubes (one InstancedMesh)
-  const box = flatten(new THREE.BoxGeometry(1, 1, 1));
-  const leafMat = new THREE.MeshLambertMaterial({ map: leafTexture(), flatShading: true });
-  patchSway(leafMat, `
+  // ---- leaf cubes: shared geometry + material, one InstancedMesh per tree / bush group
+  const box = new THREE.BoxGeometry(1, 1, 1); // indexed: 24 verts / cube (vertex cache friendly)
+  const leafMat = litMaterial({ map: leafTexture(), glow: 0.16, sway: `
     float hgt = smoothstep(0.8, 6.0, inst.y);
     float ph = dot(inst.xz, vec2(0.37, 0.23));
-    sway = vec3(sin(uTime * 1.15 + ph) + 0.4 * sin(uTime * 2.7 + ph * 3.1), 0.25 * sin(uTime * 1.6 + ph * 2.0), 0.6 * cos(uTime * 0.93 + ph * 1.7)) * (0.022 + 0.05 * uWind) * hgt;`, { glow: 0.16 });
-  const leafMesh = new THREE.InstancedMesh(box, leafMat, leaves.length);
+    sway = vec3(sin(uTime * 1.15 + ph) + 0.4 * sin(uTime * 2.7 + ph * 3.1), 0.25 * sin(uTime * 1.6 + ph * 2.0), 0.6 * cos(uTime * 0.93 + ph * 1.7)) * (0.022 + 0.05 * uWind) * hgt;` });
+  const leafGroup = new THREE.Group();
+  leafGroup.name = 'leaves';
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3();
-  leaves.forEach((L, i) => {
-    q.setFromEuler(e.set(L.rot[0], L.rot[1], L.rot[2]));
-    m.compose(L.p, q, s.set(L.s[0], L.s[1], L.s[2]));
-    leafMesh.setMatrixAt(i, m);
-    leafMesh.setColorAt(i, L.color);
+  let leafCount = 0;
+  for (const G of groups) {
+    if (!G.leaves.length) continue;
+    // front-to-back for the usual cameras on the +Z side (better early-z rejection of hidden cubes)
+    const eye = V(0.5, 1.2, 7);
+    const list = G.leaves.slice().sort((a, b) => a.p.distanceToSquared(eye) - b.p.distanceToSquared(eye));
+    const im = new THREE.InstancedMesh(box, leafMat, list.length);
+    list.forEach((L, i) => {
+      q.setFromEuler(e.set(L.rot[0], L.rot[1], L.rot[2]));
+      m.compose(L.p, q, s.set(L.s[0], L.s[1], L.s[2]));
+      im.setMatrixAt(i, m);
+      im.setColorAt(i, L.color);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.instanceColor.needsUpdate = true;
+    im.computeBoundingSphere();
+    im.boundingSphere.radius += 0.2; // sway margin
+    im.name = 'leaves_' + G.name;
+    im.castShadow = false; im.receiveShadow = false; // shadows come from the proxy below
+    leafGroup.add(im);
+    leafCount += list.length;
+  }
+  // Shadow-only proxy: a few big boxes per canopy cluster. Drawn into the shadow map only (count is zeroed
+  // for the camera pass), which keeps the 1000s of leaf cubes out of the (fill-rate bound) shadow pass.
+  const proxy = new THREE.InstancedMesh(box, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }), proxies.length);
+  proxies.forEach((B, i) => {
+    q.setFromEuler(e.set(B.rot[0], B.rot[1], B.rot[2]));
+    m.compose(B.p, q, s.set(B.s[0], B.s[1], B.s[2]));
+    proxy.setMatrixAt(i, m);
   });
-  leafMesh.instanceMatrix.needsUpdate = true;
-  leafMesh.instanceColor.needsUpdate = true;
-  leafMesh.computeBoundingSphere();
-  leafMesh.name = 'leaves';
-  leafMesh.castShadow = true; leafMesh.receiveShadow = false;
-  return { trunkMesh, leafMesh, leafCount: leaves.length };
+  proxy.instanceMatrix.needsUpdate = true;
+  proxy.computeBoundingSphere();
+  proxy.name = 'leafShadowProxy';
+  proxy.castShadow = true; proxy.receiveShadow = false;
+  const N = proxies.length;
+  proxy.onBeforeShadow = () => { proxy.count = N; };
+  proxy.onAfterShadow = () => { proxy.count = 0; };
+  proxy.onBeforeRender = () => { proxy.count = 0; };
+  proxy.count = 0;
+  leafGroup.add(proxy);
+  return { trunkMesh, leafMesh: leafGroup, leafCount };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -247,7 +291,7 @@ export function buildGrass() {
     float ph = dot(inst.xz, vec2(1.7, 1.3));
     float g = sin(uTime * 1.9 + ph) * 0.6 + sin(uTime * 3.3 + ph * 1.7) * 0.25;
     sway = vec3(g, 0.0, g * 0.4) * hgt * hgt * (0.35 + 1.1 * uWind);`;
-  const mkMat = () => patchSway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), sway, { noFlip: true });
+  const mkMat = () => litMaterial({ vertexColors: true, side: THREE.DoubleSide, upNormal: true, sway });
 
   // --- short tufts (everywhere on the meadow, dense near the action)
   const tuft = tuftGeometry(rand, 6, 0.06, 0.15, 0.05, 0.011, 0x92bc36, 0xdcef64);
@@ -308,8 +352,8 @@ export function buildGrass() {
 
   // --- flowers (pink / yellow / white / lilac pixel heads)
   const fl = flowerGeometry();
-  const flowerMat = patchSway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), sway,
-    { noFlip: true, extraAttribs: 'attribute float aHead;', colorMix: 'vColor.xyz *= mix(vec3(1.0), instanceColor.xyz, aHead);' });
+  const flowerMat = litMaterial({ vertexColors: true, side: THREE.DoubleSide, sway, extraAttribs: 'attribute float aHead;',
+    colorMix: 'vColor = color * mix(vec3(1.0), instanceColor, aHead);' });
   const heads = [0xff8fc0, 0xffe25a, 0xffffff, 0xd9a8ff, 0xff6f8a, 0xfff2a8];
   const flowers = [];
   guard = 0;

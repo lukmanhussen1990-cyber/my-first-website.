@@ -11,19 +11,19 @@ export function jesusTextures() {
   // Cream wool robe: soft dither, faint weave lines.
   const robe = pixelTexture(32, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
-      let l = 0.885 + (r() - 0.5) * 0.045;
-      if (x % 8 === 3) l -= 0.012;
-      if ((x + y * 3) % 11 === 0) l -= 0.015;
-      px(ctx, x, y, hsl(0.11 + (r() - 0.5) * 0.01, 0.38, l));
+      let l = 0.75 + (r() - 0.5) * 0.075;
+      if (x % 8 === 3) l -= 0.014;
+      if ((x + y * 3) % 11 === 0) l -= 0.018;
+      px(ctx, x, y, hsl(0.105 + (r() - 0.5) * 0.012, 0.40, l));
     }
   }, { seed: 11 });
   // Red sash: dither + darker border stripes along u (width direction is u).
   const sash = pixelTexture(32, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
-      let l = 0.40 + (r() - 0.5) * 0.05;
-      if (x < 2 || x > s - 3) l -= 0.07;
+      let l = 0.30 + (r() - 0.5) * 0.045;
+      if (x < 2 || x > s - 3) l -= 0.06;
       if (x === 3 || x === s - 4) l += 0.03;
-      px(ctx, x, y, hsl(0.995 + (r() - 0.5) * 0.012, 0.74, l));
+      px(ctx, x, y, hsl(0.995 + (r() - 0.5) * 0.012, 0.82, l));
     }
   }, { seed: 21 });
   // Hair: vertical strands (v runs along the strands).
@@ -31,15 +31,15 @@ export function jesusTextures() {
     const col = Array.from({ length: s }, () => (r() - 0.5) * 0.07);
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const streak = col[x] + Math.sin(y * 0.4 + x * 1.7) * 0.012;
-      const l = 0.205 + streak + (r() - 0.5) * 0.03;
-      px(ctx, x, y, hsl(0.065 + (r() - 0.5) * 0.01, 0.5, l));
+      const l = 0.105 + streak * 0.9 + (r() - 0.5) * 0.022;
+      px(ctx, x, y, hsl(0.052 + (r() - 0.5) * 0.01, 0.62, l));
     }
   }, { seed: 31 });
   const beard = pixelTexture(32, (ctx, s, r) => {
     const col = Array.from({ length: s }, () => (r() - 0.5) * 0.06);
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
-      const l = 0.17 + col[x] * 0.8 + (r() - 0.5) * 0.045;
-      px(ctx, x, y, hsl(0.06 + (r() - 0.5) * 0.012, 0.48, l));
+      const l = 0.088 + col[x] * 0.6 + (r() - 0.5) * 0.035;
+      px(ctx, x, y, hsl(0.055 + (r() - 0.5) * 0.012, 0.55, l));
     }
   }, { seed: 41 });
   // Skin: very gentle dither (white-ish; real colour comes from vertex colours / material colour).
@@ -61,9 +61,9 @@ export function jesusTextures() {
       let col;
       if (emissive) col = '#000000';
       else if (ang < 11) col = '#0d0806';
-      else if (ang < 24) col = hsl(0.07, 0.55, 0.17 + (ang - 11) / 13 * 0.06 + ((x * 7 + y * 3) % 5 === 0 ? 0.03 : 0));
-      else if (ang < 28) col = hsl(0.06, 0.45, 0.10);
-      else col = hsl(0.08, 0.22, ang < 70 ? 0.90 : 0.84);
+      else if (ang < 24) col = hsl(0.065, 0.58, 0.085 + (ang - 11) / 13 * 0.075 + ((x * 7 + y * 3) % 5 === 0 ? 0.025 : 0));
+      else if (ang < 28) col = hsl(0.06, 0.45, 0.06);
+      else col = hsl(0.075, 0.2, ang < 60 ? 0.80 : 0.72);
       px(ctx, x, y, col);
     }
     // catch-light: small bright patch upper-left of the pupil (as seen by the viewer)

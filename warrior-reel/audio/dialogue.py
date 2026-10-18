@@ -18,7 +18,7 @@ from common import (SR, HOP, load, path, n_total, hpf, eq, frame_rms, ar_smooth,
                     control_to_audio, undb, lufs, fade, timeline, bpf, tp_limiter)
 
 LINE_LUFS = -20.0          # working level for every line (master gain is applied later)
-PEAK_ABOVE_LUFS = 10.5     # line true peaks held <= LINE_LUFS + this (dBTP)
+PEAK_ABOVE_LUFS = 11.5     # line true peaks held <= LINE_LUFS + this (dBTP)
 SPEAKERS = ("JESUS", "KNIGHT")
 
 
@@ -55,8 +55,11 @@ def speech_mask(lev_db, ref_db, on_rel=-17.0, hold=0.22, pre=0.05, post=0.14):
     return out
 
 
-def process_line(x):
-    """Return (processed mono line, info dict)."""
+def process_line(x, speech_end=None):
+    """Return (processed mono line, info dict).
+
+    speech_end: end of the last word (s, relative to the file) from the timeline;
+    the breathy/noisy tail after it (+0.12 s grace) is always open to expansion."""
     x = hpf(x, 75.0, order=3)
     x = fade(x, 0.004, 0.03)
     n = len(x)
@@ -69,6 +72,8 @@ def process_line(x):
 
     # ---- 2. downward expansion outside speech only
     mask = speech_mask(lev, ref)
+    if speech_end is not None:
+        mask[int((speech_end + 0.12) * SR / HOP):] = False
     T = ref - 19.0                                     # expansion threshold
     ratio = 2.5
     rng = 14.0
@@ -81,15 +86,15 @@ def process_line(x):
     gain_exp = undb(control_to_audio(g_exp_s, n))
     y = x * gain_exp
 
-    # ---- 3. light compression (RMS 5 ms detector, 2.5:1 soft knee, 5 ms / 110 ms)
-    lev2 = _db(frame_rms(y, 0.005))
-    thr, cr, knee = ref - 8.0, 2.5, 8.0
+    # ---- 3. light compression (RMS 10 ms detector, 2.5:1 soft knee, 8 ms / 120 ms)
+    lev2 = _db(frame_rms(y, 0.010))
+    thr, cr, knee = ref - 4.0, 2.5, 6.0
     over = lev2 - thr
     gr = np.where(over <= -knee / 2, 0.0,
                   np.where(over >= knee / 2, over * (1 / cr - 1),
                            (1 / cr - 1) * (over + knee / 2) ** 2 / (2 * knee)))
-    # gr is <= 0; attack 5 ms (gr falling), release 110 ms
-    gr_s = ar_smooth(gr, attack=0.110, release=0.005)   # rising gr == releasing
+    # gr is <= 0; attack 8 ms (gr falling), release 120 ms
+    gr_s = ar_smooth(gr, attack=0.120, release=0.008)   # rising gr == releasing
     y = y * undb(control_to_audio(gr_s, n))
 
     # ---- 4. clarity EQ
@@ -105,7 +110,7 @@ def process_line(x):
         pk_gr = min(pk_gr, float(20 * np.log10(g.min())))
         y = y2 * undb(LINE_LUFS - lufs(y2))
     info = dict(ref_db=round(ref, 1), floor_db=round(floor, 1), src_lufs=None,
-                pre_norm_lufs=round(L, 2), max_comp_db=round(float(gr_s.min()), 1), peak_lim_db=round(pk_gr, 1),
+                pre_norm_lufs=round(L, 2), max_comp_db=round(float(gr_s.min()), 1), mean_comp_db=round(float(gr_s[mask].mean()) if mask.any() else 0.0, 1), peak_lim_db=round(pk_gr, 1),
                 exp_db_min=round(float(g_exp_s.min()), 1),
                 gap_reduction_db=round(float(np.median(g_exp_s[~mask])) if (~mask).any() else 0.0, 1))
     return y, info
@@ -119,7 +124,7 @@ def build(tl=None):
     lines = []
     for cue in tl["cues"]:
         raw = load(path(cue["file"]))
-        y, info = process_line(raw)
+        y, info = process_line(raw, cue["speechEnd"] - cue["fileStart"])
         info.update(id=cue["id"], speaker=cue["speaker"], start=cue["fileStart"],
                     src_lufs=round(lufs(raw), 2), dur=round(len(raw) / SR, 3))
         i0 = int(round(cue["fileStart"] * SR))

@@ -11,7 +11,7 @@ import os
 import numpy as np
 from scipy.signal import find_peaks
 
-from common import SR, load, path, n_total, hpf, lpf, eq, fade, place, pan, frame_rms, timeline
+from common import SR, load, path, n_total, hpf, lpf, bpf, eq, fade, place, pan, frame_rms, timeline
 
 SFX = "audio/sfx/"
 FOOTSTEP_INTERVAL = 0.55      # brief: ~0.55 s apart, establishStart -> jesusArrive
@@ -79,6 +79,59 @@ def blade_ring(dur=2.2, f0=742.0, seed=5):
     return y / np.abs(y).max()
 
 
+# ----------------------------------------------------------------------------- fallbacks
+def _synth_sfx(name, seed=3):
+    """Stand-ins with the same event layout as the ElevenLabs files (only used if a file is missing)."""
+    rng = np.random.default_rng(seed + len(name))
+    dur = {"grip_creak": 2.0, "footsteps_grass": 5.0, "robe_rustle": 2.0, "armor_shift": 3.0,
+           "sword_ground": 2.5}[name]
+    n = int(dur * SR)
+    y = np.zeros(n)
+    t = np.arange(n) / SR
+
+    def burst(t0, d, lo, hi, amp, tau):
+        k0, k1 = int(t0 * SR), min(n, int((t0 + d) * SR))
+        seg = bpf(rng.standard_normal(k1 - k0), lo, hi, 2) * amp * np.exp(-(t[k0:k1] - t0) / tau)
+        y[k0:k1] += seg
+
+    if name == "grip_creak":                    # friction: AM-modulated band noise
+        for t0, d, a in ((0.05, 0.45, 0.02), (0.9, 0.35, 0.05)):
+            k0, k1 = int(t0 * SR), int((t0 + d) * SR)
+            am = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 38 * t[k0:k1]))
+            y[k0:k1] += bpf(rng.standard_normal(k1 - k0), 900, 3500, 2) * am * a * np.sin(np.pi * (t[k0:k1] - t0) / d)
+    elif name == "footsteps_grass":
+        for k in range(8):
+            t0 = 0.33 + 0.6 * k
+            burst(t0, 0.08, 60, 400, 0.25, 0.025)
+            burst(t0 + 0.01, 0.25, 1500, 9000, 0.06, 0.06)
+    elif name == "robe_rustle":
+        for k in range(9):
+            burst(0.05 + 0.15 * k, 0.3, 400, 6000, 0.02, 0.12)
+        burst(1.1, 0.15, 60, 300, 0.15, 0.04)
+    elif name == "armor_shift":
+        for t0, f0, a in ((0.22, 2300.0, 0.25), (1.53, 2700.0, 0.25), (2.0, 3100.0, 0.08), (2.25, 2500.0, 0.06)):
+            k0 = int(t0 * SR)
+            r = blade_ring(0.4, f0, seed=int(f0))
+            y[k0:k0 + len(r)] += r[: n - k0] * a * np.exp(-np.arange(len(r[: n - k0])) / SR / 0.06)
+        burst(0.25, 0.45, 800, 8000, 0.03, 0.2)
+        burst(1.15, 0.45, 800, 8000, 0.03, 0.2)
+    elif name == "sword_ground":
+        for t0, a in ((0.35, 0.05), (1.53, 0.3)):
+            k0, k1 = int(t0 * SR), int((t0 + 0.3) * SR)
+            tt = t[k0:k1] - t0
+            y[k0:k1] += a * np.sin(2 * np.pi * 70 * tt) * np.exp(-tt / 0.07)
+            burst(t0, 0.25, 150, 2500, a * 0.5, 0.05)
+    return np.stack([y, y], axis=1)
+
+
+def _sfx(name):
+    p = path(SFX + name + ".mp3")
+    if os.path.exists(p):
+        return load(p, 2)
+    print(f"  [foley] {name}.mp3 missing -> synthesised stand-in")
+    return _synth_sfx(name)
+
+
 def build(tl=None):
     tl = tl or timeline()
     B = tl["beats"]
@@ -93,14 +146,14 @@ def build(tl=None):
         ev.append((label, round(t, 3), target))
 
     # --- grip creak (hook): first creak peaks at ~0.2 s, a second, softer tightening on "find him"
-    g = load(path(SFX + "grip_creak.mp3"), 2)
+    g = _sfx("grip_creak")
     c1 = _seg(g, 0.0, 0.62, 0.01, 0.12)
     c2 = _seg(g, 0.78, 1.45, 0.02, 0.15)
     put(c1, 0.20 - _peak_t(c1), -40.0, 0.0, "grip creak 1")
     put(c2, cue["L01"]["words"][2]["s"] - 0.10, -44.0, 0.0, "grip creak 2")
 
     # --- footsteps on grass: individual steps re-timed onto an even ~0.55 s grid
-    fs = load(path(SFX + "footsteps_grass.mp3"), 2)
+    fs = _sfx("footsteps_grass")
     e = _env_db(fs)
     pk, _ = find_peaks(e, distance=350, prominence=12)
     steps = []
@@ -115,18 +168,18 @@ def build(tl=None):
     for i in range(n_steps):
         s = steps[(i * 3) % len(steps)]
         u = i / max(1, n_steps - 1)
-        lvl = -45.0 + 7.0 * u - (1.5 if i == n_steps - 1 else 0.0)     # approaching; last step settles
+        lvl = -48.0 + 7.0 * u - (1.5 if i == n_steps - 1 else 0.0)     # approaching; last step settles
         s = lpf(s, 5000.0 + 5000.0 * u, 2)                               # distant -> closer
         put(s, t0 + i * dt - 0.06, lvl, 0.10 * (1 if i % 2 else -1) * (1 - 0.5 * u), f"step {i + 1}")
 
     # --- robe rustle as Jesus sits
-    r = load(path(SFX + "robe_rustle.mp3"), 2)
+    r = _sfx("robe_rustle")
     rr = _seg(r, 0.0, 1.75, 0.01, 0.3)
     # rustle starts with the sit; its seat-contact thump (~1.1 s in) lands near jesusSitEnd
     put(rr, B["jesusSitStart"] - _start(rr), -38.0, 0.12, "robe rustle")
 
     # --- armour
-    a = load(path(SFX + "armor_shift.mp3"), 2) * 0.89          # source peaks at +0.6 dBFS
+    a = _sfx("armor_shift") * 0.89          # source peaks at +0.6 dBFS
     a_look = _seg(a, 0.12, 1.05, 0.01, 0.2)
     a_relax = _seg(a, 1.08, 1.85, 0.02, 0.25)
     a_soft = lpf(_seg(a, 0.12, 0.95, 0.02, 0.25), 6000.0, 2)
@@ -139,10 +192,10 @@ def build(tl=None):
     put(a_soft, B["goldenStart"] - _onset(a_soft), -41.0, -0.05, "armour: golden shift")
 
     # --- sword tip into the ground: earthy thud (file) + soft metallic ring (synth)
-    sg = load(path(SFX + "sword_ground.mp3"), 2)
+    sg = _sfx("sword_ground")
     hit = _seg(sg, 1.38, 2.45, 0.004, 0.3)
     hit = eq(hit, ("lowshelf", 150.0, 2.0, 0.7))
-    put(hit, B["swordTipDown"] - _onset(hit, -24.0), -31.0, -0.05, "sword thud", peak_max=-12.0)
+    put(hit, B["swordTipDown"] - _onset(hit, -24.0), -33.0, -0.05, "sword thud", peak_max=-14.0)
     ring = blade_ring()
     ring = hpf(ring, 500.0, 2)
     put(ring, B["swordTipDown"] + 0.004, -41.0, -0.05, "blade ring")

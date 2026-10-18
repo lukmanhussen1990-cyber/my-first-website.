@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { clamp, lerp, smoothstep, rng } from '../core/util.js';
 import { noise2, fbm2, hash2, flatten, boxUV, faceColors, merge } from './wutil.js';
 import { grassTexture, waterTexture, stoneTexture } from './textures.js';
+import { litMaterial } from './litmat.js';
 
 export const RIVER = { z: 2.65, w: 1.0, water: -0.12, bed: -0.42 };
 
@@ -49,7 +50,7 @@ function landHeight(x, z) {
     if (d >= 1) continue;
     const k = plat > 0 ? clamp((1 - d) / (1 - plat), 0, 1) : 1 - d;
     const sm = k * k * (3 - 2 * k);
-    h += hh * (plat > 0 ? sm : sm * (1 + 0.15 * noise2(x * 0.12, z * 0.12, 9)));
+    h += hh * (plat > 0 ? sm : (0.55 * sm + 0.45 * k) * (1 + 0.15 * noise2(x * 0.12, z * 0.12, 9)));
   }
   // river valley: land eases down to 0 near the banks
   const dR = Math.abs(z - riverCenter(x)) - riverHalfWidth(x);
@@ -140,11 +141,11 @@ export function buildTerrain() {
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.setIndex(idx);
-  geo.computeVertexNormals();
-  geo.computeBoundingSphere();
+  const flat = flatten(geo); // per-face normals: faceted low-poly look with per-vertex lighting
+  flat.computeBoundingSphere();
   const tex = grassTexture();
-  const material = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, flatShading: true });
-  const mesh = new THREE.Mesh(geo, material);
+  const material = litMaterial({ map: tex, vertexColors: true });
+  const mesh = new THREE.Mesh(flat, material);
   mesh.name = 'terrain';
   mesh.receiveShadow = true;
   return { mesh, xs, vs, triangles: idx.length / 3 };
@@ -208,7 +209,7 @@ export function buildStones() {
     if (kind > 0) foam.push(new THREE.Vector4(x, z, r * 0.95, kind));
   }
   const geo = merge(geos);
-  const mat = new THREE.MeshLambertMaterial({ map: stoneTexture(), vertexColors: true, flatShading: true });
+  const mat = litMaterial({ map: stoneTexture(), vertexColors: true });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'stones';
   mesh.castShadow = true; mesh.receiveShadow = true;

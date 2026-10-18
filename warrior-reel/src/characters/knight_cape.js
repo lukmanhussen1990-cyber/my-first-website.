@@ -48,8 +48,10 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.setIndex(idx);
+  const colA = new Float32Array(nV * 3).fill(1);
+  geo.setAttribute('color', new THREE.BufferAttribute(colA, 3).setUsage(THREE.DynamicDrawUsage));
   const { map, alpha } = capeTextures();
-  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.93, metalness: 0.0, map, alphaMap: alpha, alphaTest: 0.5, side: THREE.DoubleSide });
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.93, metalness: 0.0, map, alphaMap: alpha, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true });
   // alpha must use the un-repeated uv; the map repeats -> give the alpha its own transform
   alpha.repeat.set(1, 1); alpha.offset.set(0, 0);
   const mesh = new THREE.Mesh(geo, mat);
@@ -63,9 +65,9 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
   // ---- colliders, in bone-local space (ellipsoidal capsules along local Y) ----
   const B = rig.b;
   const caps = [
-    { bone: 'chest', y0: 0.02, y1: 0.25, rx: 0.205, rz: 0.165, cz: -0.005 },
-    { bone: 'spine', y0: -0.02, y1: 0.14, rx: 0.185, rz: 0.15, cz: 0.0 },
-    { bone: 'hips', y0: -0.13, y1: 0.05, rx: 0.215, rz: 0.17, cz: -0.005 },
+    { bone: 'chest', y0: 0.0, y1: 0.24, rx: 0.195, rz: 0.142, cz: -0.002 },
+    { bone: 'spine', y0: -0.02, y1: 0.12, rx: 0.17, rz: 0.128, cz: 0.0 },
+    { bone: 'hips', y0: -0.12, y1: 0.05, rx: 0.212, rz: 0.168, cz: -0.004 },
     { bone: 'thighL', y0: -0.43, y1: 0.0, rx: 0.105, rz: 0.105, cz: 0 },
     { bone: 'thighR', y0: -0.43, y1: 0.0, rx: 0.105, rz: 0.105, cz: 0 },
     { bone: 'shinL', y0: -0.42, y1: 0.0, rx: 0.08, rz: 0.085, cz: -0.01 },
@@ -77,8 +79,8 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
     { bone: 'head', y0: 0.04, y1: 0.2, rx: 0.155, rz: 0.165, cz: 0.0 },
   ];
   const spheres = [ // pauldron domes
-    { bone: 'upperArmL', p: new THREE.Vector3(0.015, 0.0, 0), r: 0.16 },
-    { bone: 'upperArmR', p: new THREE.Vector3(-0.015, 0.0, 0), r: 0.16 },
+    { bone: 'upperArmL', p: new THREE.Vector3(0.02, -0.01, 0), r: 0.135 },
+    { bone: 'upperArmR', p: new THREE.Vector3(-0.02, -0.01, 0), r: 0.135 },
   ];
   const inv = caps.map(() => new THREE.Matrix4());
   const tmp = new THREE.Vector3(), q = new THREE.Vector3();
@@ -127,8 +129,9 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
   const anchors = [];
   for (let i = 0; i < COLS; i++) {
     const u = (i / (COLS - 1)) * 2 - 1; // +1 = his left (+X)
-    const a = u * 1.15;
-    anchors.push(new THREE.Vector3(-Math.sin(a) * 0.165, 0.245 - 0.012 * u * u, -Math.cos(a) * 0.15 - 0.012));
+    // across the upper back, from under one pauldron to the other, rising to the gorget in the middle
+    const x = u * 0.27;
+    anchors.push(new THREE.Vector3(x, 0.252 - 0.07 * u * u, -0.142 * Math.sqrt(Math.max(0, 1 - (x / 0.31) ** 2)) - 0.012));
   }
   const P = Array.from({ length: (ROWS + 1) * COLS }, () => new THREE.Vector3());
   const invRoot = new THREE.Matrix4();
@@ -136,8 +139,31 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
   const prevDir = Array.from({ length: COLS }, () => new THREE.Vector3());
   const chestQ = new THREE.Quaternion();
 
+  const st = { t: 0, seated: false, rock: null, wind: 0.3, ground: 0 };
+  let busy = false, lastSig = NaN;
+  const SIG_BONES = ['hips', 'spine', 'chest', 'head', 'thighL', 'thighR', 'shinL', 'shinR', 'upperArmL', 'upperArmR', 'foreArmL', 'foreArmR'];
+  function signature() {
+    let s = st.t * 1.37 + (st.seated ? 3.1 : 0) + (st.wind || 0) * 0.71 + (st.ground || 0) * 0.3;
+    if (st.rock && st.rock.center) s += st.rock.center.x * 0.11 + st.rock.center.y * 0.13 + st.rock.center.z * 0.17;
+    for (let k = 0; k < SIG_BONES.length; k++) { const e = B[SIG_BONES[k]].matrixWorld.elements; s += (e[0] * 1.1 + e[5] * 1.3 + e[10] * 1.7 + e[12] * 2.3 + e[13] * 2.9 + e[14] * 3.1 + e[4] * 0.7) * (k + 1); }
+    return s;
+  }
+  // Called by the knight's update(); also re-run automatically (via the mesh's matrix update, which
+  // happens after the bones because the cape is the last child of rig.root) whenever the pose changed.
   function update(t = 0, { seated = false, rock = null, wind = 0.3, ground = 0 } = {}) {
-    rig.root.updateMatrixWorld(true);
+    st.t = t; st.seated = seated; st.rock = rock; st.wind = wind; st.ground = ground;
+    busy = true; rig.root.updateMatrixWorld(true); busy = false;
+    compute();
+  }
+  mesh.updateMatrixWorld = function (force) {
+    THREE.Mesh.prototype.updateMatrixWorld.call(this, force);
+    if (busy) return;
+    const sg = signature();
+    if (sg !== lastSig) compute();
+  };
+  function compute() {
+    lastSig = signature();
+    const { t, seated, rock, wind, ground } = st;
     caps.forEach((c, k) => inv[k].copy(B[c.bone].matrixWorld).invert());
     B.chest.getWorldQuaternion(chestQ);
     // "back" = chest -Z flattened to horizontal; side = chest +X
@@ -148,14 +174,14 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
       const rootPos = new THREE.Vector3().setFromMatrixPosition(rig.root.matrixWorld);
       rk = {
         center: rock?.center ? rock.center.clone() : rootPos.clone().add(new THREE.Vector3(0, 0.48, 0)),
-        rTop: rock?.rTop ?? 0.31, rBottom: rock?.rBottom ?? 0.44, depth: rock?.depth ?? 0.95, pad: 0.012, round: 0.07, ground,
+        rTop: rock?.rTop ?? 0.36, rBottom: rock?.rBottom ?? 0.48, depth: rock?.depth ?? 0.95, pad: rock?.pad ?? 0.024, round: rock?.round ?? 0.1, ground,
       };
     }
     const seg = (i) => colLen[i] / ROWS;
     // row 0 = anchors
     for (let i = 0; i < COLS; i++) {
       P[i].copy(anchors[i]).applyMatrix4(B.chest.matrixWorld);
-      prevDir[i].set(0, -1, 0).addScaledVector(back, 0.35).normalize();
+      prevDir[i].set(0, -1, 0).addScaledVector(back, 0.12).normalize();
     }
     const restW = [];
     for (let j = 1; j <= ROWS; j++) {
@@ -166,7 +192,7 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
         const prev = P[(j - 1) * COLS + i];
         const gust = wind * (0.05 + 0.05 * noise1(t * 0.9 + i * 0.21 + j * 0.05)) + 0.025 * noise1(t * 0.6 + i * 0.37 + 11);
         dir.set(0, -1, 0)
-          .addScaledVector(back, 0.12 + gust * (0.6 + v))
+          .addScaledVector(back, 0.03 + gust * (0.6 + v))
           .addScaledVector(side, u * spread * 0.22)
           .normalize();
         dir.lerp(prevDir[i], seated ? 0.55 : 0.35).normalize();
@@ -179,7 +205,7 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
         prevDir[i].subVectors(p, prev).normalize();
       }
       // lateral relaxation: neighbours no further apart than their rest spacing (allows folds, no stretch)
-      const maxW = (0.33 + 0.62 * v) / (COLS - 1);
+      const maxW = (0.6 + 0.5 * v) / (COLS - 1);
       for (let it = 0; it < 2; it++) for (let i = 0; i < COLS - 1; i++) {
         const a = P[j * COLS + i], b = P[j * COLS + i + 1];
         tmp.subVectors(b, a); const d = tmp.length();
@@ -198,10 +224,13 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
         nrm.crossVectors(du, dv).normalize();
         if (nrm.dot(back) < 0) nrm.negate();
         const u = (i / (COLS - 1)) * 2 - 1;
-        const fold = 0.5 + 0.5 * Math.sin(u * Math.PI * 3.2 + 0.7 + 0.4 * noise1(t * 0.5 + i * 0.3));
-        const amp = 0.028 * Math.pow(v, 0.8) * (seated ? 0.8 : 1);
+        const fold = 0.5 + 0.5 * Math.sin(u * Math.PI * 3.6 + 0.7 + 0.4 * noise1(t * 0.5 + i * 0.3));
+        const amp = 0.045 * Math.pow(v, 0.6) * (seated ? 0.8 : 1);
         tmp.copy(P[k]).addScaledVector(nrm, amp * fold);
         P[k].copy(tmp);
+        // fold shading (valleys darker) so the drape reads even in flat light
+        const sh = 0.45 + 0.55 * Math.pow(fold, 0.7) * Math.min(1, v * 3) + 0.55 * (1 - Math.min(1, v * 3));
+        colA[k * 3] = colA[k * 3 + 1] = colA[k * 3 + 2] = sh;
         if (P[k].y < ground + 0.01) P[k].y = ground + 0.01;
       }
     }
@@ -210,8 +239,9 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
     const pa = geo.attributes.position;
     for (let k = 0; k < P.length; k++) { tmp.copy(P[k]).applyMatrix4(invRoot); pa.setXYZ(k, tmp.x, tmp.y, tmp.z); }
     pa.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
   }
-  return { mesh, update, anchors, tris: idx.length / 3 };
+  return { mesh, update, compute, anchors, tris: idx.length / 3 };
 }

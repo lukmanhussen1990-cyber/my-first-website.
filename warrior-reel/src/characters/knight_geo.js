@@ -10,10 +10,10 @@ export const UVS = 1 / 0.72;
 
 // Palette: color (sRGB hex), sel = atlas channel weights [steel grime, leather, mail], metal, rough.
 export const PAL = {
-  steel: { color: 0xc2c6cc, sel: [1, 0, 0], metal: 0.86, rough: 0.36 },
-  steelD: { color: 0x989ea7, sel: [1, 0, 0], metal: 0.86, rough: 0.42 },
-  rim: { color: 0xd6dade, sel: [1, 0, 0], metal: 0.9, rough: 0.28 },
-  rivet: { color: 0xdfe2e6, sel: [1, 0, 0], metal: 0.9, rough: 0.26 },
+  steel: { color: 0x878c94, sel: [1, 0, 0], metal: 0.78, rough: 0.45 },
+  steelD: { color: 0x6c7178, sel: [1, 0, 0], metal: 0.78, rough: 0.5 },
+  rim: { color: 0x959aa1, sel: [1, 0, 0], metal: 0.82, rough: 0.38 },
+  rivet: { color: 0xc4c8cd, sel: [1, 0, 0], metal: 0.88, rough: 0.3 },
   leather: { color: 0x6f4527, sel: [0, 1, 0], metal: 0.0, rough: 0.68 },
   strap: { color: 0x5a371e, sel: [0, 1, 0], metal: 0.0, rough: 0.64 },
   glove: { color: 0x3e332c, sel: [0, 1, 0], metal: 0.0, rough: 0.62 },
@@ -49,7 +49,7 @@ export function knightAtlas() {
     const i = y * N + x;
     const blot = vn(x, y), blot2 = vn(x * 2 + 17, y * 2 + 5);
     // steel: pixel dither + grime blotches
-    R[i] = 1.0 + (r() - 0.5) * 0.13 - 0.22 * Math.max(0, blot - 0.52) * 2.2 - 0.08 * Math.max(0, blot2 - 0.6) * 2.5;
+    R[i] = 1.04 + (r() - 0.5) * 0.2 - 0.34 * Math.max(0, blot - 0.45) * 2.0 - 0.12 * Math.max(0, blot2 - 0.55) * 2.5 + (r() < 0.05 ? -0.14 : 0);
     // leather: coarser dither + soft streaks
     Gc[i] = 1.0 + (r() - 0.5) * 0.2 + 0.07 * Math.sin(y * 0.8 + blot * 6) - 0.12 * Math.max(0, blot2 - 0.55);
     // mail: staggered ring cells (4x4)
@@ -162,8 +162,8 @@ export function shellGeo(o) {
       const th = th0 + (th1 - th0) * (i / nU);
       let s = Math.sin(th), c = Math.cos(th);
       if (pr.sq && pr.sq !== 2) { const e = 2 / pr.sq; s = Math.sign(s) * Math.pow(Math.abs(s), e); c = Math.sign(c) * Math.pow(Math.abs(c), e); }
-      const rz = c >= 0 ? (pr.rzF ?? pr.rz) : (pr.rzB ?? pr.rz);
-      const rx = s >= 0 ? (pr.rxL ?? pr.rx) : (pr.rxR ?? pr.rx);
+      const rz = c >= 0 ? (pr.rzF ?? pr.rz ?? pr.rzB) : (pr.rzB ?? pr.rz ?? pr.rzF);
+      const rx = s >= 0 ? (pr.rxL ?? pr.rx ?? pr.rxR) : (pr.rxR ?? pr.rx ?? pr.rxL);
       const p = new THREE.Vector3((pr.cx || 0) + rx * s, pr.y, (pr.cz || 0) + rz * c);
       if (o.disp) { const d = o.disp(th, t, p); p.x += Math.sin(th) * d; p.z += Math.cos(th) * d; }
       if (o.warp) o.warp(p, th, t);
@@ -173,7 +173,7 @@ export function shellGeo(o) {
     rows.push(row); rads.push(rad);
   }
   const W = nU + 1, pos = new Float32Array(W * (nV + 1) * 3), shade = new Float32Array(W * (nV + 1));
-  const aoT = o.aoTop ?? 0.12, aoB = o.aoBot ?? 0.0, aoW = o.aoW ?? 0.3;
+  const aoT = (o.aoTop ?? 0.12) * 1.5, aoB = (o.aoBot ?? 0.0) * 1.5, aoW = o.aoW ?? 0.35;
   for (let j = 0; j <= nV; j++) for (let i = 0; i <= nU; i++) {
     const k = j * W + i, p = rows[j][i];
     pos[k * 3] = p.x; pos[k * 3 + 1] = p.y; pos[k * 3 + 2] = p.z;
@@ -275,7 +275,7 @@ export class Kit {
   // shell + optional rims in one call
   shell(parent, o, spec = PAL.steel, { rim = 0.0055, edges = 'all', rimSpec = PAL.rim, matrix = null } = {}) {
     const g = shellGeo(o);
-    const rims = rim > 0 ? shellRims(g, rim, edges) : [];
+    const rims = rim > 0 ? shellRims(g, rim * (this.rimScale || 1), edges) : [];
     if (matrix) { g.applyMatrix4(matrix); rims.forEach((r) => r.applyMatrix4(matrix)); }
     this.add(parent, g, spec);
     for (const r of rims) this.add(parent, r, rimSpec);
@@ -318,8 +318,8 @@ export function shellPoint(o, th, t) {
   const pr = o.prof(t);
   let s = Math.sin(th), c = Math.cos(th);
   if (pr.sq && pr.sq !== 2) { const e = 2 / pr.sq; s = Math.sign(s) * Math.pow(Math.abs(s), e); c = Math.sign(c) * Math.pow(Math.abs(c), e); }
-  const rz = c >= 0 ? (pr.rzF ?? pr.rz) : (pr.rzB ?? pr.rz);
-  const rx = s >= 0 ? (pr.rxL ?? pr.rx) : (pr.rxR ?? pr.rx);
+  const rz = c >= 0 ? (pr.rzF ?? pr.rz ?? pr.rzB) : (pr.rzB ?? pr.rz ?? pr.rzF);
+  const rx = s >= 0 ? (pr.rxL ?? pr.rx ?? pr.rxR) : (pr.rxR ?? pr.rx ?? pr.rxL);
   const p = new THREE.Vector3((pr.cx || 0) + rx * s, pr.y, (pr.cz || 0) + rz * c);
   if (o.disp) { const d = o.disp(th, t, p); p.x += Math.sin(th) * d; p.z += Math.cos(th) * d; }
   if (o.warp) o.warp(p, th, t);
@@ -333,8 +333,8 @@ function shellPointRaw(o, th, t) {
   const pr = o.prof(t);
   let s = Math.sin(th), c = Math.cos(th);
   if (pr.sq && pr.sq !== 2) { const e = 2 / pr.sq; s = Math.sign(s) * Math.pow(Math.abs(s), e); c = Math.sign(c) * Math.pow(Math.abs(c), e); }
-  const rz = c >= 0 ? (pr.rzF ?? pr.rz) : (pr.rzB ?? pr.rz);
-  const rx = s >= 0 ? (pr.rxL ?? pr.rx) : (pr.rxR ?? pr.rx);
+  const rz = c >= 0 ? (pr.rzF ?? pr.rz ?? pr.rzB) : (pr.rzB ?? pr.rz ?? pr.rzF);
+  const rx = s >= 0 ? (pr.rxL ?? pr.rx ?? pr.rxR) : (pr.rxR ?? pr.rx ?? pr.rxL);
   const p = new THREE.Vector3((pr.cx || 0) + rx * s, pr.y, (pr.cz || 0) + rz * c);
   if (o.disp) { const d = o.disp(th, t, p); p.x += Math.sin(th) * d; p.z += Math.cos(th) * d; }
   if (o.warp) o.warp(p, th, t);

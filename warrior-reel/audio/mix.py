@@ -3,14 +3,18 @@
 Signal flow (all 48 kHz float, pre-master domain where every dialogue line is
 normalised to dialogue.LINE_LUFS):
 
-  dialogue_JESUS, dialogue_KNIGHT  ------------------------------+
-  music (score.py) --- x MUSIC gain --- duck (-DUCK_DB under speech) ---+--> sum --> master gain --> TP limiter --> mix.wav
-  river + birds (ambience.py) --- levels/automation --- duck (-AMB_DUCK_DB) --+
-  foley (foley.py) -----------------------------------------------+
+  dialogue_JESUS, dialogue_KNIGHT ------------------------------------------+
+  music (score.py) -> level -> 2-band duck (-9 dB >200 Hz, -4 dB below) -----+
+  river + birds (ambience.py) -> levels/automation -> duck (-3.5 dB) --------+-> sum -> master gain -> TP limiter -> mix.wav
+  foley (foley.py) ---------------------------------------------------------+
+  (+ dialogue protection: if a line's speech-band dialogue/background ratio is
+     < SB_MIN, the music+ambience beds get an extra smooth dip over that line)
 
-Stems in out/audio/stems/ are the post-fader, post-duck signals times the
-master gain (they sum to mix.wav before the limiter).  out/audio/music.wav is
-the score alone, un-ducked, at the same scale.
+The sidechain is the summed dialogue stems (30 ms RMS, gaps < 0.35 s bridged,
+150 ms look-ahead, 50 ms attack / 450 ms release).  Stems in out/audio/stems/
+are the post-fader, post-duck signals times the master gain (they sum to
+mix.wav before the limiter).  out/audio/music.wav is the score alone,
+un-ducked, at the same scale.
 """
 import json
 import os
@@ -18,22 +22,23 @@ import os
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
-from common import (SR, OUT, STEMS, BUILD, n_total, timeline, write, stereo, lufs, true_peak_db,
+from common import (SR, OUT, STEMS, n_total, timeline, write, stereo, lufs, true_peak_db,
                     sample_peak_db, tp_limiter, frame_rms, ar_smooth, control_to_audio, undb, curve,
-                    fade, short_term_lufs, ensure_dirs, HOP)
+                    fade, short_term_lufs, ensure_dirs, HOP, lpf, hpf, bpf)
 import dialogue
 import score
 import ambience
 import foley
 
 TARGET_LUFS = -14.0
-CEILING_DBTP = -1.5          # limiter ceiling (spec: <= -1 dBTP; margin for the AAC encode)
-DUCK_DB = 9.0                # music under speech
-AMB_DUCK_DB = 3.0            # ambience under speech
+CEILING_DBTP = -2.0          # limiter ceiling (spec: <= -1 dBTP; margin so the AAC encode stays <= -1)
+DUCK_DB = 9.0                # music under speech (above the 200 Hz crossover)
+DUCK_LOW_DB = 4.0            # music below 200 Hz (keeps the cello/bass foundation under dialogue)
+AMB_DUCK_DB = 3.5            # ambience under speech
 MUSIC_LUFS = dialogue.LINE_LUFS - 7.0     # un-ducked score, integrated (pre-master)
 RIVER_LUFS = dialogue.LINE_LUFS - 15.0    # un-ducked river bed (=> ~-30 LUFS under dialogue after master)
 BIRDS_LUFS = dialogue.LINE_LUFS - 22.0
-SB_MIN = 15.5               # dialogue-protection: min dialogue/background ratio per line (LU)
+SB_MIN = 14.0               # dialogue protection: min dialogue/background ratio per line (LU, 250 Hz-5 kHz)
 
 
 def speech_activity(tracks, N, lookahead=0.15, attack=0.05, release=0.45, bridge=0.35):
@@ -51,6 +56,10 @@ def speech_activity(tracks, N, lookahead=0.15, attack=0.05, release=0.45, bridge
     a = maximum_filter1d(a, size=la + 1, origin=-(la // 2), mode="nearest")
     a = ar_smooth(a, attack=attack, release=release)
     return np.clip(control_to_audio(a, N), 0.0, 1.0)
+
+
+def speech_band(x):
+    return bpf(x, 250.0, 5000.0, 2)
 
 
 def window(N, t0, t1, ramp):
@@ -81,8 +90,10 @@ def main():
     music, layers = score.build(tl)
     m_l = lufs(music)
     music = music * undb(MUSIC_LUFS - m_l)
-    duck = undb(-DUCK_DB * act)[:, None]
-    music_d = music * duck
+    # two-band duck: Linkwitz-Riley (LR4) split at 200 Hz, speech band ducked DUCK_DB
+    m_lo = lpf(lpf(music, 200.0, 2), 200.0, 2)
+    m_hi = hpf(hpf(music, 200.0, 2), 200.0, 2)
+    music_d = m_lo * undb(-DUCK_LOW_DB * act)[:, None] + m_hi * undb(-DUCK_DB * act)[:, None]
 
     # ---------------------------------------------------------------- ambience
     print("[audio] ambience ...")
@@ -90,7 +101,7 @@ def main():
     river = amb["river"] * undb(RIVER_LUFS - lufs(amb["river"]))
     birds = amb["birds"] * undb(BIRDS_LUFS - lufs(amb["birds"]))
     est, gold, card = B["establishStart"], B["goldenStart"], B["endCardStart"]
-    river *= curve(N, [(0, 0.0), (est, 0.0), (gold, 0.0), (gold + 2.0, -1.0), (card, -1.5),
+    river *= curve(N, [(0, -2.0), (est - 0.5, -2.0), (est + 1.0, 0.0), (gold, 0.0), (gold + 2.0, -1.0), (card, -1.5),
                        (END - 2.5, -2.0), (END, -2.0)])[:, None]
     birds *= curve(N, [(0, -60.0), (est - 0.6, -30.0), (est + 2.0, 0.0), (gold, 0.0), (gold + 2.0, 2.5),
                        (card, 2.0), (END, 2.0)])[:, None]
@@ -102,8 +113,8 @@ def main():
     fol, events = foley.build(tl)
 
     # ---------------------------------------------------------------- dialogue protection
-    # Any line whose dialogue/background ratio is below SB_MIN gets an extra, smoothly
-    # ramped music dip over its speech span (max 6 dB).  Deterministic, iterated.
+    # Any line whose speech-band dialogue/background ratio is below SB_MIN gets an extra,
+    # smoothly ramped dip of the music + ambience beds over its speech span (max 6 dB).
     dJ, dK = stereo(tracks["JESUS"]), stereo(tracks["KNIGHT"])
     dsum = dJ + dK
     extra_db = np.zeros(N)
@@ -111,9 +122,10 @@ def main():
     for c in tl["cues"]:
         a, b = int(c["speechStart"] * SR), int(c["speechEnd"] * SR)
         add = 0.0
+        ds = speech_band(dsum[a:b])
         for _ in range(4):
-            bg = music_d[a:b] * undb(extra_db[a:b])[:, None] + amb_d[a:b] + fol[a:b]
-            sb = lufs(dsum[a:b]) - lufs(bg)
+            bg = (music_d[a:b] + amb_d[a:b]) * undb(extra_db[a:b])[:, None] + fol[a:b]
+            sb = lufs(ds) - lufs(speech_band(bg))
             if sb >= SB_MIN or add >= 6.0:
                 break
             step = min(6.0 - add, SB_MIN - sb + 0.3)
@@ -123,6 +135,7 @@ def main():
         if add > 0:
             protect.append((c["id"], round(add, 1)))
     music_d = music_d * undb(extra_db)[:, None]
+    amb_d = amb_d * undb(extra_db)[:, None]
 
     # ---------------------------------------------------------------- master
     pre = music_d + amb_d + fol + dJ + dK
@@ -173,10 +186,13 @@ def main():
         d = (dJ + dK)[a:b] * G
         per_line.append({"id": c["id"], "speaker": c["speaker"], "src_lufs": None,
                          "dialogue_lufs": round(lufs(d), 2), "background_lufs": round(lufs(bg[a:b]), 2),
-                         "snr_lu": round(lufs(d) - lufs(bg[a:b]), 1)})
+                         "snr_lu": round(lufs(d) - lufs(bg[a:b]), 1),
+                         "snr_speechband_lu": round(lufs(speech_band(d)) - lufs(speech_band(bg[a:b])), 1)})
     for pl, ln in zip(per_line, lines):
         pl["src_lufs"] = ln["src_lufs"]
         pl["comp_max_db"] = ln["max_comp_db"]
+        pl["comp_mean_db"] = ln["mean_comp_db"]
+        pl["peak_lim_db"] = ln["peak_lim_db"]
         pl["gap_expansion_median_db"] = ln["gap_reduction_db"]
     rep["dialogue_lines"] = per_line
     t, st = short_term_lufs(mix)
@@ -192,7 +208,13 @@ def main():
         i = int(np.argmin(np.abs(m_t - (B[name] + 1.5))))
         beats_music[name] = round(float(m_st[i]), 1)
     rep["music_short_term_lufs_at_beats(+1.5s)"] = beats_music
-    rep["dialogue_protection_extra_music_dip_db"] = dict(protect)
+    # beds under dialogue vs. in wordless stretches (speech activity from the sidechain)
+    sp = act > 0.5
+    beds = {}
+    for name, x in (("music", music_d * G), ("ambience", amb_d * G)):
+        beds[name] = {"under_dialogue_lufs": round(lufs(x[sp]), 1), "wordless_lufs": round(lufs(x[~sp]), 1)}
+    rep["beds"] = beds
+    rep["dialogue_protection_extra_bed_dip_db"] = dict(protect)
     rep["foley_events"] = [{"event": e[0], "t": e[1], "level_db": e[2]} for e in events]
     with open(os.path.join(OUT, "report.json"), "w") as f:
         json.dump(rep, f, indent=1)
@@ -213,16 +235,18 @@ def write_text_report(rep):
         L.append(f"{k:34s} {v['lufs_i']:8.2f} {v['true_peak_dbtp']:7.2f} {v['sample_peak_dbfs']:10.2f}")
     L.append(f"mix short-term max {rep['short_term_mix_lufs']['max']} LUFS, LRA ~{rep['lra_lu']} LU")
     L.append("")
-    L.append("dialogue lines (speech span): dialogue LUFS vs. music+ambience+foley LUFS")
+    L.append("dialogue lines (speech span): dialogue LUFS vs. music+ambience+foley LUFS; S/B broadband and 250 Hz-5 kHz")
     for d in rep["dialogue_lines"]:
         L.append(f"  {d['id']} {d['speaker']:6s} src {d['src_lufs']:7.2f} -> {d['dialogue_lufs']:7.2f} LUFS | "
-                 f"bg {d['background_lufs']:7.2f} | S/B {d['snr_lu']:5.1f} LU | comp {d['comp_max_db']} dB | "
+                 f"bg {d['background_lufs']:7.2f} | S/B {d['snr_lu']:5.1f} LU ({d['snr_speechband_lu']:4.1f} speech band) | comp {d['comp_mean_db']}/{d['comp_max_db']} dB (mean/max), lim {d['peak_lim_db']} dB | "
                  f"gap exp {d['gap_expansion_median_db']} dB")
     L.append("")
+    L.append("beds (LUFS-I over speech-active vs. wordless samples): " + "; ".join(
+        f"{k} {v['under_dialogue_lufs']} under dialogue / {v['wordless_lufs']} wordless" for k, v in rep["beds"].items()))
     L.append("music short-term LUFS 1.5 s after beats: " +
              ", ".join(f"{k} {v}" for k, v in rep["music_short_term_lufs_at_beats(+1.5s)"].items()))
-    L.append("extra music dip for dialogue protection: " + (", ".join(f"{k} {v} dB" for k, v in
-             rep["dialogue_protection_extra_music_dip_db"].items()) or "none"))
+    L.append("extra music+ambience dip for dialogue protection: " + (", ".join(f"{k} {v} dB" for k, v in
+             rep["dialogue_protection_extra_bed_dip_db"].items()) or "none"))
     L.append("foley events: " + "; ".join(f"{e['event']} @{e['t']}s" for e in rep["foley_events"]))
     with open(os.path.join(OUT, "report.txt"), "w") as f:
         f.write("\n".join(L) + "\n")

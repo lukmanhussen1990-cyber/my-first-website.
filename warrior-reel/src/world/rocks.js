@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { rng, smoothstep, clamp } from '../core/util.js';
 import { flatten, boxUV, faceColors, noise2, hash2 } from './wutil.js';
 import { rockTexture } from './textures.js';
+import { litMaterial } from './litmat.js';
 
 // rings: [y, radiusScale]; rx/rz = base radii (front = +z, back = -z), top = seat height.
 function ringRock({ seed, rx, rzF, rzB, top, rings, seg = 11, jitter = 0.08, topR = 0.5, tilt = 0 }) {
@@ -63,7 +64,7 @@ function paintRock(geo, { seed, base, light, tint, moss, mossAmt, top }) {
 
 export function buildSeats() {
   const tex = rockTexture(21, 0.14);
-  const mat = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, flatShading: true });
+  const mat = litMaterial({ map: tex, vertexColors: true });
 
   // Knight: tall rounded boulder, ~0.95 m wide at the base, ~0.75 m mid, flat seat top at y = 0.48.
   let gk = ringRock({

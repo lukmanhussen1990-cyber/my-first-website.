@@ -9,7 +9,7 @@ import os
 
 import numpy as np
 
-from common import SR, load, path, n_total, hpf, lpf, eq, bpf, timeline, fade
+from common import SR, load, path, n_total, hpf, lpf, eq, bpf, timeline
 
 RIVER = "audio/sfx/river_loop.mp3"
 BIRDS = "audio/sfx/birds.mp3"
@@ -85,8 +85,9 @@ def build(tl=None):
         birds = xfade_loop(load(path(BIRDS), 2), N, xfade=1.0, offset=2.5)
     else:
         birds = synth_birds(N)
-    # river: keep the low end clean, give the dialogue band a little room
-    river = eq(hpf(river, 70.0, 2), ("peak", 2500.0, -2.0, 0.8), ("highshelf", 9000.0, -1.5, 0.7))
+    # river: keep the low end clean and carve a wide pocket for the voices (1-3 kHz);
+    # a little extra top keeps it sounding wet and sparkling rather than dull
+    river = eq(hpf(river, 70.0, 2), ("peak", 1400.0, -4.5, 0.55), ("highshelf", 6000.0, 2.0, 0.7))
     # birds: remove the breeze rumble, keep the chirps airy
     birds = lpf(hpf(birds, 300.0, 3), 15000.0, 2)
     return {"river": river, "birds": birds}

@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { pixelTexture, rng, clamp } from '../core/util.js';
 
 const hex = (c) => '#' + c.getHexString();
+// util.pixelTexture defaults to anisotropy 4 + trilinear mips, which is very expensive in SwiftShader;
+// the world uses cheap nearest-mipmap-nearest sampling (still crisp texels up close).
+function cheap(tex, aniso = 1) { tex.anisotropy = aniso; tex.minFilter = THREE.NearestMipmapNearestFilter; return tex; }
 const C = (h) => new THREE.Color(h);
 
 // HSL-jittered pixel of `base` (sRGB hex number).
@@ -14,7 +17,7 @@ function px(ctx, x, y, col, s) { ctx.fillStyle = typeof col === 'string' ? col :
 
 // Grass: near-white warm dither (multiplied by terrain vertex colour) with blade marks.
 export function grassTexture() {
-  return pixelTexture(64, (ctx, s, r) => {
+  return cheap(pixelTexture(64, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const v = 0.86 + r() * 0.12;
       const c = new THREE.Color().setRGB(v * (0.98 + r() * 0.04), v, v * (0.9 + r() * 0.08), THREE.SRGBColorSpace);
@@ -29,12 +32,12 @@ export function grassTexture() {
     }
     // a few tiny yellow / white specks (flower pixels)
     for (let i = 0; i < 10; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), r() < 0.5 ? '#fff6a8' : '#ffffff', s);
-  }, { seed: 11 });
+  }, { seed: 11 }));
 }
 
 // Mossy rock: purple-grey dither with darker cracks and green moss pixels.
 export function rockTexture(seed = 21, moss = 0.12) {
-  return pixelTexture(48, (ctx, s, r) => {
+  return cheap(pixelTexture(48, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const v = 0.82 + r() * 0.18;
       const c = new THREE.Color().setRGB(v, v * (0.97 + r() * 0.03), v * (1.0 + r() * 0.04), THREE.SRGBColorSpace);
@@ -55,24 +58,24 @@ export function rockTexture(seed = 21, moss = 0.12) {
       if (r() < 0.6) px(ctx, x + 1, y, g, s);
       if (r() < 0.4) px(ctx, x, y + 1, greens[Math.floor(r() * greens.length)], s);
     }
-  }, { seed });
+  }, { seed }));
 }
 
 // Dark river / shore stones: near-black with grey and blue-grey speckles.
 export function stoneTexture() {
-  return pixelTexture(32, (ctx, s, r) => {
+  return cheap(pixelTexture(32, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const v = 0.55 + r() * 0.25;
       px(ctx, x, y, new THREE.Color().setRGB(v, v, v * 1.06, THREE.SRGBColorSpace), s);
     }
     for (let i = 0; i < 60; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), r() < 0.5 ? '#ffffff' : '#c9d2de', s);
     for (let i = 0; i < 30; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#404040', s);
-  }, { seed: 33 });
+  }, { seed: 33 }));
 }
 
 // Leaf voxel: grey-white dither (multiplied by per-instance colour) with darker leaf spots + highlights.
 export function leafTexture() {
-  return pixelTexture(16, (ctx, s, r) => {
+  return cheap(pixelTexture(16, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const v = 0.86 + r() * 0.14;
       px(ctx, x, y, new THREE.Color().setRGB(v, v, v * 0.97, THREE.SRGBColorSpace), s);
@@ -82,12 +85,12 @@ export function leafTexture() {
       px(ctx, x, y, '#b4ae9e', s); if (r() < 0.5) px(ctx, x + 1, y, '#c2bcae', s); if (r() < 0.3) px(ctx, x, y + 1, '#c2bcae', s);
     }
     for (let i = 0; i < 16; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#ffffff', s);
-  }, { seed: 44 });
+  }, { seed: 44 }));
 }
 
 // Bark: vertical streaks, grey-brown with a lavender cast (like the reference tree).
 export function barkTexture() {
-  return pixelTexture(16, (ctx, s, r) => {
+  return cheap(pixelTexture(16, (ctx, s, r) => {
     for (let x = 0; x < s; x++) {
       const colV = 0.82 + r() * 0.16;
       for (let y = 0; y < s; y++) {
@@ -100,12 +103,12 @@ export function barkTexture() {
       for (let k = 0; k < n; k++) px(ctx, x, y + k, '#8f8780', s);
     }
     for (let i = 0; i < 8; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#f2ece6', s);
-  }, { seed: 55 });
+  }, { seed: 55 }));
 }
 
 // Castle stone bricks: grey blocks, offset rows, dark mortar, a little moss.
 export function brickTexture() {
-  return pixelTexture(32, (ctx, s, r) => {
+  return cheap(pixelTexture(32, (ctx, s, r) => {
     ctx.fillStyle = '#5d5a62'; ctx.fillRect(0, 0, s, s);
     const bh = 4, bw = 8;
     for (let row = 0; row < s / bh; row++) {
@@ -119,24 +122,24 @@ export function brickTexture() {
       }
     }
     for (let i = 0; i < 14; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#6f8f4a', s);
-  }, { seed: 66 });
+  }, { seed: 66 }));
 }
 
 // Roof shingles: plum/slate rows.
 export function roofTexture() {
-  return pixelTexture(16, (ctx, s, r) => {
+  return cheap(pixelTexture(16, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const row = Math.floor(y / 2);
       const edge = y % 2 === 0;
       const v = (edge ? 0.62 : 0.86) + r() * 0.12 + ((x + row * 2) % 4 === 0 ? -0.1 : 0);
       px(ctx, x, y, new THREE.Color().setRGB(v, v * 0.95, v * 1.02, THREE.SRGBColorSpace), s);
     }
-  }, { seed: 77 });
+  }, { seed: 77 }));
 }
 
 // Water: bright cyan with lighter flow streaks and a few white glints (scrolled in the shader).
 export function waterTexture() {
-  return pixelTexture(32, (ctx, s, r) => {
+  return cheap(pixelTexture(32, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
       const c = jit(0x37d3ee, r, 0.025, 0.01);
       px(ctx, x, y, c, s);
@@ -150,7 +153,7 @@ export function waterTexture() {
       const x = Math.floor(r() * s), y = Math.floor(r() * s), n = 2 + Math.floor(r() * 4);
       for (let k = 0; k < n; k++) px(ctx, x + k, y, '#22b9dc', s);
     }
-  }, { seed: 88 });
+  }, { seed: 88 }));
 }
 
 // Pixel cloud: soft elongated puff with quantised alpha (stair-stepped edges like the reference).

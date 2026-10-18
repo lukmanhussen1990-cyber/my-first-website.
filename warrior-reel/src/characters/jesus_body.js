@@ -22,20 +22,21 @@ const COLLAR_Y = 1.532;
 // Robe surface (rest pose, root-local)
 // ---------------------------------------------------------------------------------------------
 const PROFILE = [ // y, half width, front, back, superellipse n
-  [HEM_Y, 0.262, 0.200, 0.192, 2.0],
-  [0.30, 0.245, 0.182, 0.176, 2.0],
-  [0.52, 0.226, 0.160, 0.160, 2.0],
-  [0.74, 0.207, 0.134, 0.153, 2.05],
+  [HEM_Y, 0.258, 0.192, 0.190, 2.0],
+  [0.30, 0.240, 0.172, 0.174, 2.0],
+  [0.52, 0.218, 0.146, 0.158, 2.0],
+  [0.74, 0.204, 0.126, 0.152, 2.05],
   [0.90, 0.196, 0.120, 0.150, 2.1],
   [0.99, 0.183, 0.115, 0.139, 2.15],
   [1.06, 0.168, 0.114, 0.124, 2.2],
   [1.15, 0.162, 0.121, 0.116, 2.3],
   [1.27, 0.164, 0.132, 0.116, 2.5],
   [1.37, 0.170, 0.125, 0.113, 2.6],
-  [1.44, 0.176, 0.108, 0.106, 2.6],
-  [1.48, 0.160, 0.092, 0.094, 2.4],
-  [1.505, 0.125, 0.080, 0.084, 2.2],
-  [1.522, 0.090, 0.070, 0.075, 2.0],
+  [1.425, 0.184, 0.110, 0.107, 2.6],
+  [1.452, 0.180, 0.100, 0.100, 2.5],
+  [1.474, 0.158, 0.090, 0.092, 2.3],
+  [1.497, 0.122, 0.081, 0.085, 2.2],
+  [1.518, 0.090, 0.071, 0.076, 2.0],
   [COLLAR_Y, 0.068, 0.062, 0.067, 2.0],
 ];
 const PA = makeTable(PROFILE.map((r) => [r[0], r[1]]));
@@ -45,12 +46,24 @@ const PN = makeTable(PROFILE.map((r) => [r[0], r[4]]));
 const sp = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
 
 function foldAmt(y) {
-  return 0.052 * smoothstep(1.0, 0.18, y) + 0.006 * smoothstep(1.0, 1.25, y) * smoothstep(1.45, 1.3, y);
+  return 0.064 * smoothstep(1.0, 0.18, y) + 0.018 * smoothstep(0.95, 1.08, y) * smoothstep(1.42, 1.2, y);
 }
 function folds(th, y) {
+  const skirt = smoothstep(1.05, 0.9, y);
   const a = 0.55 * Math.sin(10 * th + 0.4 + 0.5 * Math.sin(y * 3.1)) + 0.3 * Math.sin(17 * th + 1.3 - y * 2) + 0.15 * Math.sin(27 * th + y * 4);
-  // fewer folds straight down the front of the torso
-  return a;
+  // torso: soft diagonal drape folds pulled toward the knot at the left hip
+  const b = 0.6 * Math.sin(9 * th - (y - 1.0) * 26) + 0.4 * Math.sin(15 * th - (y - 1.0) * 38 + 1.7);
+  return lerp(b, a, skirt);
+}
+function robeShade(th, y, inner) {
+  // fake occlusion / fold-valley darkening baked as vertex colour
+  const f = folds(th, y) * Math.min(1, foldAmt(y) / 0.03);
+  let k = 1 - 0.26 * Math.max(0, -f) + 0.04 * Math.max(0, f);
+  k *= lerp(0.84, 1, smoothstep(HEM_Y, 0.5, y));                                   // ground occlusion near the hem
+  const side = Math.abs(Math.sin(th));
+  k *= 1 - 0.12 * smoothstep(0.75, 1.0, side) * smoothstep(1.05, 1.2, y) * smoothstep(1.46, 1.32, y); // under the arms
+  if (inner) k *= 0.72;
+  return k;
 }
 
 // Robe surface point at angle th (0 = front) and height y. folds: include cloth folds.
@@ -70,6 +83,13 @@ function robeNormal(th, y) {
   const a = robeSurf(th + e, y, false).sub(robeSurf(th - e, y, false));
   const b = robeSurf(th, Math.min(COLLAR_Y, y + e), false).sub(robeSurf(th, y - e, false));
   return new THREE.Vector3().crossVectors(a, b).normalize();
+}
+
+function setGrey(g, list) {
+  const a = new Float32Array(list.length * 3);
+  list.forEach((k, i) => { a[i * 3] = a[i * 3 + 1] = a[i * 3 + 2] = k; });
+  g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+  return g;
 }
 
 // Skin weights for robe-like cloth at a rest-pose point.
@@ -100,6 +120,7 @@ function buildRobeBody() {
   const NR = 74;
   for (let j = 0; j <= NR; j++) ys.push(lerp(HEM_Y, COLLAR_Y, j / NR));
   // rows: 0 = inner hem lip top, 1 = inner hem lip bottom, 2.. = outer surface from hem to collar
+  const shade = [];
   const rows = [{ y: HEM_Y + 0.045, k: 0.955, inner: true }, { y: HEM_Y + 0.004, k: 0.978, inner: true }, ...ys.map((y) => ({ y, k: 1 }))];
   const g = gridGeometry(NU, rows.length - 1, (u, v, i, j) => {
     const th = u * Math.PI * 2;
@@ -110,8 +131,10 @@ function buildRobeBody() {
     y += hemWob * atHem;
     const p = robeSurf(th, Math.max(HEM_Y, r.y), true);
     p.x *= r.k; p.z *= r.k; p.y = y;
+    shade.push(robeShade(th, Math.max(HEM_Y, r.y), r.inner));
     return [p.x, p.y, p.z];
   }, { uv: (u, v, p) => [u * 4, p[1] * 2.6] });
+  setGrey(g, shade);
   setAttr(g, 'aHem', (x, y) => smoothstep(0.78, HEM_Y, y));
   return g;
 }
@@ -119,23 +142,30 @@ function buildRobeBody() {
 // Sleeve: tube along the hanging arm from a dome over the shoulder to a bell cuff. side: 1 = left (+X).
 function buildSleeve(side) {
   const L = [ // d (down from shoulder joint), rx, rz
-    [-0.046, 0.0, 0.0], [-0.044, 0.022, 0.021], [-0.038, 0.040, 0.038], [-0.028, 0.054, 0.051], [-0.014, 0.063, 0.060],
-    [0.0, 0.067, 0.064], [0.06, 0.066, 0.062], [0.14, 0.063, 0.059], [0.22, 0.060, 0.057], [0.28, 0.058, 0.056],
+    [-0.014, 0.0, 0.0], [-0.0135, 0.022, 0.021], [-0.0115, 0.038, 0.037], [-0.007, 0.050, 0.049], [0.0, 0.0575, 0.056],
+    [0.012, 0.0615, 0.060], [0.06, 0.063, 0.060], [0.14, 0.061, 0.058], [0.22, 0.059, 0.056], [0.28, 0.058, 0.056],
     [0.33, 0.058, 0.056], [0.40, 0.059, 0.058], [0.46, 0.061, 0.060], [0.51, 0.065, 0.064], [0.55, 0.072, 0.071],
-    [0.58, 0.080, 0.078], [0.598, 0.085, 0.083],
+    [0.58, 0.076, 0.074], [0.598, 0.080, 0.078],
     // lip turned inside
-    [0.594, 0.078, 0.076, true], [0.565, 0.070, 0.068, true],
+    [0.594, 0.073, 0.071, true], [0.565, 0.066, 0.064, true],
   ];
   const nu = 28;
+  const shade = [];
   const g = gridGeometry(nu, L.length - 1, (u, v, i, j) => {
     const a = u * Math.PI * 2;
-    const [d, rx, rz] = L[j];
+    const [d, rx, rz, inner] = L[j];
+    const inward = Math.max(0, -Math.sin(a) * side);
+    shade.push((1 - 0.14 * inward * smoothstep(-0.02, 0.1, d)) * (inner ? 0.72 : 1) * (1 - 0.1 * smoothstep(0.5, 0.6, d) * (0.5 + 0.5 * Math.sin(a * 6 + 0.7))));
     const fold = 1 + (0.06 * smoothstep(0.42, 0.598, d) * Math.sin(a * 6 + 0.7) + 0.035 * Math.exp(-(((d - 0.30) / 0.05) ** 2)) * Math.sin(a * 5 + 2));
-    const x = side * SHOULDER.x + Math.sin(a) * rx * fold;
+    let x = side * SHOULDER.x + Math.sin(a) * rx * fold;
     const z = Math.cos(a) * rz * fold + 0.004;
     const wob = d > 0.56 ? 0.008 * Math.sin(a * 5 + 0.5) : 0;
-    return [x, SHOULDER.y - d - wob, z];
+    // slope the shoulder: points on the outer top of the dome are lowered
+    const outer = Math.max(0, Math.sin(a) * side);
+    const drop = 0.016 * outer * smoothstep(0.03, -0.03, d);
+    return [x, SHOULDER.y - d - wob - drop, z];
   }, { flip: false, uv: (u, v) => [u * 1.6, v * 1.7], poleNormals: [[0, [0, 1, 0]]] });
+  setGrey(g, shade);
   // winding: u goes from +Z toward +X (outward for left side); rows go downward -> flip for consistency
   const idx = g.index.array;
   for (let i = 0; i < idx.length; i += 3) { const t = idx[i + 1]; idx[i + 1] = idx[i + 2]; idx[i + 2] = t; }
@@ -144,11 +174,11 @@ function buildSleeve(side) {
   setSkin(g, (x, y) => {
     const d = SHOULDER.y - y;
     const w = {};
-    const dome = smoothstep(0.03, -0.02, d);
+    const dome = smoothstep(0.07, -0.03, d);
     const fa = smoothstep(0.25, 0.36, d);
-    w[BI['upperArm' + s]] = (1 - fa) * (1 - dome * 0.45);
-    w[BI['shoulder' + s]] = dome * 0.3;
-    w[BI.chest] = dome * 0.15;
+    w[BI['upperArm' + s]] = (1 - fa) * (1 - dome * 0.7);
+    w[BI['shoulder' + s]] = dome * 0.4;
+    w[BI.chest] = dome * 0.3;
     w[BI['foreArm' + s]] = fa;
     return w;
   });
@@ -161,6 +191,7 @@ function buildCollar() {
   g.rotateX(Math.PI / 2);
   g.scale(0.069, 0.065, 0.066);
   g.translate(0, COLLAR_Y - 0.002, 0.0);
+  setColor(g, '#e8e2d8');
   setSkin(g, () => ({ [BI.chest]: 1 }));
   setAttr(g, 'aHem', () => 0);
   return g;
@@ -287,35 +318,37 @@ function capsuleSeg(r0, r1, L) {
 
 function buildHandGeo(curl, side) {
   const parts = [];
-  const palm = superEllipsoid([0.0405, 0.050, 0.0142], [0, -0.052, 0.0005], { e1: 0.5, e2: 0.62, wSeg: 18, hSeg: 12 });
-  // thicker at the wrist, thinner toward the knuckles
+  // palm: rounded slab, thicker at the heel of the hand, knuckle ridge at the end
+  const palm = superEllipsoid([0.0385, 0.049, 0.0135], [0, -0.053, 0.0], { e1: 0.62, e2: 0.78, wSeg: 22, hSeg: 14 });
   const pp = palm.attributes.position;
   for (let i = 0; i < pp.count; i++) {
-    const y = pp.getY(i);
+    const x = pp.getX(i), y = pp.getY(i), z = pp.getZ(i);
     const t = smoothstep(-0.005, -0.1, y);
-    pp.setZ(i, pp.getZ(i) * lerp(1.1, 0.85, t));
-    pp.setX(i, pp.getX(i) * lerp(0.82, 1.0, smoothstep(0.0, -0.05, y)));
+    let nz = z * lerp(1.12, 0.86, t);
+    if (z > 0) nz += 0.003 * Math.exp(-(((x + 0.012) / 0.02) ** 2 + ((y + 0.07) / 0.02) ** 2)); // hypothenar pad
+    if (z < 0) nz -= 0.0025 * smoothstep(-0.085, -0.1, y);                                     // knuckles
+    pp.setXYZ(i, x * lerp(0.84, 1.0, smoothstep(0.0, -0.05, y)), y, nz);
   }
   palm.computeVertexNormals();
   parts.push(setColor(palm, SKIN_COL));
-  const thenar = superEllipsoid([0.017, 0.027, 0.012], [0.022, -0.038, 0.008], { wSeg: 12, hSeg: 8 });
+  const thenar = superEllipsoid([0.0165, 0.026, 0.0115], [0.021, -0.040, 0.0065], { wSeg: 12, hSeg: 8 });
   parts.push(setColor(thenar, SKIN_COL));
-  const wrist = loftTube([{ p: new THREE.Vector3(0, 0.03, 0), rx: 0.030, rz: 0.021 }, { p: new THREE.Vector3(0, -0.02, 0), rx: 0.034, rz: 0.019 }], 12, { capStart: true, capEnd: false });
+  const wrist = loftTube([{ p: new THREE.Vector3(0, 0.03, 0), rx: 0.029, rz: 0.020 }, { p: new THREE.Vector3(0, -0.02, 0), rx: 0.032, rz: 0.018 }], 12, { capStart: true, capEnd: false });
   parts.push(setColor(wrist, SKIN_COL));
-  const relaxed = [32, 30, 20];
+  const relaxed = [38, 46, 30];
   for (const f of FINGERS) {
-    let m = new THREE.Matrix4().makeTranslation(f.x, f.y, 0.0);
-    m.multiply(new THREE.Matrix4().makeRotationZ(f.spread * DEG * (1 - curl * 0.5)));
-    let r = f.r;
+    const m = new THREE.Matrix4().makeTranslation(f.x * 0.94, f.y, -0.001);
+    m.multiply(new THREE.Matrix4().makeRotationZ(f.spread * DEG * 0.55));
+    let r = f.r * 0.97;
     for (let s = 0; s < 3; s++) {
-      const ang = -relaxed[s] * curl * f.k * (s === 0 ? 1.15 : 1) * DEG * (s === 0 ? 1 : 1.25);
+      const ang = -relaxed[s] * curl * f.k * DEG;
       m.multiply(new THREE.Matrix4().makeRotationX(ang));
       const r1 = r * 0.9;
       const seg = setColor(capsuleSeg(r, r1, f.L[s]), SKIN_COL);
       seg.applyMatrix4(m);
       parts.push(seg);
       if (s === 2) {
-        const nail = superEllipsoid([r1 * 0.75, f.L[2] * 0.35, r1 * 0.35], [0, -f.L[2] * 0.62, -r1 * 0.72], { wSeg: 8, hSeg: 6 });
+        const nail = superEllipsoid([r1 * 0.72, f.L[2] * 0.34, r1 * 0.32], [0, -f.L[2] * 0.64, -r1 * 0.74], { wSeg: 8, hSeg: 6 });
         setColor(nail, NAIL_COL);
         nail.applyMatrix4(m);
         parts.push(nail);
@@ -324,24 +357,23 @@ function buildHandGeo(curl, side) {
       r = r1;
     }
   }
-  // thumb
+  // thumb: from the thenar, pointing down-forward-out; curls across the palm with curl
   {
-    let m = new THREE.Matrix4().makeTranslation(0.031, -0.024, 0.010);
-    m.multiply(new THREE.Matrix4().makeRotationZ(40 * DEG));
-    m.multiply(new THREE.Matrix4().makeRotationY(-35 * DEG));
-    m.multiply(new THREE.Matrix4().makeRotationX(-18 * DEG));
-    const Ls = [0.034, 0.030, 0.026];
-    let r = 0.0112;
+    const m = new THREE.Matrix4().makeTranslation(0.029, -0.026, 0.009);
+    m.multiply(new THREE.Matrix4().makeRotationZ((36 - 10 * curl) * DEG));
+    m.multiply(new THREE.Matrix4().makeRotationY(-40 * DEG));
+    m.multiply(new THREE.Matrix4().makeRotationX(-(20 + 12 * curl) * DEG));
+    const Ls = [0.032, 0.029, 0.025];
+    let r = 0.0108;
     for (let s = 0; s < 3; s++) {
-      const ang = s === 0 ? 0 : -(14 + 20 * curl) * DEG;
+      const ang = s === 0 ? 0 : -(10 + 22 * curl) * DEG;
       m.multiply(new THREE.Matrix4().makeRotationX(ang));
-      if (s === 1) m.multiply(new THREE.Matrix4().makeRotationZ(-(8 + 18 * curl) * DEG));
       const r1 = r * 0.9;
       const seg = setColor(capsuleSeg(r, r1, Ls[s]), SKIN_COL);
       seg.applyMatrix4(m);
       parts.push(seg);
       if (s === 2) {
-        const nail = superEllipsoid([r1 * 0.75, Ls[2] * 0.33, r1 * 0.35], [0, -Ls[2] * 0.62, -r1 * 0.72], { wSeg: 8, hSeg: 6 });
+        const nail = superEllipsoid([r1 * 0.72, Ls[2] * 0.33, r1 * 0.32], [0, -Ls[2] * 0.64, -r1 * 0.74], { wSeg: 8, hSeg: 6 });
         setColor(nail, NAIL_COL);
         nail.applyMatrix4(m);
         parts.push(nail);
@@ -461,7 +493,7 @@ export function neckGeometry() {
 
 // ---------------------------------------------------------------------------------------------
 export function buildRobe(T) {
-  const robeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.robe, roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.robe, vertexColors: true, roughness: 0.92, metalness: 0, side: THREE.DoubleSide, envMapIntensity: 0.45 });
   const sway = { value: new THREE.Vector3() }, ripple = { value: new THREE.Vector2() };
   robeMat.onBeforeCompile = (sh) => {
     sh.uniforms.uSway = sway; sh.uniforms.uRipple = ripple;
@@ -482,7 +514,7 @@ export function buildRobe(T) {
   const robe = new THREE.SkinnedMesh(geo, robeMat);
   robe.name = 'robe';
 
-  const sashMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.sash, roughness: 0.8, side: THREE.DoubleSide });
+  const sashMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.sash, roughness: 0.8, side: THREE.DoubleSide, envMapIntensity: 0.7 });
   const sashParts = [buildSash(), buildSashTail(), buildSashKnot()];
   for (const g of sashParts) { setSkin(g, bodyWeights); }
   const sash = new THREE.SkinnedMesh(merge(sashParts), sashMat);

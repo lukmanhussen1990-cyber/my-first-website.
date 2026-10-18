@@ -9,15 +9,15 @@ import { DEG, clamp, lerp, noise1 } from '../core/util.js';
 
 // finger layout (right-hand numbers; z is mirrored by nothing — thumb is +Z for both hands)
 const FINGERS = [
-  { z: 0.032, y: -0.094, L: [0.047, 0.029, 0.023], r: 0.0108, spread: 4 },   // index
-  { z: 0.0105, y: -0.098, L: [0.051, 0.032, 0.024], r: 0.0113, spread: 0 },  // middle
-  { z: -0.0115, y: -0.096, L: [0.048, 0.03, 0.023], r: 0.0108, spread: -3 }, // ring
-  { z: -0.032, y: -0.089, L: [0.039, 0.024, 0.02], r: 0.0098, spread: -7 },  // pinky
+  { z: 0.035, y: -0.103, L: [0.051, 0.032, 0.025], r: 0.0118, spread: 4 },   // index
+  { z: 0.0115, y: -0.107, L: [0.055, 0.035, 0.026], r: 0.0123, spread: 0 },  // middle
+  { z: -0.0125, y: -0.105, L: [0.052, 0.033, 0.025], r: 0.0118, spread: -3 }, // ring
+  { z: -0.035, y: -0.097, L: [0.043, 0.026, 0.022], r: 0.0107, spread: -7 },  // pinky
 ];
-const THUMB = { pos: [0.006, -0.02, 0.032], L: [0.04, 0.034, 0.028], r: [0.0145, 0.0118, 0.011] };
+const THUMB = { pos: [0.007, -0.022, 0.035], L: [0.044, 0.037, 0.03], r: [0.0158, 0.0128, 0.012] };
 
 // Channel where a held grip's axis (along hand Z) sits, in (palm-axis, y) coordinates.
-export const HAND_CHANNEL = { x: 0.0345, y: -0.083 };
+export const HAND_CHANNEL = { x: 0.037, y: -0.079 };
 
 export function buildHand(side, material) {
   const ps = side === 'R' ? 1 : -1; // palm sign: palm normal = ps * X
@@ -36,28 +36,29 @@ export function buildHand(side, material) {
     geos.push(g);
   };
   // ---- palm, back of hand, cuff (bone 0) ----
-  const palm = new RoundedBoxGeometry(0.037, 0.104, 0.09, 3, 0.013);
-  palm.translate(0.001 * ps, -0.047, 0.0);
+  const palm = new RoundedBoxGeometry(0.04, 0.114, 0.098, 4, 0.0175);
+  palm.translate(0.001 * ps, -0.051, 0.0);
   addPart(palm, PAL.glove, 0);
-  // knuckle ridge / back-of-hand padding
-  const back = new RoundedBoxGeometry(0.012, 0.07, 0.078, 2, 0.005);
-  back.translate(-ps * 0.0175, -0.055, -0.001);
+  // back-of-hand padding (soft dorsal bulge) and a stitched seam
+  const back = new THREE.SphereGeometry(1, 12, 8);
+  back.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(-ps * 0.012, -0.062, 0.0), new THREE.Quaternion(), new THREE.Vector3(0.012, 0.05, 0.045)));
   addPart(back, PAL.gloveD, 0);
   // thenar pad
   const thenar = new THREE.SphereGeometry(1, 10, 8);
-  thenar.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(ps * 0.008, -0.04, 0.03), new THREE.Quaternion().setFromEuler(new THREE.Euler(0.5, 0, 0)), new THREE.Vector3(0.016, 0.03, 0.017)));
+  thenar.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(ps * 0.009, -0.043, 0.033), new THREE.Quaternion().setFromEuler(new THREE.Euler(0.5, 0, 0)), new THREE.Vector3(0.0175, 0.033, 0.018)));
   addPart(thenar, PAL.glove, 0);
   // flared leather cuff over the vambrace end
-  const cuffPts = [[0.041, -0.012], [0.043, 0.0], [0.047, 0.03], [0.054, 0.062], [0.057, 0.07]].map(([r, y]) => new THREE.Vector2(r, y));
-  const cuff = new THREE.LatheGeometry(cuffPts, 18);
-  cuff.applyMatrix4(new THREE.Matrix4().makeScale(0.86, 1, 1.08));
+  // flared cuff: clearly wider than the vambrace end so a bent wrist slides inside it without z-fighting
+  const cuffPts = [[0.043, -0.014], [0.046, 0.0], [0.052, 0.026], [0.061, 0.052], [0.064, 0.058]].map(([r, y]) => new THREE.Vector2(r, y));
+  const cuff = new THREE.LatheGeometry(cuffPts, 20);
+  cuff.applyMatrix4(new THREE.Matrix4().makeScale(0.88, 1, 1.06));
   addPart(cuff, PAL.gloveD, 0);
-  const cuffIn = new THREE.LatheGeometry([[0.054, 0.068], [0.044, 0.064], [0.04, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)), 18);
-  cuffIn.applyMatrix4(new THREE.Matrix4().makeScale(0.86, 1, 1.08));
+  const cuffIn = new THREE.LatheGeometry([[0.061, 0.056], [0.05, 0.05], [0.042, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)), 20);
+  cuffIn.applyMatrix4(new THREE.Matrix4().makeScale(0.88, 1, 1.06));
   addPart(cuffIn, PAL.pad, 0);
   // stitched strap across the back of the hand
-  const strap = new THREE.TorusGeometry(0.047, 0.0035, 4, 18);
-  strap.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(0, -0.002, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(0.82, 1.05, 1)));
+  const strap = new THREE.CylinderGeometry(0.0515, 0.05, 0.011, 18, 1, true);
+  strap.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(0, 0.018, 0), new THREE.Quaternion(), new THREE.Vector3(0.9, 1, 1.08)));
   addPart(strap, PAL.strap, 0);
 
   // ---- fingers ----
@@ -176,25 +177,22 @@ const PRESETS = {
   pommel: { curls: [[32, 44, 26], [36, 48, 28], [40, 50, 28], [44, 52, 30]], thumb: { base: [-36, 4, 34], flex: [18, 20] }, spread: 0.6 },
 };
 
-// Apply a hand mode. mode: 'grip' (around HAND_CHANNEL with grip radius rg), 'fist', 'relaxed', 'open', 'knee', 'pommel'.
-// tension 0..1 (squeeze), open 0..1 blends toward an open hand (used during re-grips), t = time for tremble.
-export function applyHandMode(hand, mode, { tension = 0, open = 0, rg = 0.0165, t = 0 } = {}) {
+function modePose(mode, { tension = 0, rg = 0.0165, t = 0 } = {}) {
   let curls, thumbPose, spread;
   const trem = tension > 0.55 ? (tension - 0.55) * 2.2 : 0;
   if (mode === 'grip') {
     const C = [HAND_CHANNEL.x - 0.0012 * tension, HAND_CHANNEL.y];
     curls = FINGERS.map((f, fi) => {
-      const R = (rg + f.r * 0.92) * (1 - 0.06 * tension) + 0.0005;
+      const R = (rg + f.r * 0.92) * (1 - 0.12 * tension) + 0.0005;
       const a = wrapChain([0, f.y], 0, f.L, C, R, [100, 110, 85], [20, 25, 15], 1);
       const j = trem * 1.2 * noise1(t * 9 + fi * 3.1);
       return [a[0] + j, a[1] + j * 0.6, a[2]];
     });
-    const Rt = rg + 0.021 + 0.011 - 0.0025 * tension;
+    const Rt = rg + 0.0235 + 0.0125 - 0.0025 * tension;
     // thumb runs over the top (wrist side) of the grip and down its far side, over the index finger
-    const ta = wrapChain([THUMB.pos[0], THUMB.pos[1]], 90 * DEG - 12 * DEG, THUMB.L, C, Rt, [70, 80, 70], [-30, 0, 0], -1);
-    // convert: base angle is measured from -Y; dir -1 means decreasing phi.
-    thumbPose = { base: [0, 0, 90 - 12 - ta[0]], flex: [-ta[1], -ta[2]] };
-    // we encoded thumb curl as negative flex (curling the other way round the grip)
+    // (planar chain curling the opposite way round the grip: base angle measured from -Y, flex negative)
+    const ta = wrapChain([THUMB.pos[0], THUMB.pos[1]], 78 * DEG, THUMB.L, C, Rt, [70, 80, 70], [-30, 0, 0], -1);
+    thumbPose = { base: [0, 0, 78 - ta[0]], flex: [-ta[1], -ta[2]] };
     spread = 0;
   } else {
     const P = PRESETS[mode] || PRESETS.relaxed;
@@ -208,13 +206,23 @@ export function applyHandMode(hand, mode, { tension = 0, open = 0, rg = 0.0165, 
       thumbPose.flex = thumbPose.flex.map((v, k) => lerp(v, F.thumb.flex[k], tension));
     }
   }
-  if (open > 0) {
-    const O = PRESETS.open;
-    curls = curls.map((c, i) => c.map((v, k) => lerp(v, O.curls[i][k], open)));
-    thumbPose.base = thumbPose.base.map((v, k) => lerp(v, O.thumb.base[k], open));
-    thumbPose.flex = thumbPose.flex.map((v, k) => lerp(v, O.thumb.flex[k], open));
-    spread = lerp(spread, O.spread, open);
-  }
-  hand.setAngles(curls, thumbPose, spread);
-  hand.mode = mode; hand.tension = tension;
+  return { curls, thumbPose, spread };
+}
+function mixPose(a, b, u) {
+  return {
+    curls: a.curls.map((c, i) => c.map((v, k) => lerp(v, b.curls[i][k], u))),
+    thumbPose: { base: a.thumbPose.base.map((v, k) => lerp(v, b.thumbPose.base[k], u)), flex: a.thumbPose.flex.map((v, k) => lerp(v, b.thumbPose.flex[k], u)) },
+    spread: lerp(a.spread, b.spread, u),
+  };
+}
+
+// Apply a hand mode. mode: 'grip' (around HAND_CHANNEL with grip radius rg), 'fist', 'relaxed', 'open', 'knee', 'pommel'.
+// tension 0..1 (squeeze), open 0..1 blends toward an open hand (used during re-grips), t = time for tremble,
+// mix = { mode, t, tension } blends toward a second mode (for hand transitions).
+export function applyHandMode(hand, mode, { tension = 0, open = 0, rg = 0.0165, t = 0, mix = null } = {}) {
+  let P = modePose(mode, { tension, rg, t });
+  if (mix && mix.t > 0) P = mixPose(P, modePose(mix.mode, { tension: mix.tension ?? tension, rg, t }), clamp(mix.t, 0, 1));
+  if (open > 0) P = mixPose(P, modePose('open'), clamp(open, 0, 1));
+  hand.setAngles(P.curls, P.thumbPose, P.spread);
+  hand.mode = mode; hand.tension = tension; hand.mix = mix;
 }

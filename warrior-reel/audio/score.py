@@ -129,27 +129,13 @@ def voice_lead(chords, lo="F3", hi="D5"):
     return out
 
 
-def pad_from_voicings(sc, voicings, end, vel, layer="pad"):
-    """Turn successive voicings into tied legato voices (nearest-voice assignment)."""
-    held = {}                 # pitch -> start time
-    for i, (t, vs) in enumerate(voicings):
-        for p in list(held):
-            if p not in vs:
-                sc.n(layer, p, held.pop(p), t + 0.08, vel)
-        for p in vs:
-            if p not in held:
-                held[p] = t
-    for p, t0 in held.items():
-        sc.n(layer, p, t0, end, vel)
-
-
 def compose(tl):
     B = tl["beats"]
     cue = {c["id"]: c for c in tl["cues"]}
     END = tl["duration"]
     est, arr, sit = B["establishStart"], B["jesusArrive"], B["jesusSitStart"]
     look, lower, tip, settle = B["swordLookStart"], B["swordLowerStart"], B["swordTipDown"], B["swordSettleEnd"]
-    gold, touch, card = B["goldenStart"], B["shoulderTouch"], B["endCardStart"]
+    gold, card = B["goldenStart"], B["endCardStart"]
     S = Score()
 
     # ------------------------------------------------------------------ chord map
@@ -188,9 +174,9 @@ def compose(tl):
         (L09["words"][7]["s"], ["C", "F", "G"], 3, ["C", "F", "G"]),       # Csus4 "happened"
         (L09["speechEnd"] + 0.05, ["C", "E", "G"], 3, ["C", "E", "G"]),    # C
         (L10["fileStart"] + 0.05, ["F", "A", "C"], 3, ["F", "A", "C"]),    # F    "It means"
-        (L10["words"][5]["s"], ["D", "F", "A"], 3, ["D", "F", "A"]),       # Dm   "let hatred"
+        (L10["words"][3]["s"], ["D", "F", "A"], 3, ["D", "F", "A"]),       # Dm   "refuse to let hatred"
         (L10["words"][7]["s"], ["Bb", "D", "F"], 3, ["Bb", "D", "F"]),     # Bb   "rule"
-        (L10["words"][8]["s"], ["C", "E", "G"], 3, ["C", "E", "G"]),       # C    "the rest of your life"
+        (L10["words"][9]["s"], ["C", "E", "G"], 3, ["C", "E", "G"]),       # C    "rest of your life"
         (L11["speechStart"] - 0.25, ["A", "C", "E", "G"], 3, ["C", "E", "G"]),  # Am7 "I've let him"
         (L11["words"][5]["s"], ["Bb", "D", "F"], 3, ["Bb", "D", "F"]),     # Bb   "long enough"
         (L11["speechEnd"] - 0.05, ["Bb", "Db", "F", "G"], 3, ["Db", "F", "G"]),  # Bbm6 (minor plagal)
@@ -269,9 +255,9 @@ def compose(tl):
 
     # ------------------------------------------------------------------ piano
     # hook: single notes, ending on the unresolved b6 (Bb over the D drone)
-    S.n("piano", "D4", 0.10, 1.9, 44)
-    S.n("piano", "A3", cue["L01"]["words"][3]["e"] + 0.12, 3.2, 40)       # in the "him, ... he" gap
-    S.n("piano", "Bb3", cue["L01"]["speechEnd"] + 0.04, est + 0.05, 46)
+    S.n("piano", "D4", 0.10, 1.9, 54)
+    S.n("piano", "A3", cue["L01"]["words"][3]["e"] + 0.12, 3.2, 50)       # in the "him, ... he" gap
+    S.n("piano", "Bb3", cue["L01"]["speechEnd"] + 0.04, est + 0.05, 54)
     S.n("piano", "D2", 0.10, 3.0, 34)
     # establishing: the motif  A3 D4 E4 F4 E4  (rhythm 3/4, 1/2, 1/2, 3/4, 3/2 beats)
     t = est
@@ -303,7 +289,7 @@ def compose(tl):
     S.n("piano", "D4", gn, gn + 0.6, 38)
     S.n("piano", "C4", gn + 0.4, gn + 1.0, 36)
     # minor plagal: Db -> C, then the motif in F major at goldenStart
-    S.n("piano", "Db4", L11["speechEnd"] - 0.02, gold + 0.05, 42)
+    S.n("piano", "Db4", L11["speechEnd"] + 0.12, gold + 0.05, 42)
     t = gold
     for p, d, v in [("C4", 0.75, 50), ("F4", 0.5, 52), ("G4", 0.5, 50), ("A4", 0.75, 54), ("G4", 1.5, 46)]:
         S.n("piano", p, t, t + d * BEAT + 0.4, v)
@@ -371,11 +357,11 @@ def automation(tl):
     off = -80.0
     l08 = cue["L08"]["speechStart"]
     return {
-        "bass": [(0, off), (0.05, -30), (1.2, -4), (est, -5), (est + 2.0, -12), (est + 2.4, off),
+        "bass": [(0, off), (0.05, -30), (1.2, 0), (est, -1), (est + 2.0, -12), (est + 2.4, off),
                  (look - 0.01, off), (look, -24), (tip - 0.25, -1), (tip - 0.02, -4), (tip, -1),
                  (tip + 1.2, -12), (tip + 2.6, off),
                  (gold - 0.01, off), (gold, -14), (gold + 1.5, -7), (card, -5), (END, -5)],
-        "cello": [(0, -40), (0.9, -6), (3.3, -4), (est, -4), (est + 2.5, -6), (13.0, -6),
+        "cello": [(0, -40), (0.9, -2), (3.3, 0), (est, -2), (est + 2.5, -6), (13.0, -6),
                   (cue["L04"]["speechStart"], -4), (cue["L05"]["speechEnd"], -4), (look - 0.3, -6),
                   (look, -8), (tip - 0.25, 0), (tip - 0.02, -2), (tip, 0), (tip + 0.6, -1), (l08 + 0.2, -8),
                   (gold, -6), (gold + 1.2, -2), (card, -1), (END, -1)],
@@ -391,7 +377,8 @@ def automation(tl):
         "choir": [(0, off), (tip - 0.01, off), (tip, -10), (tip + 0.7, -7), (l08 + 0.2, -13),
                   (settle + 2.6, off), (card - 0.01, off), (card, -14), (card + 1.5, -7), (END, -7)],
         # whole-score section level: golden body sits lower (L12 is spoken over it), end card blooms
-        "_bus": [(0, 0.0), (gold, 0.0), (gold + 1.3, -4.0), (card - 0.4, -4.0), (card + 0.6, -2.0), (END, -2.0)],
+        "_bus": [(0, 0.0), (lower, 0.0), (tip - 0.5, -2.5), (tip + 1.0, -2.5), (settle + 1.5, 0.0),
+                 (gold, 0.0), (gold + 1.3, -4.0), (card - 0.4, -4.0), (card + 0.6, -2.0), (END, -2.0)],
     }
 
 
@@ -438,9 +425,10 @@ def write_full_midi(S, p):
 
 def fluid_render(mid, wav):
     subprocess.run(["fluidsynth", "-ni", "-R", "0", "-C", "0", "-g", "0.6", "-r", str(SR),
-                    "-F", wav, SF2, mid], check=True, capture_output=True)
+                    "-O", "float", "-T", "wav", "-F", wav, SF2, mid], check=True, capture_output=True)
     x, sr = sf.read(wav, always_2d=True)
     assert sr == SR
+    os.remove(wav)                       # keep out/audio/build small (the MIDI is kept)
     return x.astype(np.float64)
 
 
@@ -508,7 +496,7 @@ def build(tl=None, verbose=True):
         elif layer == "cello":
             y = eq(hpf(y, 45.0, 2), ("peak", 220.0, -1.5, 1.0))
         elif layer in ("pad", "high"):
-            y = eq(hpf(y, 110.0, 2), ("peak", 2600.0, -2.0, 0.9), ("highshelf", 7000.0, -3.0, 0.7))
+            y = eq(hpf(y, 110.0, 2), ("peak", 2600.0, -1.0, 0.9), ("highshelf", 7000.0, -1.0, 0.7))
         elif layer == "piano":
             y = eq(hpf(y, 60.0, 2), ("peak", 3000.0, -1.0, 1.0), ("highshelf", 8000.0, -2.0, 0.7))
         elif layer == "harp":
@@ -528,14 +516,12 @@ def build(tl=None, verbose=True):
     music = dry_sum + wet * undb(-4.0)
     music *= curve(N, auto["_bus"])[:, None]
     # final fade-out: clean, over the last 1.5 s
-    B = tl["beats"]
-    fo = 1.5
-    music = fade(music, 0.0, fo)
+    music = fade(music, 0.0, 1.5)
     return music, layers
 
 
 if __name__ == "__main__":
-    from common import write, OUT, lufs, true_peak_db
+    from common import write, lufs, true_peak_db
     tl = timeline()
     m, _ = build(tl)
     write(os.path.join(BUILD, "music_raw.wav"), m * 0.5)

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { rng } from '../core/util.js';
 import { flatten, boxUV, merge, faceColors, hash2 } from './wutil.js';
 import { brickTexture, roofTexture } from './textures.js';
+import { litMaterial } from './litmat.js';
 import { groundHeight, CASTLE_POS } from './terrain.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -110,10 +111,10 @@ export function buildCastle() {
   });
   const roofGeo = merge(roofs.map((g) => { const f = flatten(g); const uv = f.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 6, uv.getY(i) * 3); return f; }));
   const darkGeo = merge(dark.map(flatten));
-  const stoneMesh = new THREE.Mesh(stoneGeo, new THREE.MeshLambertMaterial({ map: brickTexture(), vertexColors: true, flatShading: true }));
-  const roofMesh = new THREE.Mesh(roofGeo, new THREE.MeshLambertMaterial({ map: roofTexture(), color: 0x86506a, flatShading: true }));
-  const darkMesh = new THREE.Mesh(darkGeo, new THREE.MeshLambertMaterial({ color: 0x24222a }));
-  const flagMesh = new THREE.Mesh(merge(flags.map((g) => g.toNonIndexed())), new THREE.MeshLambertMaterial({ color: 0xc8343a, side: THREE.DoubleSide }));
+  const stoneMesh = new THREE.Mesh(stoneGeo, litMaterial({ map: brickTexture(), vertexColors: true }));
+  const roofMesh = new THREE.Mesh(roofGeo, litMaterial({ map: roofTexture(), color: 0x86506a }));
+  const darkMesh = new THREE.Mesh(darkGeo, litMaterial({ color: 0x24222a }));
+  const flagMesh = new THREE.Mesh(merge(flags.map((g) => g.toNonIndexed())), litMaterial({ color: 0xc8343a, side: THREE.DoubleSide, wrap: true }));
   const group = new THREE.Group();
   group.name = 'castle';
   group.add(stoneMesh, roofMesh, darkMesh, flagMesh);
@@ -158,7 +159,7 @@ export function buildRuins() {
   }
   parts.push(boxUV(flatten(box(9, 6, 1.2, -31, groundHeight(-31, -79) - 1.5, -79.5)), 0.5));
   const geo = merge(parts);
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: brickTexture(), color: 0xa9a6b4, flatShading: true, side: THREE.DoubleSide }));
+  const mesh = new THREE.Mesh(geo, litMaterial({ map: brickTexture(), color: 0xa9a6b4, side: THREE.DoubleSide }));
   mesh.name = 'ruins';
   return mesh;
 }
@@ -195,7 +196,7 @@ export function buildMountains() {
     col.lerp(sh, Math.max(0, -n.x * 0.5 + n.z * 0.2) * 0.4);
     return col.multiplyScalar(0.94 + 0.12 * hash2(i, 1, 2));
   });
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  const mesh = new THREE.Mesh(geo, litMaterial({ vertexColors: true }));
   mesh.name = 'mountains';
   return mesh;
 }

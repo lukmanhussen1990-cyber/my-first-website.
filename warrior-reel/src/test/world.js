@@ -64,6 +64,9 @@ export async function build(stage, params) {
       const p = params;
       if (p.hide !== undefined) world.root.traverse((o) => { if (o.name) o.visible = !p.hide.split(',').includes(o.name); });
       if (p.noshadow === '1') stage.renderer.shadowMap.enabled = false;
+      if (p.dbg === 'leafNoShadow') world.root.traverse((o) => { if (o.name.startsWith('leaves_')) o.castShadow = false; });
+      if (p.dbg === 'leafPlain' && !this._plain) { this._plain = new THREE.MeshLambertMaterial({ color: 0xddcc44 }); world.root.traverse((o) => { if (o.name.startsWith('leaves_')) o.material = this._plain; }); }
+      if (p.dbg === 'leafBasic' && !this._plain) { this._plain = new THREE.MeshBasicMaterial({ color: 0xddcc44 }); world.root.traverse((o) => { if (o.name.startsWith('leaves_')) { o.material = this._plain; o.castShadow = false; } }); }
       const stand = p.stand === '1';
       const show = p.proxies !== '0';
       kSeat.visible = jSeat.visible = show && !stand;
