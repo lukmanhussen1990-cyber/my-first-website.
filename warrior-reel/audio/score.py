@@ -369,25 +369,29 @@ def automation(tl):
                                      B["swordTipDown"], B["swordSettleEnd"])
     gold, card, END = B["goldenStart"], B["endCardStart"], tl["duration"]
     off = -80.0
+    l08 = cue["L08"]["speechStart"]
     return {
         "bass": [(0, off), (0.05, -30), (1.2, -4), (est, -5), (est + 2.0, -12), (est + 2.4, off),
                  (look - 0.01, off), (look, -24), (tip - 0.25, -1), (tip - 0.02, -4), (tip, -1),
-                 (settle + 1.2, -10), (settle + 2.4, off),
+                 (tip + 1.2, -12), (tip + 2.6, off),
                  (gold - 0.01, off), (gold, -14), (gold + 1.5, -7), (card, -5), (END, -5)],
         "cello": [(0, -40), (0.9, -6), (3.3, -4), (est, -4), (est + 2.5, -6), (13.0, -6),
                   (cue["L04"]["speechStart"], -4), (cue["L05"]["speechEnd"], -4), (look - 0.3, -6),
-                  (look, -8), (tip - 0.25, 0), (tip - 0.02, -2), (tip, 0), (settle + 1.5, -7),
+                  (look, -8), (tip - 0.25, 0), (tip - 0.02, -2), (tip, 0), (tip + 0.6, -1), (l08 + 0.2, -8),
                   (gold, -6), (gold + 1.2, -2), (card, -1), (END, -1)],
         "pad": [(0, off), (1.0, -30), (est - 0.1, -12), (est + 1.2, -4), (cue["L02"]["speechStart"], -6),
                 (13.2, -7), (look - 0.3, -8), (look, -10), (tip - 0.3, 1), (tip - 0.04, -1.5), (tip, 1),
-                (tip + 0.8, 0), (settle + 1.6, -6), (gold - 0.3, -6), (gold + 1.0, -1), (card, 0), (END, 0)],
+                (tip + 0.6, 0), (l08 + 0.2, -7), (settle + 2.5, -7), (gold - 0.3, -7), (gold + 1.0, -1),
+                (card, 0), (END, 0)],
         "high": [(0, off), (look - 0.01, off), (look, -26), (lower, -14), (tip - 0.3, -1), (tip - 0.04, -3),
-                 (tip, 0), (tip + 0.8, -2), (settle + 1.6, -12), (settle + 2.5, off),
+                 (tip, 0), (tip + 0.6, -2), (l08 + 0.2, -12), (settle + 2.5, off),
                  (gold - 0.01, off), (gold, -20), (gold + 1.2, -9), (card, -5), (END, -5)],
         "piano": [(0, 0), (END, 0)],
         "harp": [(0, 0), (END, 0)],
-        "choir": [(0, off), (tip - 0.01, off), (tip, -10), (tip + 1.0, -6), (settle + 1.0, -9),
+        "choir": [(0, off), (tip - 0.01, off), (tip, -10), (tip + 0.7, -7), (l08 + 0.2, -13),
                   (settle + 2.6, off), (card - 0.01, off), (card, -14), (card + 1.5, -7), (END, -7)],
+        # whole-score section level: golden body sits lower (L12 is spoken over it), end card blooms
+        "_bus": [(0, 0.0), (gold, 0.0), (gold + 1.3, -4.0), (card - 0.4, -4.0), (card + 0.6, -2.0), (END, -2.0)],
     }
 
 
@@ -522,6 +526,7 @@ def build(tl=None, verbose=True):
     ir = make_ir()
     wet = reverb(send_sum, ir)
     music = dry_sum + wet * undb(-4.0)
+    music *= curve(N, auto["_bus"])[:, None]
     # final fade-out: clean, over the last 1.5 s
     B = tl["beats"]
     fo = 1.5

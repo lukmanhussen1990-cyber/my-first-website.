@@ -62,6 +62,8 @@ export async function build(stage, params) {
     world,
     update(t) {
       const p = params;
+      if (p.hide !== undefined) world.root.traverse((o) => { if (o.name) o.visible = !p.hide.split(',').includes(o.name); });
+      if (p.noshadow === '1') stage.renderer.shadowMap.enabled = false;
       const stand = p.stand === '1';
       const show = p.proxies !== '0';
       kSeat.visible = jSeat.visible = show && !stand;

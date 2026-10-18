@@ -5,18 +5,20 @@ Per line (cue.file placed at cue.fileStart):
   1. high-pass 75 Hz (3rd-order Butterworth, 18 dB/oct)
   2. downward expansion ONLY outside detected speech (gaps / tails); broadband
      smoothed gain, no spectral processing -> no musical-noise artefacts
-  3. light RMS compression (2:1, soft knee, ~2-4 dB on the loudest syllables)
+  3. light RMS compression (2.5:1, soft knee, ~3-5 dB on the loudest syllables)
   4. gentle clarity EQ (-1.5 dB @ 250 Hz, +1.5 dB @ 3.2 kHz)
   5. integrated-loudness match: every line normalised to LINE_LUFS
+  6. look-ahead true-peak limiter on the line (only the odd plosive/onset, <= ~4 dB)
 No reverb / echo is added.
 """
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
 from common import (SR, HOP, load, path, n_total, hpf, eq, frame_rms, ar_smooth,
-                    control_to_audio, undb, lufs, fade, timeline, bpf)
+                    control_to_audio, undb, lufs, fade, timeline, bpf, tp_limiter)
 
 LINE_LUFS = -20.0          # working level for every line (master gain is applied later)
+PEAK_ABOVE_LUFS = 10.5     # line true peaks held <= LINE_LUFS + this (dBTP)
 SPEAKERS = ("JESUS", "KNIGHT")
 
 
@@ -79,25 +81,31 @@ def process_line(x):
     gain_exp = undb(control_to_audio(g_exp_s, n))
     y = x * gain_exp
 
-    # ---- 3. light compression (RMS 5 ms detector)
+    # ---- 3. light compression (RMS 5 ms detector, 2.5:1 soft knee, 5 ms / 110 ms)
     lev2 = _db(frame_rms(y, 0.005))
-    thr, cr, knee = ref - 4.0, 2.0, 6.0
+    thr, cr, knee = ref - 8.0, 2.5, 8.0
     over = lev2 - thr
     gr = np.where(over <= -knee / 2, 0.0,
                   np.where(over >= knee / 2, over * (1 / cr - 1),
                            (1 / cr - 1) * (over + knee / 2) ** 2 / (2 * knee)))
-    # gr is <= 0; attack 8 ms (gr falling), release 120 ms
-    gr_s = ar_smooth(gr, attack=0.120, release=0.008)   # rising gr == releasing
+    # gr is <= 0; attack 5 ms (gr falling), release 110 ms
+    gr_s = ar_smooth(gr, attack=0.110, release=0.005)   # rising gr == releasing
     y = y * undb(control_to_audio(gr_s, n))
 
     # ---- 4. clarity EQ
     y = eq(y, ("peak", 250.0, -1.5, 0.9), ("peak", 3200.0, 1.5, 0.8))
 
-    # ---- 5. loudness match
+    # ---- 5. loudness match, 6. transparent peak control (look-ahead, true-peak)
     L = lufs(y)
     y = y * undb(LINE_LUFS - L)
+    pk_gr = 0.0
+    for _ in range(2):
+        y2, g = tp_limiter(y, LINE_LUFS + PEAK_ABOVE_LUFS, lookahead=0.003, release=0.06)
+        y2 = y2[:, 0]
+        pk_gr = min(pk_gr, float(20 * np.log10(g.min())))
+        y = y2 * undb(LINE_LUFS - lufs(y2))
     info = dict(ref_db=round(ref, 1), floor_db=round(floor, 1), src_lufs=None,
-                pre_norm_lufs=round(L, 2), max_comp_db=round(float(gr_s.min()), 1),
+                pre_norm_lufs=round(L, 2), max_comp_db=round(float(gr_s.min()), 1), peak_lim_db=round(pk_gr, 1),
                 exp_db_min=round(float(g_exp_s.min()), 1),
                 gap_reduction_db=round(float(np.median(g_exp_s[~mask])) if (~mask).any() else 0.0, 1))
     return y, info

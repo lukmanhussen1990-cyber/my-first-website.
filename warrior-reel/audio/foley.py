@@ -3,7 +3,8 @@
 
 Every event is aligned on its detected transient/onset and levelled to a
 target momentary loudness (dB, 400 ms RMS of the K-weighted-ish band) in the
-same pre-master domain as the dialogue (lines at dialogue.LINE_LUFS).
+same pre-master domain as the dialogue (lines at dialogue.LINE_LUFS), with a
+per-event peak cap so transients never poke out of the mix.
 """
 import os
 
@@ -47,8 +48,19 @@ def _level(x):
     return float(20 * np.log10(frame_rms(y, 0.4).max() + 1e-12))
 
 
-def _at(x, target):
-    return x * 10 ** ((target - _level(x)) / 20.0)
+def _at(x, target, peak_max):
+    """Scale to the target momentary level, but never let the peak exceed peak_max dBFS."""
+    g = 10 ** ((target - _level(x)) / 20.0)
+    pk = np.abs(x).max() * g
+    if pk > 10 ** (peak_max / 20.0):
+        g *= 10 ** (peak_max / 20.0) / pk
+    return x * g
+
+
+def _start(x, rel=-30.0):
+    """Time (s) where the envelope first comes within `rel` dB of its peak."""
+    e = _env_db(x)
+    return int(np.argmax(e > e.max() + rel)) / 1000.0
 
 
 def blade_ring(dur=2.2, f0=742.0, seed=5):
@@ -75,8 +87,8 @@ def build(tl=None):
     out = np.zeros((N, 2))
     ev = []
 
-    def put(x, t, target, p=0.0, label=""):
-        x = _at(x, target)
+    def put(x, t, target, p=0.0, label="", peak_max=-20.0):
+        x = _at(x, target, peak_max)
         place(out, pan(_mono(x), p) if p else (x if x.ndim == 2 else np.stack([x, x], 1)), t)
         ev.append((label, round(t, 3), target))
 
@@ -110,7 +122,8 @@ def build(tl=None):
     # --- robe rustle as Jesus sits
     r = load(path(SFX + "robe_rustle.mp3"), 2)
     rr = _seg(r, 0.0, 1.75, 0.01, 0.3)
-    put(rr, B["jesusSitStart"] - _onset(rr), -38.0, 0.12, "robe rustle")
+    # rustle starts with the sit; its seat-contact thump (~1.1 s in) lands near jesusSitEnd
+    put(rr, B["jesusSitStart"] - _start(rr), -38.0, 0.12, "robe rustle")
 
     # --- armour
     a = load(path(SFX + "armor_shift.mp3"), 2) * 0.89          # source peaks at +0.6 dBFS
@@ -129,7 +142,7 @@ def build(tl=None):
     sg = load(path(SFX + "sword_ground.mp3"), 2)
     hit = _seg(sg, 1.38, 2.45, 0.004, 0.3)
     hit = eq(hit, ("lowshelf", 150.0, 2.0, 0.7))
-    put(hit, B["swordTipDown"] - _onset(hit, -24.0), -30.0, -0.05, "sword thud")
+    put(hit, B["swordTipDown"] - _onset(hit, -24.0), -31.0, -0.05, "sword thud", peak_max=-12.0)
     ring = blade_ring()
     ring = hpf(ring, 500.0, 2)
     put(ring, B["swordTipDown"] + 0.004, -41.0, -0.05, "blade ring")

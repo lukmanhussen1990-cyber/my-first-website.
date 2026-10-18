@@ -28,11 +28,12 @@ import foley
 
 TARGET_LUFS = -14.0
 CEILING_DBTP = -1.5          # limiter ceiling (spec: <= -1 dBTP; margin for the AAC encode)
-DUCK_DB = 8.0                # music under speech
+DUCK_DB = 9.0                # music under speech
 AMB_DUCK_DB = 3.0            # ambience under speech
 MUSIC_LUFS = dialogue.LINE_LUFS - 7.0     # un-ducked score, integrated (pre-master)
-RIVER_LUFS = dialogue.LINE_LUFS - 13.0    # un-ducked river bed (=> ~-30 LUFS under dialogue after master)
-BIRDS_LUFS = dialogue.LINE_LUFS - 20.0
+RIVER_LUFS = dialogue.LINE_LUFS - 15.0    # un-ducked river bed (=> ~-30 LUFS under dialogue after master)
+BIRDS_LUFS = dialogue.LINE_LUFS - 22.0
+SB_MIN = 15.5               # dialogue-protection: min dialogue/background ratio per line (LU)
 
 
 def speech_activity(tracks, N, lookahead=0.15, attack=0.05, release=0.45, bridge=0.35):
@@ -52,10 +53,11 @@ def speech_activity(tracks, N, lookahead=0.15, attack=0.05, release=0.45, bridge
     return np.clip(control_to_audio(a, N), 0.0, 1.0)
 
 
-def section_stats(x, tl, act):
-    """Short-term loudness summaries used in the report."""
-    t, st = short_term_lufs(x)
-    return t, st
+def window(N, t0, t1, ramp):
+    """0..1 raised-cosine window: 1 on [t0, t1], ramps of `ramp` s outside."""
+    t = np.arange(N) / SR
+    u = np.clip(np.minimum((t - (t0 - ramp)) / ramp, ((t1 + ramp) - t) / ramp), 0.0, 1.0)
+    return 0.5 - 0.5 * np.cos(np.pi * u)
 
 
 def main():
@@ -99,8 +101,30 @@ def main():
     print("[audio] foley ...")
     fol, events = foley.build(tl)
 
-    # ---------------------------------------------------------------- master
+    # ---------------------------------------------------------------- dialogue protection
+    # Any line whose dialogue/background ratio is below SB_MIN gets an extra, smoothly
+    # ramped music dip over its speech span (max 6 dB).  Deterministic, iterated.
     dJ, dK = stereo(tracks["JESUS"]), stereo(tracks["KNIGHT"])
+    dsum = dJ + dK
+    extra_db = np.zeros(N)
+    protect = []
+    for c in tl["cues"]:
+        a, b = int(c["speechStart"] * SR), int(c["speechEnd"] * SR)
+        add = 0.0
+        for _ in range(4):
+            bg = music_d[a:b] * undb(extra_db[a:b])[:, None] + amb_d[a:b] + fol[a:b]
+            sb = lufs(dsum[a:b]) - lufs(bg)
+            if sb >= SB_MIN or add >= 6.0:
+                break
+            step = min(6.0 - add, SB_MIN - sb + 0.3)
+            add += step
+            w = window(N, c["speechStart"] - 0.2, c["speechEnd"] + 0.1, 0.25)
+            extra_db = np.minimum(extra_db, -add * w)
+        if add > 0:
+            protect.append((c["id"], round(add, 1)))
+    music_d = music_d * undb(extra_db)[:, None]
+
+    # ---------------------------------------------------------------- master
     pre = music_d + amb_d + fol + dJ + dK
     g_db = TARGET_LUFS - lufs(pre)
     for it in range(4):
@@ -168,6 +192,7 @@ def main():
         i = int(np.argmin(np.abs(m_t - (B[name] + 1.5))))
         beats_music[name] = round(float(m_st[i]), 1)
     rep["music_short_term_lufs_at_beats(+1.5s)"] = beats_music
+    rep["dialogue_protection_extra_music_dip_db"] = dict(protect)
     rep["foley_events"] = [{"event": e[0], "t": e[1], "level_db": e[2]} for e in events]
     with open(os.path.join(OUT, "report.json"), "w") as f:
         json.dump(rep, f, indent=1)
@@ -196,6 +221,8 @@ def write_text_report(rep):
     L.append("")
     L.append("music short-term LUFS 1.5 s after beats: " +
              ", ".join(f"{k} {v}" for k, v in rep["music_short_term_lufs_at_beats(+1.5s)"].items()))
+    L.append("extra music dip for dialogue protection: " + (", ".join(f"{k} {v} dB" for k, v in
+             rep["dialogue_protection_extra_music_dip_db"].items()) or "none"))
     L.append("foley events: " + "; ".join(f"{e['event']} @{e['t']}s" for e in rep["foley_events"]))
     with open(os.path.join(OUT, "report.txt"), "w") as f:
         f.write("\n".join(L) + "\n")
