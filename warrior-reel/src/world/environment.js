@@ -119,7 +119,7 @@ export function buildWorld(stage) {
       const lp = (a, b) => a.clone().lerp(b, m);
       const e = Math.max(0.12, lerp(DAY.elev, GOLD.elev, m));
       envCache.set(key, makeEnvMap(renderer, {
-        top: lp(DAY.top, GOLD.top).getHex(), horizon: lp(DAY.horizon, GOLD.horizon).getHex(), ground: lp(C(0x8fbf3a), C(0x9a8a40)).getHex(),
+        top: lp(DAY.top, GOLD.top).getHex(), horizon: lp(DAY.horizon, GOLD.horizon).getHex(), ground: lp(C(0x9da98c), C(0xa8977a)).getHex(),
         sun: { color: lp(DAY.sunCol, GOLD.sunCol).getHex(), intensity: lerp(5, 7, m), dir: [SUN_X, e, SUN_Z] },
       }));
     }
