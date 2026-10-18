@@ -356,3 +356,54 @@ def place_roi(frame, pm, M, pad=4):
     Ml[1, 2] -= y0
     wpm = cv2.warpAffine(pm, Ml.astype(np.float32), (x1 - x0, y1 - y0), flags=cv2.INTER_LINEAR, borderValue=0)
     return wpm, (x0, y0, x1, y1)
+
+
+def palm_tree(img, base_x, base_y, height, lean, col, seed=0, alpha=None):
+    """Silhouette coconut palm: tapered curved trunk + drooping feathery fronds (drawn in place)."""
+    rng = np.random.default_rng(seed)
+    SH_ = 4
+    k = 1 << SH_
+    pts_l, pts_r = [], []
+    n = 30
+    top = None
+    for i in range(n + 1):
+        t = i / n
+        x = base_x + lean * height * (t ** 1.6)
+        y = base_y - height * t
+        w = height * (0.030 * (1 - t) + 0.012)
+        pts_l.append((x - w, y))
+        pts_r.append((x + w, y))
+        top = (x, y)
+    trunk = np.array(pts_l + pts_r[::-1])
+    cv2.fillPoly(img, [(trunk * k).astype(np.int32)], col, cv2.LINE_AA, SH_)
+    if alpha is not None:
+        cv2.fillPoly(alpha, [(trunk * k).astype(np.int32)], 1.0, cv2.LINE_AA, SH_)
+    tx, ty = top
+    nf = 9
+    for j in range(nf):
+        ang = -math.pi / 2 + (j - (nf - 1) / 2) * (math.pi / (nf - 1)) * 1.05 + rng.normal(0, 0.08)
+        L_ = height * rng.uniform(0.32, 0.42)
+        droop = rng.uniform(0.6, 1.0)
+        spine = []
+        for i in range(16):
+            t = i / 15
+            a = ang + droop * t * t * (1.2 if math.cos(ang) > 0 else -1.2)
+            x = tx + math.cos(ang) * L_ * t
+            y = ty + math.sin(ang) * L_ * t + droop * L_ * 0.55 * t * t
+            spine.append((x, y))
+        spine = np.array(spine)
+        for i in range(1, len(spine)):
+            p0, p1 = spine[i - 1], spine[i]
+            d = p1 - p0
+            nrm = np.array([-d[1], d[0]]) / (np.linalg.norm(d) + 1e-6)
+            t = i / len(spine)
+            ll = height * 0.07 * math.sin(math.pi * min(1.0, t * 1.15)) + 1
+            for sgn in (-1, 1):
+                q = p1 + nrm * sgn * ll + d * 0.6 + np.array([0, ll * 0.55])
+                cv2.line(img, (int(p1[0] * k), int(p1[1] * k)), (int(q[0] * k), int(q[1] * k)), col, max(1, int(height * 0.006)), cv2.LINE_AA, SH_)
+                if alpha is not None:
+                    cv2.line(alpha, (int(p1[0] * k), int(p1[1] * k)), (int(q[0] * k), int(q[1] * k)), 1.0, max(1, int(height * 0.006)), cv2.LINE_AA, SH_)
+        cv2.polylines(img, [(spine * k).astype(np.int32)], False, col, max(1, int(height * 0.010)), cv2.LINE_AA, SH_)
+        if alpha is not None:
+            cv2.polylines(alpha, [(spine * k).astype(np.int32)], False, 1.0, max(1, int(height * 0.010)), cv2.LINE_AA, SH_)
+    return img

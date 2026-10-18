@@ -1,15 +1,17 @@
 # चोर (Chor): Vertical Recreation with a Replacement Chor and an Upgraded House
 
-**Status**
-- **v1 (draft, superseded):** [`output/chor_reel_1080x1920.mp4`](output/chor_reel_1080x1920.mp4) is an Instagram Reels file: 1080×1920 (9:16), 30 fps, H.264 High, AAC (the original track, stream-copied), 53.14 s. It composites the new character and house over the original film. Feedback was that it looks mismatched, so it is being replaced.
-- **v2 (in progress):** an all-new film painted entirely in the Kerala video's art style, with the same story, timing and original audio. Scripts are in `tools/v2/`; preview in `docs/v2_preview.jpg`.
+**Main deliverable: v2:** [`output/chor_kerala_1080x1920.mp4`](output/chor_kerala_1080x1920.mp4) is an all-new film painted in the Kerala story video's art style. It is an Instagram Reels file: 1080×1920 (9:16), 30 fps, 1,591 frames, H.264 High, 53.14 s. The **original audio** is stream-copied, verified bit-identical to the source. The story, scene order and timing follow the original film. The fat-guy character plays the thief (natural colours) and the thin scribe from the same video plays the man of the house. See [`docs/v2_scene_breakdown.md`](docs/v2_scene_breakdown.md).
+
+**v1 (draft, superseded):** [`output/chor_reel_1080x1920.mp4`](output/chor_reel_1080x1920.mp4) composites the new character and house over the original film. Feedback was that it looked mismatched, which led to v2.
 
 | Document | Contents |
 |---|---|
 | [`docs/shot_list.md`](docs/shot_list.md) | Analysis of the original film and its timestamped shot list |
 | [`docs/scene_breakdown.md`](docs/scene_breakdown.md) | What changed in each shot of the v1 vertical version |
-| [`docs/qa_report.md`](docs/qa_report.md) | Checks run on v1, audio verification, known issues, v2 status |
-| `tools/` | The v1 production pipeline (Python + ffmpeg); `tools/v2/` holds the v2 scene scripts |
+| [`docs/v2_scene_breakdown.md`](docs/v2_scene_breakdown.md) | v2 scene-by-scene breakdown with timestamps |
+| [`docs/qa_report.md`](docs/qa_report.md) | Checks run on v1 and v2, audio verification, known issues |
+| `tools/` | The v1 production pipeline (Python + ffmpeg) |
+| `tools/v2/` | The v2 pipeline: `v2_main.py` renders any frame range; `assemble.sh` muxes the original audio |
 
 ## What was changed
 

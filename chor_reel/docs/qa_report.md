@@ -22,6 +22,22 @@ File: `output/chor_reel_1080x1920.mp4`
 
 - The full `tools/qa_check.py` pass (brightness-sync correlation, frozen/black-frame scan, side-by-side sheets).
 
-# v2 (all-new Kerala-style film): in progress
+# QA Report: v2 (all-new Kerala-style film)
 
-v2 keeps the story, scene order and timing, and the original audio, copied bit-exactly in the same way. Every scene is painted in the Kerala video's art style. Done so far: shots 1–3 (moon and river, the boat arrival, the house door opening). Preview: `docs/v2_preview.jpg`. Scripts: `tools/v2/`.
+File: `output/chor_kerala_1080x1920.mp4`
+
+| Check | Result |
+|---|---|
+| Video stream | H.264 High, 1080×1920, 30 fps, **1,591 frames**, 53.03 s, start 0.000 |
+| Audio stream | HE-AAC, 48 kHz, stereo, 1,246 packets, 53.14 s, start 0.000 |
+| Audio identical to the original | **Yes.** Packet-stream MD5 `ad8dcc47c432b86671aa0d1811144395` and decoded-PCM MD5 `d64174a75e596a2014d0c359c0c7f126` both equal the source's. The track was stream-copied, not re-encoded, retimed or regenerated. |
+| Timeline | Output frame *n* corresponds to the original's frame *n*. Every story beat, cut and dissolve is placed on the original's frame numbers (see `v2_scene_breakdown.md`). |
+| Render integrity | Four lossless chunks rendered with return code 0 and decode to 400 + 400 + 400 + 391 = 1,591 frames |
+| Visual review | The encoded MP4 was sampled every 2 s (27 frames, start to end), and transitions (frames 281/282, 345–356, 1469/1470) and the ending were checked individually. All scenes render as designed. |
+
+## Known differences from the original (by design)
+
+- **Art style:** everything is in the Kerala video's painted style instead of the original's glowing-outline style. This was requested so the new character no longer looks pasted in.
+- **Narrator:** the man of the house is the thin scribe from the Kerala video. In the original he is a glowing outline figure.
+- **Symbols:** each line's "taken" item is redrawn as glowing gold line art in the same order and on the same words: scales, shadow, house, kite, chest, stars, wounds, fingerprint-galaxy, letters-to-birds and the lamp.
+- **Title:** the title card (चोर / JUSTH) is cut from the original film and re-placed for the vertical frame.
