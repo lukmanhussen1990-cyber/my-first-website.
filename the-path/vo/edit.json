@@ -1,0 +1,598 @@
+{
+ "about": "Edit decision list for the VO stem. Rebuild with tools/vo_edit.py (deterministic).",
+ "take": "B",
+ "source": "vo/takes/take_B_R4I9hra1fg6HfTsCY63H.mp3",
+ "source_sha256": "6d4fc8b25fb0854526c0174589df5519bd713f323d9b4d7dd5ca3a98f5944588",
+ "decode": "FFmpeg (gapless trim) + SoX resampler at 28-bit precision, 44.1 -> 48 kHz",
+ "rules": {
+  "shrink_min": 0.45,
+  "grow_max": 1.6,
+  "punctuation_min_s": {
+   ",": 0.12,
+   "...": 0.3,
+   ".": 0.25,
+   "": 0.08
+  },
+  "sentence_gap_s": {
+   ".": 0.25,
+   ",": 0.12
+  },
+  "min_change_s": 0.01,
+  "crossfade_ms": 10
+ },
+ "segments": [
+  {
+   "n": 1,
+   "text": "Five minutes a day, that's all it takes.",
+   "anchor_t": 0.5,
+   "frame": 30,
+   "sample": 24000,
+   "fit": "natural",
+   "natural_s": 1.78,
+   "window_s": 2.2,
+   "pause_changes": [],
+   "course_words": null,
+   "onset_t": 0.5,
+   "onset_f": 30,
+   "end_t": 2.28,
+   "end_f": 137,
+   "end_limit_t": 2.7,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 2,
+   "text": "One word at a time,",
+   "anchor_t": 2.95,
+   "frame": 177,
+   "sample": 141600,
+   "fit": "natural",
+   "natural_s": 1.12,
+   "window_s": 1.25,
+   "pause_changes": [],
+   "course_words": null,
+   "onset_t": 2.95,
+   "onset_f": 177,
+   "end_t": 4.07,
+   "end_f": 244,
+   "end_limit_t": 4.2,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 3,
+   "text": "a streak you'll want to keep alive,",
+   "anchor_t": 4.6,
+   "frame": 276,
+   "sample": 220800,
+   "fit": "natural",
+   "natural_s": 1.558,
+   "window_s": 2.55,
+   "pause_changes": [],
+   "course_words": null,
+   "onset_t": 4.6,
+   "onset_f": 276,
+   "end_t": 6.1575,
+   "end_f": 369,
+   "end_limit_t": 7.15,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 4,
+   "text": "a league you'll want to win,",
+   "anchor_t": 7.3,
+   "frame": 438,
+   "sample": 350400,
+   "fit": "natural",
+   "natural_s": 1.293,
+   "window_s": 1.38,
+   "pause_changes": [],
+   "course_words": null,
+   "onset_t": 7.3,
+   "onset_f": 438,
+   "end_t": 8.5925,
+   "end_f": 516,
+   "end_limit_t": 8.68,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 5,
+   "text": "and then, one day... you just talk.",
+   "anchor_t": 9.05,
+   "frame": 543,
+   "sample": 434400,
+   "fit": "pause trims",
+   "natural_s": 2.715,
+   "window_s": 2.37,
+   "pause_changes": [
+    {
+     "after": "then,",
+     "natural_s": 0.255,
+     "new_s": 0.1619
+    },
+    {
+     "after": "day...",
+     "natural_s": 0.69,
+     "new_s": 0.4381
+    }
+   ],
+   "course_words": null,
+   "onset_t": 9.05,
+   "onset_f": 543,
+   "end_t": 11.4201,
+   "end_f": 685,
+   "end_limit_t": 11.42,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 6,
+   "text": "Languages, math, music... even chess.",
+   "anchor_t": 11.67,
+   "frame": 700,
+   "sample": 560000,
+   "fit": "natural",
+   "natural_s": 2.697,
+   "window_s": 3.013,
+   "pause_changes": [
+    {
+     "after": "music...",
+     "natural_s": 0.415,
+     "new_s": 0.3
+    }
+   ],
+   "course_words": {
+    "targets": {
+     "math": 12.42,
+     "music": 12.98,
+     "chess": 13.7
+    },
+    "natural_onsets": {
+     "math": 12.374,
+     "music": 12.844,
+     "chess": 14.047
+    },
+    "best_onsets": {
+     "math": 12.374,
+     "music": 12.837,
+     "chess": 13.924
+    },
+    "best_error_ms": {
+     "math": -46,
+     "music": -143,
+     "chess": 224
+    },
+    "pause_changes_s": {
+     "math,": -0.0075,
+     "music...": -0.115
+    }
+   },
+   "onset_t": 11.6667,
+   "onset_f": 700,
+   "end_t": 14.2492,
+   "end_f": 855,
+   "end_limit_t": 14.68,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 7,
+   "text": "One path, every skill.",
+   "anchor_t": 14.93,
+   "frame": 896,
+   "sample": 716800,
+   "fit": "pause trims",
+   "natural_s": 1.635,
+   "window_s": 1.517,
+   "pause_changes": [
+    {
+     "after": "path,",
+     "natural_s": 0.3475,
+     "new_s": 0.229
+    }
+   ],
+   "course_words": null,
+   "onset_t": 14.9333,
+   "onset_f": 896,
+   "end_t": 16.4498,
+   "end_f": 987,
+   "end_limit_t": 16.45,
+   "anchor_ok": true,
+   "end_ok": true
+  },
+  {
+   "n": 8,
+   "text": "Duolingo.",
+   "anchor_t": 17.33,
+   "frame": 1040,
+   "sample": 832000,
+   "fit": "natural",
+   "natural_s": 0.585,
+   "window_s": 0.717,
+   "pause_changes": [],
+   "course_words": null,
+   "onset_t": 17.3333,
+   "onset_f": 1040,
+   "end_t": 17.9183,
+   "end_f": 1075,
+   "end_limit_t": 18.05,
+   "anchor_ok": true,
+   "end_ok": true
+  }
+ ],
+ "pause_edits": [
+  {
+   "after": "takes.",
+   "before": "One",
+   "why": "segment 2 on its anchor (f177)",
+   "natural_s": 0.41,
+   "new_s": 0.67,
+   "kept_tail_s": 0.1277,
+   "kept_lead_in_s": 0.0091,
+   "room_tone_s": 0.5331,
+   "removed": []
+  },
+  {
+   "after": "time,",
+   "before": "a",
+   "why": "segment 3 on its anchor (f276)",
+   "natural_s": 0.11,
+   "new_s": 0.53,
+   "kept_tail_s": 0.0925,
+   "kept_lead_in_s": 0.0104,
+   "room_tone_s": 0.4271,
+   "removed": []
+  },
+  {
+   "after": "alive,",
+   "before": "a",
+   "why": "segment 4 on its anchor (f438)",
+   "natural_s": 0.44,
+   "new_s": 1.1425,
+   "kept_tail_s": 0.0105,
+   "kept_lead_in_s": 0.01,
+   "room_tone_s": 1.122,
+   "removed": []
+  },
+  {
+   "after": "win,",
+   "before": "and",
+   "why": "segment 5 on its anchor (f543)",
+   "natural_s": 0.38,
+   "new_s": 0.4575,
+   "kept_tail_s": 0.0325,
+   "kept_lead_in_s": 0.01,
+   "room_tone_s": 0.415,
+   "removed": []
+  },
+  {
+   "after": "then,",
+   "before": "one",
+   "why": "segment 5 inner pause",
+   "natural_s": 0.255,
+   "new_s": 0.1619,
+   "kept_tail_s": 0.0343,
+   "kept_lead_in_s": 0.01,
+   "room_tone_s": 0.1176,
+   "removed": []
+  },
+  {
+   "after": "day...",
+   "before": "you",
+   "why": "segment 5 inner pause",
+   "natural_s": 0.69,
+   "new_s": 0.4381,
+   "kept_tail_s": 0.0225,
+   "kept_lead_in_s": 0.0101,
+   "room_tone_s": 0.4056,
+   "removed": []
+  },
+  {
+   "after": "talk.",
+   "before": "Languages,",
+   "why": "segment 6 on its anchor (f700)",
+   "natural_s": 0.505,
+   "new_s": 0.2466,
+   "kept_tail_s": 0.0095,
+   "kept_lead_in_s": 0.01,
+   "room_tone_s": 0.2271,
+   "removed": []
+  },
+  {
+   "after": "music...",
+   "before": "even",
+   "why": "segment 6 inner pause",
+   "natural_s": 0.415,
+   "new_s": 0.3,
+   "kept_tail_s": 0.01,
+   "kept_lead_in_s": 0.01,
+   "room_tone_s": 0.28,
+   "removed": []
+  },
+  {
+   "after": "chess.",
+   "before": "One",
+   "why": "segment 7 on its anchor (f896)",
+   "natural_s": 0.55,
+   "new_s": 0.6842,
+   "kept_tail_s": 0.0849,
+   "kept_lead_in_s": 0.01,
+   "room_tone_s": 0.5893,
+   "removed": [
+    [
+     "click",
+     13.145,
+     13.155,
+     -52.7
+    ]
+   ]
+  },
+  {
+   "after": "path,",
+   "before": "every",
+   "why": "segment 7 inner pause",
+   "natural_s": 0.3475,
+   "new_s": 0.229,
+   "kept_tail_s": 0.0375,
+   "kept_lead_in_s": 0.0101,
+   "room_tone_s": 0.1814,
+   "removed": []
+  },
+  {
+   "after": "skill.",
+   "before": "Duolingo.",
+   "why": "segment 8 on its anchor (f1040)",
+   "natural_s": 0.44,
+   "new_s": 0.8835,
+   "kept_tail_s": 0.025,
+   "kept_lead_in_s": 0.0099,
+   "room_tone_s": 0.8486,
+   "removed": []
+  }
+ ],
+ "room_tone": {
+  "sources_take_t": [
+   [
+    1.975,
+    2.228
+   ],
+   [
+    5.055,
+    5.455
+   ],
+   [
+    6.81,
+    7.128
+   ],
+   [
+    7.688,
+    7.878
+   ],
+   [
+    8.475,
+    9.113
+   ],
+   [
+    9.883,
+    10.348
+   ],
+   [
+    12.05,
+    12.425
+   ],
+   [
+    13.16,
+    13.595
+   ],
+   [
+    14.285,
+    14.565
+   ],
+   [
+    15.285,
+    15.67
+   ]
+  ],
+  "unique_s": 3.737
+ },
+ "edl": [
+  {
+   "kind": "room tone",
+   "dst_t0": 0.0,
+   "dst_t1": 0.4475
+  },
+  {
+   "kind": "take",
+   "src_t0": 0.005,
+   "src_t1": 1.9652,
+   "dst_t0": 0.4475,
+   "dst_t1": 2.4077
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 2.4077,
+   "dst_t1": 2.9409
+  },
+  {
+   "kind": "take",
+   "src_t0": 2.2384,
+   "src_t1": 3.46,
+   "dst_t0": 2.9409,
+   "dst_t1": 4.1625
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 4.1625,
+   "dst_t1": 4.5896
+  },
+  {
+   "kind": "take",
+   "src_t0": 3.4671,
+   "src_t1": 5.0455,
+   "dst_t0": 4.5896,
+   "dst_t1": 6.168
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 6.168,
+   "dst_t1": 7.29
+  },
+  {
+   "kind": "take",
+   "src_t0": 5.465,
+   "src_t1": 6.8,
+   "dst_t0": 7.29,
+   "dst_t1": 8.625
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 8.625,
+   "dst_t1": 9.04
+  },
+  {
+   "kind": "take",
+   "src_t0": 7.1375,
+   "src_t1": 7.6768,
+   "dst_t0": 9.04,
+   "dst_t1": 9.5793
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 9.5793,
+   "dst_t1": 9.6969
+  },
+  {
+   "kind": "take",
+   "src_t0": 7.8875,
+   "src_t1": 8.465,
+   "dst_t0": 9.6969,
+   "dst_t1": 10.2744
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 10.2744,
+   "dst_t1": 10.68
+  },
+  {
+   "kind": "take",
+   "src_t0": 9.1224,
+   "src_t1": 9.872,
+   "dst_t0": 10.68,
+   "dst_t1": 11.4296
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 11.4296,
+   "dst_t1": 11.6567
+  },
+  {
+   "kind": "take",
+   "src_t0": 10.3575,
+   "src_t1": 12.04,
+   "dst_t0": 11.6567,
+   "dst_t1": 13.3392
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 13.3392,
+   "dst_t1": 13.6191
+  },
+  {
+   "kind": "take",
+   "src_t0": 12.435,
+   "src_t1": 13.1499,
+   "dst_t0": 13.6191,
+   "dst_t1": 14.3341
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 14.3341,
+   "dst_t1": 14.9233
+  },
+  {
+   "kind": "take",
+   "src_t0": 13.605,
+   "src_t1": 14.275,
+   "dst_t0": 14.9233,
+   "dst_t1": 15.5933
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 15.5933,
+   "dst_t1": 15.7747
+  },
+  {
+   "kind": "take",
+   "src_t0": 14.5749,
+   "src_t1": 15.275,
+   "dst_t0": 15.7747,
+   "dst_t1": 16.4748
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 16.4748,
+   "dst_t1": 17.3234
+  },
+  {
+   "kind": "take",
+   "src_t0": 15.6801,
+   "src_t1": 16.395,
+   "dst_t0": 17.3234,
+   "dst_t1": 18.0383
+  },
+  {
+   "kind": "room tone",
+   "dst_t0": 18.0383,
+   "dst_t1": 18.3383
+  }
+ ],
+ "chain": {
+  "hum_notch_hz": [
+   60.0,
+   120.0
+  ],
+  "highpass": {
+   "hz": 90,
+   "order": 4
+  },
+  "compressor": {
+   "threshold_db": -14.0,
+   "ratio": 2.5,
+   "knee_db": 6.0,
+   "attack_ms": 5.0,
+   "release_ms": 80.0,
+   "rms_ms": 10.0
+  },
+  "expander": {
+   "above_floor_db": 10.0,
+   "ratio": 3.0,
+   "range_db": 10.0,
+   "open_ms": 1.0,
+   "hold_ms": 60.0,
+   "close_ms": 120.0,
+   "lookahead_ms": 5.0
+  },
+  "loudness_lufs": -16.0,
+  "true_peak_ceiling_dbtp": -1.5,
+  "static_gain_db": 19.32,
+  "expander_threshold_dbfs": -32.5,
+  "compressor_max_gr_db": 4.63,
+  "compressor_time_over_1db_pct": 22.1,
+  "expander_max_gr_db": 10.0,
+  "limiter_max_gr_db": 0.8
+ },
+ "result": {
+  "integrated_lufs": -16.0,
+  "true_peak_dbtp": -1.5,
+  "sample_peak_dbfs": -1.5,
+  "loudness_range_note": "BS.1770-4 gated; NumPy meter (audio/loudness.py)",
+  "between_words_rms_dbfs": -42.6,
+  "room_tone_fill_rms_dbfs": -52.1,
+  "stem_recheck_max_deviation_ms": 1.7,
+  "stem_recheck_words": 14,
+  "anchors_on_frame": true,
+  "segments_end_in_time": true
+ }
+}

@@ -149,7 +149,7 @@ Rules: text lands on the focus plane, is never motion-blurred while it is meant 
 | 15 | 0.250 s | S1 | **slam_rebound**: Stretch peak of the rebound; settles by f24 (spring 4 Hz, damping 0.35). |  |
 | 24 | 0.400 s | S1 | **strands_collapse**: The strands collapse into the single line, which ignites at the left end of the underline. |  |
 | 28 | 0.467 s | S1 | **wordmark_reveal**: Line runs left to right under the wordmark; a soft wipe tied to the head x-position reveals it (f28 to f66). |  |
-| 30 | 0.500 s | S1 | **vo_open**: VO: Five minutes a day, that's all it takes. | given |
+| 30 | 0.500 s | S1 | **vo_open**: VO: Five minutes a day, that's all it takes. | given; on the VO |
 | 66 | 1.100 s | S1 | **wordmark_rest_A**: Wordmark fully revealed and pixel-exact at rest (camera still) through f92. |  |
 | 70 | 1.167 s | S1 | **duo_blink**: Blink: eye group scales vertically to 8% and back (f70 to f76). |  |
 | 82 | 1.367 s | S1 | **duo_hop**: Hop out: anticipation squash f78 to f82, take-off f82 with stretch and one wing flap, out of frame top-right by f94. |  |
@@ -161,7 +161,7 @@ Rules: text lands on the focus plane, is never motion-blurred while it is meant 
 | 144 | 2.400 s | S2 | **start_press**: The line presses START (bar 2 downbeat): node top depresses into its lip, tooltip pops; node 5 lights at f146. | given |
 | 148 | 2.467 s | S2 | **phone_rise**: Phone rises out of the node (scale 0.15 to 1.0, ease-out-back), turning to face camera; screen on at f172. |  |
 | 176 | 2.933 s | S3 | **push_in**: Camera pushes toward the floating phone UI (slow, continuous). | given |
-| 177 | 2.950 s | S3 | **vo_one_word**: VO: One word at a time, | given |
+| 177 | 2.950 s | S3 | **vo_one_word**: VO: One word at a time, | given; on the VO |
 | 180 | 3.000 s | S3 | **title_in**: Translate this sentence (header). |  |
 | 186 | 3.100 s | S3 | **duo_bubble**: Duo's speech bubble: Quiero un café, por favor. (beak talks f188 to f206; caption only, no audible line). |  |
 | 192 | 3.200 s | S3 | **bank_in**: Word bank appears scrambled: coffee / I / please / a / want. |  |
@@ -173,7 +173,7 @@ Rules: text lands on the focus plane, is never motion-blurred while it is meant 
 | 238 | 3.967 s | S3 | **check_enable**: CHECK turns from inactive grey to green. |  |
 | 243 | 4.050 s | S3 | **check_press**: CHECK pressed: top face sinks into its lip (f243 to f249). |  |
 | 254 | 4.233 s | S3 | **excellent**: Excellent! banner slides up + correct-answer chime; the line surges along the progress bar 70% to 100% (f254 to f266). | given |
-| 276 | 4.600 s | S3 | **vo_streak**: VO: a streak you'll want to keep alive, | given |
+| 276 | 4.600 s | S3 | **vo_streak**: VO: a streak you'll want to keep alive, | given; on the VO |
 | 288 | 4.800 s | S4 | **leap**: Line leaps out of the phone from the progress bar's end; camera whips to follow (f288 to f322). | given |
 | 290 | 4.833 s | S4 | **curl**: Line curls into the flame silhouette in one stroke; color ramps green to orange to gold. |  |
 | 300 | 5.000 s | S4 | **ignite**: Flame ignites; the film's single anamorphic streak (decays over f300 to f324). | given |
@@ -188,7 +188,7 @@ Rules: text lands on the focus plane, is never motion-blurred while it is meant 
 | 416 | 6.933 s | S4 | **day_Su**: Day 7 fills (accented). |  |
 | 420 | 7.000 s | S4 | **crest**: Crest: the line turns downward, camera rises slightly and tilts down - anticipation before the drop. |  |
 | 432 | 7.200 s | S5 | **drop**: THE DROP (bar 4 downbeat): line plunges, camera falls ~2,900 units; kick, claps and shaker enter. | given |
-| 438 | 7.300 s | S5 | **vo_league**: VO: a league you'll want to win, (derived anchor; placed just after the drop so the kick never masks the onset). |  |
+| 438 | 7.300 s | S5 | **vo_league**: VO: a league you'll want to win, (derived anchor; placed just after the drop so the kick never masks the onset). | on the VO |
 | 455 | 7.583 s | S5 | **arrive_league**: Camera arrives at the league card (air-brake, 3 px bump). |  |
 | 456 | 7.600 s | S5 | **card_in**: Diamond League card resolves; rows cascade in f460 to f472. |  |
 | 466 | 7.767 s | S5 | **row_lift**: User row (#7) lifts out of the card in 3D (+90 units toward camera, 4 deg tilt). |  |
@@ -198,28 +198,28 @@ Rules: text lands on the focus plane, is never motion-blurred while it is meant 
 | 507 | 8.450 s | S5 | **pass_3**: Passes #3. |  |
 | 515 | 8.583 s | S5 | **pass_2**: Passes #2. |  |
 | 522 | 8.700 s | S5 | **rank_1**: Lands at #1 + correct-answer chime; particle burst; rank cell reads 1. | given |
-| 543 | 9.050 s | S5 | **vo_and_then**: VO: and then, one day... you just talk. | given |
+| 543 | 9.050 s | S5 | **vo_and_then**: VO: and then, one day... you just talk. | given; on the VO |
 | 560 | 9.333 s | S6 | **to_call**: Line flows from the card to the call UI; camera trucks left and down (f560 to f590). | given |
 | 566 | 9.433 s | S6 | **call_connect**: Call connects; UI assembles (f566 to f586). |  |
 | 572 | 9.533 s | S6 | **duo_caption**: Duo caption: ¡Hola! ¿Qué tal tu día?; beak talks f574 to f592. |  |
 | 596 | 9.933 s | S6 | **reply_caption**: Reply appears word by word (f596, 602, 610, 616, 622, 630): ¡Muy bien! Pedí un café en español. The line becomes the voice waveform under it (f594 to f664). |  |
 | 684 | 11.400 s | S7 | **pull_back**: Rapid pull-back + zoom-out (lens 2000 to 1400 px) reveals the whole path splitting into four branches; musical lift. | given |
 | 690 | 11.500 s | S7 | **fork**: Path forks into four branch heads racing to the course nodes. |  |
-| 700 | 11.667 s | S7 | **languages**: Languages node lights (Feather Green); eight flag tiles pop into orbit f702 to f716. | given |
-| 745 | 12.417 s | S7 | **math**: Math node lights (blue #1CB0F6) with pi. | given |
-| 779 | 12.983 s | S7 | **music**: Music node lights (purple #CE82FF) with a musical note. | given |
-| 822 | 13.700 s | S7 | **chess**: Chess node lights (white) and the knight hops (lands f834). | given |
+| 700 | 11.667 s | S7 | **languages**: Languages node lights (Feather Green); eight flag tiles pop into orbit f702 to f716. | given; on the VO |
+| 742 | 12.367 s | S7 | **math**: Math node lights (blue #1CB0F6) with pi. | given 12.42 s; follows the VO |
+| 771 | 12.850 s | S7 | **music**: Music node lights (purple #CE82FF) with a musical note. | given 12.98 s; follows the VO |
+| 836 | 13.933 s | S7 | **chess**: Chess node lights (white) and the knight hops (lands 12 frames later). | given 13.70 s; follows the VO |
 | 880 | 14.667 s | S8 | **converge**: Four branch lines braid and converge; camera cranes down and pushes in to the tagline. | given |
 | 892 | 14.867 s | S8 | **merge**: Strands merge into one Feather Green line. |  |
-| 896 | 14.933 s | S8 | **one_path**: Line draws the baseline of One path, (f896 to f916); letters rise from it with a 2-frame stagger. | given |
-| 920 | 15.333 s | S8 | **baseline_drop**: Baseline drops one line-height to line 2 (f920 to f928). |  |
-| 930 | 15.500 s | S8 | **every_skill**: every skill. rises; the baseline splits into four course-color strands (f930 to f956). |  |
-| 956 | 15.933 s | S8 | **merge_back**: Strands merge back into Feather Green (f956 to f972). |  |
+| 896 | 14.933 s | S8 | **one_path**: Line draws the baseline of One path, (f896 to f916); letters rise from it with a 2-frame stagger. | given; on the VO |
+| 929 | 15.483 s | S8 | **baseline_drop**: Baseline drops one line-height to line 2 (8 frames, ending 2 frames before every skill. rises). |  |
+| 939 | 15.650 s | S8 | **every_skill**: every skill. rises, starting 8 frames before the spoken word with a 1-frame letter stagger (fully risen 12 frames later); the baseline splits into four course-color strands. | on the VO |
+| 965 | 16.083 s | S8 | **merge_back**: Strands merge back into Feather Green (over 16 frames, starting 26 frames after every skill. begins to rise). |  |
 | 990 | 16.500 s | S9 | **breath**: Breath: music cuts to a reversed swell; camera pulls back (f990 to f1032); the baseline contracts to a point (inhale). | given |
 | 998 | 16.633 s | S9 | **duo_enters**: Duo falls into frame from the top, stretched. |  |
 | 1008 | 16.800 s | S9 | **landing**: Duo lands on the main impact (bar 8 downbeat): squash peak f1009, contact shadow, light shockwave; tagline (now behind) racks out of focus and fades by f1030. | given |
 | 1023 | 17.050 s | S9 | **underline_run**: The point of light draws under the wordmark left to right, revealing it. |  |
-| 1040 | 17.333 s | S9 | **duolingo_shown**: Wordmark fully revealed exactly on VO Duolingo. | given |
+| 1040 | 17.333 s | S9 | **duolingo_shown**: Wordmark fully revealed exactly on VO Duolingo. | given; on the VO |
 | 1044 | 17.400 s | S9 | **wordmark_rest_I**: Wordmark pixel-exact at rest through f1151 (camera at home I since f1032). |  |
 | 1084 | 18.067 s | S9 | **fanfare**: Lesson-complete fanfare; Duo's happy wing flap (two flaps, f1084 to f1112). | given |
 | 1128 | 18.800 s | S9 | **hero_blink**: Final blink; idle breathing (+/-1% squash) to the end of S9. |  |
@@ -270,18 +270,18 @@ Rules: text lands on the focus plane, is never motion-blurred while it is meant 
 **S6 · Talk · f560–f683 · Station F**
 - **f560 (9.33 s):** the line flows from the card into a floating video-call UI and the camera trucks left. f566: the call connects. Main tile: Duo (official art) on a soft green gradient. Picture-in-picture: Maya's initial. Header `Duo · 02:14`. Mic, camera and hang-up controls.
 - f572: Duo's caption **¡Hola! ¿Qué tal tu día?** with beak animation (f574–f592).
-- f596–f630: the reply builds word by word, **¡Muy bien! Pedí un café en español.**, and **the line becomes its voice waveform** (f594–f664). Its amplitude comes from a real syllable envelope of that sentence.
+- f596–f630: the reply builds word by word, **¡Muy bien! Pedí un café en español.**, and **the line becomes its voice waveform** (f594–f664). Its amplitude follows the sentence's eleven syllables and stress pattern (`audio/reply.py`), keyed to the word reveals.
 - The VO *and then, one day… you just talk.* runs over the scene. The Spanish is captioned, not voiced, so the VO stays clear (see §19).
 
 **S7 · Every Skill · f684–f879 · Station G**
 - **f684 (11.40 s): rapid pull-back.** A minimum-jerk snap of about 8,700 units, settled by f700 while the lens widens to 24 mm, then a slow drift back (about 9,400 units in total by f866). The call card shrinks away, the **whole glowing path** appears winding down from the logo through every station, and at f690 it **forks into four branches** racing to four big course nodes that rise into view from under the lens.
-- **f700 Languages** (green, eight flag tiles pop into a tilted orbit) · **f745 Math** (blue, a chunky π) · **f779 Music** (purple, a ♪ bobbing on the beat) · **f822 Chess** (white, the knight hops and lands at f834). Each lights on the frame its name is spoken, while the camera is nearly still (≤ 3 px/frame of motion). Labels sit below each node.
+- **f700 Languages** (green, eight flag tiles pop into a tilted orbit) · **f742 Math** (blue, a chunky π) · **f771 Music** (purple, a ♪ bobbing on the beat) · **f836 Chess** (white, the knight hops and lands at f848). Each lights on the frame its name is spoken in the locked VO, while the camera is nearly still (≤ 3 px/frame of motion). The brief's 12.42 / 12.98 / 13.70 s moved by −3, −8 and +14 frames: *music… even chess* needs at least 1.04 s in this read, so *chess* cannot land 0.72 s after *music* without cutting speech (see `vo/VOICE.md`). Labels sit below each node.
 - Glyphs stand on the node tops as camera-facing chunky 3D shapes. Green stays the connecting light; each branch takes on its course color as it reaches its node.
 
 **S8 · Tagline · f880–f989 · Station H**
 - f866–f902: the camera cranes down and pushes in. The four branches braid (f880) and merge into one Feather Green line (f892).
 - **f896 (14.93 s):** the line draws the baseline of **One path,** and the letters rise out of it with a 2-frame stagger.
-- f920–f928: the baseline drops one line height. f930: **every skill.** rises while the baseline **splits into four strands** (green, blue, purple, white), then merges back to Feather Green over f956–f972.
+- f929–f937: the baseline drops one line height. f939: **every skill.** rises, 8 frames ahead of the spoken *every* (f947) with a 1-frame letter stagger, while the baseline **splits into four strands** (green, blue, purple, white), then merges back to Feather Green over f965–f981.
 
 **S9 · Hero Ending · f990–f1151 · Station I**
 - **f990 (16.50 s) breath:** the music falls away to a reversed swell. The camera breathes back 1,570 units (f990–f1032) and the baseline contracts to a single point: an inhale.
@@ -401,23 +401,24 @@ Everything green and luminous in the film, from the hook's strands to the final 
   - prefer the take whose natural pauses need the least adjustment to hit the anchors.
 - **Edit rules:**
   - Cut **only inside the take's own pauses**. Never time-stretch or pitch-shift speech.
-  - Every anchor in the brief is hit by moving whole phrases at their pauses. This includes the course words inside segment 6: *Languages,* · *math,* · *music…* · *even chess.*
-  - Gaps are filled with the take's own room tone, crossfaded 10 ms at zero crossings.
+  - Every anchor in the brief is hit by moving whole phrases at their pauses. The course words inside segment 6 (*Languages,* · *math,* · *music…* · *even chess.*) move as close to their times as the take's pauses allow; the animation absorbs what is left.
+  - An edited pause keeps the previous word's tail and the next word's lead-in; the middle becomes the take's own room tone, crossfaded 10 ms at zero crossings. Pauses shrink to no less than 45 % of their natural length or their punctuation's minimum (comma 0.12 s, ellipsis 0.30 s).
   - Word timings are verified to ±1 frame. The animation is then **locked to the recording**: `timeline.json` is rewritten with measured word frames, and any event tied to a word follows it.
-- **Waveform source (S6):** I will also generate the Spanish reply once in the same voice (about 35 characters) **only as a control signal** for the waveform's syllable timing and amplitude. It is not mixed.
+- **Waveform source (S6):** planned as a one-off Spanish control line in the same voice. ElevenLabs refused that request (the account's free tier was disabled for "unusual activity" after both takes and both transcriptions were done), so the waveform follows the sentence's own syllables and stress instead (`audio/reply.py`). It was never going to be heard, so the mix is unaffected.
+- **Result (Phase 3): take B**, edited at its own pauses and locked to the timeline. Full report: [`vo/VOICE.md`](vo/VOICE.md).
 
 ### 10.1 Placement map *(generated; * = derived anchor, not given in the brief)*
 <!-- GEN:vo -->
-| # | Segment (cut only at the take's own pauses) | Anchor | Frame | Sample @48 kHz | Must end before | Est. end |
+| # | Segment (cut only at the take's own pauses) | Anchor | Frame | Sample @48 kHz | Must end before | Measured end |
 |---:|---|---:|---:|---:|---:|---:|
-| 1 | Five minutes a day, that's all it takes. | 0.50 s | 30 | 24,000 | 2.90 s | 2.70 s |
-| 2 | One word at a time, | 2.95 s | 177 | 141,600 | 4.20 s | 3.95 s |
-| 3 | a streak you'll want to keep alive, | 4.60 s | 276 | 220,800 | 7.15 s | 6.25 s |
-| 4 | a league you'll want to win, | 7.30 s * | 438 | 350,400 | 8.68 s | 8.60 s |
-| 5 | and then, one day... you just talk. | 9.05 s | 543 | 434,400 | 11.60 s | 11.30 s |
-| 6 | Languages, math, music... even chess. | 11.67 s | 700 | 560,000 | 14.85 s | 14.12 s |
-| 7 | One path, every skill. | 14.93 s | 896 | 716,800 | 16.45 s | 16.23 s |
-| 8 | Duolingo. | 17.33 s | 1040 | 832,000 | 18.05 s | 17.95 s |
+| 1 | Five minutes a day, that's all it takes. | 0.50 s | 30 | 24,000 | 2.90 s | 2.28 s |
+| 2 | One word at a time, | 2.95 s | 177 | 141,600 | 4.20 s | 4.07 s |
+| 3 | a streak you'll want to keep alive, | 4.60 s | 276 | 220,800 | 7.15 s | 6.16 s |
+| 4 | a league you'll want to win, | 7.30 s * | 438 | 350,400 | 8.68 s | 8.59 s |
+| 5 | and then, one day... you just talk. | 9.05 s | 543 | 434,400 | 11.60 s | 11.42 s |
+| 6 | Languages, math, music... even chess. | 11.67 s | 700 | 560,000 | 14.85 s | 14.25 s |
+| 7 | One path, every skill. | 14.93 s | 896 | 716,800 | 16.45 s | 16.45 s |
+| 8 | Duolingo. | 17.33 s | 1040 | 832,000 | 18.05 s | 17.92 s |
 <!-- /GEN:vo -->
 
 ---
@@ -569,16 +570,16 @@ All five fall in gaps in the VO, so none of them masks a word.
 | 88 | 690 | 11.500 | S7 | `fork_zing` | path | Four zips panned left to right. |
 | 89 | 700 | 11.667 | S7 | `languages_light` | hero | Node light chime D6 + pop. |
 | 90 | 702 | 11.700 | S7 | `flag_pops` | ui | Eight staggered flag pops (f702 to f716). |
-| 91 | 745 | 12.417 | S7 | `math_light` | hero | Node light chime F#6 + pi pop. |
-| 92 | 779 | 12.983 | S7 | `music_light` | hero | Node light chime A6 + note pop. |
-| 93 | 822 | 13.700 | S7 | `chess_light` | hero | Node light chime D7 + wooden knock. |
-| 94 | 834 | 13.900 | S7 | `knight_land` | character | Wooden tock as the knight lands. |
+| 91 | 742 | 12.367 | S7 | `math_light` | hero | Node light chime F#6 + pi pop. |
+| 92 | 771 | 12.850 | S7 | `music_light` | hero | Node light chime A6 + note pop. |
+| 93 | 836 | 13.933 | S7 | `chess_light` | hero | Node light chime D7 + wooden knock. |
+| 94 | 848 | 14.133 | S7 | `knight_land` | character | Wooden tock as the knight lands. |
 | 95 | 880 | 14.667 | S8 | `converge_whoosh` | whoosh | Four strands zipping together. |
 | 96 | 892 | 14.867 | S8 | `merge_zip` | path | Merge zip. |
 | 97 | 896 | 14.933 | S8 | `line1_reveal` | text | Soft upward swell for One path, |
-| 98 | 920 | 15.333 | S8 | `baseline_drop` | path | Soft whoop down. |
-| 99 | 930 | 15.500 | S8 | `line2_split` | text | Four-voice stereo shimmer for every skill. and the color split. |
-| 100 | 956 | 15.933 | S8 | `merge_back` | path | Glassy resolve as the strands merge. |
+| 98 | 929 | 15.483 | S8 | `baseline_drop` | path | Soft whoop down. |
+| 99 | 939 | 15.650 | S8 | `line2_split` | text | Four-voice stereo shimmer for every skill. and the color split. |
+| 100 | 965 | 16.083 | S8 | `merge_back` | path | Glassy resolve as the strands merge. |
 | 101 | 990 | 16.500 | S9 | `breath_inhale` | texture | Air inhale under the reversed swell. |
 | 102 | 998 | 16.633 | S9 | `duo_fall` | whoosh | Descending whistle-whoosh. |
 | 103 | 1008 | 16.800 | S9 | `landing_impact` | hero | HERO: landing hit, locked with the music impact. |
@@ -731,11 +732,11 @@ Same world, same path topology, same frame timing, with **new home poses and por
 | ¡Hola! ¿Qué tal tu día? | S6 | f576–f688 | 1.87 s |
 | ¡Muy bien! Pedí un café en español. | S6 | f634–f688 | 0.90 s |
 | Languages | S7 | f704–f884 | 3.00 s |
-| Math | S7 | f749–f884 | 2.25 s |
-| Music | S7 | f783–f884 | 1.68 s |
-| Chess | S7 | f826–f884 | 0.97 s |
+| Math | S7 | f746–f884 | 2.30 s |
+| Music | S7 | f775–f884 | 1.82 s |
+| Chess | S7 | f840–f884 | 0.73 s |
 | One path, | S8 | f912–f1012 | 1.67 s |
-| every skill. | S8 | f948–f1012 | 1.07 s |
+| every skill. | S8 | f951–f1012 | 1.02 s |
 | duolingo (official wordmark) | S9 | f1040–f1158 | 1.97 s |
 | [signature] | S10 | f1186–f1271 | 1.42 s |
 <!-- /GEN:legibility -->
@@ -744,7 +745,7 @@ Same world, same path topology, same frame timing, with **new home poses and por
 
 ## 19. Interpretations I made (tell me if any is wrong)
 
-1. **In-call Spanish is captioned, not voiced.** The VO runs straight through S6 and must stay intelligible, so the two Spanish lines appear as captions. The waveform follows a real speech envelope of the reply.
+1. **In-call Spanish is captioned, not voiced.** The VO runs straight through S6 and must stay intelligible, so the two Spanish lines appear as captions. The waveform follows the reply's own syllables and stress pattern.
 2. **"Duolingo." at 17.33 s is the official wordmark completing its reveal** exactly on the spoken word, not a second typeset word.
 3. **VO segment 4 (*a league you'll want to win,*) starts at 7.30 s**, a derived anchor just after the drop so the kick never masks the onset, and so *win* ends just before the 8.70 s chime.
 4. **The chime and fanfare are original sounds** in the spirit of the app. I won't extract Duolingo's audio files.

@@ -1,0 +1,1848 @@
+{
+ "script": "Five minutes a day, that's all it takes. One word at a time, a streak you'll want to keep alive, a league you'll want to win, and then, one day... you just talk. Languages, math, music... even chess. One path, every skill. Duolingo.",
+ "takes": [
+  {
+   "take": "A",
+   "file": "vo/takes/take_A_LlkgOOWVd2uAtxaMLhNI.mp3",
+   "duration_s": 18.56,
+   "transcript_exact": true,
+   "integrated_lufs": -30.48,
+   "true_peak_dbtp": -14.2,
+   "sample_peak_dbfs": -14.2,
+   "noise_floor_dbfs": -63.8,
+   "room_tone": {
+    "t0": 11.465,
+    "t1": 11.715,
+    "rms_dbfs": -63.0,
+    "spread_db": 2.9
+   },
+   "f0_median_hz": 217.5,
+   "f0_range_st": 6.2,
+   "segment_f0_median_hz": [
+    217.2,
+    225.4,
+    222.8,
+    220.7,
+    212.7,
+    217.5,
+    209.1,
+    201.6
+   ],
+   "words_per_s_of_speech": 3.34,
+   "clicks_all": 34,
+   "clicks_stray": [],
+   "stray_sounds_in_pauses": [
+    [
+     "takes.",
+     "One",
+     [
+      "breath/noise",
+      2.09,
+      2.2175,
+      -53.2
+     ]
+    ],
+    [
+     "takes.",
+     "One",
+     [
+      "click",
+      2.2425,
+      2.2525,
+      -56.3
+     ]
+    ],
+    [
+     "takes.",
+     "One",
+     [
+      "click",
+      2.255,
+      2.265,
+      -57.4
+     ]
+    ],
+    [
+     "math,",
+     "music...",
+     [
+      "click",
+      12.895,
+      12.9175,
+      -56.6
+     ]
+    ],
+    [
+     "path,",
+     "every",
+     [
+      "click",
+      16.2175,
+      16.245,
+      -56.6
+     ]
+    ],
+    [
+     "path,",
+     "every",
+     [
+      "click",
+      16.2475,
+      16.255,
+      -57.4
+     ]
+    ]
+   ],
+   "spectral_jumps": [
+    [
+     0.085,
+     8.7
+    ]
+   ],
+   "pauses": [
+    {
+     "after": "takes.",
+     "before": "One",
+     "t0": 1.995,
+     "t1": 2.345,
+     "len_s": 0.35,
+     "safe": [
+      2.005,
+      2.335
+     ],
+     "events": [
+      [
+       "breath/noise",
+       2.09,
+       2.2175,
+       -53.2
+      ],
+      [
+       "click",
+       2.2425,
+       2.2525,
+       -56.3
+      ],
+      [
+       "click",
+       2.255,
+       2.265,
+       -57.4
+      ]
+     ]
+    },
+    {
+     "after": "time,",
+     "before": "a",
+     "t0": 3.607,
+     "t1": 3.795,
+     "len_s": 0.188,
+     "safe": [
+      3.725,
+      3.785
+     ],
+     "events": [
+      [
+       "tail",
+       3.6125,
+       3.6525,
+       -55.2
+      ],
+      [
+       "tail",
+       3.6825,
+       3.715,
+       -50.0
+      ]
+     ]
+    },
+    {
+     "after": "alive,",
+     "before": "a",
+     "t0": 5.56,
+     "t1": 5.742,
+     "len_s": 0.183,
+     "safe": [
+      5.57,
+      5.647
+     ],
+     "events": [
+      [
+       "lead-in",
+       5.6575,
+       5.74,
+       -53.5
+      ]
+     ]
+    },
+    {
+     "after": "win,",
+     "before": "and",
+     "t0": 7.438,
+     "t1": 7.825,
+     "len_s": 0.388,
+     "safe": [
+      7.63,
+      7.815
+     ],
+     "events": [
+      [
+       "tail",
+       7.4425,
+       7.4575,
+       -55.8
+      ],
+      [
+       "tail",
+       7.4925,
+       7.62,
+       -54.1
+      ]
+     ]
+    },
+    {
+     "after": "then,",
+     "before": "one",
+     "t0": 8.412,
+     "t1": 8.648,
+     "len_s": 0.235,
+     "safe": [
+      8.422,
+      8.613
+     ],
+     "events": [
+      [
+       "lead-in",
+       8.6225,
+       8.6325,
+       -54.7
+      ]
+     ]
+    },
+    {
+     "after": "day...",
+     "before": "you",
+     "t0": 9.307,
+     "t1": 10.325,
+     "len_s": 1.018,
+     "safe": [
+      9.335,
+      10.315
+     ],
+     "events": [
+      [
+       "tail",
+       9.3125,
+       9.325,
+       -54.5
+      ]
+     ]
+    },
+    {
+     "after": "talk.",
+     "before": "Languages,",
+     "t0": 11.07,
+     "t1": 11.732,
+     "len_s": 0.662,
+     "safe": [
+      11.08,
+      11.723
+     ],
+     "events": []
+    },
+    {
+     "after": "math,",
+     "before": "music...",
+     "t0": 12.812,
+     "t1": 13.0,
+     "len_s": 0.188,
+     "safe": [
+      12.883,
+      12.92
+     ],
+     "events": [
+      [
+       "tail",
+       12.825,
+       12.8325,
+       -56.7
+      ],
+      [
+       "tail",
+       12.8675,
+       12.8725,
+       -57.3
+      ],
+      [
+       "click",
+       12.895,
+       12.9175,
+       -56.6
+      ],
+      [
+       "lead-in",
+       12.93,
+       12.9425,
+       -55.5
+      ],
+      [
+       "lead-in",
+       12.9575,
+       12.965,
+       -56.8
+      ]
+     ]
+    },
+    {
+     "after": "music...",
+     "before": "even",
+     "t0": 13.52,
+     "t1": 14.13,
+     "len_s": 0.61,
+     "safe": [
+      13.53,
+      14.12
+     ],
+     "events": []
+    },
+    {
+     "after": "chess.",
+     "before": "One",
+     "t0": 14.967,
+     "t1": 15.543,
+     "len_s": 0.575,
+     "safe": [
+      14.977,
+      15.533
+     ],
+     "events": []
+    },
+    {
+     "after": "path,",
+     "before": "every",
+     "t0": 16.137,
+     "t1": 16.457,
+     "len_s": 0.32,
+     "safe": [
+      16.148,
+      16.447
+     ],
+     "events": [
+      [
+       "click",
+       16.2175,
+       16.245,
+       -56.6
+      ],
+      [
+       "click",
+       16.2475,
+       16.255,
+       -57.4
+      ]
+     ]
+    },
+    {
+     "after": "skill.",
+     "before": "Duolingo.",
+     "t0": 17.233,
+     "t1": 17.8,
+     "len_s": 0.567,
+     "safe": [
+      17.27,
+      17.79
+     ],
+     "events": [
+      [
+       "tail",
+       17.245,
+       17.26,
+       -56.5
+      ]
+     ]
+    }
+   ],
+   "segments": [
+    {
+     "n": 1,
+     "natural_s": 1.923,
+     "window_s": 2.2,
+     "end_limit_t": 2.7,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 2,
+     "natural_s": 1.262,
+     "window_s": 1.25,
+     "end_limit_t": 4.2,
+     "over_s": 0.012,
+     "inner_pauses": [],
+     "pause_factor": null,
+     "fits": "NO"
+    },
+    {
+     "n": 3,
+     "natural_s": 1.765,
+     "window_s": 2.55,
+     "end_limit_t": 7.15,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 4,
+     "natural_s": 1.695,
+     "window_s": 1.38,
+     "end_limit_t": 8.68,
+     "over_s": 0.315,
+     "inner_pauses": [],
+     "pause_factor": null,
+     "fits": "NO"
+    },
+    {
+     "n": 5,
+     "natural_s": 3.245,
+     "window_s": 2.37,
+     "end_limit_t": 11.42,
+     "over_s": 0.875,
+     "inner_pauses": [
+      {
+       "after": "then,",
+       "len_s": 0.235,
+       "punct": ","
+      },
+      {
+       "after": "day...",
+       "len_s": 1.018,
+       "punct": "..."
+      }
+     ],
+     "pause_factor": null,
+     "fits": "NO"
+    },
+    {
+     "n": 6,
+     "natural_s": 3.235,
+     "window_s": 3.013,
+     "end_limit_t": 14.68,
+     "over_s": 0.222,
+     "inner_pauses": [
+      {
+       "after": "math,",
+       "len_s": 0.188,
+       "punct": ","
+      },
+      {
+       "after": "music...",
+       "len_s": 0.61,
+       "punct": "..."
+      }
+     ],
+     "pause_factor": 0.722,
+     "fits": "pause trims"
+    },
+    {
+     "n": 7,
+     "natural_s": 1.69,
+     "window_s": 1.517,
+     "end_limit_t": 16.45,
+     "over_s": 0.173,
+     "inner_pauses": [
+      {
+       "after": "path,",
+       "len_s": 0.32,
+       "punct": ","
+      }
+     ],
+     "pause_factor": 0.458,
+     "fits": "pause trims"
+    },
+    {
+     "n": 8,
+     "natural_s": 0.672,
+     "window_s": 0.717,
+     "end_limit_t": 18.05,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    }
+   ],
+   "course_words": {
+    "targets": {
+     "math": 12.42,
+     "music": 12.98,
+     "chess": 13.7
+    },
+    "natural_onsets": {
+     "math": 12.377,
+     "music": 12.934,
+     "chess": 14.389
+    },
+    "best_onsets": {
+     "math": 12.377,
+     "music": 12.867,
+     "chess": 14.012
+    },
+    "best_error_ms": {
+     "math": -43,
+     "music": -113,
+     "chess": 312
+    },
+    "pause_changes_s": {
+     "math,": -0.0675,
+     "music...": -0.31
+    }
+   },
+   "duolingo": {
+    "onset": 17.8,
+    "end": 18.473,
+    "length_s": 0.672
+   },
+   "chess": {
+    "onset": 14.455,
+    "end": 14.967,
+    "onset_high_minus_low_db": 2.4,
+    "coda_high_minus_low_db": 11.6,
+    "vowel_s": 0.138
+   },
+   "scribe_vs_waveform_ms": {
+    "onset_median": 35,
+    "onset_max": 178
+   },
+   "words": [
+    {
+     "text": "Five",
+     "scribe_start": 0.0,
+     "scribe_end": 0.16,
+     "onset": 0.0725,
+     "nucleus": 0.09,
+     "end": 0.3,
+     "peak_db": -20.8279,
+     "pause_before": 0.0
+    },
+    {
+     "text": "minutes",
+     "scribe_start": 0.32,
+     "scribe_end": 0.56,
+     "onset": 0.3,
+     "nucleus": 0.3,
+     "end": 0.5425,
+     "peak_db": -25.4198,
+     "pause_before": 0.0
+    },
+    {
+     "text": "a",
+     "scribe_start": 0.6,
+     "scribe_end": 0.64,
+     "onset": 0.5425,
+     "nucleus": 0.63,
+     "end": 0.7175,
+     "peak_db": -29.9814,
+     "pause_before": 0.0
+    },
+    {
+     "text": "day,",
+     "scribe_start": 0.72,
+     "scribe_end": 0.92,
+     "onset": 0.7175,
+     "nucleus": 0.755,
+     "end": 0.995,
+     "peak_db": -21.9729,
+     "pause_before": 0.0
+    },
+    {
+     "text": "that's",
+     "scribe_start": 0.96,
+     "scribe_end": 1.2,
+     "onset": 0.995,
+     "nucleus": 1.015,
+     "end": 1.14,
+     "peak_db": -26.1988,
+     "pause_before": 0.0
+    },
+    {
+     "text": "all",
+     "scribe_start": 1.28,
+     "scribe_end": 1.36,
+     "onset": 1.16,
+     "nucleus": 1.2625,
+     "end": 1.32,
+     "peak_db": -25.5551,
+     "pause_before": 0.02
+    },
+    {
+     "text": "it",
+     "scribe_start": 1.44,
+     "scribe_end": 1.52,
+     "onset": 1.32,
+     "nucleus": 1.32,
+     "end": 1.565,
+     "peak_db": -23.6787,
+     "pause_before": 0.0
+    },
+    {
+     "text": "takes.",
+     "scribe_start": 1.6,
+     "scribe_end": 2.0,
+     "onset": 1.5725,
+     "nucleus": 1.68,
+     "end": 1.995,
+     "peak_db": -24.1928,
+     "pause_before": 0.0075
+    },
+    {
+     "text": "One",
+     "scribe_start": 2.4,
+     "scribe_end": 2.56,
+     "onset": 2.345,
+     "nucleus": 2.39,
+     "end": 2.67,
+     "peak_db": -21.9203,
+     "pause_before": 0.35
+    },
+    {
+     "text": "word",
+     "scribe_start": 2.64,
+     "scribe_end": 2.8,
+     "onset": 2.67,
+     "nucleus": 2.67,
+     "end": 2.855,
+     "peak_db": -24.7106,
+     "pause_before": 0.0
+    },
+    {
+     "text": "at",
+     "scribe_start": 2.88,
+     "scribe_end": 2.96,
+     "onset": 2.855,
+     "nucleus": 2.865,
+     "end": 2.9675,
+     "peak_db": -23.8146,
+     "pause_before": 0.0
+    },
+    {
+     "text": "a",
+     "scribe_start": 2.987,
+     "scribe_end": 3.013,
+     "onset": 2.9675,
+     "nucleus": 2.975,
+     "end": 3.08,
+     "peak_db": -23.9809,
+     "pause_before": 0.0
+    },
+    {
+     "text": "time,",
+     "scribe_start": 3.04,
+     "scribe_end": 3.52,
+     "onset": 3.08,
+     "nucleus": 3.195,
+     "end": 3.6075,
+     "peak_db": -25.6174,
+     "pause_before": 0.0
+    },
+    {
+     "text": "a",
+     "scribe_start": 3.76,
+     "scribe_end": 3.84,
+     "onset": 3.795,
+     "nucleus": 3.8,
+     "end": 3.96,
+     "peak_db": -24.219,
+     "pause_before": 0.1875
+    },
+    {
+     "text": "streak",
+     "scribe_start": 3.92,
+     "scribe_end": 4.32,
+     "onset": 3.96,
+     "nucleus": 4.1275,
+     "end": 4.2875,
+     "peak_db": -28.8209,
+     "pause_before": 0.0
+    },
+    {
+     "text": "you'll",
+     "scribe_start": 4.4,
+     "scribe_end": 4.56,
+     "onset": 4.3475,
+     "nucleus": 4.4475,
+     "end": 4.6125,
+     "peak_db": -22.0873,
+     "pause_before": 0.06
+    },
+    {
+     "text": "want",
+     "scribe_start": 4.64,
+     "scribe_end": 4.72,
+     "onset": 4.6125,
+     "nucleus": 4.6125,
+     "end": 4.84,
+     "peak_db": -24.496,
+     "pause_before": 0.0
+    },
+    {
+     "text": "to",
+     "scribe_start": 4.8,
+     "scribe_end": 4.84,
+     "onset": 4.84,
+     "nucleus": 4.8475,
+     "end": 4.9125,
+     "peak_db": -30.826,
+     "pause_before": 0.0
+    },
+    {
+     "text": "keep",
+     "scribe_start": 4.88,
+     "scribe_end": 5.04,
+     "onset": 4.9125,
+     "nucleus": 4.9775,
+     "end": 5.05,
+     "peak_db": -30.149,
+     "pause_before": 0.0
+    },
+    {
+     "text": "alive,",
+     "scribe_start": 5.12,
+     "scribe_end": 5.6,
+     "onset": 5.1,
+     "nucleus": 5.115,
+     "end": 5.56,
+     "peak_db": -23.894,
+     "pause_before": 0.05
+    },
+    {
+     "text": "a",
+     "scribe_start": 5.92,
+     "scribe_end": 6.0,
+     "onset": 5.7425,
+     "nucleus": 5.93,
+     "end": 6.12,
+     "peak_db": -22.9886,
+     "pause_before": 0.1825
+    },
+    {
+     "text": "league",
+     "scribe_start": 6.08,
+     "scribe_end": 6.4,
+     "onset": 6.12,
+     "nucleus": 6.12,
+     "end": 6.455,
+     "peak_db": -22.9873,
+     "pause_before": 0.0
+    },
+    {
+     "text": "you'll",
+     "scribe_start": 6.48,
+     "scribe_end": 6.64,
+     "onset": 6.4575,
+     "nucleus": 6.52,
+     "end": 6.695,
+     "peak_db": -21.9981,
+     "pause_before": 0.0025
+    },
+    {
+     "text": "want",
+     "scribe_start": 6.72,
+     "scribe_end": 6.8,
+     "onset": 6.695,
+     "nucleus": 6.7025,
+     "end": 6.9125,
+     "peak_db": -23.6713,
+     "pause_before": 0.0
+    },
+    {
+     "text": "to",
+     "scribe_start": 6.88,
+     "scribe_end": 6.96,
+     "onset": 6.9125,
+     "nucleus": 6.9125,
+     "end": 6.97,
+     "peak_db": -43.1793,
+     "pause_before": 0.0
+    },
+    {
+     "text": "win,",
+     "scribe_start": 7.04,
+     "scribe_end": 7.44,
+     "onset": 6.97,
+     "nucleus": 6.985,
+     "end": 7.4375,
+     "peak_db": -25.1449,
+     "pause_before": 0.0
+    },
+    {
+     "text": "and",
+     "scribe_start": 7.76,
+     "scribe_end": 8.0,
+     "onset": 7.825,
+     "nucleus": 7.8325,
+     "end": 8.0475,
+     "peak_db": -26.8467,
+     "pause_before": 0.3875
+    },
+    {
+     "text": "then,",
+     "scribe_start": 8.16,
+     "scribe_end": 8.52,
+     "onset": 8.0475,
+     "nucleus": 8.055,
+     "end": 8.4125,
+     "peak_db": -25.5405,
+     "pause_before": 0.0
+    },
+    {
+     "text": "one",
+     "scribe_start": 8.72,
+     "scribe_end": 8.88,
+     "onset": 8.6475,
+     "nucleus": 8.7225,
+     "end": 8.9975,
+     "peak_db": -25.059,
+     "pause_before": 0.235
+    },
+    {
+     "text": "day...",
+     "scribe_start": 8.96,
+     "scribe_end": 9.36,
+     "onset": 8.9975,
+     "nucleus": 9.0075,
+     "end": 9.3075,
+     "peak_db": -25.9043,
+     "pause_before": 0.0
+    },
+    {
+     "text": "you",
+     "scribe_start": 10.32,
+     "scribe_end": 10.4,
+     "onset": 10.325,
+     "nucleus": 10.36,
+     "end": 10.45,
+     "peak_db": -26.0303,
+     "pause_before": 1.0175
+    },
+    {
+     "text": "just",
+     "scribe_start": 10.48,
+     "scribe_end": 10.64,
+     "onset": 10.45,
+     "nucleus": 10.495,
+     "end": 10.635,
+     "peak_db": -28.1763,
+     "pause_before": 0.0
+    },
+    {
+     "text": "talk.",
+     "scribe_start": 10.84,
+     "scribe_end": 11.12,
+     "onset": 10.6775,
+     "nucleus": 10.7575,
+     "end": 11.07,
+     "peak_db": -29.3575,
+     "pause_before": 0.0425
+    },
+    {
+     "text": "Languages,",
+     "scribe_start": 11.76,
+     "scribe_end": 12.4,
+     "onset": 11.7325,
+     "nucleus": 11.7625,
+     "end": 12.43,
+     "peak_db": -24.2221,
+     "pause_before": 0.6625
+    },
+    {
+     "text": "math,",
+     "scribe_start": 12.48,
+     "scribe_end": 12.92,
+     "onset": 12.4425,
+     "nucleus": 12.455,
+     "end": 12.8125,
+     "peak_db": -26.2853,
+     "pause_before": 0.0125
+    },
+    {
+     "text": "music...",
+     "scribe_start": 12.96,
+     "scribe_end": 13.6,
+     "onset": 13.0,
+     "nucleus": 13.075,
+     "end": 13.52,
+     "peak_db": -25.7758,
+     "pause_before": 0.1875
+    },
+    {
+     "text": "even",
+     "scribe_start": 14.16,
+     "scribe_end": 14.4,
+     "onset": 14.13,
+     "nucleus": 14.14,
+     "end": 14.455,
+     "peak_db": -24.4752,
+     "pause_before": 0.61
+    },
+    {
+     "text": "chess.",
+     "scribe_start": 14.48,
+     "scribe_end": 14.96,
+     "onset": 14.455,
+     "nucleus": 14.57,
+     "end": 14.9675,
+     "peak_db": -27.8229,
+     "pause_before": 0.0
+    },
+    {
+     "text": "One",
+     "scribe_start": 15.6,
+     "scribe_end": 15.76,
+     "onset": 15.5425,
+     "nucleus": 15.5925,
+     "end": 15.8025,
+     "peak_db": -24.0059,
+     "pause_before": 0.575
+    },
+    {
+     "text": "path,",
+     "scribe_start": 15.84,
+     "scribe_end": 16.24,
+     "onset": 15.8475,
+     "nucleus": 15.91,
+     "end": 16.1375,
+     "peak_db": -26.6838,
+     "pause_before": 0.045
+    },
+    {
+     "text": "every",
+     "scribe_start": 16.48,
+     "scribe_end": 16.72,
+     "onset": 16.4575,
+     "nucleus": 16.4675,
+     "end": 16.79,
+     "peak_db": -24.1302,
+     "pause_before": 0.32
+    },
+    {
+     "text": "skill.",
+     "scribe_start": 16.8,
+     "scribe_end": 17.2,
+     "onset": 16.79,
+     "nucleus": 16.955,
+     "end": 17.2325,
+     "peak_db": -24.3998,
+     "pause_before": 0.0
+    },
+    {
+     "text": "Duolingo.",
+     "scribe_start": 17.76,
+     "scribe_end": 18.64,
+     "onset": 17.8,
+     "nucleus": 17.8525,
+     "end": 18.4725,
+     "peak_db": -24.3503,
+     "pause_before": 0.5675
+    }
+   ]
+  },
+  {
+   "take": "B",
+   "file": "vo/takes/take_B_R4I9hra1fg6HfTsCY63H.mp3",
+   "duration_s": 16.4,
+   "transcript_exact": true,
+   "integrated_lufs": -33.31,
+   "true_peak_dbtp": -15.9,
+   "sample_peak_dbfs": -15.92,
+   "noise_floor_dbfs": -59.7,
+   "room_tone": {
+    "t0": 10.012,
+    "t1": 10.262,
+    "rms_dbfs": -59.2,
+    "spread_db": 2.0
+   },
+   "f0_median_hz": 216.0,
+   "f0_range_st": 8.8,
+   "segment_f0_median_hz": [
+    221.1,
+    240.8,
+    210.3,
+    227.4,
+    217.9,
+    218.7,
+    195.8,
+    185.2
+   ],
+   "words_per_s_of_speech": 3.88,
+   "clicks_all": 35,
+   "clicks_stray": [],
+   "stray_sounds_in_pauses": [
+    [
+     "chess.",
+     "One",
+     [
+      "click",
+      13.145,
+      13.155,
+      -52.7
+     ]
+    ]
+   ],
+   "spectral_jumps": [
+    [
+     4.68,
+     7.2
+    ]
+   ],
+   "pauses": [
+    {
+     "after": "takes.",
+     "before": "One",
+     "t0": 1.837,
+     "t1": 2.248,
+     "len_s": 0.41,
+     "safe": [
+      1.965,
+      2.238
+     ],
+     "events": [
+      [
+       "tail",
+       1.8575,
+       1.8625,
+       -53.4
+      ],
+      [
+       "tail",
+       1.8875,
+       1.955,
+       -51.4
+      ]
+     ]
+    },
+    {
+     "after": "time,",
+     "before": "a",
+     "t0": 3.368,
+     "t1": 3.478,
+     "len_s": 0.11,
+     "safe": [
+      3.46,
+      3.468
+     ],
+     "events": [
+      [
+       "tail",
+       3.3725,
+       3.4,
+       -51.1
+      ],
+      [
+       "tail",
+       3.445,
+       3.45,
+       -53.3
+      ]
+     ]
+    },
+    {
+     "after": "streak",
+     "before": "you'll",
+     "t0": 3.922,
+     "t1": 4.01,
+     "len_s": 0.087,
+     "safe": [
+      3.975,
+      4.0
+     ],
+     "events": [
+      [
+       "tail",
+       3.9275,
+       3.935,
+       -50.2
+      ],
+      [
+       "tail",
+       3.955,
+       3.965,
+       -52.3
+      ]
+     ]
+    },
+    {
+     "after": "alive,",
+     "before": "a",
+     "t0": 5.035,
+     "t1": 5.475,
+     "len_s": 0.44,
+     "safe": [
+      5.045,
+      5.465
+     ],
+     "events": []
+    },
+    {
+     "after": "win,",
+     "before": "and",
+     "t0": 6.768,
+     "t1": 7.147,
+     "len_s": 0.38,
+     "safe": [
+      6.8,
+      7.138
+     ],
+     "events": [
+      [
+       "tail",
+       6.7825,
+       6.79,
+       -52.8
+      ]
+     ]
+    },
+    {
+     "after": "then,",
+     "before": "one",
+     "t0": 7.643,
+     "t1": 7.897,
+     "len_s": 0.255,
+     "safe": [
+      7.678,
+      7.888
+     ],
+     "events": [
+      [
+       "tail",
+       7.6475,
+       7.6575,
+       -50.9
+      ],
+      [
+       "tail",
+       7.66,
+       7.6675,
+       -53.6
+      ]
+     ]
+    },
+    {
+     "after": "day...",
+     "before": "you",
+     "t0": 8.443,
+     "t1": 9.133,
+     "len_s": 0.69,
+     "safe": [
+      8.465,
+      9.123
+     ],
+     "events": [
+      [
+       "tail",
+       8.4475,
+       8.455,
+       -52.1
+      ]
+     ]
+    },
+    {
+     "after": "talk.",
+     "before": "Languages,",
+     "t0": 9.863,
+     "t1": 10.367,
+     "len_s": 0.505,
+     "safe": [
+      9.873,
+      10.357
+     ],
+     "events": []
+    },
+    {
+     "after": "math,",
+     "before": "music...",
+     "t0": 11.418,
+     "t1": 11.545,
+     "len_s": 0.127,
+     "safe": [
+      11.442,
+      11.535
+     ],
+     "events": [
+      [
+       "tail",
+       11.4225,
+       11.4325,
+       -51.4
+      ]
+     ]
+    },
+    {
+     "after": "music...",
+     "before": "even",
+     "t0": 12.03,
+     "t1": 12.445,
+     "len_s": 0.415,
+     "safe": [
+      12.04,
+      12.435
+     ],
+     "events": []
+    },
+    {
+     "after": "chess.",
+     "before": "One",
+     "t0": 13.065,
+     "t1": 13.615,
+     "len_s": 0.55,
+     "safe": [
+      13.15,
+      13.605
+     ],
+     "events": [
+      [
+       "tail",
+       13.07,
+       13.14,
+       -50.0
+      ],
+      [
+       "click",
+       13.145,
+       13.155,
+       -52.7
+      ]
+     ]
+    },
+    {
+     "after": "path,",
+     "before": "every",
+     "t0": 14.238,
+     "t1": 14.585,
+     "len_s": 0.348,
+     "safe": [
+      14.275,
+      14.575
+     ],
+     "events": [
+      [
+       "tail",
+       14.2425,
+       14.265,
+       -51.0
+      ]
+     ]
+    },
+    {
+     "after": "skill.",
+     "before": "Duolingo.",
+     "t0": 15.25,
+     "t1": 15.69,
+     "len_s": 0.44,
+     "safe": [
+      15.275,
+      15.68
+     ],
+     "events": [
+      [
+       "tail",
+       15.255,
+       15.265,
+       -51.6
+      ]
+     ]
+    }
+   ],
+   "segments": [
+    {
+     "n": 1,
+     "natural_s": 1.78,
+     "window_s": 2.2,
+     "end_limit_t": 2.7,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 2,
+     "natural_s": 1.12,
+     "window_s": 1.25,
+     "end_limit_t": 4.2,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 3,
+     "natural_s": 1.558,
+     "window_s": 2.55,
+     "end_limit_t": 7.15,
+     "over_s": 0.0,
+     "inner_pauses": [
+      {
+       "after": "streak",
+       "len_s": 0.087,
+       "punct": ""
+      }
+     ],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 4,
+     "natural_s": 1.293,
+     "window_s": 1.38,
+     "end_limit_t": 8.68,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 5,
+     "natural_s": 2.715,
+     "window_s": 2.37,
+     "end_limit_t": 11.42,
+     "over_s": 0.345,
+     "inner_pauses": [
+      {
+       "after": "then,",
+       "len_s": 0.255,
+       "punct": ","
+      },
+      {
+       "after": "day...",
+       "len_s": 0.69,
+       "punct": "..."
+      }
+     ],
+     "pause_factor": 0.635,
+     "fits": "pause trims"
+    },
+    {
+     "n": 6,
+     "natural_s": 2.697,
+     "window_s": 3.013,
+     "end_limit_t": 14.68,
+     "over_s": 0.0,
+     "inner_pauses": [
+      {
+       "after": "math,",
+       "len_s": 0.127,
+       "punct": ","
+      },
+      {
+       "after": "music...",
+       "len_s": 0.415,
+       "punct": "..."
+      }
+     ],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    },
+    {
+     "n": 7,
+     "natural_s": 1.635,
+     "window_s": 1.517,
+     "end_limit_t": 16.45,
+     "over_s": 0.118,
+     "inner_pauses": [
+      {
+       "after": "path,",
+       "len_s": 0.348,
+       "punct": ","
+      }
+     ],
+     "pause_factor": 0.659,
+     "fits": "pause trims"
+    },
+    {
+     "n": 8,
+     "natural_s": 0.585,
+     "window_s": 0.717,
+     "end_limit_t": 18.05,
+     "over_s": 0.0,
+     "inner_pauses": [],
+     "pause_factor": 1.0,
+     "fits": "natural"
+    }
+   ],
+   "course_words": {
+    "targets": {
+     "math": 12.42,
+     "music": 12.98,
+     "chess": 13.7
+    },
+    "natural_onsets": {
+     "math": 12.374,
+     "music": 12.844,
+     "chess": 14.047
+    },
+    "best_onsets": {
+     "math": 12.374,
+     "music": 12.837,
+     "chess": 13.924
+    },
+    "best_error_ms": {
+     "math": -46,
+     "music": -143,
+     "chess": 224
+    },
+    "pause_changes_s": {
+     "math,": -0.0075,
+     "music...": -0.115
+    }
+   },
+   "duolingo": {
+    "onset": 15.69,
+    "end": 16.275,
+    "length_s": 0.585
+   },
+   "chess": {
+    "onset": 12.748,
+    "end": 13.065,
+    "onset_high_minus_low_db": 4.5,
+    "coda_high_minus_low_db": 8.0,
+    "vowel_s": 0.13
+   },
+   "scribe_vs_waveform_ms": {
+    "onset_median": 35,
+    "onset_max": 125
+   },
+   "words": [
+    {
+     "text": "Five",
+     "scribe_start": 0.0,
+     "scribe_end": 0.24,
+     "onset": 0.0575,
+     "nucleus": 0.0625,
+     "end": 0.2675,
+     "peak_db": -23.0537,
+     "pause_before": 0.0
+    },
+    {
+     "text": "minutes",
+     "scribe_start": 0.32,
+     "scribe_end": 0.48,
+     "onset": 0.2675,
+     "nucleus": 0.3175,
+     "end": 0.5025,
+     "peak_db": -32.6854,
+     "pause_before": 0.0
+    },
+    {
+     "text": "a",
+     "scribe_start": 0.56,
+     "scribe_end": 0.64,
+     "onset": 0.5375,
+     "nucleus": 0.5975,
+     "end": 0.6725,
+     "peak_db": -32.9518,
+     "pause_before": 0.035
+    },
+    {
+     "text": "day,",
+     "scribe_start": 0.76,
+     "scribe_end": 0.96,
+     "onset": 0.6725,
+     "nucleus": 0.6975,
+     "end": 1.0375,
+     "peak_db": -24.8062,
+     "pause_before": 0.0
+    },
+    {
+     "text": "that's",
+     "scribe_start": 1.04,
+     "scribe_end": 1.2,
+     "onset": 1.045,
+     "nucleus": 1.0475,
+     "end": 1.2175,
+     "peak_db": -33.652,
+     "pause_before": 0.0075
+    },
+    {
+     "text": "all",
+     "scribe_start": 1.28,
+     "scribe_end": 1.36,
+     "onset": 1.255,
+     "nucleus": 1.2625,
+     "end": 1.32,
+     "peak_db": -34.3171,
+     "pause_before": 0.0375
+    },
+    {
+     "text": "it",
+     "scribe_start": 1.44,
+     "scribe_end": 1.52,
+     "onset": 1.32,
+     "nucleus": 1.32,
+     "end": 1.6,
+     "peak_db": -28.0476,
+     "pause_before": 0.0
+    },
+    {
+     "text": "takes.",
+     "scribe_start": 1.6,
+     "scribe_end": 2.0,
+     "onset": 1.6375,
+     "nucleus": 1.645,
+     "end": 1.8375,
+     "peak_db": -29.7014,
+     "pause_before": 0.0375
+    },
+    {
+     "text": "One",
+     "scribe_start": 2.32,
+     "scribe_end": 2.48,
+     "onset": 2.2475,
+     "nucleus": 2.3275,
+     "end": 2.535,
+     "peak_db": -23.2603,
+     "pause_before": 0.41
+    },
+    {
+     "text": "word",
+     "scribe_start": 2.56,
+     "scribe_end": 2.72,
+     "onset": 2.535,
+     "nucleus": 2.535,
+     "end": 2.77,
+     "peak_db": -26.4475,
+     "pause_before": 0.0
+    },
+    {
+     "text": "at",
+     "scribe_start": 2.8,
+     "scribe_end": 2.88,
+     "onset": 2.77,
+     "nucleus": 2.785,
+     "end": 2.96,
+     "peak_db": -29.1693,
+     "pause_before": 0.0
+    },
+    {
+     "text": "a",
+     "scribe_start": 2.92,
+     "scribe_end": 2.96,
+     "onset": 2.96,
+     "nucleus": 2.96,
+     "end": 3.055,
+     "peak_db": -45.6633,
+     "pause_before": 0.0
+    },
+    {
+     "text": "time,",
+     "scribe_start": 3.12,
+     "scribe_end": 3.36,
+     "onset": 3.055,
+     "nucleus": 3.0775,
+     "end": 3.3675,
+     "peak_db": -28.1115,
+     "pause_before": 0.0
+    },
+    {
+     "text": "a",
+     "scribe_start": 3.44,
+     "scribe_end": 3.52,
+     "onset": 3.4775,
+     "nucleus": 3.48,
+     "end": 3.64,
+     "peak_db": -33.0962,
+     "pause_before": 0.11
+    },
+    {
+     "text": "streak",
+     "scribe_start": 3.6,
+     "scribe_end": 3.92,
+     "onset": 3.64,
+     "nucleus": 3.77,
+     "end": 3.9225,
+     "peak_db": -31.0781,
+     "pause_before": 0.0
+    },
+    {
+     "text": "you'll",
+     "scribe_start": 4.0,
+     "scribe_end": 4.08,
+     "onset": 4.01,
+     "nucleus": 4.0175,
+     "end": 4.1275,
+     "peak_db": -25.9633,
+     "pause_before": 0.0875
+    },
+    {
+     "text": "want",
+     "scribe_start": 4.16,
+     "scribe_end": 4.24,
+     "onset": 4.1275,
+     "nucleus": 4.1275,
+     "end": 4.3875,
+     "peak_db": -27.638,
+     "pause_before": 0.0
+    },
+    {
+     "text": "to",
+     "scribe_start": 4.32,
+     "scribe_end": 4.4,
+     "onset": 4.4025,
+     "nucleus": 4.4025,
+     "end": 4.505,
+     "peak_db": -37.3138,
+     "pause_before": 0.015
+    },
+    {
+     "text": "keep",
+     "scribe_start": 4.48,
+     "scribe_end": 4.56,
+     "onset": 4.5425,
+     "nucleus": 4.545,
+     "end": 4.63,
+     "peak_db": -29.6786,
+     "pause_before": 0.0375
+    },
+    {
+     "text": "alive,",
+     "scribe_start": 4.64,
+     "scribe_end": 5.12,
+     "onset": 4.665,
+     "nucleus": 4.68,
+     "end": 5.035,
+     "peak_db": -28.1026,
+     "pause_before": 0.035
+    },
+    {
+     "text": "a",
+     "scribe_start": 5.44,
+     "scribe_end": 5.52,
+     "onset": 5.475,
+     "nucleus": 5.49,
+     "end": 5.64,
+     "peak_db": -25.8248,
+     "pause_before": 0.44
+    },
+    {
+     "text": "league",
+     "scribe_start": 5.6,
+     "scribe_end": 5.92,
+     "onset": 5.64,
+     "nucleus": 5.64,
+     "end": 5.9125,
+     "peak_db": -26.7744,
+     "pause_before": 0.0
+    },
+    {
+     "text": "you'll",
+     "scribe_start": 5.96,
+     "scribe_end": 6.08,
+     "onset": 5.9375,
+     "nucleus": 5.9725,
+     "end": 6.13,
+     "peak_db": -24.2477,
+     "pause_before": 0.025
+    },
+    {
+     "text": "want",
+     "scribe_start": 6.16,
+     "scribe_end": 6.24,
+     "onset": 6.13,
+     "nucleus": 6.13,
+     "end": 6.3675,
+     "peak_db": -26.4835,
+     "pause_before": 0.0
+    },
+    {
+     "text": "to",
+     "scribe_start": 6.32,
+     "scribe_end": 6.4,
+     "onset": 6.3875,
+     "nucleus": 6.3925,
+     "end": 6.465,
+     "peak_db": -28.5913,
+     "pause_before": 0.02
+    },
+    {
+     "text": "win,",
+     "scribe_start": 6.48,
+     "scribe_end": 6.8,
+     "onset": 6.465,
+     "nucleus": 6.4775,
+     "end": 6.7675,
+     "peak_db": -26.9947,
+     "pause_before": 0.0
+    },
+    {
+     "text": "and",
+     "scribe_start": 7.12,
+     "scribe_end": 7.28,
+     "onset": 7.1475,
+     "nucleus": 7.155,
+     "end": 7.315,
+     "peak_db": -25.4212,
+     "pause_before": 0.38
+    },
+    {
+     "text": "then,",
+     "scribe_start": 7.44,
+     "scribe_end": 7.76,
+     "onset": 7.315,
+     "nucleus": 7.33,
+     "end": 7.6425,
+     "peak_db": -26.4827,
+     "pause_before": 0.0
+    },
+    {
+     "text": "one",
+     "scribe_start": 7.92,
+     "scribe_end": 8.08,
+     "onset": 7.8975,
+     "nucleus": 7.9325,
+     "end": 8.1975,
+     "peak_db": -26.441,
+     "pause_before": 0.255
+    },
+    {
+     "text": "day...",
+     "scribe_start": 8.16,
+     "scribe_end": 9.12,
+     "onset": 8.1975,
+     "nucleus": 8.2075,
+     "end": 8.4425,
+     "peak_db": -30.8831,
+     "pause_before": 0.0
+    },
+    {
+     "text": "you",
+     "scribe_start": 9.16,
+     "scribe_end": 9.2,
+     "onset": 9.1325,
+     "nucleus": 9.1675,
+     "end": 9.3275,
+     "peak_db": -29.8617,
+     "pause_before": 0.69
+    },
+    {
+     "text": "just",
+     "scribe_start": 9.28,
+     "scribe_end": 9.44,
+     "onset": 9.3325,
+     "nucleus": 9.34,
+     "end": 9.545,
+     "peak_db": -28.5574,
+     "pause_before": 0.005
+    },
+    {
+     "text": "talk.",
+     "scribe_start": 9.52,
+     "scribe_end": 9.92,
+     "onset": 9.58,
+     "nucleus": 9.585,
+     "end": 9.8625,
+     "peak_db": -31.0016,
+     "pause_before": 0.035
+    },
+    {
+     "text": "Languages,",
+     "scribe_start": 10.4,
+     "scribe_end": 11.04,
+     "onset": 10.3675,
+     "nucleus": 10.38,
+     "end": 11.0125,
+     "peak_db": -25.4301,
+     "pause_before": 0.505
+    },
+    {
+     "text": "math,",
+     "scribe_start": 11.12,
+     "scribe_end": 11.52,
+     "onset": 11.075,
+     "nucleus": 11.1625,
+     "end": 11.4175,
+     "peak_db": -25.7321,
+     "pause_before": 0.0625
+    },
+    {
+     "text": "music...",
+     "scribe_start": 11.6,
+     "scribe_end": 12.4,
+     "onset": 11.545,
+     "nucleus": 11.5925,
+     "end": 12.03,
+     "peak_db": -24.8094,
+     "pause_before": 0.1275
+    },
+    {
+     "text": "even",
+     "scribe_start": 12.48,
+     "scribe_end": 12.64,
+     "onset": 12.445,
+     "nucleus": 12.4475,
+     "end": 12.7325,
+     "peak_db": -32.1505,
+     "pause_before": 0.415
+    },
+    {
+     "text": "chess.",
+     "scribe_start": 12.72,
+     "scribe_end": 13.2,
+     "onset": 12.7475,
+     "nucleus": 12.8475,
+     "end": 13.065,
+     "peak_db": -32.0687,
+     "pause_before": 0.015
+    },
+    {
+     "text": "One",
+     "scribe_start": 13.68,
+     "scribe_end": 13.84,
+     "onset": 13.615,
+     "nucleus": 13.7025,
+     "end": 13.9275,
+     "peak_db": -25.6482,
+     "pause_before": 0.55
+    },
+    {
+     "text": "path,",
+     "scribe_start": 13.92,
+     "scribe_end": 14.32,
+     "onset": 13.9475,
+     "nucleus": 14.01,
+     "end": 14.2375,
+     "peak_db": -28.9527,
+     "pause_before": 0.02
+    },
+    {
+     "text": "every",
+     "scribe_start": 14.56,
+     "scribe_end": 14.8,
+     "onset": 14.585,
+     "nucleus": 14.605,
+     "end": 14.9025,
+     "peak_db": -28.1959,
+     "pause_before": 0.3475
+    },
+    {
+     "text": "skill.",
+     "scribe_start": 14.88,
+     "scribe_end": 15.44,
+     "onset": 14.9025,
+     "nucleus": 15.0225,
+     "end": 15.25,
+     "peak_db": -29.5633,
+     "pause_before": 0.0
+    },
+    {
+     "text": "Duolingo.",
+     "scribe_start": 15.68,
+     "scribe_end": 16.48,
+     "onset": 15.69,
+     "nucleus": 15.725,
+     "end": 16.275,
+     "peak_db": -25.0171,
+     "pause_before": 0.44
+    }
+   ]
+  }
+ ]
+}

@@ -199,6 +199,18 @@ def bandpass(x, lo, hi, order=2):
     return highpass(lowpass(x, hi, order), lo, order)
 
 
+def notches(x, freqs, width=2.0, depth_db=40.0):
+    """Zero-phase narrow notches (Gaussian, `width` Hz standard deviation) for hum
+    removal; 1 s of zero padding keeps their long impulse response from wrapping."""
+    n = len(x)
+    m = 1 << (n + SR - 1).bit_length()
+    f = np.fft.rfftfreq(m, 1 / SR)
+    H = np.ones_like(f)
+    for fc in freqs:
+        H *= 1 - (1 - 10 ** (-depth_db / 20)) * np.exp(-0.5 * ((f - fc) / width) ** 2)
+    return np.fft.irfft(np.fft.rfft(x, m) * H, m)[:n]
+
+
 # ---------------------------------------------------------------- space etc.
 
 def pan(mono, p) -> np.ndarray:
@@ -277,10 +289,13 @@ def mix(*items, n=None):
     return out
 
 
-def write_wav(path, x, bits=24):
+def write_wav(path, x, bits=24, mono=False):
+    """24- or 16-bit PCM WAV at 48 kHz; mono input is written as two identical
+    channels unless mono=True."""
     x = np.asarray(x, float)
-    if x.ndim == 1:
+    if x.ndim == 1 and not mono:
         x = np.stack([x, x], 1)
+    nch = 1 if x.ndim == 1 else x.shape[1]
     x = np.clip(x, -1, 1 - 2 ** -(bits - 1))
     if bits == 24:
         q = np.round(x * (2 ** 23)).astype(np.int32)
@@ -289,7 +304,7 @@ def write_wav(path, x, bits=24):
         b = np.round(x * 32767).astype("<i2").tobytes()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(path), "wb") as w:
-        w.setnchannels(2)
+        w.setnchannels(nch)
         w.setsampwidth(bits // 8)
         w.setframerate(SR)
         w.writeframes(b)

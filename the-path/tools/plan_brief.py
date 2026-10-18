@@ -40,7 +40,8 @@ GRID = (55, 70, 79)
 INK = (226, 232, 235)
 DIM = (130, 145, 152)
 
-# Estimated natural-read durations (s) per VO segment; replaced by measurements in Phase 3.
+# Phase 1 estimates of the natural read per VO segment (s); used only until a segment
+# carries "measured" times from the edited take (tools/vo_edit.py).
 VO_EST = {1: 2.20, 2: 1.00, 3: 1.65, 4: 1.30, 5: 2.25, 6: 2.45, 7: 1.30, 8: 0.62}
 
 
@@ -89,15 +90,18 @@ def resolve_timeline(tl):
     vo = []
     for seg in tl["vo"]["segments"]:
         f = frame_of(seg["anchor_t"])
-        est_end = seg["anchor_t"] + VO_EST[seg["n"]]
+        m = seg.get("measured")
+        est_end = m["end_t"] if m else seg["anchor_t"] + VO_EST[seg["n"]]
+        if m and m["onset_f"] != f:
+            problems.append(f"VO segment {seg['n']} measured onset f{m['onset_f']} is not on its anchor f{f}")
         if est_end > seg["must_end_before_t"]:
-            problems.append(f"VO segment {seg['n']} estimated end {est_end:.2f}s > {seg['must_end_before_t']}s")
+            problems.append(f"VO segment {seg['n']} {'measured' if m else 'estimated'} end {est_end:.2f}s > {seg['must_end_before_t']}s")
         vo.append({**seg, "f": f, "est_end_t": est_end})
     for a, b in zip(vo, vo[1:]):
         if a["est_end_t"] >= b["anchor_t"]:
             problems.append(f"VO segments {a['n']}/{b['n']} overlap (estimate)")
 
-    # hero cues must sit in VO gaps (estimated)
+    # hero cues must sit in VO gaps (measured once Phase 3 has locked the take)
     for h in tl["hero_audio"]:
         t = h["f"] / FPS
         for seg in vo:
@@ -331,7 +335,9 @@ def draw_timeline(tl, scenes, events, sfx, vo, cam_rep, frames, path):
         return x0 + (x1 - x0) * f / total
 
     c.text((40, 28), "THE PATH  -  master timeline (60 fps, 1272 frames, 100 BPM in D major)", 26, INK, "Bold")
-    c.text((40, 64), "Frame-exact plan from brief/timeline.json. VO bars use estimated read lengths until Phase 3 locks them to the selected take.", 15, DIM)
+    measured = all("measured" in s for s in tl["vo"]["segments"])
+    c.text((40, 64), "Frame-exact plan from brief/timeline.json. " + ("VO bars are the measured segments of the edited take (vo/words.json)."
+           if measured else "VO bars use estimated read lengths until Phase 3 locks them to the selected take."), 15, DIM)
 
     lanes = [("Scenes", 120, 70), ("Camera", 205, 46), ("Voice-over", 265, 70), ("Music", 350, 70),
              ("Hero cues", 435, 92), ("SFX cues", 542, 120), ("Text legible", 676, 470)]
@@ -573,10 +579,17 @@ def md_tables(tl, scenes, events, sfx, vo, cam, rep):
 
     rows = ["| Frame | Time | Scene | Event | Spec |", "|---:|---:|---|---|:---:|"]
     for e in events:
-        rows.append(f"| {e['f']} | {e['f'] / FPS:.3f} s | {e['scene']} | **{e['id']}**: {e['what']} | {'given' if e.get('given') else ''} |")
+        spec = "given" if e.get("given") else ""
+        if e.get("given") and "given_t" in e and frame_of(e["given_t"]) != e["f"]:
+            spec = f"given {e['given_t']:.2f} s; follows the VO"
+        elif "vo_lock" in e:
+            spec = (spec + "; " if spec else "") + "on the VO"
+        rows.append(f"| {e['f']} | {e['f'] / FPS:.3f} s | {e['scene']} | **{e['id']}**: {e['what']} | {spec} |")
     t["events"] = "\n".join(rows)
 
-    rows = ["| # | Segment (cut only at the take's own pauses) | Anchor | Frame | Sample @48 kHz | Must end before | Est. end |", "|---:|---|---:|---:|---:|---:|---:|"]
+    measured = all("measured" in v for v in vo)
+    rows = ["| # | Segment (cut only at the take's own pauses) | Anchor | Frame | Sample @48 kHz | Must end before | "
+            + ("Measured end |" if measured else "Est. end |"), "|---:|---|---:|---:|---:|---:|---:|"]
     for seg in vo:
         rows.append(f"| {seg['n']} | {seg['text']} | {seg['anchor_t']:.2f} s{'' if seg['given'] else ' *'} | {seg['f']} | {seg['f'] * 800:,} | {seg['must_end_before_t']:.2f} s | {seg['est_end_t']:.2f} s |")
     t["vo"] = "\n".join(rows)

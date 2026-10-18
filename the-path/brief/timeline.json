@@ -1,6 +1,6 @@
 {
  "project": "THE PATH - unofficial Duolingo spec advertisement (portfolio only, not affiliated with Duolingo)",
- "version": "phase1-brief-v1",
+ "version": "phase3-voice-locked",
  "fps": 60,
  "audio_rate": 48000,
  "samples_per_frame": 800,
@@ -128,11 +128,17 @@
   },
   {
    "id": "vo_open",
-   "t": 0.5,
    "scene": "S1",
    "kind": "vo",
    "given": true,
-   "what": "VO: Five minutes a day, that's all it takes."
+   "what": "VO: Five minutes a day, that's all it takes.",
+   "vo_lock": {
+    "segment": 1,
+    "index": 0,
+    "word": "Five"
+   },
+   "given_t": 0.5,
+   "f": 30
   },
   {
    "id": "wordmark_reveal",
@@ -223,11 +229,17 @@
   },
   {
    "id": "vo_one_word",
-   "t": 2.95,
    "scene": "S3",
    "kind": "vo",
    "given": true,
-   "what": "VO: One word at a time,"
+   "what": "VO: One word at a time,",
+   "vo_lock": {
+    "segment": 2,
+    "index": 0,
+    "word": "One"
+   },
+   "given_t": 2.95,
+   "f": 177
   },
   {
    "id": "title_in",
@@ -309,11 +321,17 @@
   },
   {
    "id": "vo_streak",
-   "t": 4.6,
    "scene": "S3",
    "kind": "vo",
    "given": true,
-   "what": "VO: a streak you'll want to keep alive,"
+   "what": "VO: a streak you'll want to keep alive,",
+   "vo_lock": {
+    "segment": 3,
+    "index": 0,
+    "word": "a"
+   },
+   "given_t": 4.6,
+   "f": 276
   },
   {
    "id": "leap",
@@ -419,10 +437,16 @@
   },
   {
    "id": "vo_league",
-   "t": 7.3,
    "scene": "S5",
    "kind": "vo",
-   "what": "VO: a league you'll want to win, (derived anchor; placed just after the drop so the kick never masks the onset)."
+   "what": "VO: a league you'll want to win, (derived anchor; placed just after the drop so the kick never masks the onset).",
+   "vo_lock": {
+    "segment": 4,
+    "index": 0,
+    "word": "a"
+   },
+   "given_t": 7.3,
+   "f": 438
   },
   {
    "id": "arrive_league",
@@ -490,11 +514,17 @@
   },
   {
    "id": "vo_and_then",
-   "t": 9.05,
    "scene": "S5",
    "kind": "vo",
    "given": true,
-   "what": "VO: and then, one day... you just talk."
+   "what": "VO: and then, one day... you just talk.",
+   "vo_lock": {
+    "segment": 5,
+    "index": 0,
+    "word": "and"
+   },
+   "given_t": 9.05,
+   "f": 543
   },
   {
    "id": "to_call",
@@ -542,35 +572,59 @@
   },
   {
    "id": "languages",
-   "t": 11.67,
    "scene": "S7",
    "kind": "hero",
    "given": true,
-   "what": "Languages node lights (Feather Green); eight flag tiles pop into orbit f702 to f716."
+   "what": "Languages node lights (Feather Green); eight flag tiles pop into orbit f702 to f716.",
+   "vo_lock": {
+    "segment": 6,
+    "index": 0,
+    "word": "Languages,"
+   },
+   "given_t": 11.67,
+   "f": 700
   },
   {
    "id": "math",
-   "t": 12.42,
    "scene": "S7",
    "kind": "hero",
    "given": true,
-   "what": "Math node lights (blue #1CB0F6) with pi."
+   "what": "Math node lights (blue #1CB0F6) with pi.",
+   "vo_lock": {
+    "segment": 6,
+    "index": 1,
+    "word": "math,"
+   },
+   "given_t": 12.42,
+   "f": 742
   },
   {
    "id": "music",
-   "t": 12.98,
    "scene": "S7",
    "kind": "hero",
    "given": true,
-   "what": "Music node lights (purple #CE82FF) with a musical note."
+   "what": "Music node lights (purple #CE82FF) with a musical note.",
+   "vo_lock": {
+    "segment": 6,
+    "index": 2,
+    "word": "music..."
+   },
+   "given_t": 12.98,
+   "f": 771
   },
   {
    "id": "chess",
-   "t": 13.7,
    "scene": "S7",
    "kind": "hero",
    "given": true,
-   "what": "Chess node lights (white) and the knight hops (lands f834)."
+   "what": "Chess node lights (white) and the knight hops (lands 12 frames later).",
+   "vo_lock": {
+    "segment": 6,
+    "index": 4,
+    "word": "chess."
+   },
+   "given_t": 13.7,
+   "f": 836
   },
   {
    "id": "converge",
@@ -589,32 +643,53 @@
   },
   {
    "id": "one_path",
-   "t": 14.93,
    "scene": "S8",
    "kind": "text",
    "given": true,
-   "what": "Line draws the baseline of One path, (f896 to f916); letters rise from it with a 2-frame stagger."
+   "what": "Line draws the baseline of One path, (f896 to f916); letters rise from it with a 2-frame stagger.",
+   "vo_lock": {
+    "segment": 7,
+    "index": 0,
+    "word": "One"
+   },
+   "given_t": 14.93,
+   "f": 896
   },
   {
    "id": "baseline_drop",
-   "f": 920,
+   "f": 929,
    "scene": "S8",
    "kind": "path",
-   "what": "Baseline drops one line-height to line 2 (f920 to f928)."
+   "what": "Baseline drops one line-height to line 2 (8 frames, ending 2 frames before every skill. rises).",
+   "follows": {
+    "event": "every_skill",
+    "offset_f": -10
+   }
   },
   {
    "id": "every_skill",
-   "f": 930,
+   "f": 939,
    "scene": "S8",
    "kind": "text",
-   "what": "every skill. rises; the baseline splits into four course-color strands (f930 to f956)."
+   "what": "every skill. rises, starting 8 frames before the spoken word with a 1-frame letter stagger (fully risen 12 frames later); the baseline splits into four course-color strands.",
+   "vo_lock": {
+    "segment": 7,
+    "index": 2,
+    "word": "every",
+    "offset_f": -8
+   },
+   "planned_f": 930
   },
   {
    "id": "merge_back",
-   "f": 956,
+   "f": 965,
    "scene": "S8",
    "kind": "path",
-   "what": "Strands merge back into Feather Green (f956 to f972)."
+   "what": "Strands merge back into Feather Green (over 16 frames, starting 26 frames after every skill. begins to rise).",
+   "follows": {
+    "event": "every_skill",
+    "offset_f": 26
+   }
   },
   {
    "id": "breath",
@@ -648,11 +723,17 @@
   },
   {
    "id": "duolingo_shown",
-   "t": 17.33,
    "scene": "S9",
    "kind": "hero",
    "given": true,
-   "what": "Wordmark fully revealed exactly on VO Duolingo."
+   "what": "Wordmark fully revealed exactly on VO Duolingo.",
+   "vo_lock": {
+    "segment": 8,
+    "index": 0,
+    "word": "Duolingo."
+   },
+   "given_t": 17.33,
+   "f": 1040
   },
   {
    "id": "wordmark_rest_I",
@@ -722,7 +803,14 @@
     "anchor_t": 0.5,
     "anchor_word": "Five",
     "given": true,
-    "must_end_before_t": 2.9
+    "must_end_before_t": 2.9,
+    "measured": {
+     "onset_t": 0.5,
+     "onset_f": 30,
+     "end_t": 2.28,
+     "end_f": 137,
+     "end_limit_t": 2.7
+    }
    },
    {
     "n": 2,
@@ -730,7 +818,14 @@
     "anchor_t": 2.95,
     "anchor_word": "One",
     "given": true,
-    "must_end_before_t": 4.2
+    "must_end_before_t": 4.2,
+    "measured": {
+     "onset_t": 2.95,
+     "onset_f": 177,
+     "end_t": 4.07,
+     "end_f": 244,
+     "end_limit_t": 4.2
+    }
    },
    {
     "n": 3,
@@ -738,7 +833,14 @@
     "anchor_t": 4.6,
     "anchor_word": "a streak",
     "given": true,
-    "must_end_before_t": 7.15
+    "must_end_before_t": 7.15,
+    "measured": {
+     "onset_t": 4.6,
+     "onset_f": 276,
+     "end_t": 6.1575,
+     "end_f": 369,
+     "end_limit_t": 7.15
+    }
    },
    {
     "n": 4,
@@ -746,7 +848,14 @@
     "anchor_t": 7.3,
     "anchor_word": "a league",
     "given": false,
-    "must_end_before_t": 8.68
+    "must_end_before_t": 8.68,
+    "measured": {
+     "onset_t": 7.3,
+     "onset_f": 438,
+     "end_t": 8.5925,
+     "end_f": 516,
+     "end_limit_t": 8.68
+    }
    },
    {
     "n": 5,
@@ -754,7 +863,14 @@
     "anchor_t": 9.05,
     "anchor_word": "and then",
     "given": true,
-    "must_end_before_t": 11.6
+    "must_end_before_t": 11.6,
+    "measured": {
+     "onset_t": 9.05,
+     "onset_f": 543,
+     "end_t": 11.4201,
+     "end_f": 685,
+     "end_limit_t": 11.42
+    }
    },
    {
     "n": 6,
@@ -767,6 +883,13 @@
      "math": 12.42,
      "music": 12.98,
      "chess": 13.7
+    },
+    "measured": {
+     "onset_t": 11.6667,
+     "onset_f": 700,
+     "end_t": 14.2492,
+     "end_f": 855,
+     "end_limit_t": 14.68
     }
    },
    {
@@ -775,7 +898,14 @@
     "anchor_t": 14.93,
     "anchor_word": "One path",
     "given": true,
-    "must_end_before_t": 16.45
+    "must_end_before_t": 16.45,
+    "measured": {
+     "onset_t": 14.9333,
+     "onset_f": 896,
+     "end_t": 16.4498,
+     "end_f": 987,
+     "end_limit_t": 16.45
+    }
    },
    {
     "n": 8,
@@ -783,15 +913,28 @@
     "anchor_t": 17.33,
     "anchor_word": "Duolingo",
     "given": true,
-    "must_end_before_t": 18.05
+    "must_end_before_t": 18.05,
+    "measured": {
+     "onset_t": 17.3333,
+     "onset_f": 1040,
+     "end_t": 17.9183,
+     "end_f": 1075,
+     "end_limit_t": 18.05
+    }
    }
   ],
   "edit_rules": [
    "Cut only inside the take's own pauses (silences >= 80 ms between words); never time-stretch or pitch-shift speech.",
-   "Segment onsets snap to their anchors; inner words (math, music, chess, win, talk, skill) are measured, and the animation follows the measured onsets.",
-   "Gaps are filled with the take's own room tone, crossfaded over 10 ms at zero crossings.",
-   "Word timings come from ElevenLabs Scribe word timestamps, cross-checked against an energy-onset detector; tolerance +/- 1 frame (16.7 ms)."
-  ]
+   "Segment onsets snap to their anchor frames; inner words (math, music, chess, win, talk, skill) are measured, and the animation follows the measured onsets.",
+   "An edited pause keeps the previous word's tail and the next word's lead-in; the middle is replaced with the take's own room tone, crossfaded over 10 ms at zero crossings.",
+   "Pauses may shrink to 45% of their natural length but never below their punctuation's minimum (comma 0.12 s, ellipsis 0.30 s), and may grow to 160%; changes under 10 ms are not made.",
+   "Word timings come from ElevenLabs Scribe word timestamps (word identity, 40 ms grid), snapped to the waveform by an energy-onset detector (2.5 ms resolution) and re-measured on the finished stem; tolerance +/- 1 frame (16.7 ms)."
+  ],
+  "take": {
+   "id": "B",
+   "edit": "vo/edit.json",
+   "words": "vo/words.json"
+  }
  },
  "music": {
   "bpm": 100,
@@ -1600,7 +1743,11 @@
    "scene": "S7",
    "name": "languages_light",
    "layer": "hero",
-   "desc": "Node light chime D6 + pop."
+   "desc": "Node light chime D6 + pop.",
+   "follows": {
+    "event": "languages",
+    "offset_f": 0
+   }
   },
   {
    "n": 90,
@@ -1608,39 +1755,59 @@
    "scene": "S7",
    "name": "flag_pops",
    "layer": "ui",
-   "desc": "Eight staggered flag pops (f702 to f716)."
+   "desc": "Eight staggered flag pops (f702 to f716).",
+   "follows": {
+    "event": "languages",
+    "offset_f": 2
+   }
   },
   {
    "n": 91,
-   "f": 745,
+   "f": 742,
    "scene": "S7",
    "name": "math_light",
    "layer": "hero",
-   "desc": "Node light chime F#6 + pi pop."
+   "desc": "Node light chime F#6 + pi pop.",
+   "follows": {
+    "event": "math",
+    "offset_f": 0
+   }
   },
   {
    "n": 92,
-   "f": 779,
+   "f": 771,
    "scene": "S7",
    "name": "music_light",
    "layer": "hero",
-   "desc": "Node light chime A6 + note pop."
+   "desc": "Node light chime A6 + note pop.",
+   "follows": {
+    "event": "music",
+    "offset_f": 0
+   }
   },
   {
    "n": 93,
-   "f": 822,
+   "f": 836,
    "scene": "S7",
    "name": "chess_light",
    "layer": "hero",
-   "desc": "Node light chime D7 + wooden knock."
+   "desc": "Node light chime D7 + wooden knock.",
+   "follows": {
+    "event": "chess",
+    "offset_f": 0
+   }
   },
   {
    "n": 94,
-   "f": 834,
+   "f": 848,
    "scene": "S7",
    "name": "knight_land",
    "layer": "character",
-   "desc": "Wooden tock as the knight lands."
+   "desc": "Wooden tock as the knight lands.",
+   "follows": {
+    "event": "chess",
+    "offset_f": 12
+   }
   },
   {
    "n": 95,
@@ -1664,31 +1831,47 @@
    "scene": "S8",
    "name": "line1_reveal",
    "layer": "text",
-   "desc": "Soft upward swell for One path,"
+   "desc": "Soft upward swell for One path,",
+   "follows": {
+    "event": "one_path",
+    "offset_f": 0
+   }
   },
   {
    "n": 98,
-   "f": 920,
+   "f": 929,
    "scene": "S8",
    "name": "baseline_drop",
    "layer": "path",
-   "desc": "Soft whoop down."
+   "desc": "Soft whoop down.",
+   "follows": {
+    "event": "baseline_drop",
+    "offset_f": 0
+   }
   },
   {
    "n": 99,
-   "f": 930,
+   "f": 939,
    "scene": "S8",
    "name": "line2_split",
    "layer": "text",
-   "desc": "Four-voice stereo shimmer for every skill. and the color split."
+   "desc": "Four-voice stereo shimmer for every skill. and the color split.",
+   "follows": {
+    "event": "every_skill",
+    "offset_f": 0
+   }
   },
   {
    "n": 100,
-   "f": 956,
+   "f": 965,
    "scene": "S8",
    "name": "merge_back",
    "layer": "path",
-   "desc": "Glassy resolve as the strands merge."
+   "desc": "Glassy resolve as the strands merge.",
+   "follows": {
+    "event": "merge_back",
+    "offset_f": 0
+   }
   },
   {
    "n": 101,
@@ -1752,7 +1935,11 @@
    "scene": "S9",
    "name": "wordmark_settle_B",
    "layer": "ui",
-   "desc": "Soft ting on Duolingo."
+   "desc": "Soft ting on Duolingo.",
+   "follows": {
+    "event": "duolingo_shown",
+    "offset_f": 0
+   }
   },
   {
    "n": 109,
@@ -1906,31 +2093,47 @@
    "readable_f": [
     704,
     884
-   ]
+   ],
+   "follows": {
+    "event": "languages",
+    "offset_f": 4
+   }
   },
   {
    "text": "Math",
    "scene": "S7",
    "readable_f": [
-    749,
+    746,
     884
-   ]
+   ],
+   "follows": {
+    "event": "math",
+    "offset_f": 4
+   }
   },
   {
    "text": "Music",
    "scene": "S7",
    "readable_f": [
-    783,
+    775,
     884
-   ]
+   ],
+   "follows": {
+    "event": "music",
+    "offset_f": 4
+   }
   },
   {
    "text": "Chess",
    "scene": "S7",
    "readable_f": [
-    826,
+    840,
     884
-   ]
+   ],
+   "follows": {
+    "event": "chess",
+    "offset_f": 4
+   }
   },
   {
    "text": "One path,",
@@ -1938,15 +2141,23 @@
    "readable_f": [
     912,
     1012
-   ]
+   ],
+   "follows": {
+    "event": "one_path",
+    "offset_f": 16
+   }
   },
   {
    "text": "every skill.",
    "scene": "S8",
    "readable_f": [
-    948,
+    951,
     1012
-   ]
+   ],
+   "follows": {
+    "event": "every_skill",
+    "offset_f": 12
+   }
   },
   {
    "text": "duolingo (official wordmark)",

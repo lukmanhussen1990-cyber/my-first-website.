@@ -1,0 +1,28 @@
+{
+ "about": "Provenance of the delivered voice-over takes. The MP3 files are byte-identical to what ElevenLabs delivered (sha256 below).",
+ "service": "ElevenLabs (elevenlabs.io), text to speech",
+ "model": "eleven_v4",
+ "voice": {"name": "Mira - Bright & Friendly Narrator", "voice_id": "rdEyNni8e60Jlx1RsV9N"},
+ "flow_id": "TqYcVWCvBHcZmaaWupxA",
+ "generated_utc": "2026-10-18T23:14Z",
+ "prompt": "Five minutes a day, that's all it takes. One word at a time, a streak you'll want to keep alive, a league you'll want to win, and then, one day... you just talk. Languages, math, music... even chess. One path, every skill. Duolingo.",
+ "settings": "one request, two variations, no direction tags, default voice settings",
+ "takes": [
+  {"id": "A", "generation_id": "LlkgOOWVd2uAtxaMLhNI", "file": "vo/takes/take_A_LlkgOOWVd2uAtxaMLhNI.mp3",
+   "sha256": "bf0821c2b88220e92f7a5161f8efa4c472dca628735b7fd13145f478f158c681",
+   "format": "MP3, 44.1 kHz, mono, 128 kb/s, gapless header (1,105-sample encoder delay, trimmed on decode)",
+   "duration_s": 18.56, "scribe": "vo/scribe/take_A_words.json", "scribe_generation_id": "iSVQ4J7dzw6PqB9EOI87"},
+  {"id": "B", "generation_id": "R4I9hra1fg6HfTsCY63H", "file": "vo/takes/take_B_R4I9hra1fg6HfTsCY63H.mp3",
+   "sha256": "6d4fc8b25fb0854526c0174589df5519bd713f323d9b4d7dd5ca3a98f5944588",
+   "format": "MP3, 44.1 kHz, mono, 128 kb/s, gapless header (1,105-sample encoder delay, trimmed on decode)",
+   "duration_s": 16.40, "scribe": "vo/scribe/take_B_words.json", "scribe_generation_id": "QihHereR8kcvrkGu2eOA"}
+ ],
+ "chosen": "B",
+ "transcription": "ElevenLabs Scribe (eleven_scribe_v1), word timestamps on a 40 ms grid; both transcripts match the script exactly",
+ "control_line": {
+  "text": "¡Muy bien! Pedí un café en español.",
+  "purpose": "S6 waveform control signal only (never mixed)",
+  "status": "not generated",
+  "reason": "ElevenLabs rejected the request: the account's free-tier access was disabled for 'unusual activity' (its message says a proxy or VPN can trigger this). No audio was produced."
+ }
+}
