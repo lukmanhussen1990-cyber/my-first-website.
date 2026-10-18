@@ -41,3 +41,24 @@ File: `output/chor_kerala_1080x1920.mp4`
 - **Narrator:** the man of the house is the thin scribe from the Kerala video. In the original he is a glowing outline figure.
 - **Symbols:** each line's "taken" item is redrawn as glowing gold line art in the same order and on the same words: scales, shadow, house, kite, chest, stars, wounds, fingerprint-galaxy, letters-to-birds and the lamp.
 - **Title:** the title card (चोर / JUSTH) is cut from the original film and re-placed for the vertical frame.
+
+# QA Report: v3 (the Buddha version)
+
+File: `output/chor_buddha_v3_1080x1920.mp4`
+
+| Check | Result |
+|---|---|
+| Video stream | H.264 High, 1080×1920, 30 fps, **1,591 frames** (decoded count), 53.03 s, start 0.000 |
+| Audio stream | HE-AAC, 48 kHz, stereo, 1,246 packets, 53.14 s, start 0.000 |
+| Audio identical to the original | **Yes.** Packet-stream MD5 `ad8dcc47c432b86671aa0d1811144395` and decoded-PCM MD5 `d64174a75e596a2014d0c359c0c7f126` both equal the source's, and the packet counts match (1,246 = 1,246). The track was stream-copied, not re-encoded, retimed or regenerated. |
+| Timeline | Output frame *n* corresponds to the original's frame *n*. Each lyric item appears on its key word and is taken on "ले जा" (word timings measured from the original audio, see `tools/v3/v3_beats.py`). |
+| Render integrity | Four lossless chunks finished with return code 0: 398 + 398 + 398 + 397 = 1,591 frames |
+| Black and frozen frames | `blackdetect` (≥0.3 s) and `freezedetect` (≥1 s) flagged nothing |
+| Visual review | One frame per second (54 frames) was sampled from the encoded MP4 and checked against the scene list in `v3_scene_breakdown.md`. Test frames from every lyric line were reviewed during production. |
+
+## Known differences from the original (by design)
+
+- **Art style:** the whole film is painted in the Kerala video's style, not the original's glowing-outline style.
+- **House owner:** a slim Buddha drawn from scratch, at the user's request. He sits where the original's seated narrator sits and makes the same offering gestures.
+- **Thief:** the round-bellied man from the Kerala video, in his natural colours.
+- **Title:** the title card (चोर / JUSTH) is cut from the original film and placed where the thief stood.
