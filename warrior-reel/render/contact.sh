@@ -8,8 +8,8 @@ node render/shoot.mjs --q "entry=film" --times "$TIMES" --out "$DIR/f" --w "$W" 
 N=$(ls "$DIR"/f_t*.png | wc -l)
 ROWS=$(( (N + COLS - 1) / COLS ))
 i=0
-for f in $(ls "$DIR"/f_t*.png | sort -t t -k2 -g); do
-  t=$(basename "$f" .png | sed 's/f_t//')
+for t in $(ls "$DIR"/f_t*.png | sed -E 's#.*/f_t([0-9.]+)\.png#\1#' | sort -g); do
+  f="$DIR/f_t$t.png"
   ffmpeg -v error -y -i "$f" -vf "drawtext=fontfile=assets/fonts/Silkscreen-Regular.ttf:text='$t':x=8:y=8:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6" "$DIR/l_$(printf %03d $i).png"
   i=$((i+1))
 done

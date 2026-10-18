@@ -122,7 +122,7 @@ export function buildTrees() {
     if (castShadow) proxies.push(...t.shadowBoxes);
   };
   // THE big autumn tree behind the seats
-  add(tree(rand, { x: 0.6, z: -2.6, h: 7.6, trunkR: 0.42, pal: 'bigtree', spread: 1.05, cube: 0.66, density: 0.95, limbs: 5, fork: 0.34, canopy: 0.62, barkCol: 0xb8aeb0 }), 'bigTree', true);
+  add(tree(rand, { x: 0.9, z: -4.3, h: 8.4, trunkR: 0.45, pal: 'bigtree', spread: 1.0, cube: 0.66, density: 0.95, limbs: 5, fork: 0.36, canopy: 0.66, barkCol: 0xb8aeb0 }), 'bigTree', true);
   // scattered trees (none within 1.2 m of the seats, sight-lines across the river kept clear)
   const spots = [
     [-5.2, -4.8, 5.2, 'golden'], [5.8, -5.4, 5.6, 'orange'], [-9.5, -2.0, 6.0, 'green'], [10.5, -3.2, 5.4, 'autumn'],
@@ -299,7 +299,7 @@ function flowerGeometry() {
 const KEEP_OUT = [
   [-0.55, -0.05, 0.62], [0.80, 0.05, 0.66],   // seats
   [-0.45, 0.6, 0.35], [0.35, 0.62, 0.32],     // ending stand spots (short tufts only around)
-  [0.6, -2.6, 0.75],                          // big tree trunk
+  [0.9, -4.3, 0.8],                           // big tree trunk
 ];
 function blocked(x, z, extra = 0) {
   for (const [kx, kz, r] of KEEP_OUT) if (Math.hypot(x - kx, z - kz) < r + extra) return true;

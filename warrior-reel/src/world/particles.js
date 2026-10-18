@@ -38,7 +38,7 @@ void main() {
   float px = size * uScale / max(0.05, -mv.z);
   gl_PointSize = clamp(px, 1.0, 14.0);
   float edge = min(min(min(qn.x, 1.0 - qn.x), min(qn.y, 1.0 - qn.y)), min(qn.z, 1.0 - qn.z));
-  vAlpha = smoothstep(0.0, 0.08, edge) * smoothstep(0.35, 0.9, -mv.z) * clamp(px / 1.5, 0.25, 1.0);
+  vAlpha = smoothstep(0.0, 0.08, edge) * smoothstep(0.8, 1.7, -mv.z) * clamp(px / 1.5, 0.25, 1.0);
   if (aKind < 0.5) vAlpha *= 0.55 + 0.45 * sin(t * (0.8 + 1.7 * r) + r * 50.0);
   vCol = aColor;
   vKind = aKind;
