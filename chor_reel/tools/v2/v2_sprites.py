@@ -18,6 +18,7 @@ SEQ = {
     'thin_st': ([(f'{S}/v2/thin/st_{k:02d}.png', f'{S}/v2/thin/a_st_{k:02d}.png') for k in range(1, 15)], (0, 0, 330, 480), False),
     'thin_cu': ([(f'{S}/v2/thin/cu_{k:02d}.png', f'{S}/v2/thin/a_cu_{k:02d}.png') for k in range(1, 21)], (0, 0, 656, 480), False),
     'hand': ([(f'{S}/assets/bsrc/f_{n:05d}.png', f'{S}/assets/balpha/a_{n:05d}.png') for n in (1854,)], (0, 160, 656, 480), True),
+    'walk': ([(f'{S}/v3/wsrc/f_{n:05d}.png', f'{S}/v3/wsrc/a_{n:05d}.png') for n in range(3038, 3061, 2)], (240, 110, 470, 480), True),
 }
 
 
@@ -53,6 +54,8 @@ def build(name):
                 continue
             fr = cv2.imread(fp)[y0:y1, x0:x1]
             a = cv2.imread(ap, 0).astype(np.float32) / 255
+            if a.shape != fr.shape[:2]:
+                a = cv2.resize(a, (fr.shape[1], fr.shape[0]))
             if name == 'thin_st':
                 # keep only the left figure (the thin man); the frames also contain the fat man on the right
                 a[:, 230:] = 0
