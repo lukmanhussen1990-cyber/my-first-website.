@@ -47,6 +47,8 @@ window.renderAndSend = async (t, idx) => {
   post.readPixels(pixels);
   const res = await fetch(`/frame?i=${idx}`, { method: 'POST', body: pixels });
   if (!res.ok) throw new Error('frame upload failed');
+  // Each upload copies an 8 MB frame; collect eagerly so long renders stay within memory limits.
+  if (window.gc && idx % 6 === 0) window.gc();
 };
 window.__info = { W, H, duration: assets.timing.duration, fps: assets.timing.fps };
 window.__ready = true;
