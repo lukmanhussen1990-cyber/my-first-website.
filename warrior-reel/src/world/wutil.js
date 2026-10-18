@@ -128,7 +128,7 @@ export const WIND = { uTime: { value: 0 }, uWind: { value: 0.5 } };
 // Replace the projection step so a displacement in mesh-local (post-instance) space can be added.
 // `swayGLSL` is a GLSL snippet that may read `pos` (vec3, local post-instance position), `inst` (vec3 instance
 // origin or vec3(0)), `objPos` (vec3 original transformed) and must write `vec3 sway`.
-export function patchSway(material, swayGLSL, { extraAttribs = '', colorMix = null } = {}) {
+export function patchSway(material, swayGLSL, { extraAttribs = '', colorMix = null, noFlip = false, glow = 0 } = {}) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = WIND.uTime;
     shader.uniforms.uWind = WIND.uWind;
@@ -148,9 +148,19 @@ export function patchSway(material, swayGLSL, { extraAttribs = '', colorMix = nu
         }
         mvPosition = modelViewMatrix * mvPosition;
         gl_Position = projectionMatrix * mvPosition;`);
-    if (colorMix) shader.vertexShader = shader.vertexShader.replace('vColor.xyz *= instanceColor.xyz;', colorMix);
+    if (noFlip) {
+      // thin double-sided blades: keep the (up-facing) normal on back faces so both sides light alike
+      shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>',
+        THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'));
+    }
+    if (glow > 0) {
+      // cheap translucency / sky bounce: a little of the albedo added as emission
+      shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * ' + glow.toFixed(3) + ';');
+    }
+    if (colorMix) shader.vertexShader = shader.vertexShader.replace('#include <color_vertex>', THREE.ShaderChunk.color_vertex.replace('vColor.xyz *= instanceColor.xyz;', colorMix));
   };
-  const key = 'sway:' + swayGLSL + '|' + (colorMix || '') + '|' + extraAttribs;
+  const key = 'sway:' + swayGLSL + '|' + (colorMix || '') + '|' + extraAttribs + '|' + noFlip + '|' + glow;
   material.customProgramCacheKey = () => key;
   return material;
 }
@@ -189,16 +199,16 @@ export function patchHeightFog({ mistH = 6.5, mistBase = 0.0, hazeK = 0.2, start
   C.fog_fragment = `
 #ifdef USE_FOG
   #ifdef FOG_EXP2
-    float fogDist = max( 0.0, vFogDepth - ${start.toFixed(2)} );
-    float hazeD = fogDensity * ${hazeK.toFixed(3)};
-    float fogHaze = 1.0 - exp( - hazeD * hazeD * fogDist * fogDist );
-    float fy0 = max( cameraPosition.y - ${mistBase.toFixed(2)}, 0.0 );
-    float fy1 = max( vFogWorldY - ${mistBase.toFixed(2)}, 0.0 );
-    float fdy = fy1 - fy0;
-    float fe0 = exp( - fy0 / ${mistH.toFixed(2)} );
-    float fg = abs( fdy ) < 0.05 ? fe0 : ${mistH.toFixed(2)} * ( fe0 - exp( - fy1 / ${mistH.toFixed(2)} ) ) / fdy;
-    float fogMist = 1.0 - exp( - fogDensity * fogDist * fg );
-    float fogFactor = 1.0 - ( 1.0 - fogHaze ) * ( 1.0 - fogMist );
+    float wfDist = max( 0.0, vFogDepth - ${start.toFixed(2)} );
+    float wfHazeD = fogDensity * ${hazeK.toFixed(3)};
+    float wfHaze = 1.0 - exp( - wfHazeD * wfHazeD * wfDist * wfDist );
+    float wfY0 = max( cameraPosition.y - ${mistBase.toFixed(2)}, 0.0 );
+    float wfY1 = max( vFogWorldY - ${mistBase.toFixed(2)}, 0.0 );
+    float wfDY = wfY1 - wfY0;
+    float wfE0 = exp( - wfY0 / ${mistH.toFixed(2)} );
+    float wfG = abs( wfDY ) < 0.05 ? wfE0 : ${mistH.toFixed(2)} * ( wfE0 - exp( - wfY1 / ${mistH.toFixed(2)} ) ) / wfDY;
+    float wfMist = 1.0 - exp( - fogDensity * wfDist * wfG );
+    float fogFactor = 1.0 - ( 1.0 - wfHaze ) * ( 1.0 - wfMist );
   #else
     float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
   #endif

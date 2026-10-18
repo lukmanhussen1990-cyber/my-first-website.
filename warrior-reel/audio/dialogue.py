@@ -81,7 +81,7 @@ def process_line(x):
 
     # ---- 3. light compression (RMS 5 ms detector)
     lev2 = _db(frame_rms(y, 0.005))
-    thr, cr, knee = ref - 7.0, 2.0, 6.0
+    thr, cr, knee = ref - 4.0, 2.0, 6.0
     over = lev2 - thr
     gr = np.where(over <= -knee / 2, 0.0,
                   np.where(over >= knee / 2, over * (1 / cr - 1),
@@ -152,7 +152,12 @@ def mouth(tl, tracks, gate_db=-30.0):
             lin = np.clip(seg / p95, 0.0, 1.0) ** 0.75
             # soft gate: 0 below gate_db, full above gate_db+8
             g = np.clip((rel_db - gate_db) / 8.0, 0.0, 1.0)
-            openv[a:b] = np.maximum(openv[a:b], lin * g)
+            v = lin * g
+            # non-word sounds (e.g. the "[exhales]" before L11) only part the lips
+            tt = t[a:b]
+            words = (tt >= cue["speechStart"] - 0.12) & (tt <= cue["speechEnd"] + 0.30)
+            v = np.where(words, v, np.minimum(v, 0.3))
+            openv[a:b] = np.maximum(openv[a:b], v)
         frames = []
         for i in range(F):
             s = int(i / fps / hop_s)
