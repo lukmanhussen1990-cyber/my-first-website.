@@ -33,6 +33,9 @@ void main() {
     mvPosition = instanceMatrix * mvPosition;
     inst = instanceMatrix[3].xyz;
   #endif
+  #ifdef INST_ATTR
+    inst = aInst;
+  #endif
   {
     vec3 pos = mvPosition.xyz; vec3 objPos = transformed; vec3 sway = vec3( 0.0 );
     SWAY
@@ -109,19 +112,21 @@ void main() {
 }`;
 
 export function litMaterial({ map = null, color = 0xffffff, vertexColors = false, side = THREE.FrontSide, sway = '', upNormal = false,
-  glow = 0, extraAttribs = '', colorMix = '', wrap = false, transparent = false } = {}) {
+  glow = 0, extraAttribs = '', colorMix = '', wrap = false, transparent = false, instAttr = false } = {}) {
   const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.lights, THREE.UniformsLib.fog, {
     diffuse: { value: new THREE.Color(color) }, uGlow: { value: glow }, uMap: { value: null },
   }]);
   uniforms.uMap.value = map;
   uniforms.uTime = WIND.uTime;
   uniforms.uWind = WIND.uWind;
+  if (instAttr) extraAttribs += '\nattribute vec3 aInst;';
   let vs = VS.replace('EXTRA_ATTRIBS', extraAttribs).replace('SWAY', sway || '').replace('COLOR_MIX', '');
   if (colorMix) vs = vs.replace('#include <color_vertex>', colorMix);
   if (upNormal) vs = vs.replace('vec3 objectNormal = normal;', 'vec3 objectNormal = vec3( 0.0, 1.0, 0.0 );');
   const defines = {};
   if (map) defines.HAS_MAP = '';
   if (wrap) defines.WRAP_LIGHT = '';
+  if (instAttr) defines.INST_ATTR = '';
   const m = new THREE.ShaderMaterial({
     uniforms, vertexShader: vs, fragmentShader: FS, lights: true, fog: true, vertexColors, side, defines, transparent,
   });

@@ -58,7 +58,8 @@ function folds(th, y) {
 function robeShade(th, y, inner) {
   // fake occlusion / fold-valley darkening baked as vertex colour
   const f = folds(th, y) * Math.min(1, foldAmt(y) / 0.03);
-  let k = 1 - 0.26 * Math.max(0, -f) + 0.04 * Math.max(0, f);
+  const skirt = smoothstep(1.0, 0.85, y);
+  let k = 1 - 0.26 * lerp(0.3, 1, skirt) * Math.max(0, -f) + 0.04 * Math.max(0, f);
   k *= lerp(0.84, 1, smoothstep(HEM_Y, 0.5, y));                                   // ground occlusion near the hem
   const side = Math.abs(Math.sin(th));
   k *= 1 - 0.12 * smoothstep(0.75, 1.0, side) * smoothstep(1.05, 1.2, y) * smoothstep(1.46, 1.32, y); // under the arms
@@ -142,8 +143,8 @@ function buildRobeBody() {
 // Sleeve: tube along the hanging arm from a dome over the shoulder to a bell cuff. side: 1 = left (+X).
 function buildSleeve(side) {
   const L = [ // d (down from shoulder joint), rx, rz
-    [-0.014, 0.0, 0.0], [-0.0135, 0.022, 0.021], [-0.0115, 0.038, 0.037], [-0.007, 0.050, 0.049], [0.0, 0.0575, 0.056],
-    [0.012, 0.0615, 0.060], [0.06, 0.063, 0.060], [0.14, 0.061, 0.058], [0.22, 0.059, 0.056], [0.28, 0.058, 0.056],
+    [-0.008, 0.0, 0.0], [-0.0075, 0.021, 0.021], [-0.0055, 0.036, 0.036], [-0.001, 0.048, 0.048], [0.007, 0.0555, 0.055],
+    [0.02, 0.0595, 0.058], [0.07, 0.0605, 0.059], [0.14, 0.060, 0.058], [0.22, 0.059, 0.056], [0.28, 0.058, 0.056],
     [0.33, 0.058, 0.056], [0.40, 0.059, 0.058], [0.46, 0.061, 0.060], [0.51, 0.065, 0.064], [0.55, 0.072, 0.071],
     [0.58, 0.076, 0.074], [0.598, 0.080, 0.078],
     // lip turned inside

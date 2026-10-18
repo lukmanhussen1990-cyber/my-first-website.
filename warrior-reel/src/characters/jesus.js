@@ -294,9 +294,14 @@ export function buildJesus() {
     if (seated) { sx *= 0.5; sz *= 0.5; rip *= 0.6; }
     cloth.sway.value.set(sx, 0, sz);
     cloth.ripple.value.set(t * 1.9, rip);
-    // --- hair sway ---
+    // --- hair: hangs toward gravity (partial compensation of head pitch/roll) + gentle sway ---
+    rig.root.updateMatrixWorld(true);
+    b.head.getWorldQuaternion(qTmp);
+    const down = vTmp.set(0, -1, 0).applyQuaternion(qTmp.invert());   // world down in head space
+    const pitch = Math.atan2(down.z, -down.y), roll = Math.asin(clamp(down.x, -1, 1));
     const hb = walking ? Math.sin(Math.PI * 4 * ph) : 0;
-    head.hairPivot.rotation.set((0.6 * fbm1(t * 0.45, 11) + 0.8 * hb) * DEG, 0, 0.7 * fbm1(t * 0.38, 13) * DEG);
+    const kp = pitch > 0 ? 0.8 : 0.2;
+    head.hairPivot.rotation.set(-kp * pitch + (0.6 * fbm1(t * 0.45, 11) + 0.8 * hb) * DEG, 0, 0.45 * roll + 0.7 * fbm1(t * 0.38, 13) * DEG);
     // --- flat feet when seated (after the integrator's leg IK) ---
     if (seated) {
       rig.root.getWorldQuaternion(qTmp);

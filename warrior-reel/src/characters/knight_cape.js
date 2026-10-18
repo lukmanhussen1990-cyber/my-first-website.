@@ -150,17 +150,22 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
   }
   // Called by the knight's update(); also re-run automatically (via the mesh's matrix update, which
   // happens after the bones because the cape is the last child of rig.root) whenever the pose changed.
+  // Stores the drape state; the drape itself is computed lazily during the next matrix update of the scene
+  // (i.e. at render time, after all posing/IK), so call order within a frame does not matter.
   function update(t = 0, { seated = false, rock = null, wind = 0.3, ground = 0 } = {}) {
     st.t = t; st.seated = seated; st.rock = rock; st.wind = wind; st.ground = ground;
-    busy = true; rig.root.updateMatrixWorld(true); busy = false;
-    compute();
+    lastSig = NaN;
   }
-  mesh.updateMatrixWorld = function (force) {
-    THREE.Mesh.prototype.updateMatrixWorld.call(this, force);
-    if (busy) return;
-    const sg = signature();
-    if (sg !== lastSig) compute();
-  };
+  // Force an immediate drape computation (e.g. for tests outside a render).
+  function computeNow() { busy = true; rig.root.updateMatrixWorld(true); busy = false; compute(); }
+  // Render-time hook: WebGLRenderer.projectObject() calls LOD.update(camera) after the scene's matrices are
+  // final and before the cape geometry is uploaded (the sentinel sits just before the cape in rig.root's
+  // children). So the drape is computed exactly once per rendered pose, whatever the integrator's call order.
+  const sentinel = new THREE.LOD();
+  sentinel.name = 'knightCapeSentinel';
+  sentinel.update = function () { if (!busy && signature() !== lastSig) compute(); };
+  rig.root.add(sentinel);
+  rig.root.remove(mesh); rig.root.add(mesh);
   function compute() {
     lastSig = signature();
     const { t, seated, rock, wind, ground } = st;
@@ -169,8 +174,10 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
     // "back" = chest -Z flattened to horizontal; side = chest +X
     back.set(0, 0, -1).applyQuaternion(chestQ); back.y = 0; back.normalize();
     side.set(1, 0, 0).applyQuaternion(chestQ);
+    // the rock collider is active whenever a rock is given (so standing up next to it stays smooth),
+    // or by default (rock centred under the root, top 0.48) while seated
     let rk = null;
-    if (seated) {
+    if (rock || seated) {
       const rootPos = new THREE.Vector3().setFromMatrixPosition(rig.root.matrixWorld);
       rk = {
         center: rock?.center ? rock.center.clone() : rootPos.clone().add(new THREE.Vector3(0, 0.48, 0)),
@@ -244,5 +251,5 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
   }
-  return { mesh, update, compute, anchors, tris: idx.length / 3 };
+  return { mesh, update, compute: computeNow, anchors, tris: idx.length / 3 };
 }

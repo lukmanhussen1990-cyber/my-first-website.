@@ -395,10 +395,10 @@ function buildBrow(side) {
   const n = 12;
   for (let i = 0; i <= n; i++) {
     const t = i / n;
-    const x = side * lerp(0.0105, 0.0565, t);
-    const y = 0.0838 + 0.0058 * Math.sin(Math.PI * Math.pow(t, 0.7)) - 0.0026 * t;
-    const taper = smoothstep(0, 0.12, t) * 0.45 + 0.55;
-    pts.push({ x, y, rx: lerp(0.0044, 0.0016, Math.pow(t, 1.2)) * taper, rz: 0.0019, t });
+    const x = side * lerp(0.0108, 0.0560, t);
+    const y = 0.0826 + 0.0040 * Math.sin(Math.PI * Math.pow(t, 0.65)) - 0.0030 * t;
+    const taper = smoothstep(0, 0.12, t) * 0.4 + 0.6;
+    pts.push({ x, y, rx: lerp(0.0036, 0.0013, Math.pow(t, 1.1)) * taper, rz: 0.0016, t });
   }
   return pts;
 }
@@ -436,7 +436,7 @@ export function buildHead(T) {
   skinMat.emissive = new THREE.Color('#4a1608'); skinMat.emissiveIntensity = 0.16;
   const hairMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.hair, roughness: 0.62, side: THREE.DoubleSide });
   const beardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: T.beard, roughness: 0.75, side: THREE.DoubleSide });
-  const browMat = new THREE.MeshStandardMaterial({ color: '#9c8474', map: T.beard, roughness: 0.85 });
+  const browMat = new THREE.MeshStandardMaterial({ color: '#ffffff', map: T.hair, roughness: 0.85 });
   const mouthMat = new THREE.MeshStandardMaterial({ color: '#240a08', roughness: 0.9 });
   const teethMat = new THREE.MeshStandardMaterial({ color: '#c9bfac', roughness: 0.5 });
   const eyeMat = new THREE.MeshStandardMaterial({ map: T.eye, emissive: 0xffffff, emissiveMap: T.eyeEmissive, emissiveIntensity: 1.4, roughness: 0.2 });
@@ -579,7 +579,7 @@ export function buildHead(T) {
   const lid = { blink: 0, smile: 0.25 };
   function applyLids() {
     const b = clamp(lid.blink, 0, 1), s = clamp(lid.smile, 0, 1);
-    upperLid.rotation.x = (lerp(-18.5, 17, b) + 2.5 * s) * DEG;
+    upperLid.rotation.x = (lerp(-20, 17, b) + 2.5 * s) * DEG;
     lowerLid.rotation.x = (lerp(29.5, 25, b) - 7 * s) * DEG;
   }
   function setBlink(v) { lid.blink = v; applyLids(); }

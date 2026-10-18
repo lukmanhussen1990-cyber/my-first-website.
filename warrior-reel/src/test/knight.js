@@ -58,7 +58,7 @@ export async function build(stage, params) {
         knight.rig.addRot('chest', br * 0.5);
         plantFeet(knight);
         const sp = swordPose(knight, 'sitGrip');
-        solveSwordHands(knight, sp.position, sp.quaternion, { left: 'knee', grip: 'forward' });
+        solveSwordHands(knight, sp.position, sp.quaternion, { left: 'knee', grip: 'forward', tremble: +(params.tremble ?? 0), t, tension: grip });
         knight.rig.lookAt(knight.rig.pointToWorld(new THREE.Vector3(-0.2, 1.3, 3)), 0.5);
       } else if (pose === 'sit_rest') {
         knight.rig.applyPose(Humanoid.compile(POSES.seatedRelaxed));

@@ -160,7 +160,7 @@ export function buildTrees() {
 
   // ---- leaf cubes: shared geometry + material, one InstancedMesh per tree / bush group
   const box = new THREE.BoxGeometry(1, 1, 1); // indexed: 24 verts / cube (vertex cache friendly)
-  const leafMat = litMaterial({ map: leafTexture(), glow: 0.16, sway: `
+  const leafMat = litMaterial({ map: leafTexture(), glow: 0.16, vertexColors: true, instAttr: true, sway: `
     float hgt = smoothstep(0.8, 6.0, inst.y);
     float ph = dot(inst.xz, vec2(0.37, 0.23));
     sway = vec3(sin(uTime * 1.15 + ph) + 0.4 * sin(uTime * 2.7 + ph * 3.1), 0.25 * sin(uTime * 1.6 + ph * 2.0), 0.6 * cos(uTime * 0.93 + ph * 1.7)) * (0.022 + 0.05 * uWind) * hgt;` });
@@ -173,17 +173,36 @@ export function buildTrees() {
     // front-to-back for the usual cameras on the +Z side (better early-z rejection of hidden cubes)
     const eye = V(0.5, 1.2, 7);
     const list = G.leaves.slice().sort((a, b) => a.p.distanceToSquared(eye) - b.p.distanceToSquared(eye));
-    const im = new THREE.InstancedMesh(box, leafMat, list.length);
-    list.forEach((L, i) => {
+    // merged static geometry (SwiftShader handles big instance counts poorly); aInst = cube centre for sway
+    const bp = box.attributes.position, bn = box.attributes.normal, bu = box.attributes.uv, bi = box.index;
+    const nv = bp.count, ni = bi.count, n = list.length;
+    const P = new Float32Array(n * nv * 3), Nn = new Float32Array(n * nv * 3), U = new Float32Array(n * nv * 2), Cc = new Float32Array(n * nv * 3), I = new Float32Array(n * nv * 3);
+    const idx = new Uint32Array(n * ni);
+    const v = new THREE.Vector3(), nm = new THREE.Matrix3();
+    list.forEach((L, c) => {
       q.setFromEuler(e.set(L.rot[0], L.rot[1], L.rot[2]));
       m.compose(L.p, q, s.set(L.s[0], L.s[1], L.s[2]));
-      im.setMatrixAt(i, m);
-      im.setColorAt(i, L.color);
+      nm.getNormalMatrix(m);
+      for (let k = 0; k < nv; k++) {
+        const o = c * nv + k;
+        v.fromBufferAttribute(bp, k).applyMatrix4(m); P.set([v.x, v.y, v.z], o * 3);
+        v.fromBufferAttribute(bn, k).applyMatrix3(nm).normalize(); Nn.set([v.x, v.y, v.z], o * 3);
+        U.set([bu.getX(k), bu.getY(k)], o * 2);
+        Cc.set([L.color.r, L.color.g, L.color.b], o * 3);
+        I.set([L.p.x, L.p.y, L.p.z], o * 3);
+      }
+      for (let k = 0; k < ni; k++) idx[c * ni + k] = bi.getX(k) + c * nv;
     });
-    im.instanceMatrix.needsUpdate = true;
-    im.instanceColor.needsUpdate = true;
-    im.computeBoundingSphere();
-    im.boundingSphere.radius += 0.2; // sway margin
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(Nn, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(U, 2));
+    g.setAttribute('color', new THREE.BufferAttribute(Cc, 3));
+    g.setAttribute('aInst', new THREE.BufferAttribute(I, 3));
+    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    g.computeBoundingSphere();
+    g.boundingSphere.radius += 0.2; // sway margin
+    const im = new THREE.Mesh(g, leafMat);
     im.name = 'leaves_' + G.name;
     im.castShadow = false; im.receiveShadow = false; // shadows come from the proxy below
     leafGroup.add(im);

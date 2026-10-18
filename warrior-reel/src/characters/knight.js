@@ -21,7 +21,7 @@
 // Hand modes: 'grip' | 'fist' | 'relaxed' | 'open' | 'knee' | 'pommel'.
 import * as THREE from 'three';
 import { Humanoid, quatFromBasis } from '../core/rig.js';
-import { clamp, smoothstep, DEG } from '../core/util.js';
+import { clamp, smoothstep, DEG, noise1 } from '../core/util.js';
 import { makeKnightMaterial, Kit, PAL } from './knight_geo.js';
 import { buildArmor } from './knight_armor.js';
 import { buildHand, applyHandMode, HAND_CHANNEL } from './knight_hand.js';
@@ -187,10 +187,18 @@ export function solveArmToHand(knight, side, wristPos, handQuat, naturalPole, st
 //   opts.grip: 'forward' | 'reverse' | 'auto' (reverse when the blade points down) | number 0..1 =
 //              re-grip blend forward->reverse (hand opens, lifts off and turns around the grip)
 //   opts.rightPole / opts.leftPole: natural elbow pole in character space (optional overrides)
+//   opts.tremble: 0..1 adds a fine tremor to fist + sword; pass opts.t (time) and optionally opts.tension
+//                 (defaults: knight.t / knight.grip as last set by knight.update)
 export function solveSwordHands(knight, swordPos, swordQuat, opts = {}) {
   const { left = 'free' } = opts;
   let grip = opts.grip ?? 'auto';
   const { rig, sword, hands } = knight;
+  // optional tremor of the whole fist + sword (scaled by fist tension): opts.tremble 0..1
+  if (opts.tremble > 0) {
+    const a = opts.tremble * (0.35 + 0.65 * (opts.tension ?? knight.grip)), t = opts.t ?? knight.t;
+    swordPos = swordPos.clone().add(new THREE.Vector3(noise1(t * 11 + 1), noise1(t * 13 + 7), noise1(t * 9 + 3)).multiplyScalar(0.0022 * a));
+    swordQuat = swordQuat.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(noise1(t * 10 + 5) * 0.012 * a, noise1(t * 8 + 2) * 0.006 * a, noise1(t * 12 + 9) * 0.012 * a)));
+  }
   // 1) place the sword (works whatever the sword's parent is)
   if (sword.parent) {
     sword.parent.updateMatrixWorld(true);
