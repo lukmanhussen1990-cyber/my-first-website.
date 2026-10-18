@@ -23,9 +23,9 @@ export const PAL = {
   brass: { color: 0xc99a42, sel: [1, 0, 0], metal: 0.92, rough: 0.3 },
   void: { color: 0x020203, sel: [0, 0, 0], metal: 0.0, rough: 1.0 },
   cloth: { color: 0x262c3a, sel: [0, 1, 0], metal: 0.0, rough: 0.95 },
-  blade: { color: 0xd3d8de, sel: [0.55, 0, 0], metal: 0.95, rough: 0.24 },
-  bladeEdge: { color: 0xf2f5f8, sel: [0.3, 0, 0], metal: 0.97, rough: 0.12 },
-  fuller: { color: 0x9da4ad, sel: [1, 0, 0], metal: 0.93, rough: 0.34 },
+  blade: { color: 0xd4d8de, sel: [0.55, 0, 0], metal: 0.68, rough: 0.3 },
+  bladeEdge: { color: 0xf4f6f9, sel: [0.3, 0, 0], metal: 0.8, rough: 0.16 },
+  fuller: { color: 0x9aa1aa, sel: [1, 0, 0], metal: 0.72, rough: 0.36 },
   iron: { color: 0x8b9099, sel: [1, 0, 0], metal: 0.88, rough: 0.38 },
 };
 

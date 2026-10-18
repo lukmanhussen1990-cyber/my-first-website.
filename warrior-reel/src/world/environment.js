@@ -28,7 +28,7 @@ const DAY = {
   hemiSky: C(0xd4e8ff), hemiGround: C(0x95b244), hemiI: 1.3,
   rimCol: C(0xe2ecff), rimI: 0.6,
   top: C(0x3a8de8), mid: C(0x94c5f0), horizon: C(0xeef2f5),
-  fog: C(0xe9eef2), fogD: 0.021,
+  fog: C(0xe9eef2), fogD: 0.016,
   exposure: 1.0, envI: 1.0, water: C(0xffffff), cloud: C(0xffffff), glow: 0.35, disc: 2.0,
   shafts: 0, spark: 2.2,
 };
@@ -37,7 +37,7 @@ const GOLD = {
   hemiSky: C(0xffd6a6), hemiGround: C(0x8f7d3e), hemiI: 1.0,
   rimCol: C(0xffb35e), rimI: 1.5,
   top: C(0x5b84c8), mid: C(0xf2b88a), horizon: C(0xffd9a4),
-  fog: C(0xf7d6a6), fogD: 0.025,
+  fog: C(0xf7d6a6), fogD: 0.019,
   exposure: 1.1, envI: 0.95, water: C(0xffe2bc), cloud: C(0xffcfae), glow: 1.3, disc: 4.0,
   shafts: 0.22, spark: 3.6,
 };
@@ -45,7 +45,7 @@ const SUN_X = -0.55, SUN_Z = 0.45;
 
 export function buildWorld(stage) {
   const { scene, renderer } = stage;
-  patchHeightFog({ mistH: 3.0, hazeK: 0.15, start: 9.0 });
+  patchHeightFog({ mistH: 2.6, hazeK: 0.2, start: 12.0 });
 
   const root = new THREE.Group();
   root.name = 'world';

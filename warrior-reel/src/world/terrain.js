@@ -80,7 +80,7 @@ function axisCoords(stepFn, min, max) {
 
 const COL = {
   grass: new THREE.Color(0xb6d63a), grassG: new THREE.Color(0x9ccc34), grassY: new THREE.Color(0xcadb48),
-  bank: new THREE.Color(0x76a82c), mud: new THREE.Color(0x6d7550), hill: new THREE.Color(0xa7b84a), hillTop: new THREE.Color(0xc4cf62),
+  bank: new THREE.Color(0x8cb832), mud: new THREE.Color(0x6d7550), hill: new THREE.Color(0x98ae3e), hillTop: new THREE.Color(0xbcc95a),
   far: new THREE.Color(0xb8c96a),
 };
 

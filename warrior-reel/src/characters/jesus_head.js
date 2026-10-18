@@ -133,7 +133,7 @@ function skinColorAt(x, y, z) {
   c.lerp(new THREE.Color('#8a4a3a'), 0.30 * crease);
   // around the lips: slightly darker, redder (reads as shadow between lips and beard)
   const mz = Math.exp(-((x / 0.026) ** 2 + ((y - MY) / 0.013) ** 2));
-  c.lerp(new THREE.Color('#9a5644'), 0.42 * mz);
+  c.lerp(new THREE.Color('#7a3e32'), 0.72 * mz);
   // sides of the face slightly darker for form
   c.multiplyScalar(1 - 0.10 * smoothstep(0.045, 0.07, ax) * smoothstep(-0.03, 0.03, z - ZO));
   c.lerp(new THREE.Color('#d39b76'), 0.22 * smoothstep(0.09, 0.13, y));

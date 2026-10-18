@@ -79,6 +79,7 @@ export async function build(stage, params) {
       camera.lookAt(V(...s.l));
       camera.updateProjectionMatrix();
       world.update(t, { mood: +(p.mood ?? 0), wind: +(p.wind ?? 0.5) });
+      if (p.fogmul !== undefined) scene.fog.density *= +p.fogmul;
       const key = JSON.stringify(s.p) + JSON.stringify(s.l);
       if (key !== lastKey) { world.focusShadow(s.focus[0], s.focus[1]); lastKey = key; }
     },

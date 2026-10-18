@@ -15,6 +15,7 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 // ---------------------------------------------------------------------------------------------
 const PALETTES = {
   autumn: [0xffd447, 0xf7c235, 0xe8b23a, 0xc2b440, 0xa9ae3c, 0xf59a32, 0xffe27a, 0xe8822e, 0xfff0a0],
+  bigtree: [0xffe07a, 0xffd04f, 0xf7c235, 0xfff0a8, 0xf0b840, 0xf59a32, 0xd9b848, 0xb8b444, 0xffe9a0, 0xffd860],
   golden: [0xffe27a, 0xffd04f, 0xf5c040, 0xe6d064, 0xfff2b0, 0xd8b84a],
   orange: [0xf59a32, 0xe8822e, 0xffb44a, 0xd96a2c, 0xffcc55, 0xc9622a],
   green: [0x8cc43a, 0x76b432, 0xa2d044, 0xb6d84e, 0x6aa42e, 0xc4dc56],
@@ -29,23 +30,26 @@ function tree(rand, o) {
   const shadowBoxes = []; // coarse canopy boxes used only for the sun shadow map
   const colors = PALETTES[pal];
   const pick = () => new THREE.Color(colors[Math.floor(rand() * colors.length)]);
-  const forkY = h * (o.fork ?? (0.4 + rand() * 0.06));
+  const forkY = h * (o.fork ?? (0.3 + rand() * 0.06));
   const base = V(x, y0, z);
   const leanDir = V(Math.cos(lean), 0, Math.sin(lean)).multiplyScalar(0.06 * h);
   const fork = V(x, y0 + forkY, z).add(leanDir);
   const r1 = trunkR * 0.7;
-  trunk.push(limb(base, fork, trunkR, r1, 8, 2.2, rand()));
-  // flared base (a short faceted frustum) + a few low root humps, mostly buried
-  trunk.push(limb(V(x, y0 - 0.05, z), V(x, y0 + 0.15 + trunkR * 1.6, z).add(leanDir.clone().multiplyScalar(0.12)), trunkR * 1.65, trunkR * 1.02, 8, 2.2, rand()));
+  const tw = rand() * 6.28;
+  // flared base: the trunk starts wide at the ground and narrows to its radius ~1.2 m up (same facets/twist)
+  const flareTop = base.clone().lerp(fork, Math.min(0.45, (0.35 + trunkR * 2.2) / forkY));
+  const rFlare = lerp(trunkR, r1, flareTop.distanceTo(base) / fork.distanceTo(base));
+  trunk.push(limb(V(x, y0 - 0.05, z), flareTop, trunkR * 1.55, rFlare, 8, 2.2, tw));
+  trunk.push(limb(flareTop, fork, rFlare, r1, 8, 2.2, tw));
   const nRoots = trunkR > 0.3 ? 5 : 3;
   for (let i = 0; i < nRoots; i++) {
     const a = (i / nRoots) * Math.PI * 2 + rand() * 0.6;
-    const out = V(x + Math.cos(a) * trunkR * 2.5, y0 + 0.08, z + Math.sin(a) * trunkR * 2.5);
-    trunk.push(limb(out, V(x + Math.cos(a) * trunkR * 1.0, y0 + 0.15 + trunkR * 0.5, z + Math.sin(a) * trunkR * 1.0), trunkR * 0.16, trunkR * 0.32, 5, 2.2));
+    const out = V(x + Math.cos(a) * trunkR * 2.4, y0 + 0.1, z + Math.sin(a) * trunkR * 2.4);
+    trunk.push(limb(out, V(x + Math.cos(a) * trunkR * 0.9, y0 + 0.12 + trunkR * 0.7, z + Math.sin(a) * trunkR * 0.9), trunkR * 0.12, trunkR * 0.3, 5, 2.2));
   }
   // cluster helper: shell-weighted ellipsoid of cubes
   const cluster = (c, rx, ry, rz, n) => {
-    shadowBoxes.push({ p: c.clone(), s: [rx * 1.35, ry * 1.25, rz * 1.35], rot: [0, rand() * Math.PI, 0] });
+    shadowBoxes.push({ p: c.clone(), s: [rx * 1.15, ry * 1.1, rz * 1.15], rot: [0, rand() * Math.PI, 0] });
     for (let i = 0; i < n; i++) {
       const u = rand() * 2 - 1, th = rand() * Math.PI * 2;
       const sq = Math.sqrt(1 - u * u);
@@ -57,7 +61,7 @@ function tree(rand, o) {
       leaves.push({ p, s: [s * (0.9 + rand() * 0.3), s * (0.75 + rand() * 0.3), s * (0.9 + rand() * 0.3)], rot: [(rand() - 0.5) * 0.5, rand() * Math.PI, (rand() - 0.5) * 0.5], color: col });
     }
   };
-  const canopyY = y0 + h * 0.64;
+  const canopyY = y0 + h * (o.canopy ?? 0.56);
   const R = h * 0.44 * spread;
   // main limbs
   for (let i = 0; i < limbs; i++) {
@@ -118,7 +122,7 @@ export function buildTrees() {
     if (castShadow) proxies.push(...t.shadowBoxes);
   };
   // THE big autumn tree behind the seats
-  add(tree(rand, { x: 0.6, z: -2.6, h: 7.6, trunkR: 0.42, pal: 'autumn', spread: 1.05, cube: 0.6, density: 1.0, limbs: 5, fork: 0.34, barkCol: 0xb8aeb0 }), 'bigTree', true);
+  add(tree(rand, { x: 0.6, z: -2.6, h: 7.6, trunkR: 0.42, pal: 'bigtree', spread: 1.05, cube: 0.66, density: 0.95, limbs: 5, fork: 0.34, canopy: 0.62, barkCol: 0xb8aeb0 }), 'bigTree', true);
   // scattered trees (none within 1.2 m of the seats, sight-lines across the river kept clear)
   const spots = [
     [-5.2, -4.8, 5.2, 'golden'], [5.8, -5.4, 5.6, 'orange'], [-9.5, -2.0, 6.0, 'green'], [10.5, -3.2, 5.4, 'autumn'],
@@ -133,7 +137,7 @@ export function buildTrees() {
   spots.forEach(([x, z, h, pal], i) => {
     const d = Math.hypot(x, z);
     const far = d > 14;
-    add(tree(rand, { x, z, h, trunkR: 0.16 + h * 0.022, pal, spread: 0.85 + rand() * 0.25, cube: (far ? 0.7 : 0.52) + h * 0.03, density: far ? 0.6 : 0.8, limbs: 3 + Math.floor(rand() * 2), lean: rand() * 6.28, barkCol: rand() < 0.5 ? 0xa0948e : 0x988a80 }),
+    add(tree(rand, { x, z, h, trunkR: 0.16 + h * 0.022, pal, spread: 0.85 + rand() * 0.25, cube: (far ? 0.75 : 0.6) + h * 0.03, density: far ? 0.6 : 0.8, limbs: 3 + Math.floor(rand() * 2), lean: rand() * 6.28, barkCol: rand() < 0.5 ? 0xa0948e : 0x988a80 }),
       'tree' + i, d < 9);
   });
   // bushes / small blocky plants, grouped by side for culling

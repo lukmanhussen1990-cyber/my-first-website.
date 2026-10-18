@@ -1,23 +1,26 @@
-// The Knight — big armoured warrior (~1.9 m with helmet) in weathered silver plate, dark leather
+// The Knight — big armoured warrior (~1.93 m with helmet) in weathered silver plate, dark leather
 // gauntlets, dark frayed cape, and a separate arming sword.
 //
-//   import { buildKnight, POSES, SWORD, GRIP_R, GRIP_R_REV, POMMEL_L, swordPose, solveSwordHands,
-//            legTargetsSeated, plantFeet } from './characters/knight.js';
+//   import { buildKnight, POSES, SWORD, GRIP_R, GRIP_R_REV, POMMEL_L, swordPose, swordLowerPose,
+//            solveSwordHands, legTargetsSeated, plantFeet } from './characters/knight.js';
 //
 //   const knight = buildKnight();
 //   scene.add(knight.root); scene.add(knight.sword);        // the sword is NOT parented to the hand
 //   knight.root.position.set(-0.55, 0, -0.05);              // seated: root at the seat-rock centre (seat top y 0.48)
-//   // every frame, in this order:
+//   // every frame:
 //   knight.rig.applyPose(Humanoid.compile(POSES.seated));   // (or a Humanoid.blend of POSES)
 //   plantFeet(knight);                                      // seated: legIK to legTargetsSeated() + flat feet
-//   const sp = swordPose(knight, 'sitGrip');                // or your own world {position, quaternion}
-//   solveSwordHands(knight, sp.position, sp.quaternion, { left: 'knee', grip: 'forward' });
+//   const sp = swordPose(knight, 'sitGrip');                // 'sitGrip' | 'sitForward' | 'sitLower' | 'sitRest' | 'standDown'
+//   solveSwordHands(knight, sp.position, sp.quaternion, { left: sp.left, grip: sp.grip, tremble: 0.6, t });
 //   knight.rig.lookAt(target, w);                           // optional head look
-//   knight.update(t, { grip: 0..1, seated: true });         // fingers squeeze + cape drape
+//   knight.update(t, { grip: 0..1, seated: true, rock: { center: seatTopCentreWorld } });
+//   // lowering beat: const p = swordLowerPose(knight, u) (u 0..1) -> solveSwordHands(knight, p.position,
+//   //   p.quaternion, { grip: p.grip, left: p.left }); blend POSES.seated -> seatedRelaxed by p.relax.
 //
-// Extras on the returned object:
-//   sword (Group), hands {L,R} (finger rigs), cape, setHand(side, mode, {tension, open}),
-//   setPose(nameOrPose), stats() -> { triangles, meshes }.
+// Call order within a frame is free: fingers are re-applied by both solveSwordHands and update, and the
+// cape drape is computed lazily at render time (after all IK) from the state given to update().
+// Extras on the returned object: sword (Group), hands {L,R} (finger rigs), cape, setHand(side, mode,
+// {tension, open, mix}), setPose(nameOrPose), stats() -> { triangles, meshes }.
 // Hand modes: 'grip' | 'fist' | 'relaxed' | 'open' | 'knee' | 'pommel'.
 import * as THREE from 'three';
 import { Humanoid, quatFromBasis } from '../core/rig.js';
@@ -74,7 +77,7 @@ export const POSES = {
   // standing: heroic but calm — chest up, chin level, arms relaxed clear of the plates
   stand: {
     // NB: thigh joints sit 0.04 below the hips bone, so feet-on-ground needs standHipY + 0.04
-    hipsPos: [0, KNIGHT_DIMS.thigh + KNIGHT_DIMS.shin + KNIGHT_DIMS.ankle + 0.04 - 0.004, 0],
+    hipsPos: [0, KNIGHT_DIMS.thigh + KNIGHT_DIMS.shin + KNIGHT_DIMS.ankle + 0.04 + 0.008, 0],
     spine: [-2, 0, 0], chest: [-3, 0, 0], neck: [1, 0, 0], head: [3, 0, 0],
     upperArmL: [4, 0, 14], foreArmL: [-14, 0, 0], handL: [0, 0, 0],
     upperArmR: [4, 0, -14], foreArmR: [-14, 0, 0], handR: [0, 0, 0],
@@ -314,11 +317,17 @@ export function buildKnight(opts = {}) {
   const hands = { L: buildHand('L', material), R: buildHand('R', material) };
   rig.b.handL.add(hands.L.root);
   rig.b.handR.add(hands.R.root);
-  const sword = buildSword(material);
+  // the sword gets its own instance of the armour material (same shader program) with softer environment
+  // reflections, so a mirror-like blade doesn't turn grass-green in the meadow
+  const swordMat = material.clone();
+  swordMat.onBeforeCompile = material.onBeforeCompile;
+  swordMat.customProgramCacheKey = material.customProgramCacheKey;
+  swordMat.envMapIntensity = 0.6;
+  const sword = buildSword(swordMat);
   rig.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 
   const knight = {
-    rig, root: rig.root, sword, hands, cape, material, armor,
+    rig, root: rig.root, sword, hands, cape, material, swordMaterial: swordMat, armor,
     grip: 0, seated: false, t: 0,
     setHand(side, mode, { tension = 0, open = 0, mix = null } = {}) {
       const h = hands[side];
