@@ -1,0 +1,15 @@
+{
+  "name": "warrior-reel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The Warrior Who Couldn't Forgive — procedural low-poly 3D animated reel (Three.js, rendered headless)",
+  "scripts": {
+    "shoot": "node render/shoot.mjs",
+    "render": "node render/render.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.48.2",
+    "three": "0.169.0"
+  }
+}

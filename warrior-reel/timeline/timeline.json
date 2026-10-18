@@ -1,0 +1,765 @@
+{
+ "title": "The Warrior Who Couldn't Forgive",
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "duration": 60.367,
+ "frames": 1811,
+ "voices": {
+  "JESUS": {
+   "elevenlabs_voice_id": "9Ni5tnvWT8WRgVNQLU3c",
+   "name": "LAUKYS Voice",
+   "model": "eleven_v4"
+  },
+  "KNIGHT": {
+   "elevenlabs_voice_id": "2ajXGJNYBR0iNHpS4VZb",
+   "name": "Rob - Tough, Calloused, British",
+   "model": "eleven_v4"
+  }
+ },
+ "beats": {
+  "hookStart": 0.0,
+  "establishStart": 3.64,
+  "jesusWalkStart": 0.0,
+  "jesusArrive": 7.44,
+  "jesusSitStart": 9.39,
+  "jesusSitEnd": 10.54,
+  "swordLookStart": 32.01,
+  "swordLowerStart": 33.01,
+  "swordTipDown": 35.31,
+  "swordSettleEnd": 36.11,
+  "goldenStart": 50.24,
+  "goldenEnd": 51.14,
+  "shoulderTouch": 51.44,
+  "endCardStart": 55.56,
+  "end": 60.36
+ },
+ "cues": [
+  {
+   "id": "L01",
+   "speaker": "KNIGHT",
+   "text": "When I find him... he will pay.",
+   "ttsTags": "[tense] [quietly]",
+   "file": "audio/dialogue/L01.mp3",
+   "fileStart": 0.45,
+   "fileDur": 3.239,
+   "speechStart": 0.45,
+   "speechEnd": 3.29,
+   "words": [
+    {
+     "w": "When",
+     "s": 0.45,
+     "e": 0.77
+    },
+    {
+     "w": "I",
+     "s": 0.77,
+     "e": 0.97
+    },
+    {
+     "w": "find",
+     "s": 0.97,
+     "e": 1.37
+    },
+    {
+     "w": "him,",
+     "s": 1.37,
+     "e": 1.65
+    },
+    {
+     "w": "he",
+     "s": 2.27,
+     "e": 2.73
+    },
+    {
+     "w": "will",
+     "s": 2.73,
+     "e": 2.95
+    },
+    {
+     "w": "pay.",
+     "s": 2.95,
+     "e": 3.29
+    }
+   ]
+  },
+  {
+   "id": "L02",
+   "speaker": "JESUS",
+   "text": "You've been gripping that sword since sunrise, my friend.",
+   "ttsTags": "[warmly]",
+   "file": "audio/dialogue/L02.mp3",
+   "fileStart": 6.24,
+   "fileDur": 3.474,
+   "speechStart": 6.24,
+   "speechEnd": 9.24,
+   "words": [
+    {
+     "w": "You've",
+     "s": 6.24,
+     "e": 6.66
+    },
+    {
+     "w": "been",
+     "s": 6.66,
+     "e": 6.8
+    },
+    {
+     "w": "gripping",
+     "s": 6.8,
+     "e": 7.16
+    },
+    {
+     "w": "that",
+     "s": 7.16,
+     "e": 7.44
+    },
+    {
+     "w": "sword",
+     "s": 7.44,
+     "e": 7.78
+    },
+    {
+     "w": "since",
+     "s": 7.78,
+     "e": 8.06
+    },
+    {
+     "w": "sunrise,",
+     "s": 8.06,
+     "e": 8.58
+    },
+    {
+     "w": "my",
+     "s": 8.82,
+     "e": 8.92
+    },
+    {
+     "w": "friend.",
+     "s": 8.92,
+     "e": 9.24
+    }
+   ]
+  },
+  {
+   "id": "L03",
+   "speaker": "JESUS",
+   "text": "Why do you carry so much anger?",
+   "ttsTags": "[gently]",
+   "file": "audio/dialogue/L03.mp3",
+   "fileStart": 10.74,
+   "fileDur": 2.586,
+   "speechStart": 10.74,
+   "speechEnd": 12.88,
+   "words": [
+    {
+     "w": "Why",
+     "s": 10.74,
+     "e": 11.16
+    },
+    {
+     "w": "do",
+     "s": 11.16,
+     "e": 11.32
+    },
+    {
+     "w": "you",
+     "s": 11.32,
+     "e": 11.46
+    },
+    {
+     "w": "carry",
+     "s": 11.46,
+     "e": 11.82
+    },
+    {
+     "w": "so",
+     "s": 11.82,
+     "e": 12.2
+    },
+    {
+     "w": "much",
+     "s": 12.2,
+     "e": 12.44
+    },
+    {
+     "w": "anger?",
+     "s": 12.44,
+     "e": 12.88
+    }
+   ]
+  },
+  {
+   "id": "L04",
+   "speaker": "KNIGHT",
+   "text": "The man I trusted most betrayed me. He opened our gates to the enemy.",
+   "ttsTags": "[bitter] ... [pause] ...",
+   "file": "audio/dialogue/L04.mp3",
+   "fileStart": 13.43,
+   "fileDur": 6.113,
+   "speechStart": 13.43,
+   "speechEnd": 19.21,
+   "words": [
+    {
+     "w": "the",
+     "s": 13.43,
+     "e": 13.75
+    },
+    {
+     "w": "man",
+     "s": 13.75,
+     "e": 13.97
+    },
+    {
+     "w": "I",
+     "s": 13.97,
+     "e": 14.17
+    },
+    {
+     "w": "trusted",
+     "s": 14.17,
+     "e": 14.59
+    },
+    {
+     "w": "most",
+     "s": 14.59,
+     "e": 15.17
+    },
+    {
+     "w": "betrayed",
+     "s": 15.17,
+     "e": 15.85
+    },
+    {
+     "w": "me.",
+     "s": 15.85,
+     "e": 16.41
+    },
+    {
+     "w": "He",
+     "s": 17.21,
+     "e": 17.51
+    },
+    {
+     "w": "opened",
+     "s": 17.51,
+     "e": 17.85
+    },
+    {
+     "w": "our",
+     "s": 17.85,
+     "e": 18.13
+    },
+    {
+     "w": "gates",
+     "s": 18.13,
+     "e": 18.45
+    },
+    {
+     "w": "to",
+     "s": 18.45,
+     "e": 18.81
+    },
+    {
+     "w": "the",
+     "s": 18.81,
+     "e": 18.97
+    },
+    {
+     "w": "enemy.",
+     "s": 18.97,
+     "e": 19.21
+    }
+   ]
+  },
+  {
+   "id": "L05",
+   "speaker": "KNIGHT",
+   "text": "Every day since... I've sharpened this blade for him.",
+   "ttsTags": "[quietly] [tense]",
+   "file": "audio/dialogue/L05.mp3",
+   "fileStart": 19.66,
+   "fileDur": 3.866,
+   "speechStart": 19.66,
+   "speechEnd": 23.28,
+   "words": [
+    {
+     "w": "Every",
+     "s": 19.66,
+     "e": 20.1
+    },
+    {
+     "w": "day",
+     "s": 20.1,
+     "e": 20.34
+    },
+    {
+     "w": "since",
+     "s": 20.34,
+     "e": 20.82
+    },
+    {
+     "w": "I've",
+     "s": 20.82,
+     "e": 21.76
+    },
+    {
+     "w": "sharpened",
+     "s": 21.76,
+     "e": 22.32
+    },
+    {
+     "w": "this",
+     "s": 22.32,
+     "e": 22.48
+    },
+    {
+     "w": "blade",
+     "s": 22.48,
+     "e": 22.78
+    },
+    {
+     "w": "for",
+     "s": 22.78,
+     "e": 23.08
+    },
+    {
+     "w": "him",
+     "s": 23.08,
+     "e": 23.28
+    }
+   ]
+  },
+  {
+   "id": "L06",
+   "speaker": "JESUS",
+   "text": "Any man can defeat his enemy with a sword.",
+   "ttsTags": "[softly]",
+   "file": "audio/dialogue/L06.mp3",
+   "fileStart": 24.03,
+   "fileDur": 2.847,
+   "speechStart": 24.03,
+   "speechEnd": 26.45,
+   "words": [
+    {
+     "w": "Any",
+     "s": 24.03,
+     "e": 24.37
+    },
+    {
+     "w": "man",
+     "s": 24.37,
+     "e": 24.71
+    },
+    {
+     "w": "can",
+     "s": 24.71,
+     "e": 24.95
+    },
+    {
+     "w": "defeat",
+     "s": 24.95,
+     "e": 25.27
+    },
+    {
+     "w": "his",
+     "s": 25.27,
+     "e": 25.47
+    },
+    {
+     "w": "enemy",
+     "s": 25.47,
+     "e": 25.75
+    },
+    {
+     "w": "with",
+     "s": 25.75,
+     "e": 26.03
+    },
+    {
+     "w": "a",
+     "s": 26.03,
+     "e": 26.19
+    },
+    {
+     "w": "sword.",
+     "s": 26.19,
+     "e": 26.45
+    }
+   ]
+  },
+  {
+   "id": "L07",
+   "speaker": "JESUS",
+   "text": "True strength is ruling the anger inside you... and choosing what is right.",
+   "ttsTags": "[warmly]",
+   "file": "audio/dialogue/L07.mp3",
+   "fileStart": 26.8,
+   "fileDur": 5.329,
+   "speechStart": 26.8,
+   "speechEnd": 31.66,
+   "words": [
+    {
+     "w": "True",
+     "s": 26.8,
+     "e": 27.2
+    },
+    {
+     "w": "strength",
+     "s": 27.2,
+     "e": 27.64
+    },
+    {
+     "w": "is",
+     "s": 27.64,
+     "e": 28.02
+    },
+    {
+     "w": "ruling",
+     "s": 28.02,
+     "e": 28.48
+    },
+    {
+     "w": "the",
+     "s": 28.48,
+     "e": 28.78
+    },
+    {
+     "w": "anger",
+     "s": 28.78,
+     "e": 29.1
+    },
+    {
+     "w": "inside",
+     "s": 29.1,
+     "e": 29.56
+    },
+    {
+     "w": "you",
+     "s": 29.56,
+     "e": 29.96
+    },
+    {
+     "w": "and",
+     "s": 29.96,
+     "e": 30.5
+    },
+    {
+     "w": "choosing",
+     "s": 30.5,
+     "e": 30.88
+    },
+    {
+     "w": "what",
+     "s": 30.88,
+     "e": 31.22
+    },
+    {
+     "w": "is",
+     "s": 31.22,
+     "e": 31.34
+    },
+    {
+     "w": "right.",
+     "s": 31.34,
+     "e": 31.66
+    }
+   ]
+  },
+  {
+   "id": "L08",
+   "speaker": "KNIGHT",
+   "text": "So I'm supposed to pretend it never happened?",
+   "ttsTags": "[hesitant] [quietly]",
+   "file": "audio/dialogue/L08.mp3",
+   "fileStart": 36.31,
+   "fileDur": 2.769,
+   "speechStart": 36.31,
+   "speechEnd": 38.61,
+   "words": [
+    {
+     "w": "So",
+     "s": 36.31,
+     "e": 36.73
+    },
+    {
+     "w": "I'm",
+     "s": 36.73,
+     "e": 37.01
+    },
+    {
+     "w": "supposed",
+     "s": 37.01,
+     "e": 37.29
+    },
+    {
+     "w": "to",
+     "s": 37.29,
+     "e": 37.51
+    },
+    {
+     "w": "pretend",
+     "s": 37.51,
+     "e": 37.81
+    },
+    {
+     "w": "it",
+     "s": 37.81,
+     "e": 38.03
+    },
+    {
+     "w": "never",
+     "s": 38.03,
+     "e": 38.23
+    },
+    {
+     "w": "happened.",
+     "s": 38.23,
+     "e": 38.61
+    }
+   ]
+  },
+  {
+   "id": "L09",
+   "speaker": "JESUS",
+   "text": "No. Forgiveness doesn't pretend the wrong never happened.",
+   "ttsTags": "[gently]",
+   "file": "audio/dialogue/L09.mp3",
+   "fileStart": 39.11,
+   "fileDur": 4.206,
+   "speechStart": 39.11,
+   "speechEnd": 42.93,
+   "words": [
+    {
+     "w": "No.",
+     "s": 39.11,
+     "e": 39.63
+    },
+    {
+     "w": "Forgiveness",
+     "s": 40.43,
+     "e": 40.83
+    },
+    {
+     "w": "doesn't",
+     "s": 40.83,
+     "e": 41.37
+    },
+    {
+     "w": "pretend",
+     "s": 41.37,
+     "e": 41.71
+    },
+    {
+     "w": "the",
+     "s": 41.71,
+     "e": 41.93
+    },
+    {
+     "w": "wrong",
+     "s": 41.93,
+     "e": 42.17
+    },
+    {
+     "w": "never",
+     "s": 42.17,
+     "e": 42.49
+    },
+    {
+     "w": "happened.",
+     "s": 42.49,
+     "e": 42.93
+    }
+   ]
+  },
+  {
+   "id": "L10",
+   "speaker": "JESUS",
+   "text": "It means you refuse to let hatred rule the rest of your life.",
+   "ttsTags": "[warmly]",
+   "file": "audio/dialogue/L10.mp3",
+   "fileStart": 43.33,
+   "fileDur": 4.206,
+   "speechStart": 43.33,
+   "speechEnd": 47.13,
+   "words": [
+    {
+     "w": "It",
+     "s": 43.33,
+     "e": 43.55
+    },
+    {
+     "w": "means",
+     "s": 43.55,
+     "e": 43.81
+    },
+    {
+     "w": "you",
+     "s": 43.81,
+     "e": 44.07
+    },
+    {
+     "w": "refuse",
+     "s": 44.07,
+     "e": 44.55
+    },
+    {
+     "w": "to",
+     "s": 44.55,
+     "e": 44.87
+    },
+    {
+     "w": "let",
+     "s": 44.87,
+     "e": 45.03
+    },
+    {
+     "w": "hatred",
+     "s": 45.03,
+     "e": 45.49
+    },
+    {
+     "w": "rule",
+     "s": 45.49,
+     "e": 46.01
+    },
+    {
+     "w": "the",
+     "s": 46.01,
+     "e": 46.27
+    },
+    {
+     "w": "rest",
+     "s": 46.27,
+     "e": 46.47
+    },
+    {
+     "w": "of",
+     "s": 46.47,
+     "e": 46.71
+    },
+    {
+     "w": "your",
+     "s": 46.71,
+     "e": 46.85
+    },
+    {
+     "w": "life.",
+     "s": 46.85,
+     "e": 47.13
+    }
+   ]
+  },
+  {
+   "id": "L11",
+   "speaker": "KNIGHT",
+   "text": "I've let him rule me long enough.",
+   "ttsTags": "[exhales] [softly]",
+   "file": "audio/dialogue/L11.mp3",
+   "fileStart": 46.83,
+   "fileDur": 3.396,
+   "speechStart": 47.83,
+   "speechEnd": 49.79,
+   "words": [
+    {
+     "w": "I've",
+     "s": 47.83,
+     "e": 48.35
+    },
+    {
+     "w": "let",
+     "s": 48.35,
+     "e": 48.51
+    },
+    {
+     "w": "him",
+     "s": 48.51,
+     "e": 48.71
+    },
+    {
+     "w": "rule",
+     "s": 48.71,
+     "e": 48.99
+    },
+    {
+     "w": "me",
+     "s": 48.99,
+     "e": 49.21
+    },
+    {
+     "w": "long",
+     "s": 49.21,
+     "e": 49.45
+    },
+    {
+     "w": "enough.",
+     "s": 49.45,
+     "e": 49.79
+    }
+   ]
+  },
+  {
+   "id": "L12",
+   "speaker": "JESUS",
+   "text": "Then today... you've won the greatest battle of all.",
+   "ttsTags": "[warmly] [softly]",
+   "file": "audio/dialogue/L12.mp3",
+   "fileStart": 51.69,
+   "fileDur": 3.709,
+   "speechStart": 51.69,
+   "speechEnd": 55.11,
+   "words": [
+    {
+     "w": "Then",
+     "s": 51.69,
+     "e": 51.93
+    },
+    {
+     "w": "today,",
+     "s": 51.93,
+     "e": 52.37
+    },
+    {
+     "w": "you've",
+     "s": 53.23,
+     "e": 53.41
+    },
+    {
+     "w": "won",
+     "s": 53.41,
+     "e": 53.57
+    },
+    {
+     "w": "the",
+     "s": 53.57,
+     "e": 53.77
+    },
+    {
+     "w": "greatest",
+     "s": 53.77,
+     "e": 54.15
+    },
+    {
+     "w": "battle",
+     "s": 54.15,
+     "e": 54.59
+    },
+    {
+     "w": "of",
+     "s": 54.59,
+     "e": 54.85
+    },
+    {
+     "w": "all.",
+     "s": 54.85,
+     "e": 55.11
+    }
+   ]
+  }
+ ],
+ "endCard": {
+  "verse": "One who is slow to anger is better than the mighty;\none who rules his spirit, than he who takes a city.",
+  "reference": "PROVERBS 16:32 (WEB)",
+  "tagline": "True strength forgives."
+ }
+}
