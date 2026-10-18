@@ -4,6 +4,7 @@ A 37-second, 9:16 (1080×1920, 30 fps) 3D-animated science explainer with bold k
 a cinematic electronic score and synchronized sound effects. **No narration, dialogue or vocals.**
 
 Final video: [`what-if-the-moon-disappeared.mp4`](what-if-the-moon-disappeared.mp4)
+(1080×1920, 30 fps, 37.0 s, H.264 High / BT.709, AAC 48 kHz stereo, -14 LUFS integrated, -1.3 dBTP true peak, 35 MB)
 
 Every frame is rendered from real 3D scenes (Three.js / WebGL in headless Chromium). The soundtrack is
 synthesized procedurally in Python. Both read the same timing table ([`src/events.json`](src/events.json)),

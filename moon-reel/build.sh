@@ -37,8 +37,10 @@ while read -r a b i; do echo "file 'seg_$i.mkv'" >> "$OUT/concat.txt"; done < "$
 
 python3 audio/make_audio.py "$OUT/soundtrack.wav"
 
-ffmpeg -y -loglevel error -f concat -safe 0 -i "$OUT/concat.txt" -i "$OUT/soundtrack.wav" \
-  -map 0:v -map 1:a -c:v libx264 -preset slow -crf 17 -maxrate 12M -bufsize 24M \
-  -profile:v high -level 4.1 -pix_fmt yuv420p -r 30 -g 60 -movflags +faststart \
-  -c:a aac -b:a 320k -ar 48000 -ac 2 -shortest "$FINAL"
+# Segments are untagged BT.601 YUV 4:4:4 (ffmpeg's default RGB conversion); deliver tagged BT.709 4:2:0.
+ffmpeg -y -loglevel error -f concat -safe 0 -i "$OUT/concat.txt" -i "$OUT/soundtrack.wav" -map 0:v -map 1:a \
+  -vf "scale=in_color_matrix=bt601:in_range=tv:out_color_matrix=bt709:out_range=tv,format=yuv420p" \
+  -c:v libx264 -preset slow -crf 19 -maxrate 9M -bufsize 18M -profile:v high -level 4.1 -r 30 -g 60 \
+  -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -movflags +faststart \
+  -c:a aac -b:a 256k -ar 48000 -ac 2 -shortest "$FINAL"
 ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate:format=duration,size -of compact "$FINAL"
