@@ -83,10 +83,10 @@ function faceAt(x, y) {
   return { p: new THREE.Vector3(...headSurf(th, y)), n: headNormal(th, y), th };
 }
 
-const NU = 88;
+const NU = 72;
 const RING_Y = (() => {
   const ys = [HEAD.bottom - 0.0015];
-  const nLin = 50, nTop = 13;
+  const nLin = 44, nTop = 11;
   for (let i = 0; i <= nLin; i++) ys.push(lerp(HEAD.bottom, 0.13, i / nLin));
   for (let i = 1; i <= nTop; i++) ys.push(0.13 + (HEAD.top - 0.13) * Math.sin((i / nTop) * Math.PI / 2));
   return ys;
@@ -238,7 +238,7 @@ function hairThick(th, y, v) {
   return t * lerp(0.18, 1, smoothstep(0, 0.14, v));
 }
 function buildHairCap() {
-  const nu = 112, nv = 30;
+  const nu = 96, nv = 25;
   const base = [];
   const g = gridGeometry(nu, nv + 1, (u, vv, i, j) => {
     const th = (u - 0.5) * Math.PI * 2; // seam at the back
@@ -288,7 +288,7 @@ function beardThick(x, y, z, edgeV, edgeTh) {
   return t * lerp(0.2, 1, smoothstep(0, 0.16, edgeV)) * edgeTh;
 }
 function buildBeard() {
-  const nu = 84, nvFace = 28, nvUnder = 9;
+  const nu = 72, nvFace = 25, nvUnder = 7;
   const nv = nvFace + nvUnder + 1; // +1 tuck row
   const baseP = [];
   const g = gridGeometry(nu, nv, (u, vv, i, j) => {
@@ -412,7 +412,7 @@ function browGeometry(pts, raiseInner, raiseOuter) {
 }
 
 function lidGeometry(r, lenDeg, lower) {
-  const g = new THREE.SphereGeometry(r, 24, 14, 0, Math.PI * 2, 0, lenDeg * DEG);
+  const g = new THREE.SphereGeometry(r, 20, 11, 0, Math.PI * 2, 0, lenDeg * DEG);
   const p = g.attributes.position;
   const col = new Float32Array(p.count * 3);
   const skin = SKIN_BASE.clone().lerp(new THREE.Color('#b0644e'), lower ? 0.15 : 0.28);
@@ -468,7 +468,7 @@ export function buildHead(T) {
   const E = HEAD.eye;
   const eyeZ = faceZ(E.x, E.y) - E.r + 0.0068;
   const eyeGroups = [];
-  const eyeGeo = new THREE.SphereGeometry(E.r, 28, 20).rotateX(Math.PI / 2);
+  const eyeGeo = new THREE.SphereGeometry(E.r, 24, 16).rotateX(Math.PI / 2);
   for (const sx of [1, -1]) {
     const pivot = new THREE.Group();
     pivot.position.set(sx * E.x, E.y, eyeZ);

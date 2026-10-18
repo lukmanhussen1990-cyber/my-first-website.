@@ -115,9 +115,9 @@ export function bodyWeights(x, y, z) {
 }
 
 function buildRobeBody() {
-  const NU = 72;
+  const NU = 64;
   const ys = [];
-  const NR = 74;
+  const NR = 62;
   for (let j = 0; j <= NR; j++) ys.push(lerp(HEM_Y, COLLAR_Y, j / NR));
   // rows: 0 = inner hem lip top, 1 = inner hem lip bottom, 2.. = outer surface from hem to collar
   const shade = [];
@@ -302,24 +302,25 @@ const FINGERS = [ // x, base y, lengths, radius, spread deg, curl scale
 const SKIN_COL = '#cf9168';
 const NAIL_COL = '#e2b39a';
 
-function capsuleSeg(r0, r1, L) {
-  // tapered capsule from y=0 to y=-L
+function capsuleSeg(r0, r1, L, startCap = true) {
+  // tapered capsule from y=0 to y=-L (end sphere always, start sphere optional)
   const pts = [];
-  const n = 6;
+  const n = 2;
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     pts.push({ p: new THREE.Vector3(0, -L * t, 0), rx: lerp(r0, r1, t), rz: lerp(r0, r1, t) * 0.92 });
   }
-  const g = loftTube(pts, 10, { capStart: false, capEnd: false });
-  const s0 = new THREE.SphereGeometry(r0, 10, 6); const s1 = new THREE.SphereGeometry(r1, 10, 6);
-  s0.scale(1, 1, 0.92); s1.scale(1, 1, 0.92); s1.translate(0, -L, 0);
-  return merge([g, s0, s1]);
+  const parts = [loftTube(pts, 8, { capStart: false, capEnd: false })];
+  const s1 = new THREE.SphereGeometry(r1, 8, 5); s1.scale(1, 1, 0.92); s1.translate(0, -L, 0);
+  parts.push(s1);
+  if (startCap) { const s0 = new THREE.SphereGeometry(r0, 8, 5); s0.scale(1, 1, 0.92); parts.push(s0); }
+  return merge(parts);
 }
 
 function buildHandGeo(curl, side) {
   const parts = [];
   // palm: rounded slab, thicker at the heel of the hand, knuckle ridge at the end
-  const palm = superEllipsoid([0.0385, 0.049, 0.0135], [0, -0.053, 0.0], { e1: 0.62, e2: 0.78, wSeg: 22, hSeg: 14 });
+  const palm = superEllipsoid([0.0385, 0.049, 0.0135], [0, -0.053, 0.0], { e1: 0.62, e2: 0.78, wSeg: 18, hSeg: 11 });
   const pp = palm.attributes.position;
   for (let i = 0; i < pp.count; i++) {
     const x = pp.getX(i), y = pp.getY(i), z = pp.getZ(i);
@@ -344,11 +345,11 @@ function buildHandGeo(curl, side) {
       const ang = -relaxed[s] * curl * f.k * DEG;
       m.multiply(new THREE.Matrix4().makeRotationX(ang));
       const r1 = r * 0.9;
-      const seg = setColor(capsuleSeg(r, r1, f.L[s]), SKIN_COL);
+      const seg = setColor(capsuleSeg(r, r1, f.L[s], s === 0), SKIN_COL);
       seg.applyMatrix4(m);
       parts.push(seg);
       if (s === 2) {
-        const nail = superEllipsoid([r1 * 0.72, f.L[2] * 0.34, r1 * 0.32], [0, -f.L[2] * 0.64, -r1 * 0.74], { wSeg: 8, hSeg: 6 });
+        const nail = superEllipsoid([r1 * 0.72, f.L[2] * 0.34, r1 * 0.32], [0, -f.L[2] * 0.64, -r1 * 0.74], { wSeg: 6, hSeg: 4 });
         setColor(nail, NAIL_COL);
         nail.applyMatrix4(m);
         parts.push(nail);
@@ -369,11 +370,11 @@ function buildHandGeo(curl, side) {
       const ang = s === 0 ? 0 : -(10 + 22 * curl) * DEG;
       m.multiply(new THREE.Matrix4().makeRotationX(ang));
       const r1 = r * 0.9;
-      const seg = setColor(capsuleSeg(r, r1, Ls[s]), SKIN_COL);
+      const seg = setColor(capsuleSeg(r, r1, Ls[s], s === 0), SKIN_COL);
       seg.applyMatrix4(m);
       parts.push(seg);
       if (s === 2) {
-        const nail = superEllipsoid([r1 * 0.72, Ls[2] * 0.33, r1 * 0.32], [0, -Ls[2] * 0.64, -r1 * 0.74], { wSeg: 8, hSeg: 6 });
+        const nail = superEllipsoid([r1 * 0.72, Ls[2] * 0.33, r1 * 0.32], [0, -Ls[2] * 0.64, -r1 * 0.74], { wSeg: 6, hSeg: 4 });
         setColor(nail, NAIL_COL);
         nail.applyMatrix4(m);
         parts.push(nail);

@@ -224,8 +224,9 @@ export function buildCape(rig, { length = 1.24, color = 0x262c3b } = {}) {
         nrm.crossVectors(du, dv).normalize();
         if (nrm.dot(back) < 0) nrm.negate();
         const u = (i / (COLS - 1)) * 2 - 1;
-        const fold = 0.5 + 0.5 * Math.sin(u * Math.PI * 3.6 + 0.7 + 0.4 * noise1(t * 0.5 + i * 0.3));
-        const amp = 0.045 * Math.pow(v, 0.6) * (seated ? 0.8 : 1);
+        const ph = u * Math.PI * 3.4 + 0.7 + 0.9 * Math.sin(u * 5.3 + 1.3) + 0.35 * v + 0.4 * noise1(t * 0.5 + i * 0.3);
+        const fold = Math.pow(0.5 + 0.5 * Math.sin(ph), 1.3);
+        const amp = 0.06 * Math.pow(v, 0.55) * (seated ? 0.8 : 1);
         tmp.copy(P[k]).addScaledVector(nrm, amp * fold);
         P[k].copy(tmp);
         // fold shading (valleys darker) so the drape reads even in flat light
