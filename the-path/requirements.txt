@@ -1,0 +1,4 @@
+# Python 3.13. Environment: python3 -m venv --system-site-packages .venv && .venv/bin/pip install -r requirements.txt
+# Pillow comes from the system site-packages (12.3.0, built with libraqm/HarfBuzz shaping); NumPy is pinned by the OpenCV wheel.
+opencv-python-headless==4.12.0.88
+numpy==2.2.6

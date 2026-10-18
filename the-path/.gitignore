@@ -1,10 +1,13 @@
 # This repository is public. Official brand artwork (wordmark, Duo) and
-# licensed fonts (SF Pro Rounded) are used locally for the spec film only
-# and must never be committed.
+# licensed fonts (e.g. SF Pro Rounded) are used locally for the spec film only
+# and must never be committed. Open-licensed fonts (Nunito, SIL OFL) are fine.
 assets/brand/
-assets/fonts/
+assets/fonts/licensed/
 
-# Render outputs, masters and caches
+# Render outputs, review images, masters and caches
 out/
 __pycache__/
 *.pyc
+
+# Local virtualenv
+.venv/
