@@ -1,0 +1,17 @@
+{
+  "name": "moon-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D-animated Instagram Reel: What if the Moon disappeared? (Three.js frames rendered in headless Chromium + procedural soundtrack)",
+  "type": "module",
+  "scripts": {
+    "build": "./build.sh",
+    "stills": "node render.mjs --scale 0.5 --stills",
+    "audio": "python3 audio/make_audio.py out/soundtrack.wav"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@fontsource/montserrat": "5.1.0",
+    "three": "0.169.0"
+  }
+}
