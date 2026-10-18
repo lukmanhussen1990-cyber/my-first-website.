@@ -31,8 +31,8 @@ import { buildCape } from './knight_cape.js';
 export { SWORD };
 
 export const KNIGHT_DIMS = {
-  spine: 0.15, chest: 0.29, neck: 0.10, shoulderW: 0.46, shoulderY: 0.22,
-  upperArm: 0.31, foreArm: 0.28, hipW: 0.22, thigh: 0.47, shin: 0.45, ankle: 0.08,
+  spine: 0.15, chest: 0.29, neck: 0.105, shoulderW: 0.46, shoulderY: 0.22,
+  upperArm: 0.31, foreArm: 0.28, hipW: 0.22, thigh: 0.48, shin: 0.46, ankle: 0.08,
 };
 
 // ---------- grips ----------
@@ -73,7 +73,8 @@ export const POSES = {
   },
   // standing: heroic but calm — chest up, chin level, arms relaxed clear of the plates
   stand: {
-    hipsPos: [0, 0.995, 0],
+    // NB: thigh joints sit 0.04 below the hips bone, so feet-on-ground needs standHipY + 0.04
+    hipsPos: [0, KNIGHT_DIMS.thigh + KNIGHT_DIMS.shin + KNIGHT_DIMS.ankle + 0.04 - 0.004, 0],
     spine: [-2, 0, 0], chest: [-3, 0, 0], neck: [1, 0, 0], head: [3, 0, 0],
     upperArmL: [4, 0, 14], foreArmL: [-14, 0, 0], handL: [0, 0, 0],
     upperArmR: [4, 0, -14], foreArmR: [-14, 0, 0], handR: [0, 0, 0],
@@ -135,8 +136,8 @@ export const POMMEL_L = (() => {
   Y.addScaledVector(X, -Y.dot(X)).normalize();
   const Z = new THREE.Vector3().crossVectors(X, Y).normalize();
   const q = quatFromBasis(X, Y, Z);
-  const palm = new THREE.Vector3(-0.0225, -0.052, 0.0).applyQuaternion(q);
-  return { position: new THREE.Vector3(0, SWORD.pommelEnd - 0.002, 0).sub(palm), quaternion: q };
+  const palm = new THREE.Vector3(-0.0205, -0.05, 0.004).applyQuaternion(q);
+  return { position: new THREE.Vector3(0, SWORD.pommelEnd + 0.001, 0).sub(palm), quaternion: q };
 })();
 const POMMEL_L_M = new THREE.Matrix4().compose(POMMEL_L.position, POMMEL_L.quaternion, new THREE.Vector3(1, 1, 1));
 

@@ -267,11 +267,11 @@ export function buildArmor(rig, material) {
       nU: 18, nV: 9, th0: -112 * DEG, th1: 112 * DEG, aoTop: 0, aoBot: 0,
       prof: profile([
         { t: 0, y: -0.09, rx: 0.046, rzF: 0.084, rzB: 0.01, sq: 2.6 },
-        { t: 0.14, y: -0.062, rx: 0.053, rzF: 0.118, sq: 2.6 },
-        { t: 0.38, y: 0.03, rx: 0.057, rzF: 0.096, sq: 2.7 },
-        { t: 0.62, y: 0.115, rx: 0.055, rzF: 0.066, sq: 2.6 },
-        { t: 0.84, y: 0.19, rx: 0.046, rzF: 0.046, sq: 2.4 },
-        { t: 1, y: 0.24, rx: 0.016, rzF: 0.024, sq: 2.2 },
+        { t: 0.14, y: -0.062, rx: 0.053, rzF: 0.118, rzB: 0.01, sq: 2.6 },
+        { t: 0.38, y: 0.03, rx: 0.057, rzF: 0.096, rzB: 0.01, sq: 2.7 },
+        { t: 0.62, y: 0.115, rx: 0.055, rzF: 0.066, rzB: 0.01, sq: 2.6 },
+        { t: 0.84, y: 0.19, rx: 0.046, rzF: 0.046, rzB: 0.008, sq: 2.4 },
+        { t: 1, y: 0.24, rx: 0.016, rzF: 0.024, rzB: 0.005, sq: 2.2 },
       ]),
     };
     kit.shell(foot, sab, PAL.steel, { rim: 0.0045, edges: ['bottom', 'left', 'right'], matrix: sabM });
@@ -279,7 +279,18 @@ export function buildArmor(rig, material) {
       const g = bandGeo(sab, tt, tt + 0.03, -100 * DEG, 100 * DEG, 0.003, 14);
       g.applyMatrix4(sabM); kit.add(foot, g, PAL.steelD);
     }
-    { const g = new THREE.BoxGeometry(0.104, 0.016, 0.32); g.translate(0, soleY + 0.006, 0.075); kit.add(foot, g, PAL.pad); }
+    { // leather sole following the sabaton outline (heel to toe)
+      const sh = new THREE.Shape();
+      const outline = [];
+      for (let i = 0; i <= 12; i++) { const t = i / 12, pr = sab.prof(t); outline.push([pr.rx * 0.98, pr.y]); }
+      sh.moveTo(-outline[0][0], outline[0][1]);
+      for (const [w, z] of outline) sh.lineTo(-w, z);
+      for (let i = outline.length - 1; i >= 0; i--) sh.lineTo(outline[i][0], outline[i][1]);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: 0.014, bevelEnabled: false });
+      g.rotateX(Math.PI / 2); // shape (x, y=z_foot) -> foot XZ plane, extruded downward
+      g.translate(0, soleY + 0.014, 0);
+      kit.add(foot, g, PAL.pad);
+    }
     // mail at the ankle
     { const g = new THREE.SphereGeometry(0.058, 10, 8); g.translate(0, 0.0, -0.005); kit.add(foot, g, PAL.mail); }
   }

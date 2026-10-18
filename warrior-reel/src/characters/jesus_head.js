@@ -131,6 +131,9 @@ function skinColorAt(x, y, z) {
   // lid crease
   const crease = Math.exp(-(((ax - HEAD.eye.x) / 0.015) ** 2 + ((y - HEAD.eye.y - 0.0125) / 0.0022) ** 2));
   c.lerp(new THREE.Color('#8a4a3a'), 0.30 * crease);
+  // around the lips: slightly darker, redder (reads as shadow between lips and beard)
+  const mz = Math.exp(-((x / 0.026) ** 2 + ((y - MY) / 0.013) ** 2));
+  c.lerp(new THREE.Color('#9a5644'), 0.42 * mz);
   // sides of the face slightly darker for form
   c.multiplyScalar(1 - 0.10 * smoothstep(0.045, 0.07, ax) * smoothstep(-0.03, 0.03, z - ZO));
   c.lerp(new THREE.Color('#d39b76'), 0.22 * smoothstep(0.09, 0.13, y));
@@ -478,7 +481,7 @@ export function buildHead(T) {
     group.add(pivot);
     eyeGroups.push(pivot);
   }
-  const lidR = E.r * 1.07;
+  const lidR = E.r * 1.055;
   const mkLid = (len, lower) => {
     const a = lidGeometry(lidR, len, lower).translate(E.x, 0, 0);
     const b = lidGeometry(lidR, len, lower).translate(-E.x, 0, 0);
@@ -579,8 +582,8 @@ export function buildHead(T) {
   const lid = { blink: 0, smile: 0.25 };
   function applyLids() {
     const b = clamp(lid.blink, 0, 1), s = clamp(lid.smile, 0, 1);
-    upperLid.rotation.x = (lerp(-20, 17, b) + 2.5 * s) * DEG;
-    lowerLid.rotation.x = (lerp(29.5, 25, b) - 7 * s) * DEG;
+    upperLid.rotation.x = (lerp(-18.8, 17, b) + 2 * s) * DEG;
+    lowerLid.rotation.x = (lerp(29.5, 25, b) - 6 * s) * DEG;
   }
   function setBlink(v) { lid.blink = v; applyLids(); }
   function setEyes(yawDeg = 0, pitchDeg = 0) {
@@ -589,7 +592,8 @@ export function buildHead(T) {
   let browState = [0, 0];
   function setExpression({ smile = 0.25, brow = 0.25 } = {}) {
     lid.smile = smile; applyLids();
-    const inner = 0.0026 * brow, outer = -0.0005 * brow + 0.0005 * smile;
+    const bq = Math.round(clamp(brow, -1, 1) * 20) / 20, sq = Math.round(clamp(smile, 0, 1) * 10) / 10; // limit rebuilds
+    const inner = 0.0026 * bq, outer = -0.0005 * bq + 0.0005 * sq;
     if (Math.abs(inner - browState[0]) + Math.abs(outer - browState[1]) > 1e-5) {
       browState = [inner, outer];
       brows.geometry.dispose();

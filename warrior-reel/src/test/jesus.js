@@ -6,6 +6,7 @@
 //   g = openPalm | handOnHeart | welcome            (gesture pose; seated unless base=stand)
 //   mouth (0..1, or "talk" = animated), blink (0..1), smile, brow, eyeYaw, eyePitch, look (x,y,z world look target)
 //   move=1 (walk: translate the root forward at 1.24 m per cycle)
+//   stats=1 logs Jesus's mesh / triangle / draw-call counts to the console once
 // walk: walkPhase = t (one stride cycle per second of t).
 import * as THREE from 'three';
 import { Humanoid, quatFromBasis } from '../core/rig.js';
@@ -127,11 +128,25 @@ export async function build(stage, params) {
     jesus.update(t, { seated: t >= B.jesusSitStart + 0.5 && t < goldenMid, walkPhase, walking: t < arriveT });
   }
 
+  let statsDone = false;
+  function logStats() {
+    let tris = 0, meshes = 0;
+    jesus.root.traverse((o) => {
+      if (o.isMesh && o.visible) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; }
+    });
+    seat.visible = false;
+    stage.renderer.info.autoReset = false; stage.renderer.info.reset();
+    stage.renderer.render(stage.scene, stage.camera);
+    console.log(`JESUS meshes=${meshes} triangles=${Math.round(tris)} calls(incl. shadow pass + studio ground)=${stage.renderer.info.render.calls}`);
+    stage.renderer.info.autoReset = true;
+  }
+
   return {
     duration: 4,
     update(t) {
       const pose = params.pose || 'stand';
       studio.updateCamera();
+      if (params.stats === '1' && !statsDone) { statsDone = true; logStats(); }
       const rig = jesus.rig;
       if (pose === 'film') { seat.visible = true; filmJesus(t); return; }
       let seated = false, walkPhase = 0, walking = false;

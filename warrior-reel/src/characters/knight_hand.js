@@ -2,7 +2,7 @@
 // parented under the rig's hand bone). Hand-local frame (rig convention): wrist at origin, fingers
 // along -Y, thumb side +Z, palm normal = +X for the RIGHT hand and -X for the LEFT hand.
 import * as THREE from 'three';
-import { PAL, paint, Kit } from './knight_geo.js';
+import { PAL, paint } from './knight_geo.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { DEG, clamp, lerp, noise1 } from '../core/util.js';
@@ -15,6 +15,8 @@ const FINGERS = [
   { z: -0.035, y: -0.097, L: [0.043, 0.026, 0.022], r: 0.0107, spread: -7 },  // pinky
 ];
 const THUMB = { pos: [0.007, -0.022, 0.035], L: [0.044, 0.037, 0.03], r: [0.0158, 0.0128, 0.012] };
+
+const _X = new THREE.Vector3(1, 0, 0), _Z = new THREE.Vector3(0, 0, 1), _qs = new THREE.Quaternion();
 
 // Channel where a held grip's axis (along hand Z) sits, in (palm-axis, y) coordinates.
 export const HAND_CHANNEL = { x: 0.037, y: -0.079 };
@@ -130,8 +132,8 @@ export function buildHand(side, material) {
         for (let k = 0; k < 3; k++) {
           const b = fingerBones[fi][k];
           const sp = k === 0 ? f.spread * spreadMul * DEG : 0;
-          b.quaternion.setFromEuler(new THREE.Euler(sp * -1 * 0 + 0, 0, ps * curls[fi][k] * DEG, 'XYZ'));
-          if (k === 0 && sp) b.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -sp));
+          b.quaternion.setFromAxisAngle(_Z, ps * curls[fi][k] * DEG); // curl toward the palm
+          if (k === 0 && sp) b.quaternion.premultiply(_qs.setFromAxisAngle(_X, -sp)); // abduction (spread)
         }
       });
       const tb = thumbPose.base;
@@ -174,7 +176,7 @@ const PRESETS = {
   relaxed: { curls: [[16, 26, 14], [20, 30, 16], [24, 34, 18], [28, 38, 20]], thumb: { base: [-38, 4, 26], flex: [14, 12] }, spread: 1 },
   fist: { curls: [[88, 100, 62], [90, 102, 64], [92, 100, 62], [94, 98, 60]], thumb: { base: [-8, 0, 62], flex: [42, 38] }, spread: 0 },
   knee: { curls: [[14, 28, 18], [16, 32, 20], [20, 34, 22], [24, 38, 24]], thumb: { base: [-42, 6, 24], flex: [10, 12] }, spread: 1.1 },
-  pommel: { curls: [[32, 44, 26], [36, 48, 28], [40, 50, 28], [44, 52, 30]], thumb: { base: [-36, 4, 34], flex: [18, 20] }, spread: 0.6 },
+  pommel: { curls: [[40, 52, 34], [44, 56, 36], [48, 58, 36], [52, 60, 38]], thumb: { base: [-30, 4, 40], flex: [24, 24] }, spread: 0.5 },
 };
 
 function modePose(mode, { tension = 0, rg = 0.0165, t = 0 } = {}) {
