@@ -7,7 +7,6 @@ Units: ~1 mm; origin on the floor under his hips, y down."""
 import os, sys, math
 import numpy as np, cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "v2"))  # v2 helpers
 
 
 def bgr(r, g, b):
