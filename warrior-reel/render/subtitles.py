@@ -1,32 +1,41 @@
 #!/usr/bin/env python3
 """Word-synchronised subtitles, title card and end card for "The Warrior Who Couldn't Forgive".
 
-Reads timeline/timeline.json and writes
+Reads timeline/timeline.json (+ the dialogue takes in audio/dialogue/ for onset refinement) and writes
   out/subs/film.ass   ASS script (PlayRes 1080x1920) burned in at the final encode by ffmpeg/libass:
                         ffmpeg -i film.mp4 -vf "ass=out/subs/film.ass:fontsdir=assets/fonts" ...
-  out/subs/film.srt   plain dialogue captions (for platforms that take a caption file)
+  out/subs/film.srt   plain dialogue captions ("SPEAKER: text", <= 2 x 42 chars) for caption uploads
 
 Usage (from the project root):
   python3 render/subtitles.py                      # regenerate film.ass + film.srt
-  python3 render/subtitles.py --stills qa          # + QA stills at the default timestamps -> out/subs/test/
-  python3 render/subtitles.py --stills 7.3,12@bg.png --bg 0x88aa66
-  python3 render/subtitles.py --no-refine          # use words[].s verbatim (skip audio onset refinement)
+  python3 render/subtitles.py --stills qa          # + QA stills (flat bg) at default timestamps -> out/subs/test/
+  python3 render/subtitles.py --stills 7.3,12@frame.png --bg 0x88aa66   # T or T@background (png or hex colour)
+  python3 render/subtitles.py --no-refine          # reveal words exactly at cue.words[].s (no audio refinement)
 
-Sizes: every size below is a *pixel em* (CSS-like font-size). libass sizes a font so that
-winAscent+winDescent == Fontsize, so the ASS Fontsize written to the file is em * (winAsc+winDesc)/unitsPerEm
-(Pixelify Sans: x1.211, Silkscreen: x1.25).
+Sizes: every size in this file is a *pixel em* (CSS-like font-size). libass scales a face so that
+winAscent+winDescent == Fontsize, so the ASS \fs written is em * (winAsc+winDesc)/unitsPerEm
+(Pixelify Sans: x1.211 -> 64 px em = \fs77.5; Silkscreen: x1.25 -> 40 px em = \fs50).
 
-Word reveal: every subtitle page is laid out once from the full text (balanced line breaks, one ASS event
-per line so line spacing is exact) and each word carries its own override block
-  {\\1a&HFF&\\3a&HFF&\\t(t0,t0+70,\\1a&H00&\\3a&H00&)}word
-so unrevealed words are fully transparent but still occupy their place (stable layout) and fade in over
-70 ms at the moment they are spoken. Spoken onsets come from cue.words[].s; when the dialogue audio is
-available the start of a word is nudged later if the take is silent at words[].s (whisper often glues a
-pause onto the next word), so a word never shows up during a pause before it is heard.
+Layout: the speaker label (Silkscreen) sits at a fixed baseline; dialogue lines (Pixelify Sans Bold) follow
+below it at a fixed pitch, each line its own \an8 event so spacing is exact. Line breaks are balanced on
+measured widths (<= 800 px so text stays in x 140..940, clear of the IG right rail; ~24 chars; max 3 lines;
+no orphans; breaks preferred after punctuation). A cue is split into two "pages" only when it cannot fit
+3 lines, or when a sentence break followed by a pause would otherwise fall mid-line.
 
-Fonts: assets/fonts/PixelifySans-Bold.ttf actually contains the *Regular* face and PixelifySans-Regular.ttf
-the *Bold* face (file names are swapped upstream). libass selects faces by family + weight, so
-"Pixelify Sans" + Bold picks the right face regardless; this script measures text with the same face.
+Word reveal: each page is laid out once from the full text and every word carries its own override block
+  {\\1a&HFF&\\3a&HFF&\\t(t0,t0+70,\\1a&H00&\\3a&H00&)}word     (and the same on \\4a in the shadow layer)
+so unrevealed words are fully transparent but keep their place (stable layout), and each fades in over
+70 ms when spoken. Spoken onsets are cue.words[].s; when the take is silent at words[].s (whisper glues a
+pause onto the following word, e.g. L05 "I've" +0.75 s) the reveal is moved to the acoustic onset - 40 ms.
+Text is the cue's display text (cue.text), aligned to cue.words token by token (difflib fallback).
+
+Layers: 0 glow, 1 soft blurred drop shadows (fill/border transparent, shadow only), 2 crisp text with a
+dark warm-brown outline. The title's stepped gradient fill uses horizontal \\clip strips on layer 2.
+
+Fonts: assets/fonts/PixelifySans-Bold.ttf actually contains the *Regular* face (weight 400) and
+PixelifySans-Regular.ttf the *Bold* face (weight 700) -- the file names are swapped upstream. libass picks
+faces by family + weight, so style "Pixelify Sans" + Bold gets the real bold face (log:
+"fontselect: (Pixelify Sans, 700, 0) -> PixelifySans-Bold"); this script measures with the same face.
 """
 import argparse
 import difflib

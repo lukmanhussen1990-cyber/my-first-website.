@@ -45,7 +45,7 @@ const SUN_X = -0.55, SUN_Z = 0.45;
 
 export function buildWorld(stage) {
   const { scene, renderer } = stage;
-  patchHeightFog();
+  patchHeightFog({ mistH: 4.0, hazeK: 0.15, start: 6.0 });
 
   const root = new THREE.Group();
   root.name = 'world';

@@ -49,12 +49,12 @@ function stoneify(list, uvScale = 0.5) {
 }
 
 export function buildCastle() {
-  const cx = CASTLE_POS.x, cz = CASTLE_POS.z;
-  const gy = groundHeight(cx, cz);
+  // modelled around a local origin (ground level 0), then placed + scaled as a group
+  const cx = 0, cz = 0, gy = 0;
   const stone = [], roofs = [], dark = [];
   const B = gy - 2.5; // foundations sink into the hill
   // curtain wall rectangle (front faces -Z, toward the river/camera)
-  const W = 24, D = 16, wallH = 8.5;
+  const W = 22, D = 15, wallH = 8.5;
   const corners = [[-W / 2, -D / 2], [W / 2, -D / 2], [W / 2, D / 2], [-W / 2, D / 2]];
   for (let i = 0; i < 4; i++) {
     const [x0, z0] = corners[i], [x1, z1] = corners[(i + 1) % 4];
@@ -117,6 +117,9 @@ export function buildCastle() {
   const group = new THREE.Group();
   group.name = 'castle';
   group.add(stoneMesh, roofMesh, darkMesh, flagMesh);
+  group.position.set(CASTLE_POS.x, groundHeight(CASTLE_POS.x, CASTLE_POS.z), CASTLE_POS.z);
+  group.scale.setScalar(0.6);
+  group.rotation.y = 0.1;
   // flags flutter: vertex wave growing from the pole (pole at local x = 0 of each flag)
   const fp = flagMesh.geometry.attributes.position;
   const rest = Float32Array.from(fp.array);

@@ -74,16 +74,14 @@ export function stoneTexture() {
 export function leafTexture() {
   return pixelTexture(16, (ctx, s, r) => {
     for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
-      const v = 0.8 + r() * 0.17;
+      const v = 0.86 + r() * 0.14;
       px(ctx, x, y, new THREE.Color().setRGB(v, v, v * 0.97, THREE.SRGBColorSpace), s);
     }
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 18; i++) {
       const x = Math.floor(r() * s), y = Math.floor(r() * s);
-      px(ctx, x, y, '#9a9488', s); if (r() < 0.5) px(ctx, x + 1, y, '#a8a296', s);
+      px(ctx, x, y, '#b4ae9e', s); if (r() < 0.5) px(ctx, x + 1, y, '#c2bcae', s); if (r() < 0.3) px(ctx, x, y + 1, '#c2bcae', s);
     }
-    for (let i = 0; i < 14; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#ffffff', s);
-    // border darkening = reads as separate leaf blocks
-    for (let k = 0; k < s; k++) { if (r() < 0.7) px(ctx, k, 0, '#b0aba0', s); if (r() < 0.7) px(ctx, 0, k, '#b8b3a8', s); }
+    for (let i = 0; i < 16; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#ffffff', s);
   }, { seed: 44 });
 }
 
@@ -99,7 +97,7 @@ export function barkTexture() {
     }
     for (let i = 0; i < 12; i++) {
       const x = Math.floor(r() * s), y = Math.floor(r() * s), n = 2 + Math.floor(r() * 5);
-      for (let k = 0; k < n; k++) px(ctx, x, y + k, '#6e6660', s);
+      for (let k = 0; k < n; k++) px(ctx, x, y + k, '#8f8780', s);
     }
     for (let i = 0; i < 8; i++) px(ctx, Math.floor(r() * s), Math.floor(r() * s), '#f2ece6', s);
   }, { seed: 55 });

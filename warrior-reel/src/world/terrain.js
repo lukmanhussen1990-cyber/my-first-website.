@@ -9,9 +9,9 @@ import { grassTexture, waterTexture, stoneTexture } from './textures.js';
 export const RIVER = { z: 2.65, w: 1.0, water: -0.12, bed: -0.42 };
 
 // Far hills that are part of the height field: [x, z, radius, height, plateauFrac]
-export const CASTLE_POS = new THREE.Vector3(12, 0, 75);
+export const CASTLE_POS = new THREE.Vector3(5, 0, 78);
 const HILLS = [
-  [CASTLE_POS.x, CASTLE_POS.z, 30, 11, 0.32],   // castle hill (flat top)
+  [CASTLE_POS.x, CASTLE_POS.z, 28, 10, 0.34],   // castle hill (flat top)
   [-24, 52, 24, 13, 0], [38, 58, 28, 16, 0], [-52, 82, 34, 22, 0], [66, 92, 40, 25, 0], [22, 128, 46, 28, 0],
   [-14, 112, 30, 18, 0],
   [-18, -40, 22, 10, 0], [24, -48, 26, 13, 0], [-52, -34, 28, 12, 0], [4, -84, 38, 20, 0], [58, -28, 28, 10, 0],
@@ -48,7 +48,8 @@ function landHeight(x, z) {
     const d = Math.hypot(x - hx, z - hz) / r;
     if (d >= 1) continue;
     const k = plat > 0 ? clamp((1 - d) / (1 - plat), 0, 1) : 1 - d;
-    h += hh * (plat > 0 ? Math.pow(k, 0.8) * (0.6 + 0.4 * k) : Math.pow(k, 1.15) * (1 + 0.12 * noise2(x * 0.15, z * 0.15, 9)));
+    const sm = k * k * (3 - 2 * k);
+    h += hh * (plat > 0 ? sm : sm * (1 + 0.15 * noise2(x * 0.12, z * 0.12, 9)));
   }
   // river valley: land eases down to 0 near the banks
   const dR = Math.abs(z - riverCenter(x)) - riverHalfWidth(x);
@@ -104,8 +105,9 @@ export function buildTerrain() {
       const jw = undulationWeight(x, z0) * smoothstep(1.8, 4.0, Math.abs(v));
       if (jw > 0 && i > 0 && i < nx - 1 && j > 0 && j < nv - 1) {
         const sx = (xs[i + 1] - xs[i - 1]) * 0.5, sv = (vs[j + 1] - vs[j - 1]) * 0.5;
-        x += (hash2(i, j, 1) - 0.5) * 0.55 * sx * jw;
-        v += (hash2(i, j, 2) - 0.5) * 0.55 * sv * jw;
+        const sm = Math.min(sx, sv) * 0.6 * jw; // isotropic, bounded by the finer spacing (no saw-teeth)
+        x += (hash2(i, j, 1) - 0.5) * sm;
+        v += (hash2(i, j, 2) - 0.5) * sm;
       }
       const z = riverCenter(x) + v;
       const y = groundHeight(x, z);
