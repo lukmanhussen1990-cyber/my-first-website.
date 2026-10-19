@@ -574,6 +574,8 @@ def attach_cape(cache=CACHE, collection=None):
     ob = bpy.data.objects.new("SM_Cape", me)
     (collection or bpy.context.scene.collection).objects.link(ob)
     mat = bpy.data.materials.get("SM_Cape")
+    if mat is None:
+        raise RuntimeError("SM_Cape material missing: append it with the Superman collection")
     me.materials.append(mat)
     mc = ob.modifiers.new("Cache", 'MESH_CACHE')
     mc.cache_format = 'PC2'

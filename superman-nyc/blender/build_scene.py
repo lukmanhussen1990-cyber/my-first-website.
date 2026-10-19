@@ -31,6 +31,8 @@ def coll(name):
 def append_superman(path="/opt/work/assets/superman.blend"):
     with bpy.data.libraries.load(path, link=False) as (df, dt):
         dt.collections = [c for c in df.collections if c == "Superman"]
+        # the cape mesh is created here (attach_cape), so its material has no user in that collection
+        dt.materials = [m for m in df.materials if m == "SM_Cape"]
     for c in dt.collections:
         bpy.context.scene.collection.children.link(c)
     return dt.collections[0]
