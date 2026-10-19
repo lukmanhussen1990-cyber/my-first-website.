@@ -370,11 +370,13 @@ def resize(x, size):
 
 
 def sensor_noise(x, rng, iso):
+    """Luma + a little chroma noise, soft-grained the way a phone's denoiser leaves it."""
     y = lum(x)[..., None]
     sig = (0.006 + 0.022 * (1 - y) ** 3) * iso
-    n = rng.standard_normal(x.shape[:2] + (1,)).astype(np.float32)
-    nc = rng.standard_normal(x.shape).astype(np.float32) * 0.35
-    return np.clip(x + (n + nc) * sig, 0, 1)
+    h, w = x.shape[0] // 2, x.shape[1] // 2
+    n = rng.standard_normal((h, w, 4)).astype(np.float32)
+    n = ndimage.zoom(n, (x.shape[0] / h, x.shape[1] / w, 1), order=1)[:x.shape[0], :x.shape[1]] * 1.35
+    return np.clip(x + (n[..., :1] + n[..., 1:] * 0.35) * sig, 0, 1)
 
 
 def glitch(img, rng, amount):
@@ -669,7 +671,8 @@ def main():
     ap.add_argument("--png")
     ap.add_argument("--frames", default=None)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
-    ap.add_argument("--crf", type=int, default=16)
+    ap.add_argument("--crf", type=int, default=18)
+    ap.add_argument("--maxrate", default="8M")
     ap.add_argument("--camera", default="/opt/work/cache/camera_track.json")
     a = ap.parse_args()
 
@@ -695,7 +698,8 @@ def main():
                "-r", str(FPS), "-i", "-"]
         if a.audio:
             cmd += ["-i", a.audio, "-c:a", "aac", "-b:a", "256k", "-ar", "48000"]
-        cmd += ["-c:v", "libx264", "-preset", "slow", "-crf", str(a.crf), "-pix_fmt", "yuv420p",
+        cmd += ["-c:v", "libx264", "-preset", "slow", "-crf", str(a.crf), "-maxrate", a.maxrate,
+                "-bufsize", str(2 * int(a.maxrate.rstrip("M"))) + "M", "-pix_fmt", "yuv420p",
                 "-profile:v", "high", "-level", "4.2", "-g", "60", "-movflags", "+faststart",
                 "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
                 "-frames:v", str(TL.N_FRAMES), "-t", f"{TL.DURATION:.3f}", a.mp4]
