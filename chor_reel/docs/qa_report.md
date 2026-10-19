@@ -62,3 +62,22 @@ File: `output/chor_buddha_v3_1080x1920.mp4`
 - **House owner:** a slim Buddha drawn from scratch, at the user's request. He sits where the original's seated narrator sits and makes the same offering gestures.
 - **Thief:** the round-bellied man from the Kerala video, in his natural colours.
 - **Title:** the title card (चोर / JUSTH) is cut from the original film and placed where the thief stood.
+
+# QA Report: v4 (16:9, cosmic thief, Buddha)
+
+File: `output/chor_cosmic_v4_1920x1080.mp4`
+
+| Check | Result |
+|---|---|
+| Video stream | H.264 High, **1920×1080 (16:9, the original's shape)**, 30 fps, **1,591 frames** (decoded count), 53.03 s, start 0.000 |
+| Letterbox | The original's bars, measured per frame from the source: 137 px top and bottom (91/720 scaled to 1080) until frame 1355. They open on the original's measured curve to 0 by frame 1380, and the frame stays full to the end. |
+| Audio stream | HE-AAC, 48 kHz, stereo, 1,246 packets, 53.14 s, start 0.000 |
+| Audio identical to the original | **Yes.** Packet-stream MD5 `ad8dcc47c432b86671aa0d1811144395` and decoded-PCM MD5 `d64174a75e596a2014d0c359c0c7f126` both equal the source's, and the packet counts match (1,246 = 1,246). The track was stream-copied. |
+| Render integrity | Four lossless chunks finished with return code 0 and concatenate to 1,591 frames |
+| Black and frozen frames | `blackdetect` (≥0.3 s) found nothing. `freezedetect` (≥1 s) flagged only 50.77–52.27 s. That is the end-title hold, where only faint star twinkle moves; it runs on into the original's fade to black. |
+| Visual review | One frame per second (54 frames) was sampled from the encoded MP4 and checked against `v4_scene_breakdown.md`: the opening cuts, door, flash, room, close-ups, every lyric effect, the starry dome, the bars opening, the thief's burst, the star pictures and the title. |
+
+## Known differences from the original (by design)
+
+- **Art style:** the house, room and Buddha are painted in the Kerala video's style. The thief is in the original's cosmic style, as requested.
+- **House owner:** a slim Buddha drawn from scratch (mouth closed, no lip movement), seated where the original's narrator sits.
