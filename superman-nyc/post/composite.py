@@ -212,6 +212,9 @@ def exposure_track(stats, smap):
     return ev
 
 
+ZOOM = np.ones(TL.N_FRAMES)
+
+
 def motion_track(stats, smap, camera_json=None):
     """Image motion of the phone camera in output px/frame (x right, y down), for rolling-shutter skew.
     Exact from the exported camera track when available, else measured by phase correlation."""
@@ -234,6 +237,7 @@ def motion_track(stats, smap, camera_json=None):
             dx[f] = ry / sn * ang * fpx       # yaw left -> content moves right
             dy[f] = rx / sn * ang * fpx       # pitch up -> content moves down
         lim = 160.0
+        ZOOM[:len(track)] = [d["lens"] / 28.8 for d in track[:TL.N_FRAMES]]
         return np.clip(dx, -lim, lim), np.clip(dy, -lim, lim)
     for f in range(TL.N_FRAMES):
         s = smap[f]
@@ -581,8 +585,9 @@ class Ctx:
 CTX = Ctx()
 
 
-def init_worker(frames_dir, smap, ev, mdx, mdy, ev_cctv):
+def init_worker(frames_dir, smap, ev, mdx, mdy, ev_cctv, zoom):
     CTX.frames_dir, CTX.smap, CTX.ev, CTX.mdx, CTX.mdy, CTX.ev_cctv = frames_dir, smap, ev, mdx, mdy, ev_cctv
+    CTX.zoom = zoom
     CTX.captions = Captions()
 
 
@@ -598,17 +603,19 @@ def phone_frame(rgb, z, f, t, rng):
     x = bloom(x, 0.6)
     x = grade(agx(x))
     x = remap(x, t, CTX.mdx[f], CTX.mdy[f])
-    s = af_blur(t) * x.shape[1] / W
+    # digital zoom: softer, over-sharpened and noisier, like a phone cropping its sensor
+    dz = max(0.0, CTX.zoom[f] - 2.2)
+    s = (af_blur(t) + 0.45 * dz) * x.shape[1] / W
     if s > 0.05:
         x = blur(x, s)
-    x = sharpen(x, 0.35, 0.9 * x.shape[1] / 720)
+    x = sharpen(x, 0.35 + 0.12 * dz, 0.9 * x.shape[1] / 720)
     x = resize(x, (W, H))
     # after the impact the phone on the ground keeps shaking in the shockwave
     if t > TL.T_IMPACT:
         a = 18 * math.exp(-(t - TL.T_IMPACT) / 0.45)
         if a > 0.5:
             x = ndimage.shift(x, (rng.normal(0, a), rng.normal(0, a), 0), order=1, mode="nearest")
-    iso = 1.0 + 1.6 * smoothstep(28.5, 30.5, t) + 0.6 * (t > TL.T_IMPACT)
+    iso = 1.0 + 1.6 * smoothstep(28.5, 30.5, t) + 0.6 * (t > TL.T_IMPACT) + 0.25 * dz
     return sensor_noise(x, rng, iso)
 
 
@@ -676,7 +683,7 @@ def main():
         for k in range(1, n):
             smap[f0 + k] = smap[f0]
     frames = parse_frames(a.frames) if a.frames else list(range(TL.N_FRAMES))
-    args = (a.frames_dir, smap, ev, mdx, mdy, ev_cctv)
+    args = (a.frames_dir, smap, ev, mdx, mdy, ev_cctv, ZOOM.copy())
     if a.png:
         os.makedirs(a.png, exist_ok=True)
         with Pool(a.workers, init_worker, args) as pool:
