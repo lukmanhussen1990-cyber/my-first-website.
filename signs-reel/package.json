@@ -1,0 +1,14 @@
+{
+  "name": "signs-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "60-second Instagram Reel 'Signs before the Last Day', drawn and rendered 100% with code",
+  "type": "module",
+  "scripts": {
+    "frames": "node render_frames.mjs",
+    "build": "bash build.sh"
+  },
+  "dependencies": {
+    "playwright": "1.56.1"
+  }
+}
