@@ -1,0 +1,57 @@
+SCIENCE NOTES — "What If Mars Appeared in Earth's Sky?" (45.0 s reel)
+=====================================================================
+SCENARIO (shown on screen). Mars suddenly appears on a fast flyby of Earth; we do not explain how.
+After that, only real two-body physics. [ASSUMPTION] closest approach 384,400 km (centre to centre,
+= Moon's mean distance) and speed far from Earth v_inf = 10 km/s. Inputs: M_Mars 6.42e23 kg
+(0.1075 M_Earth), R_Mars 3,389.5 km, rho 3,933 kg/m3; M_Earth 5.972e24 kg, R_Earth 6,371 km;
+M_Moon 7.342e22 kg, R_Moon 1,737.4 km. Every number below is computed in src/science.py.
+
+1. APPARENT SIZE [ESTABLISHED]   theta = 2*atan(R/d)
+   Mars @ 55 million km : 25.4 arcsec (0.0071 deg)     -> "tiny dot" (today's closest)
+   Mars @ 10 million km : 139.8 arcsec (0.0388 deg)    -> still a dot
+   Mars @ 1 million km  : 0.388 deg = 0.75 x Moon      -> "three-quarters as wide"
+   Mars @ 384,400 km    : 1.010 deg ; Moon 0.518 deg   -> ratio 1.95 ("twice as wide")
+2. TIDES [scaling ESTABLISHED, heights UNCERTAIN]   tidal acceleration ~ M/d^3
+   Same distance as the Moon -> ratio = M_Mars/M_Moon = 8.74 ("~9x", "nearly nine times").
+   Equilibrium tide range = 1.5*(M/M_E)*R_E^4/d^3: Moon 0.53 m; Mars 4.7 m (3.2 m relative to the
+   yielding sea floor, factor 1+k2-h2 = 0.69). Real oceans never reach equilibrium and the forcing
+   is a pulse, so local rises of "up to several metres" are possible, not certain. Mars, Moon and
+   Sun were nearly aligned in this geometry (spring-tide-like); totals depend on coast shape.
+3. BRIGHTNESS [ESTABLISHED]   (p_Mars/p_Moon)*(R_Mars/R_Moon)^2 = (0.170/0.12)*3.81 = 5.4;
+   from magnitudes: Mars at 384,400 km, full phase V = -14.5 vs full Moon -12.7 -> 4.9x.
+   Shown phase: phase angle 11.7 deg (99% lit), consistent with the single Sun direction used.
+4. FLYBY [ESTABLISHED, given the ASSUMPTION]   mu = G(M_E+M_M) = 4.415e14 m3/s2
+   e = 1 + r_p*v_inf^2/mu = 88.1 (hyperbolic: no capture, no collision); v at closest approach 10.11 km/s.
+   Deflection delta = 2*asin(1/e) = 1.30 deg ("just over one degree", "~1.3 deg" on screen).
+   Earth's velocity change = (M_M/(M_E+M_M))*2*v_inf*sin(delta/2) = 22.0 m/s (impulse check: 22.0 m/s).
+   Year change <= 3*dv/v_orbit = 0.22% (<= 0.81 day) if the kick were fully along Earth's orbit;
+   in this geometry the kick is mostly radial -> about 3.7 hours. "Earth's year barely changes."
+   Earth-Mars barycentre at closest approach: 37,300 km from Earth's centre (not shown; no wobble drawn).
+5. NO BREAK-UP [ESTABLISHED]   Roche limit for Mars near Earth: 9,000 km (rigid) to 17,400 km
+   (fluid); Earth near Mars 3,800 km; contact at 9,760 km. 384,400 km is 22x beyond the largest.
+6. TIMING (corrects the brief)   Exact hyperbola, not a straight line:
+   Mars is larger than 0.39 deg (closer than 1 million km) for 51 h = 2.1 DAYS (brief said "about a day").
+   Larger than the full Moon (closer than 750,000 km) for 36 h. 10 million km -> closest: 11.6 days.
+   Tidal forcing above 90% of peak for 5.7 h, above 50% for 16 h; each coast sees high water lasting
+   a few hours as Earth turns -> "for a few hours" on screen. Mars crosses the sky at 5.4 deg/h.
+7. THE MOON [UNCERTAIN]   For Mars to rise 3.1 deg from the Moon (hook shot) both must be ~384,000 km
+   away, so Mars passes ~18,000 km from the Moon (outside the Moon's Roche limit, 4,500-8,700 km).
+   Impulse ~2GM/(b*v) = ~460 m/s vs the Moon's 1,020 m/s orbital speed: its orbit would change a lot
+   (escape needs ~420 m/s prograde). Outcome depends on exact timing -> labelled UNCERTAIN.
+8. ALSO UNCERTAIN: earthquake triggering (tidal stress ~9x lunar, tens of kPa: may tip faults already
+   near failure), exact flood heights, long-term climate (Earth's orbital eccentricity changes by
+   <0.0015). None is shown as certain; the harbour flood is tagged POSSIBLE/UNCERTAIN.
+
+VISUAL CONVENTIONS. Cartoon style (requested); maps derived from real NASA data so Olympus Mons,
+Tharsis, Valles Marineris, polar caps, continents and city lights are in their true places.
+One Sun direction in every scene; angular sizes, phases and terminators computed from the 3D
+geometry. EXAGGERATED: tidal bulge (~10^5 x) and Earth's 22 m/s nudge. True scale: Moon/Mars sizes,
+the 1.3 deg path bend. Time-lapse: Scene 1 sky motion 30x; Scene 8 compresses ~10 days. Mars's visible
+face is held fixed between Earth-based shots for continuity (in reality it would shift tens of degrees).
+Script edit for timing: line 2 now says "at the Moon's distance" (= 384,000 km, shown on screen);
+"about one degree" -> "just over one degree" (1.30 deg).
+
+SOURCES. NASA Blue Marble NG & Black Marble 2016 (Earth Observatory); NASA SVS CGI Moon Kit (LROC);
+Solar System Scope maps (CC BY 4.0, from NASA data) for Mars, clouds, ocean mask. Constants: NASA
+planetary fact sheets; Mars H_V = -1.52 (Mallama 2017). Voice: ElevenLabs (Oliver). Music and sound
+effects: synthesised for this reel. Mix: -14.0 LUFS integrated, true peak below -1 dBTP.
