@@ -816,8 +816,9 @@ def standoff(m, rng):
     t_pole = TL.T_DESCEND + 1.02
     m.put(creak(0.9, rng), t_pole, 0.07, verb=0.4)
     sp = m.sfx.get("sparks")
-    if sp is not None:
-        m.put(sp, t_pole + 0.05, 0.3, verb=0.2)
+    if sp is not None:          # a burst as it shorts out, then a dying crackle
+        sp = sp * curve([(0, 1.0), (1.2, 0.75), (len(sp) / SR, 0.12)], len(sp), 0.0)[:, None]
+        m.put(fade(sp, 0.005, 0.4), t_pole + 0.05, 0.22, verb=0.2)
     m.put(elec_buzz(TL.T_LAUNCH + 0.3 - t_pole, rng), t_pole + 0.05, 0.025, verb=0.2)
     # wind through the empty street, a faint hum while his eyes glow
     n = sec(6.5)
@@ -828,7 +829,7 @@ def standoff(m, rng):
     # the deep atmospheric rumble that is left when everything else drops away
     n = sec(TL.T_LAUNCH - 28.8)
     rum = butter(brown(n, rng), 'low', 60) * (0.7 + 0.3 * lfo(n, 0.4, rng))
-    m.low.add(fade(rum, 1.2, 0.3), 28.8, 0.12)
+    m.low.add(fade(rum, 1.2, 0.3), 28.8, 0.08)
 
 
 def finale(m, rng):

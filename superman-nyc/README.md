@@ -67,7 +67,8 @@ python3 post/composite.py /opt/work/frames/final --mp4 superman_nyc_40s.mp4 --au
 - Textures and HDRI: [Poly Haven](https://polyhaven.com) (CC0).
 - Human bodies: Blender Studio "Human Base Meshes" bundle (CC0).
 - Animation clips: three.js example `Xbot.glb` (Mixamo rig).
-- Sound effects: 13 short clips generated with ElevenLabs (crowd reactions, street ambience, glass,
-  sonic boom, flyby, heat beam, impact, explosion, phone drop, breathing, car alarm, braam). Every
-  cue also has a synthesized fallback in `sound_design.py`.
+- Sound effects: 17 short clips generated with ElevenLabs: crowd reactions, street ambience, glass,
+  sonic boom, flyby, heat beam, impact, explosion, debris, tyre screech, phone drop, breathing,
+  running footsteps, car alarm, sparks and a braam. The rest is synthesized, and every cue has a
+  synthesized fallback in `sound_design.py`.
 - Fonts: Inter (OFL) and DejaVu Sans Mono.
