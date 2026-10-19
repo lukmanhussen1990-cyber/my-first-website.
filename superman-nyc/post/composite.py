@@ -303,8 +303,8 @@ def depth_haze(x, z, t, sky):
     zz = np.minimum(z, 5000.0)[..., None]
     a = (1 - np.exp(-zz / 1400.0)) * 0.35
     x = x * (1 - a) + sky * a
-    d = interp_curve([(0, 0), (17.5, 0), (21, 0.1), (24.5, 0.22), (29.0, 0.22), (30.5, 0.1), (35.0, 0.1),
-                      (36.8, 0.15), (37.4, 0.55), (39.5, 0.65)], t)
+    d = interp_curve([(0, 0), (17.5, 0), (21, 0.1), (24.5, 0.22), (29.0, 0.2), (30.5, 0.05), (35.0, 0.05),
+                      (36.8, 0.12), (37.4, 0.55), (39.5, 0.65)], t)
     if d > 0:
         dust = np.array([0.56, 0.5, 0.42], np.float32) * float(np.median(lum(x)) * 1.6 + 0.02)
         a = (1 - np.exp(-zz / 55.0)) * d
@@ -617,7 +617,7 @@ def phone_frame(rgb, z, f, t, rng):
         a = 18 * math.exp(-(t - TL.T_IMPACT) / 0.45)
         if a > 0.5:
             x = ndimage.shift(x, (rng.normal(0, a), rng.normal(0, a), 0), order=1, mode="nearest")
-    iso = 1.0 + 1.6 * smoothstep(28.5, 30.5, t) + 0.6 * (t > TL.T_IMPACT) + 0.25 * dz
+    iso = 1.0 + 1.1 * smoothstep(28.5, 30.5, t) + 0.6 * (t > TL.T_IMPACT) + 0.15 * dz
     return sensor_noise(x, rng, iso)
 
 
