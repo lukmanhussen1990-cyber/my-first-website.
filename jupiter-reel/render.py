@@ -1066,7 +1066,7 @@ def shot_6AB(t):
                         uCA=0.12, uGrain=0.016))
     if t >= 39.2:
         k = smooth((t - 39.3) / 0.6)
-        fr.post.update(dict(uBloomAmt=0.4 + 0.25 * k, uFlash=0.12 * math.exp(-(t - 39.3) * 14.0), uFlashCol=(1.0, 0.7, 0.4)))
+        fr.post.update(dict(uBloomAmt=0.4 + 0.25 * k, uFlash=0.0))
     return fr
 
 

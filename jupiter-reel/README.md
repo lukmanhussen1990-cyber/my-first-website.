@@ -5,6 +5,8 @@ generated entirely from code: GLSL shaders for the picture, PIL for on-screen te
 HUD, numpy/scipy synthesis for music and sound effects, ffmpeg for encoding.
 
 **Finished video:** [`output/what-if-you-fell-into-jupiter.mp4`](output/what-if-you-fell-into-jupiter.mp4)
+(H.264 High + AAC, 1080×1920, 45.000 s, ~44 MB, −14 LUFS). Suggested Reel cover:
+[`output/cover.jpg`](output/cover.jpg).
 
 ## Rebuild
 
