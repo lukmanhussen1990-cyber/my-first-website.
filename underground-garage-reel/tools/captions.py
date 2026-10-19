@@ -71,20 +71,47 @@ try:
 except FileNotFoundError:
     pass
 
-lines = []
+LEAD = 0.02  # show each word a hair before it is heard
+MIN_ON = 0.125  # at least 3 frames on screen
+spans = []
 for i, ev in enumerate(events):
-    nxt = events[i + 1]["s"] if i + 1 < len(events) else None
+    start = ev["s"] - LEAD
+    nxt = events[i + 1]["s"] - LEAD if i + 1 < len(events) else None
     end = ev["e"] + 0.3
     if nxt is not None and nxt - ev["e"] < 0.7:
-        end = nxt  # continuous speech: hand over to the next word
+        end = nxt  # continuous speech: hand over exactly at the next word (never overlap)
     elif nxt is not None:
         end = min(end, nxt)
+    spans.append([start, end])
+# borrow a little time from the following word so quick words stay readable
+for i in range(len(spans) - 1):
+    a, b = spans[i], spans[i + 1]
+    short = MIN_ON - (a[1] - a[0])
+    if short > 0 and abs(a[1] - b[0]) < 1e-9:
+        shift = min(short, max(0.0, (b[1] - b[0]) - MIN_ON))
+        a[1] += shift
+        b[0] += shift
+# ...or from the pause / word before them
+for i in range(1, len(spans)):
+    p, a = spans[i - 1], spans[i]
+    short = MIN_ON - (a[1] - a[0])
+    if short <= 0:
+        continue
+    gap = a[0] - p[1]
+    if gap > 1e-9:
+        a[0] -= min(short, gap, 0.08)
+    else:
+        shift = min(short, max(0.0, (p[1] - p[0]) - MIN_ON))
+        p[1] -= shift
+        a[0] -= shift
+lines = []
+for ev, (start, end) in zip(events, spans):
     text = re.sub(r"[.,!?;:]+$", "", ev["text"]).upper()
     width = font.getlength(text)
     k = min(1.0, MAX_W / width) * 100
     pop = (f"{{\\an5\\pos(540,960)\\fscx{k * 0.82:.0f}\\fscy{k * 0.82:.0f}"
            f"\\t(0,70,\\fscx{k * 1.06:.0f}\\fscy{k * 1.06:.0f})\\t(70,140,\\fscx{k:.0f}\\fscy{k:.0f})}}")
-    lines.append(f"Dialogue: 0,{ts(ev['s'] - 0.02)},{ts(end)},Word,,0,0,0,,{pop}{text}")
+    lines.append(f"Dialogue: 0,{ts(start)},{ts(end)},Word,,0,0,0,,{pop}{text}")
 
 header = f"""[Script Info]
 ScriptType: v4.00+
