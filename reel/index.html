@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maa ki Lori</title>
+<style>
+  :root { --bg: #02050f; --fg: #e9dcc0; --muted: #8a93b3; --accent: #ffc96a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif;
+         display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px; }
+  canvas { height: min(78vh, calc((100vw - 32px) * 16 / 9)); aspect-ratio: 9 / 16; border-radius: 10px; box-shadow: 0 0 40px #0a1840; }
+  .bar { display: flex; gap: 8px; align-items: center; width: min(100%, 520px); }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  button { background: #0d1838; color: var(--fg); border: 1px solid #23345f; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  .scenes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 520px; }
+  .t { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="bar"><button id="play">Pause</button><input id="seek" type="range" min="0" max="50" step="0.01" value="0"><span class="t" id="time">0.0s</span></div>
+<div class="scenes" id="scenes"></div>
+<script src="lib.js"></script>
+<script src="scenes.js"></script>
+<script>
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const params = new URLSearchParams(location.search);
+  if (!params.has('render')) {
+    const seek = document.getElementById('seek'), tl = document.getElementById('time'), btn = document.getElementById('play');
+    seek.max = REEL.TOTAL;
+    let playing = true, t0 = performance.now(), base = 0;
+    const now = () => playing ? (base + (performance.now() - t0) / 1000) % REEL.TOTAL : base;
+    btn.onclick = () => { base = now(); playing = !playing; t0 = performance.now(); btn.textContent = playing ? 'Pause' : 'Play'; };
+    seek.oninput = () => { base = +seek.value; t0 = performance.now(); };
+    REEL.SCENES.forEach((s, i) => {
+      const b = document.createElement('button'); b.textContent = `${i + 1}. ${s.name}`;
+      b.onclick = () => { base = s.start + s.still; t0 = performance.now(); };
+      document.getElementById('scenes').appendChild(b);
+    });
+    (function loop() { const t = now(); REEL.renderAt(ctx, t); seek.value = t; tl.textContent = t.toFixed(1) + 's'; requestAnimationFrame(loop); })();
+  }
+</script>
+</body>
+</html>
