@@ -14,6 +14,7 @@ as [`../underground-garage-reel`](../underground-garage-reel).
 | Timing | [`src/timeline.js`](src/timeline.js) is the single source of truth: voiceover sentence placement, every animation event and every sound cue. |
 | Voiceover | ElevenLabs TTS, model `eleven_v4`: narrator "Holden – Warm Midwest Narrator"; the boy's "Hi, Aunty..." is "Adik M – Playful Cartoon Character", pitched up 2.5 semitones with rubberband for a younger voice. |
 | Captions | One word at a time, a little above the middle, Fredoka Bold white with a thick black outline and a soft shadow, each word popping in with a tiny bounce; "HI, AUNTY..." last, yellow and bigger. Word times from faster-whisper refined against the audio's silences. |
+| Watermark | "Garden_reels" pressed into the soil of the cut face, low on the left under the tunnel: a text mask baked into the soil colours with a little relief, so the scene lights it like the dirt around it ([`src/main.js`](src/main.js), `engraveSoil`). |
 | Sound | Synthesised effects (digging thuds, concrete clunk, brick clacks, candle fizz, whooshes, switch clicks, rail rattle, wooden lid knocks…) plus recorded crumbling dirt and pops; light pizzicato/marimba music composed in code that stops dead right before "Hi, Aunty...". Voice-ducked mix at −14 LUFS. |
 
 ### Scenes
@@ -24,15 +25,18 @@ as [`../underground-garage-reel`](../underground-garage-reel).
 4. A candle flickers out as the air goes stale; an air pipe pops up through the lawn; blue fresh-air dots flow in, the grey air flows out of the shaft.
 5. Pitch dark; a wire runs along the arches and warm bulbs switch on one by one.
 6. A snail takes forever; tiny rails snap onto the floor; a red mine cart drops in and zooms through the dip with a cricket bat.
-7. Wide shot of the glowing tunnel; Aunty (modern clothes, arms crossed, flip-flop in hand) waits by the hatch; push-in; the hatch flips open, the boy pops his head out grinning, looks up, "Hi, Aunty...", sinks back and the lid slams. A girl watches in shock from the friend's upstairs window.
+7. Wide shot of the glowing tunnel; Aunty (modern clothes, arms crossed, flip-flop in hand) waits by the hatch; push-in; the hatch flips open, the boy pops his head out grinning and looks up, Aunty whips her chappal up out of her crossed arms, "Hi, Aunty...", he sinks back and the lid slams. A girl watches in shock from the friend's upstairs window.
 
 ## Rebuild
 
 ```bash
 npm install                      # three.js
 pip install numpy scipy soundfile pillow faster-whisper
-PY=python3 SPP=8 JOBS=2 ./make_reel.sh
+PY=python3 SPP=5 JOBS=3 ./make_reel.sh   # -> secret-tunnel.mp4
 ```
+
+Each render job needs about 3 GB of memory at full size, so pick `JOBS` to fit.
+The committed `secret-tunnel.mp4` was rendered at 5 samples per frame.
 
 Quick looks: `node render.mjs stills 6.4,21,53.9 --spp 4` (PNG stills).
 
