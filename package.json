@@ -1,0 +1,21 @@
+{
+  "name": "two-moms-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code-rendered vertical horror reel (Three.js + ElevenLabs + ffmpeg)",
+  "type": "module",
+  "scripts": {
+    "voice": "node scripts/voice.mjs",
+    "sfx": "python3 scripts/sfx.py",
+    "timeline": "node scripts/timeline.mjs",
+    "test-scene6": "node scripts/render.mjs --scene 6 --seconds 5 --stills 3",
+    "render": "node scripts/render.mjs",
+    "mix": "node scripts/mix.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^24.43.1",
+    "three": "^0.180.0"
+  }
+}
