@@ -698,7 +698,7 @@ export class Director {
     place(L0[1], this.car.nozzles.under[0], th.under, 90);
     place(L0[2], th.sideR > th.sideL ? this.car.nozzles.side[0] : this.car.nozzles.side[2], Math.max(th.sideR, th.sideL), 25);
     // speed lines (attached to the camera)
-    const spd = pulse(t, 31.9, 34.25, 0.5, 0.3) + 0.6 * pulse(t, 23.1, 24.4, 0.2, 0.6);
+    const spd = pulse(t, 31.9, 34.25, 0.5, 0.3);   // vertical lines: only for the vertical drop
     if (!fx.speed.grp.parent) cam.add(fx.speed.grp);
     fx.speed.grp.visible = spd > 0.01;
     if (spd > 0.01) {
@@ -805,6 +805,7 @@ export class Director {
   }
 
   samplesAt(t) {
+    if (t > 22.85 && t < 23.45) return 14; // whip from the roof run to the launch: smooth blur
     if (t > 23.3 && t < 28.9) return 8;   // tumble
     if (t > 19.3 && t < 23.4) return 7;   // climb + roof launch
     if (t > 31.5 && t < 34.3) return 7;   // drop
