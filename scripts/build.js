@@ -32,7 +32,12 @@ if (!argv.includes('--skip-render')) {
   for (let f = 0; f < tl.frames; f += size) {
     const out = path.join(ROOT, 'final/parts', `part_${String(f).padStart(5, '0')}.mp4`);
     fs.mkdirSync(path.dirname(out), { recursive: true });
-    if (!fs.existsSync(out)) run('node', ['scripts/render.js', '--from', String(f), '--to', String(f + size), '--out', path.relative(ROOT, out)]);
+    if (!fs.existsSync(out)) {
+      // render to a temp name so an interrupted chunk is never mistaken for a finished one
+      const tmp = out.replace(/\.mp4$/, '.partial.mp4');
+      run('node', ['scripts/render.js', '--from', String(f), '--to', String(f + size), '--out', path.relative(ROOT, tmp)]);
+      fs.renameSync(tmp, out);
+    }
     parts.push(out);
   }
   const list = path.join(ROOT, 'final/parts/list.txt');
