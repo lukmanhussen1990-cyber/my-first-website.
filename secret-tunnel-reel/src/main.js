@@ -220,6 +220,65 @@ const quad = (w, h) => new THREE.PlaneGeometry(w, h);
 // ground: soil cut face + lawn (baked), tunnel surfaces driven by the dig field
 // ---------------------------------------------------------------------------
 const BAKE = bakeGround(renderer, FullScreenQuad);
+// the channel name pressed into the soil of the cut face, low on the left under the
+// tunnel, as if it had always been there: a soft text mask drawn into a canvas is
+// baked into the soil colours with a little relief (letter floors darker, walls
+// facing the sun lit, the others shaded), so the scene lights it like the dirt
+await engraveSoil(BAKE, 'Garden_reels', -2.95, -3.84, 0.29);
+async function engraveSoil(bake, text, cx, cy, em) {
+  const ff = new FontFace('FredokaMark', 'url(/assets/Fredoka-Bold.ttf)');
+  await ff.load();
+  document.fonts.add(ff);
+  const px = 256; // mask pixels per em
+  const cv = document.createElement('canvas');
+  const g = cv.getContext('2d');
+  g.font = `${px}px FredokaMark`;
+  cv.width = Math.ceil(g.measureText(text).width + px * 0.6);
+  cv.height = Math.ceil(px * 1.5);
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, cv.width, cv.height);
+  g.filter = `blur(${(px * 0.02).toFixed(1)}px)`; // rounded walls
+  g.font = `${px}px FredokaMark`;
+  g.fillStyle = '#fff';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, cv.width / 2, cv.height / 2);
+  const mask = new THREE.CanvasTexture(cv);
+  mask.generateMipmaps = false;
+  mask.minFilter = THREE.LinearFilter;
+  const hw = ((cv.width / px) * em) / 2, hh = ((cv.height / px) * em) / 2;
+  const src = bake.frontTex;
+  const rt = new THREE.WebGLRenderTarget(src.image.width, src.image.height, {
+    type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false,
+  });
+  rt.texture.anisotropy = src.anisotropy;
+  const q = new FullScreenQuad(new THREE.ShaderMaterial({
+    uniforms: {
+      uSoil: { value: src }, uMask: { value: mask }, uRect: { value: bake.frontRect }, uSun: { value: SUN_DIR },
+      uBox: { value: new THREE.Vector4(cx - hw, cy - hh, cx + hw, cy + hh) },
+      uStep: { value: new THREE.Vector2(2 / cv.width, 2 / cv.height) },
+    },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: `uniform sampler2D uSoil, uMask; uniform vec4 uRect, uBox; uniform vec2 uStep; uniform vec3 uSun; varying vec2 vUv;
+      void main(){
+        vec3 soil = texture2D(uSoil, vUv).rgb;
+        vec2 m = (mix(uRect.xy, uRect.zw, vUv) - uBox.xy) / (uBox.zw - uBox.xy);
+        if (m.x < 0.0 || m.y < 0.0 || m.x > 1.0 || m.y > 1.0) { gl_FragColor = vec4(soil, 1.0); return; }
+        float d = texture2D(uMask, m).r;
+        float gx = texture2D(uMask, m + vec2(uStep.x, 0.0)).r - texture2D(uMask, m - vec2(uStep.x, 0.0)).r;
+        float gy = texture2D(uMask, m + vec2(0.0, uStep.y)).r - texture2D(uMask, m - vec2(0.0, uStep.y)).r;
+        vec3 n = normalize(vec3(gx, gy, 0.0) * 2.4 + vec3(0.0, 0.0, 1.0));
+        float relief = (dot(n, uSun) - uSun.z) / uSun.z;
+        gl_FragColor = vec4(soil * clamp((1.0 - 0.3 * d) * (1.0 + 0.55 * relief), 0.3, 1.5), 1.0);
+      }`,
+  }));
+  renderer.setRenderTarget(rt);
+  q.render(renderer);
+  renderer.setRenderTarget(null);
+  q.material.dispose();
+  mask.dispose();
+  bake.frontTex = rt.texture;
+}
 function digTexture(back) {
   const r = WD.digRaster(200, back);
   const half = new Uint16Array(r.data.length);
