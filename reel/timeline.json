@@ -1,0 +1,162 @@
+{
+  "fps": 30,
+  "duration": 55.6,
+  "width": 1080,
+  "height": 1920,
+  "notes": "All times in seconds. 'voice' gives each line a slot; the mixer places a line so its anchor word lands on anchor_time (clamped to [earliest, latest_end]), so re-voiced lines stay in sync with the fixed 3D picture.",
+  "scenes": [
+    {
+      "id": 1,
+      "name": "Golden-hour backyard",
+      "start": 0.0,
+      "end": 8.0
+    },
+    {
+      "id": 2,
+      "name": "Spinning tires, the drill",
+      "start": 8.0,
+      "end": 15.3
+    },
+    {
+      "id": 3,
+      "name": "Crumbling tunnel, concrete rings",
+      "start": 15.3,
+      "end": 22.8
+    },
+    {
+      "id": 4,
+      "name": "Hot rock, heat shield, ice-cold air",
+      "start": 22.8,
+      "end": 30.3
+    },
+    {
+      "id": 5,
+      "name": "The core, SpaceX thrusters",
+      "start": 30.3,
+      "end": 38.6
+    },
+    {
+      "id": 6,
+      "name": "Hologram globe, aim for a beach",
+      "start": 38.6,
+      "end": 45.0
+    },
+    {
+      "id": 7,
+      "name": "Sunrise beach, the question",
+      "start": 45.0,
+      "end": 55.6
+    }
+  ],
+  "voice": {
+    "n1": {
+      "start": 0.4,
+      "anchor_word": 10,
+      "anchor_time": 3.17,
+      "earliest": 0.25,
+      "latest_end": 7.9
+    },
+    "n2": {
+      "start": 8.1,
+      "anchor_word": 13,
+      "anchor_time": 11.49,
+      "earliest": 7.95,
+      "latest_end": 15.1
+    },
+    "n3": {
+      "start": 15.3,
+      "anchor_word": 12,
+      "anchor_time": 19.27,
+      "earliest": 15.15,
+      "latest_end": 22.75
+    },
+    "n4": {
+      "start": 23.0,
+      "anchor_word": 15,
+      "anchor_time": 26.67,
+      "earliest": 22.85,
+      "latest_end": 30.2
+    },
+    "n5": {
+      "start": 30.4,
+      "anchor_word": 18,
+      "anchor_time": 35.52,
+      "earliest": 30.3,
+      "latest_end": 38.55
+    },
+    "n6": {
+      "start": 38.85,
+      "anchor_word": 15,
+      "anchor_time": 42.7,
+      "earliest": 38.65,
+      "latest_end": 44.9
+    },
+    "n7": {
+      "start": 48.75,
+      "anchor_word": 0,
+      "anchor_time": 48.82,
+      "earliest": 48.6,
+      "latest_end": 51.98
+    },
+    "j1": {
+      "start": 52.3,
+      "anchor_word": 0,
+      "anchor_time": 52.41,
+      "earliest": 52.2,
+      "latest_end": 55.5
+    }
+  },
+  "music": {
+    "start": 0.0,
+    "stop": 52.05,
+    "fade_in": 0.6
+  },
+  "events": {
+    "hole_open": 3.05,
+    "hole_done": 3.9,
+    "car_roll": 4.2,
+    "car_tip": 4.75,
+    "car_land": 5.95,
+    "spin_start": 8.3,
+    "spin_end": 10.6,
+    "drill_snap": 11.42,
+    "drill_spinup": 11.85,
+    "drill_go": 12.5,
+    "crumble_start": 15.6,
+    "crumble_end": 17.8,
+    "rings_start": 18.3,
+    "rock_enter": 19.6,
+    "heat_start": 23.4,
+    "sweat": 24.3,
+    "shield_wrap": 26.3,
+    "shield_done": 27.0,
+    "vents": 27.25,
+    "frost": 27.55,
+    "thumbs_up": 28.85,
+    "core_reveal": 30.3,
+    "core_push_in": 32.9,
+    "thrusters": 35.42,
+    "zoom_start": 36.3,
+    "flash": 36.8,
+    "zoom_end": 37.25,
+    "holo_pop": 39.4,
+    "holo_tap": 41.38,
+    "path_bend": 41.6,
+    "beach_lock": 42.7,
+    "car_tilt": 42.75,
+    "shield_off": 43.4,
+    "sand_enter": 44.2,
+    "surface_rise": 45.0,
+    "sand_bulge": 45.95,
+    "burst": 46.6,
+    "land": 48.15,
+    "scoop_fall": 48.35,
+    "plop": 48.85,
+    "drill_stop": 47.75,
+    "door_open": 50.55,
+    "sand_pour": 50.95,
+    "john_lean": 51.2,
+    "john_talk": 52.35,
+    "end_hold": 55.3
+  }
+}
