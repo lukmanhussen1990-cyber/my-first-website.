@@ -209,7 +209,7 @@ export function build(ctx) {
       q.setFromEuler(e);
       m4.compose(v.set(x, 0, z), q, s.set(wid, hgt, wid));
       im.setMatrixAt(i, m4);
-      c.copy(greens[Math.floor(rnd() * greens.length)]).multiplyScalar(0.8 + 0.4 * rnd());
+      c.copy(greens[Math.floor(rnd() * greens.length)]).multiplyScalar(0.62 + 0.32 * rnd());
       im.setColorAt(i, c);
     });
     im.castShadow = false;
@@ -427,7 +427,7 @@ export function build(ctx) {
         if (n.z > 0.5 && p.z > -0.012) return cutCol(p);
         if (hwExt(p, n)) return siding(p, n);
         if (p.y < ${H.ceil.toFixed(3)}) {
-          vec3 c = p.y < 0.95 ? vec3(0.62, 0.72, 0.58) : vec3(0.93, 0.86, 0.72);
+          vec3 c = p.y < 0.95 ? vec3(0.5, 0.6, 0.48) : vec3(0.8, 0.72, 0.6);
           c *= 1.0 - 0.25 * (1.0 - smoothstep(0.0, 0.015, abs(p.y - 0.95)));
           return c * (0.93 + 0.08 * fbm(p.xy * 4.0 + p.z));
         }
@@ -607,8 +607,8 @@ export function build(ctx) {
   // keep the moon off the kitchen and the bedroom (dim until the fridge light):
   // an invisible flag in front of the house that only casts a shadow
   {
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 5.4), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
-    flag.position.set(2.35, 3.95, 0.65);
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 6.35), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+    flag.position.set(2.35, 3.475, 0.65);
     flag.castShadow = true;
     flag.receiveShadow = false;
     scene.add(flag);

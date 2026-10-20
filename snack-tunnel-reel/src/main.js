@@ -83,7 +83,7 @@ function updateCamera(t) {
 // ---------------------------------------------------------------------------
 const MOON_DIR = V(-0.5, 0.74, 0.45).normalize();
 const LIGHT_TARGET = V(0.3, -0.8, -2.5);
-const moon = new THREE.DirectionalLight(new THREE.Color(0.62, 0.74, 1.0), 2.4);
+const moon = new THREE.DirectionalLight(new THREE.Color(0.56, 0.69, 1.0), 2.9);
 moon.castShadow = true;
 moon.shadow.mapSize.set(2048, 2048);
 Object.assign(moon.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 90 });
@@ -92,7 +92,7 @@ moon.shadow.normalBias = 0.02;
 moon.target.position.copy(LIGHT_TARGET);
 scene.add(moon, moon.target);
 
-const skyL = new THREE.DirectionalLight(new THREE.Color(0.33, 0.43, 0.9), 0.9);
+const skyL = new THREE.DirectionalLight(new THREE.Color(0.3, 0.4, 0.85), 0.75);
 skyL.castShadow = true;
 skyL.shadow.mapSize.set(1024, 1024);
 Object.assign(skyL.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 100 });
@@ -101,9 +101,9 @@ skyL.shadow.normalBias = 0.025;
 skyL.target.position.copy(LIGHT_TARGET);
 scene.add(skyL, skyL.target);
 
-const hemi = new THREE.HemisphereLight(new THREE.Color(0.24, 0.31, 0.62), new THREE.Color(0.11, 0.085, 0.065), 0.55);
+const hemi = new THREE.HemisphereLight(new THREE.Color(0.2, 0.27, 0.58), new THREE.Color(0.09, 0.075, 0.06), 0.24);
 scene.add(hemi);
-const fill = new THREE.DirectionalLight(new THREE.Color(0.55, 0.62, 0.86), 0.32);
+const fill = new THREE.DirectionalLight(new THREE.Color(0.5, 0.56, 0.82), 0.17);
 fill.position.set(0.25, 0.3, 1).multiplyScalar(40);
 scene.add(fill);
 
