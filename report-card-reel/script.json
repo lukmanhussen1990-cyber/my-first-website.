@@ -1,0 +1,38 @@
+{
+  "title": "The buried report card",
+  "voices": {
+    "narrator": {
+      "description": "calm, friendly, a little playful, quick pace, neutral accent",
+      "elevenlabs": {
+        "voice_id": "oXpouBLuKFVTJwcJO3YL",
+        "name": "Holden - Warm Midwest Narrator",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.45, "similarity_boost": 0.8, "style": 0.25, "use_speaker_boost": true, "speed": 1.06 }
+      },
+      "kokoro": { "voice": "am_michael", "speed": 1.1 },
+      "piper": { "model": "en_US-ryan-high.onnx", "length_scale": 0.9 },
+      "espeak": { "voice": "en-us+m3", "words_per_minute": 170 }
+    },
+    "dad": {
+      "description": "calm, amused dad",
+      "elevenlabs": {
+        "voice_id": "QjDQ1tIpSyUSYwAB9vIx",
+        "name": "Owen - Patient, friendly American male",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.4, "similarity_boost": 0.8, "style": 0.4, "use_speaker_boost": true, "speed": 0.95 }
+      },
+      "kokoro": { "voice": "am_fenrir", "speed": 0.9 },
+      "piper": { "model": "en_US-joe-medium.onnx", "length_scale": 1.05 },
+      "espeak": { "voice": "en-us+m1", "words_per_minute": 140 }
+    }
+  },
+  "lines": [
+    { "id": "n1", "scene": 1, "speaker": "narrator", "text": "If you dig a hole and bury your bad report card, nobody will ever find it. Sort of." },
+    { "id": "n2", "scene": 2, "speaker": "narrator", "text": "But the dog digs it right back up. So you dig deeper, way below where the dog can reach." },
+    { "id": "n3", "scene": 3, "speaker": "narrator", "text": "But rain turns the hole to mud and the card floats up. So you seal it in a metal box." },
+    { "id": "n4", "scene": 4, "speaker": "narrator", "text": "But the fresh dirt looks suspicious. So you plant flowers on top." },
+    { "id": "n5", "scene": 5, "speaker": "narrator", "text": "But the box makes a lump in the lawn. So you roll the ground perfectly flat." },
+    { "id": "n6", "scene": 6, "speaker": "narrator", "text": "Congratulations, you hid your report card forever." },
+    { "id": "dad", "scene": 7, "speaker": "dad", "text": "Hmm... a C in science?", "subtitle": "dad" }
+  ]
+}
