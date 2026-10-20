@@ -321,15 +321,15 @@ def main():
         if e["type"] == "buzz":
             place(ev, pan(buzz_clip(), 0.2), t, 0.55)
         elif e["type"] == "horn":
-            place(ev, horn_clip(), t, 0.5)
+            place(ev, horn_clip(), t, 0.22)
         elif e["type"] == "bangles":
-            place(ev, bangles_clip(seed=int(t * 10)), t, 0.6)
+            place(ev, bangles_clip(seed=int(t * 10)), t, 0.45)
         elif e["type"] == "hit":
             place(ev, hit_clip(1.0, seed=int(t)), t, 0.9)
             if e["scene"] != "s10":  # s10 comes out of dead silence: no riser
                 place(ev, riser_clip(0.45, seed=int(t)), t - 0.45, 0.8)
         elif e["type"] == "hit_soft":
-            place(ev, hit_clip(0.5, seed=int(t) + 1), t, 0.6)
+            place(ev, hit_clip(0.5, seed=int(t) + 1), t, 0.38)
     # twist: bone cracks as every passenger's feet turn
     s13 = sc["s13"]
     r = np.random.default_rng(13)

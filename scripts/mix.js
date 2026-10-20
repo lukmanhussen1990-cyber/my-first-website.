@@ -60,7 +60,13 @@ function buildMix(tl, out) {
   chains.push(`[${events}:a]volume=0.9[fx]`);
   chains.push(`[vomix][ducked][fx]amix=inputs=3:normalize=0,atrim=0:${dur},asetpts=N/SR/TB[pre]`);
   const pre = path.join(ROOT, 'audio/premix.wav');
-  ff([...inputs, '-filter_complex', chains.join(';'), '-map', '[pre]', '-c:a', 'pcm_s24le', pre]);
+  if (process.env.MIX_DEBUG) {
+    // write the voice, ducked bed and fx buses separately for level checks
+    const dbg = chains.map((c) => c.replace('[vomix][ducked][fx]amix', '[vomix]asplit[vd][vomix2];[ducked]asplit[dd][ducked2];[fx]asplit[fd][fx2];[vomix2][ducked2][fx2]amix'));
+    ff([...inputs, '-filter_complex', dbg.join(';'), '-map', '[pre]', '-c:a', 'pcm_s24le', pre, '-map', '[vd]', path.join(ROOT, 'audio/bus_vo.wav'), '-map', '[dd]', path.join(ROOT, 'audio/bus_bed.wav'), '-map', '[fd]', path.join(ROOT, 'audio/bus_fx.wav')]);
+  } else {
+    ff([...inputs, '-filter_complex', chains.join(';'), '-map', '[pre]', '-c:a', 'pcm_s24le', pre]);
+  }
 
   // two-pass loudnorm
   const stats = ff(['-i', pre, '-af', `loudnorm=I=${TARGET.I}:TP=${TARGET.TP}:LRA=${TARGET.LRA}:print_format=json`, '-f', 'null', '-'], { capture: true });
