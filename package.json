@@ -1,0 +1,20 @@
+{
+  "name": "night-shift-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NIGHT SHIFT - vertical 3D horror reel rendered 100% with code (Three.js + ElevenLabs VO).",
+  "type": "module",
+  "scripts": {
+    "voice": "NODE_USE_ENV_PROXY=1 node scripts/voice.mjs",
+    "timeline": "node scripts/timeline.mjs",
+    "sfx": "python3 scripts/sfx.py",
+    "test-render": "node scripts/render.mjs --test",
+    "render": "node scripts/render.mjs --workers 2",
+    "mix": "node scripts/mix.mjs",
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^24.43.1",
+    "three": "^0.180.0"
+  }
+}

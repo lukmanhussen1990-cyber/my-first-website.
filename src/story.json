@@ -1,0 +1,345 @@
+{
+  "title": "NIGHT SHIFT",
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "targetDuration": 64,
+  "minDuration": 60,
+  "maxDuration": 70,
+  "scenePadding": 0.4,
+  "voices": {
+    "narrator": {
+      "elevenlabs": {
+        "envVoiceId": "ELEVENLABS_VOICE_ID",
+        "voiceId": "DtOpqti8cQGq9RkxkXWI",
+        "name": "Tastygraph - Deep, Bassy & Relaxing"
+      },
+      "kokoro": {
+        "voice": "am_michael:0.6,am_onyx:0.4",
+        "lang": "a",
+        "speed": 0.9
+      }
+    },
+    "whisper": {
+      "elevenlabs": {
+        "envVoiceId": "ELEVENLABS_WHISPER_ID",
+        "voiceId": "bjoUrk7s2fY9cu2u67KF",
+        "name": "Annie - Whispering British Girl"
+      },
+      "kokoro": {
+        "voice": "af_nicole",
+        "lang": "a",
+        "speed": 0.86
+      }
+    }
+  },
+  "elevenlabs": {
+    "model": "eleven_multilingual_v2",
+    "voiceSettings": {
+      "stability": 0.4,
+      "similarity_boost": 0.8,
+      "style": 0.3,
+      "use_speaker_boost": true
+    }
+  },
+  "lines": [
+    {
+      "id": "s01",
+      "voice": "narrator",
+      "text": "Night shift. 2:58 AM. You're closing alone.",
+      "say": "Night shift.\nTwo fifty-eight, [A](/ˈA/) [M](/ˈɛm/).\nYou're closing alone.",
+      "pause": 0.38
+    },
+    {
+      "id": "s02",
+      "voice": "narrator",
+      "text": "Someone is dancing outside."
+    },
+    {
+      "id": "s03",
+      "voice": "narrator",
+      "text": "But there's no music."
+    },
+    {
+      "id": "s04",
+      "voice": "narrator",
+      "text": "You look away for one second. She's closer.",
+      "say": "You look away for one second.\nShe's closer.",
+      "pause": 0.5
+    },
+    {
+      "id": "s05",
+      "voice": "narrator",
+      "text": "You run and lock the door."
+    },
+    {
+      "id": "s06",
+      "voice": "narrator",
+      "text": "She's right at the glass."
+    },
+    {
+      "id": "s07",
+      "voice": "narrator",
+      "text": "You hide behind the counter."
+    },
+    {
+      "id": "s08",
+      "voice": "narrator",
+      "text": "Then you realize. She only moves when you look away.",
+      "say": "Then you realize.\nShe only moves when you look away.",
+      "pause": 0.55
+    },
+    {
+      "id": "s09",
+      "voice": "narrator",
+      "text": "The window is empty."
+    },
+    {
+      "id": "s10w",
+      "voice": "whisper",
+      "text": "Why did you stop watching?"
+    },
+    {
+      "id": "s10",
+      "voice": "narrator",
+      "text": "Don't. Turn. Around.",
+      "say": "Don't.\nTurn.\nAround.",
+      "pause": 0.42
+    },
+    {
+      "id": "s11",
+      "voice": "narrator",
+      "text": "Turn around… or keep watching her reflection? Comment A or B.",
+      "say": "Turn around...\nor keep watching her reflection?\nComment, [A](/ˈA/), or [B](/bˈi/).",
+      "pause": 0.38
+    }
+  ],
+  "scenes": [
+    {
+      "id": 1,
+      "name": "mop",
+      "lines": [
+        "s01"
+      ],
+      "lead": 1.5,
+      "tail": 0.5,
+      "captions": [
+        {
+          "line": "s01",
+          "text": "NIGHT SHIFT. 2:58\u00a0AM.",
+          "red": "2:58"
+        },
+        {
+          "line": "s01",
+          "at": "you're",
+          "text": "YOU'RE CLOSING ALONE."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "window",
+      "lines": [
+        "s02"
+      ],
+      "lead": 1.2,
+      "tail": 0.9,
+      "captions": [
+        {
+          "line": "s02",
+          "text": "SOMEONE IS DANCING OUTSIDE."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "closer",
+      "lines": [
+        "s03"
+      ],
+      "lead": 2.8,
+      "tail": 1.8,
+      "captions": [
+        {
+          "line": "s03",
+          "text": "BUT THERE'S NO MUSIC.",
+          "red": "MUSIC"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "phone",
+      "lines": [
+        "s04"
+      ],
+      "lead": 0.7,
+      "tail": 0.9,
+      "scare": true,
+      "captions": [
+        {
+          "line": "s04",
+          "text": "YOU LOOK AWAY FOR ONE SECOND."
+        },
+        {
+          "line": "s04",
+          "at": "she's",
+          "text": "SHE'S CLOSER.",
+          "red": "CLOSER"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "lock",
+      "lines": [
+        "s05"
+      ],
+      "lead": 0.6,
+      "tail": 1.4,
+      "captions": [
+        {
+          "line": "s05",
+          "text": "YOU LOCK THE DOOR."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "glass",
+      "lines": [
+        "s06"
+      ],
+      "lead": 0.7,
+      "tail": 1.8,
+      "scare": true,
+      "captions": [
+        {
+          "line": "s06",
+          "text": "SHE'S AT THE GLASS."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "hide",
+      "lines": [
+        "s07"
+      ],
+      "lead": 0.9,
+      "tail": 1.4,
+      "captions": [
+        {
+          "line": "s07",
+          "text": "YOU HIDE."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "realize",
+      "lines": [
+        "s08"
+      ],
+      "lead": 1.3,
+      "tail": 0.8,
+      "captions": [
+        {
+          "line": "s08",
+          "text": "THEN YOU REALIZE."
+        },
+        {
+          "line": "s08",
+          "at": "she",
+          "text": "SHE ONLY MOVES WHEN YOU LOOK AWAY.",
+          "red": "LOOK"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "empty",
+      "lines": [
+        "s09"
+      ],
+      "lead": 1.9,
+      "tail": 1.2,
+      "captions": [
+        {
+          "line": "s09",
+          "text": "THE WINDOW IS EMPTY.",
+          "red": "EMPTY"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "fridge",
+      "lines": [
+        "s10w",
+        "s10"
+      ],
+      "lead": 3.05,
+      "gaps": [
+        0.6
+      ],
+      "tail": 0.3,
+      "scare": true,
+      "bubble": {
+        "line": "s10w",
+        "text": "Why did you stop watching?"
+      },
+      "captions": [
+        {
+          "line": "s10",
+          "text": "DON'T TURN AROUND.",
+          "reveal": "words"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "choice",
+      "lines": [
+        "s11"
+      ],
+      "lead": 0.3,
+      "tail": 0.6,
+      "captions": [
+        {
+          "line": "s11",
+          "text": "TURN AROUND…"
+        },
+        {
+          "line": "s11",
+          "at": "or",
+          "text": "OR KEEP WATCHING HER REFLECTION?"
+        },
+        {
+          "line": "s11",
+          "at": "comment",
+          "text": "COMMENT A OR B."
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "twist",
+      "lines": [],
+      "fixed": 2.0
+    }
+  ],
+  "choiceCard": {
+    "title": "WHAT WOULD YOU DO?",
+    "options": [
+      [
+        "A",
+        "TURN AROUND"
+      ],
+      [
+        "B",
+        "KEEP STARING AT HER REFLECTION"
+      ]
+    ]
+  }
+}
