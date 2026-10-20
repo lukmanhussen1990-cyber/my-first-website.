@@ -1,0 +1,23 @@
+{
+  "name": "train-berth-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vertical horror reel 'The Train Berth' rendered 100% with code (Three.js) + ElevenLabs voiceover.",
+  "type": "module",
+  "scripts": {
+    "voice": "node scripts/voice.js",
+    "timeline": "node scripts/timeline.js",
+    "sfx": "python3 scripts/sfx.py",
+    "render": "node scripts/render.js",
+    "test-render": "node scripts/render.js --scene 5 --seconds 5 --stills 3 --out frames/test_scene5.mp4",
+    "mix": "node scripts/mix.js",
+    "build": "node scripts/build.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "puppeteer": "^24.43.1",
+    "three": "^0.170.0"
+  }
+}

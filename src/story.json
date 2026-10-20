@@ -1,0 +1,104 @@
+{
+  "title": "THE TRAIN BERTH",
+  "watermark": "midnightcompile",
+  "video": { "width": 1080, "height": 1920, "fps": 30 },
+  "padding": 0.4,
+  "rail": { "period": 1.04, "phase": 0.35, "hits": [0, 0.17] },
+  "tts": {
+    "model_id": "eleven_multilingual_v2",
+    "voice_settings": { "stability": 0.4, "similarity_boost": 0.8, "style": 0.3, "use_speaker_boost": true },
+    "output_format": "mp3_44100_192"
+  },
+  "voices": {
+    "narrator": {
+      "env": "ELEVENLABS_VOICE_ID",
+      "default_id": "tZssYepgGaQmegsMEXjK",
+      "default_name": "True - Crime & Horror Narrator",
+      "want": { "gender": "male", "descriptives": ["deep", "calm", "whispery", "dark", "horror", "narrat", "breathy", "eerie"] }
+    },
+    "whisper": {
+      "env": "ELEVENLABS_WHISPER_ID",
+      "default_id": "NNlPuk2Pv2RnraA6G8yp",
+      "default_name": "Blondie - Whispery",
+      "want": { "gender": "female", "descriptives": ["whisper", "soft", "breathy", "airy", "eerie", "asmr", "atmospheric"] }
+    }
+  },
+  "scenes": [
+    {
+      "id": "s01", "voice": "narrator",
+      "text": "Your phone buzzes at two forty-seven A.M.",
+      "sfx": [{ "type": "buzz", "at": { "scene": 0.15 } }]
+    },
+    {
+      "id": "s02", "voice": "narrator",
+      "text": "Railway alert... If a passenger's feet point backward... pretend to sleep."
+    },
+    {
+      "id": "s03", "voice": "narrator",
+      "text": "You look around. Everyone in the coach is asleep.",
+      "caption": { "text": "EVERYONE IS ASLEEP.", "red": "ASLEEP", "cue": "everyone" },
+      "sfx": [{ "type": "horn", "at": { "scene": 0.2 } }]
+    },
+    {
+      "id": "s04", "voice": "narrator",
+      "text": "Almost everyone. On the top berth across from you... a woman lies perfectly still.",
+      "caption": { "text": "ALMOST EVERYONE.", "red": "ALMOST", "cue": "almost everyone" }
+    },
+    {
+      "id": "s05", "voice": "narrator",
+      "text": "Then you see her feet. Her feet are backward.",
+      "caption": { "text": "HER FEET ARE BACKWARD.", "red": "BACKWARD", "cue": "her feet are" },
+      "scare": true,
+      "sfx": [{ "type": "hit", "at": { "word": "backward" } }]
+    },
+    {
+      "id": "s06", "voice": "narrator",
+      "text": "You remember the alert. So you pretend to sleep.",
+      "caption": { "text": "YOU PRETEND TO SLEEP.", "red": "PRETEND", "cue": "you pretend" },
+      "sfx": [{ "type": "heartbeat_start", "at": { "scene": 0.0 } }]
+    },
+    {
+      "id": "s07", "voice": "narrator",
+      "text": "Through your eyelashes, you watch her climb down... slowly... closer.",
+      "caption": { "text": "CLOSER.", "red": "CLOSER", "cue": "closer" },
+      "sfx": [{ "type": "bangles", "at": { "scene": 0.9 } }, { "type": "bangles", "at": { "word": "slowly" } }]
+    },
+    {
+      "id": "s08", "voice": "whisper",
+      "text": "I know you're awake.",
+      "bubble": "I know you're awake.",
+      "scare": true,
+      "sfx": [{ "type": "hit_soft", "at": { "scene": 0.0 } }, { "type": "bangles", "at": { "scene": 0.35 } }]
+    },
+    {
+      "id": "s09", "voice": "narrator",
+      "text": "Her hand rests on your berth. Then your phone lights up... again.",
+      "caption": { "text": "YOUR PHONE LIGHTS UP.", "red": "LIGHTS", "cue": "your phone lights up" },
+      "notification": "DO NOT LET IT SEE YOUR PHONE.",
+      "sfx": [{ "type": "bangles", "at": { "scene": 0.3 } }, { "type": "buzz", "at": { "word": "phone", "offset": -0.25 } }],
+      "silence_tail": 0.55
+    },
+    {
+      "id": "s10", "voice": "narrator",
+      "text": "She leans into the light. She saw it.",
+      "caption": { "text": "SHE SAW IT.", "red": "SAW", "cue": "she saw it" },
+      "scare": true,
+      "sfx": [{ "type": "hit", "at": { "scene": 0.0 } }, { "type": "hit_soft", "at": { "word": "saw" } }]
+    },
+    {
+      "id": "s11", "voice": "narrator",
+      "text": "One pull stops the train. The chain is right above you.",
+      "caption": { "text": "THE CHAIN IS RIGHT ABOVE YOU.", "red": "CHAIN", "cue": "the chain is" }
+    },
+    {
+      "id": "s12", "voice": "narrator",
+      "text": "Keep pretending... or pull the chain? Comment A or B.",
+      "choice": { "title": "WHAT WOULD YOU DO?", "a": "KEEP PRETENDING", "b": "PULL THE CHAIN" }
+    },
+    {
+      "id": "s13", "voice": null, "duration": 2.0,
+      "choice_hold": true,
+      "twist": true
+    }
+  ]
+}
