@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "rg:craft_m249"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "IIB",
+      "IGB",
+      "M M"
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "B": {
+        "item": "minecraft:iron_block"
+      },
+      "G": {
+        "item": "minecraft:gunpowder"
+      },
+      "M": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "result": {
+      "item": "rg:m249",
+      "count": 1
+    }
+  }
+}

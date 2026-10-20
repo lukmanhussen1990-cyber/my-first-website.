@@ -1,0 +1,59 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Realistic Guns BP",
+    "description": "10 realistic guns: shooting, reloading, recoil, scopes, ammo & block damage.",
+    "uuid": "1d4b4684-1525-42b8-a008-930061290ac3",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      100
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "57739d44-9ff4-48e2-a27d-ea27a090bed8",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "1cbfdcb6-65fb-4170-b92d-34532d02062c",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "4534fe80-3b41-4ac4-8258-1347dadc9298",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.0.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Realistic Guns"
+    ]
+  }
+}

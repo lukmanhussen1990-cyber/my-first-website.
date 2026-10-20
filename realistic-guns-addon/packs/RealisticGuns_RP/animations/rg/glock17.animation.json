@@ -1,0 +1,88 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.rg.glock17.first_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            -5.739,
+            27.512,
+            -8.243
+          ],
+          "rotation": [
+            76.531,
+            60.864,
+            -56.465
+          ]
+        }
+      }
+    },
+    "animation.rg.glock17.third_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            0.03,
+            23.615,
+            0.756
+          ],
+          "rotation": [
+            17.979,
+            0.885,
+            -2.725
+          ]
+        }
+      }
+    },
+    "animation.rg.glock17.kick": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "position": [
+            0.0,
+            "v.kick * 0.096",
+            "v.kick * 0.8"
+          ],
+          "rotation": [
+            "-v.kick * 6.0",
+            0.0,
+            "v.kick * 0.9"
+          ]
+        },
+        "slide": {
+          "position": [
+            0.0,
+            0.0,
+            "v.kick * 1.15"
+          ]
+        }
+      }
+    },
+    "animation.rg.glock17.reload": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "rotation": [
+            "-9.0 * v.rw",
+            "-6.0 * v.rw",
+            "26.0 * v.rw"
+          ],
+          "position": [
+            0.0,
+            "-1.0 * v.rw",
+            "0.4 * v.rw"
+          ]
+        },
+        "mag": {
+          "position": [
+            0.0,
+            "-5.0 * v.md",
+            "0.4 * v.md"
+          ],
+          "scale": "v.md > 0.97 ? 0.0 : 1.0"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.100",
+  "minecraft:item": {
+    "description": {
+      "identifier": "rg:mag_m4a1"
+    },
+    "components": {
+      "minecraft:display_name": {
+        "value": "M4A1 STANAG Magazine (30)"
+      },
+      "minecraft:icon": {
+        "textures": {
+          "default": "rg_mag_m4a1"
+        }
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:tags": {
+        "tags": [
+          "rg:magazine"
+        ]
+      }
+    }
+  }
+}

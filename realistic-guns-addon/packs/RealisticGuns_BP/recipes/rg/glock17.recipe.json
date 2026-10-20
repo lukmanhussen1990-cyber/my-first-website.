@@ -1,0 +1,33 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "rg:craft_glock17"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "II ",
+      "IP ",
+      " I "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "P": {
+        "item": "minecraft:black_dye"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "result": {
+      "item": "rg:glock17",
+      "count": 1
+    }
+  }
+}

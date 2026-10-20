@@ -1,0 +1,81 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.rg.m4a1.first_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            -5.691,
+            28.38,
+            -6.257
+          ],
+          "rotation": [
+            75.385,
+            62.794,
+            -57.594
+          ]
+        }
+      }
+    },
+    "animation.rg.m4a1.third_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            0.03,
+            23.615,
+            0.756
+          ],
+          "rotation": [
+            17.979,
+            0.885,
+            -2.725
+          ]
+        }
+      }
+    },
+    "animation.rg.m4a1.kick": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "position": [
+            0.0,
+            "v.kick * 0.084",
+            "v.kick * 0.7"
+          ],
+          "rotation": [
+            "-v.kick * 2.4",
+            0.0,
+            "v.kick * 0.36"
+          ]
+        }
+      }
+    },
+    "animation.rg.m4a1.reload": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "rotation": [
+            "-9.0 * v.rw",
+            "-6.0 * v.rw",
+            "26.0 * v.rw"
+          ],
+          "position": [
+            0.0,
+            "-1.0 * v.rw",
+            "0.4 * v.rw"
+          ]
+        },
+        "mag": {
+          "position": [
+            0.0,
+            "-6.0 * v.md",
+            "0.4 * v.md"
+          ],
+          "scale": "v.md > 0.97 ? 0.0 : 1.0"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.100",
+  "minecraft:item": {
+    "description": {
+      "identifier": "rg:mag_ak47"
+    },
+    "components": {
+      "minecraft:display_name": {
+        "value": "AK-47 Magazine (30)"
+      },
+      "minecraft:icon": {
+        "textures": {
+          "default": "rg_mag_ak47"
+        }
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:tags": {
+        "tags": [
+          "rg:magazine"
+        ]
+      }
+    }
+  }
+}

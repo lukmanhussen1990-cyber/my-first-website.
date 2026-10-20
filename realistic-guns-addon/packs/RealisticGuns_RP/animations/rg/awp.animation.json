@@ -1,0 +1,106 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.rg.awp.first_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            -5.059,
+            27.977,
+            -5.759
+          ],
+          "rotation": [
+            75.827,
+            62.828,
+            -57.259
+          ]
+        }
+      }
+    },
+    "animation.rg.awp.third_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            0.03,
+            23.615,
+            0.756
+          ],
+          "rotation": [
+            17.979,
+            0.885,
+            -2.725
+          ]
+        }
+      }
+    },
+    "animation.rg.awp.kick": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "position": [
+            0.0,
+            "v.kick * 0.192",
+            "v.kick * 1.6"
+          ],
+          "rotation": [
+            "-v.kick * 7.0",
+            0.0,
+            "v.kick * 1.05"
+          ]
+        }
+      }
+    },
+    "animation.rg.awp.reload": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "rotation": [
+            "-9.0 * v.rw",
+            "-6.0 * v.rw",
+            "26.0 * v.rw"
+          ],
+          "position": [
+            0.0,
+            "-1.0 * v.rw",
+            "0.4 * v.rw"
+          ]
+        },
+        "mag": {
+          "position": [
+            0.0,
+            "-5.0 * v.md",
+            "0.4 * v.md"
+          ],
+          "scale": "v.md > 0.97 ? 0.0 : 1.0"
+        }
+      }
+    },
+    "animation.rg.awp.cycle": {
+      "loop": true,
+      "bones": {
+        "bolt": {
+          "rotation": [
+            0.0,
+            0.0,
+            "62.0 * math.clamp(math.min(v.cp / 0.16, (1.0 - v.cp) / 0.16), 0.0, 1.0)"
+          ],
+          "position": [
+            0.0,
+            0.0,
+            "1.6 * math.clamp(math.min((v.cp - 0.16) / 0.3, (0.84 - v.cp) / 0.3), 0.0, 1.0)"
+          ]
+        }
+      }
+    },
+    "animation.rg.awp.scoped": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "scale": 0.0
+        }
+      }
+    }
+  }
+}

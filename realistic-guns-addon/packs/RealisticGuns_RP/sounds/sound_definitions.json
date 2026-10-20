@@ -1,0 +1,221 @@
+{
+  "format_version": "1.20.20",
+  "sound_definitions": {
+    "rg.ak47.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/ak47_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.m4a1.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/m4a1_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.deagle.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/deagle_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.glock17.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/glock17_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.awp.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 160.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/awp_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.barrett.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 192.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/barrett_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.mp5.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/mp5_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.uzi.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 64.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/uzi_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.spas12.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 80.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/spas12_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.m249.fire": {
+      "category": "player",
+      "min_distance": 4.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/m249_fire",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.dry": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/dry",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.mag_out": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/mag_out",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.mag_in": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/mag_in",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.charge": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/charge",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.bolt": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/bolt",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.pump": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/pump",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.shell_in": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/shell_in",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "rg.hitmarker": {
+      "category": "player",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/rg/hitmarker",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "rg:spas12",
+      "materials": {
+        "default": "entity_alphatest",
+        "enchanted": "entity_alphatest_glint"
+      },
+      "textures": {
+        "default": "textures/rg/guns/spas12",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.rg.spas12"
+      },
+      "animations": {
+        "first_person": "animation.rg.spas12.first_person",
+        "third_person": "animation.rg.spas12.third_person",
+        "kick": "animation.rg.spas12.kick",
+        "reload": "animation.rg.spas12.reload",
+        "cycle": "animation.rg.spas12.cycle"
+      },
+      "scripts": {
+        "pre_animation": [
+          "v.kick = math.clamp(q.cooldown_time_remaining('rg_kick') / 0.3, 0.0, 1.0);",
+          "v.rl = q.cooldown_time_remaining('rg_reload');",
+          "v.rt = v.rl > 0.0 ? 1.0 - math.clamp(v.rl / 0.6, 0.0, 1.0) : 0.0;",
+          "v.rw = v.rl > 0.0 ? math.clamp(math.min(v.rt / 0.18, (1.0 - v.rt) / 0.18), 0.0, 1.0) : 0.0;",
+          "v.md = v.rl > 0.0 ? (v.rt < 0.5 ? math.clamp((v.rt - 0.12) / 0.22, 0.0, 1.0) : math.clamp(1.0 - (v.rt - 0.55) / 0.22, 0.0, 1.0)) : 0.0;",
+          "v.cy = q.cooldown_time_remaining('rg_cycle');",
+          "v.cp = v.cy > 0.0 ? 1.0 - math.clamp(v.cy / 0.6, 0.0, 1.0) : 0.0;"
+        ],
+        "animate": [
+          {
+            "first_person": "c.is_first_person"
+          },
+          {
+            "third_person": "!c.is_first_person"
+          },
+          "kick",
+          "reload",
+          "cycle"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.rg.gun"
+      ]
+    }
+  }
+}

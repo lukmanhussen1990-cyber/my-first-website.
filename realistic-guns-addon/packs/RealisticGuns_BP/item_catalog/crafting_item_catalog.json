@@ -1,0 +1,52 @@
+{
+  "format_version": "1.21.60",
+  "minecraft:crafting_items_catalog": {
+    "categories": [
+      {
+        "category_name": "equipment",
+        "groups": [
+          {
+            "group_identifier": {
+              "icon": "rg:ak47",
+              "name": "rg:itemGroup.name.guns"
+            },
+            "items": [
+              "rg:ak47",
+              "rg:m4a1",
+              "rg:deagle",
+              "rg:glock17",
+              "rg:awp",
+              "rg:barrett",
+              "rg:mp5",
+              "rg:uzi",
+              "rg:spas12",
+              "rg:m249"
+            ]
+          },
+          {
+            "group_identifier": {
+              "icon": "rg:mag_ak47",
+              "name": "rg:itemGroup.name.gun_ammo"
+            },
+            "items": [
+              "rg:mag_ak47",
+              "rg:mag_m4a1",
+              "rg:mag_deagle",
+              "rg:mag_glock17",
+              "rg:mag_awp",
+              "rg:mag_barrett",
+              "rg:mag_mp5",
+              "rg:mag_uzi",
+              "rg:mag_m249",
+              "rg:ammo_9mm",
+              "rg:ammo_556",
+              "rg:ammo_762",
+              "rg:ammo_50",
+              "rg:shell_12g"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

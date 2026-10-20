@@ -1,0 +1,89 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.rg.barrett.first_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            -4.434,
+            27.704,
+            -5.207
+          ],
+          "rotation": [
+            75.776,
+            62.826,
+            -57.279
+          ]
+        }
+      }
+    },
+    "animation.rg.barrett.third_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            0.03,
+            23.615,
+            0.756
+          ],
+          "rotation": [
+            17.979,
+            0.885,
+            -2.725
+          ]
+        }
+      }
+    },
+    "animation.rg.barrett.kick": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "position": [
+            0.0,
+            "v.kick * 0.264",
+            "v.kick * 2.2"
+          ],
+          "rotation": [
+            "-v.kick * 9.0",
+            0.0,
+            "v.kick * 1.35"
+          ]
+        }
+      }
+    },
+    "animation.rg.barrett.reload": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "rotation": [
+            "-9.0 * v.rw",
+            "-6.0 * v.rw",
+            "26.0 * v.rw"
+          ],
+          "position": [
+            0.0,
+            "-1.0 * v.rw",
+            "0.4 * v.rw"
+          ]
+        },
+        "mag": {
+          "position": [
+            0.0,
+            "-5.5 * v.md",
+            "0.4 * v.md"
+          ],
+          "scale": "v.md > 0.97 ? 0.0 : 1.0"
+        }
+      }
+    },
+    "animation.rg.barrett.scoped": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "scale": 0.0
+        }
+      }
+    }
+  }
+}

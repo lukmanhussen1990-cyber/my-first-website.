@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "rg:bullet",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/rg/entity/bullet"
+      },
+      "geometry": {
+        "default": "geometry.rg.bullet"
+      },
+      "particle_effects": {
+        "trail": "rg:bullet_trail"
+      },
+      "animations": {
+        "move": "animation.rg.bullet.move",
+        "trail": "animation.rg.bullet.trail"
+      },
+      "scripts": {
+        "animate": [
+          "move",
+          "trail"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.rg.bullet"
+      ]
+    }
+  }
+}

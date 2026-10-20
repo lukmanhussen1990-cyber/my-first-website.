@@ -1,0 +1,93 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.rg.spas12.first_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            -5.556,
+            28.37,
+            -6.216
+          ],
+          "rotation": [
+            74.988,
+            62.752,
+            -58.0
+          ]
+        }
+      }
+    },
+    "animation.rg.spas12.third_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            0.03,
+            23.615,
+            0.756
+          ],
+          "rotation": [
+            17.979,
+            0.885,
+            -2.725
+          ]
+        }
+      }
+    },
+    "animation.rg.spas12.kick": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "position": [
+            0.0,
+            "v.kick * 0.168",
+            "v.kick * 1.4"
+          ],
+          "rotation": [
+            "-v.kick * 8.0",
+            0.0,
+            "v.kick * 1.2"
+          ]
+        }
+      }
+    },
+    "animation.rg.spas12.reload": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "rotation": [
+            "-6.0 * v.rw",
+            "-4.0 * v.rw",
+            "18.0 * v.rw"
+          ],
+          "position": [
+            0.0,
+            "-0.6 * v.rw",
+            0.0
+          ]
+        },
+        "mag": {
+          "position": [
+            0.0,
+            "-2.2 * (1.0 - v.rt)",
+            "0.6 * (1.0 - v.rt)"
+          ],
+          "scale": "v.rt > 0.08 && v.rt < 0.9 ? 1.0 : 0.0"
+        }
+      }
+    },
+    "animation.rg.spas12.cycle": {
+      "loop": true,
+      "bones": {
+        "pump": {
+          "position": [
+            0.0,
+            0.0,
+            "1.5 * math.clamp(math.min(v.cp / 0.4, (1.0 - v.cp) / 0.4), 0.0, 1.0)"
+          ]
+        }
+      }
+    }
+  }
+}

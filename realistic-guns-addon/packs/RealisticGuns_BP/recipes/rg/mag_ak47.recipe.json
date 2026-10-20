@@ -1,0 +1,34 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "rg:craft_mag_ak47"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "rg:ammo_762"
+      },
+      {
+        "item": "rg:ammo_762"
+      },
+      {
+        "item": "rg:ammo_762"
+      },
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "unlock": [
+      {
+        "item": "rg:ammo_762"
+      }
+    ],
+    "result": {
+      "item": "rg:mag_ak47",
+      "count": 1
+    }
+  }
+}

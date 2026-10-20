@@ -1,0 +1,39 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "rg:craft_barrett"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "GBB",
+      "IIB",
+      " M "
+    ],
+    "key": {
+      "G": {
+        "item": "minecraft:glass_pane"
+      },
+      "B": {
+        "item": "minecraft:iron_block"
+      },
+      "I": {
+        "item": "minecraft:iron_ingot"
+      },
+      "M": {
+        "item": "minecraft:gunpowder"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "result": {
+      "item": "rg:barrett",
+      "count": 1
+    }
+  }
+}

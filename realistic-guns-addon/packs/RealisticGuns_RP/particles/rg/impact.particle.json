@@ -1,0 +1,76 @@
+{
+  "format_version": "1.10.0",
+  "particle_effect": {
+    "description": {
+      "identifier": "rg:impact",
+      "basic_render_parameters": {
+        "material": "particles_blend",
+        "texture": "textures/rg/particle/spark"
+      }
+    },
+    "components": {
+      "minecraft:emitter_rate_instant": {
+        "num_particles": 10
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 0.05
+      },
+      "minecraft:emitter_shape_point": {
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          "variable.nrm.x + math.random(-0.8, 0.8)",
+          "variable.nrm.y + math.random(-0.5, 0.9)",
+          "variable.nrm.z + math.random(-0.8, 0.8)"
+        ]
+      },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "math.random(0.15, 0.45)"
+      },
+      "minecraft:particle_initial_speed": "math.random(1.5, 5.0)",
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0,
+          -14,
+          0
+        ],
+        "linear_drag_coefficient": 2.5
+      },
+      "minecraft:particle_motion_collision": {
+        "collision_radius": 0.02,
+        "coefficient_of_restitution": 0.3,
+        "collision_drag": 4
+      },
+      "minecraft:particle_appearance_billboard": {
+        "size": [
+          "0.025 + variable.particle_random_2 * 0.03",
+          "0.025 + variable.particle_random_2 * 0.03"
+        ],
+        "facing_camera_mode": "lookat_xyz",
+        "uv": {
+          "texture_width": 8,
+          "texture_height": 8,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            8,
+            8
+          ]
+        }
+      },
+      "minecraft:particle_appearance_tinting": {
+        "color": [
+          "variable.particle_random_3 > 0.45 ? 1.0 : 0.55",
+          "variable.particle_random_3 > 0.45 ? 0.75 : 0.52",
+          "variable.particle_random_3 > 0.45 ? 0.35 : 0.48",
+          "1.0 - variable.particle_age / variable.particle_lifetime * 0.6"
+        ]
+      }
+    }
+  }
+}

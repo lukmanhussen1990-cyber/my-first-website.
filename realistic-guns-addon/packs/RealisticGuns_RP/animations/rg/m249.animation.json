@@ -1,0 +1,81 @@
+{
+  "format_version": "1.10.0",
+  "animations": {
+    "animation.rg.m249.first_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            -5.137,
+            28.178,
+            -5.699
+          ],
+          "rotation": [
+            74.927,
+            62.755,
+            -57.971
+          ]
+        }
+      }
+    },
+    "animation.rg.m249.third_person": {
+      "loop": true,
+      "bones": {
+        "gun": {
+          "position": [
+            0.03,
+            23.615,
+            0.756
+          ],
+          "rotation": [
+            17.979,
+            0.885,
+            -2.725
+          ]
+        }
+      }
+    },
+    "animation.rg.m249.kick": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "position": [
+            0.0,
+            "v.kick * 0.096",
+            "v.kick * 0.8"
+          ],
+          "rotation": [
+            "-v.kick * 2.2",
+            0.0,
+            "v.kick * 0.33"
+          ]
+        }
+      }
+    },
+    "animation.rg.m249.reload": {
+      "loop": true,
+      "bones": {
+        "recoil": {
+          "rotation": [
+            "-9.0 * v.rw",
+            "-6.0 * v.rw",
+            "26.0 * v.rw"
+          ],
+          "position": [
+            0.0,
+            "-1.0 * v.rw",
+            "0.4 * v.rw"
+          ]
+        },
+        "mag": {
+          "position": [
+            0.0,
+            "-4.5 * v.md",
+            "0.4 * v.md"
+          ],
+          "scale": "v.md > 0.97 ? 0.0 : 1.0"
+        }
+      }
+    }
+  }
+}

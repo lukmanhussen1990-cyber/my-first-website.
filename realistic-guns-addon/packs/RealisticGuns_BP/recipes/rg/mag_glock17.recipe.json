@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "rg:craft_mag_glock17"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "rg:ammo_9mm"
+      },
+      {
+        "item": "rg:ammo_9mm"
+      },
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "unlock": [
+      {
+        "item": "rg:ammo_9mm"
+      }
+    ],
+    "result": {
+      "item": "rg:mag_glock17",
+      "count": 1
+    }
+  }
+}

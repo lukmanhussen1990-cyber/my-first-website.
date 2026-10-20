@@ -1,0 +1,37 @@
+{
+  "format_version": "1.21.100",
+  "minecraft:item": {
+    "description": {
+      "identifier": "rg:spas12"
+    },
+    "components": {
+      "minecraft:display_name": {
+        "value": "SPAS-12"
+      },
+      "minecraft:icon": {
+        "textures": {
+          "default": "rg_spas12"
+        }
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true,
+      "minecraft:allow_off_hand": false,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:damage": {
+        "value": 4
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 3600,
+        "movement_modifier": 1.0
+      },
+      "minecraft:interact_button": "Fire",
+      "minecraft:rarity": "uncommon",
+      "minecraft:tags": {
+        "tags": [
+          "rg:gun",
+          "rg:shotgun"
+        ]
+      }
+    }
+  }
+}
