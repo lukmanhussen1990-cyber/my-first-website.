@@ -17,12 +17,16 @@ usage: finalize.py [--master PATH] [--out PATH] [--preview]
 import argparse, json, os, subprocess, tempfile
 import numpy as np
 from scipy.io import wavfile
+from scipy.signal import butter, sosfiltfilt
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 W = lambda *p: os.path.join(ROOT, 'work', *p)
 SR = 48000
 GAIN = {'voice': 0.0, 'music': -8.0, 'sfx': -1.0}   # dB, before loudness normalization
-DUCK = {'music': -6.5, 'sfx': -3.0}                  # extra dB while someone is talking
+# extra dB while someone is talking, per band: (lows < 700 Hz, speech band, highs > 5 kHz).
+# The speech band is cleared hard; rumble and sparkle stay so the action keeps its punch.
+DUCK = {'music': (-5.0, -12.0, -5.0), 'sfx': (-3.0, -16.0, -5.0)}
+XOVER = (700.0, 5000.0)
 
 
 def read(path, stereo=True):
@@ -52,6 +56,18 @@ def speech_mask(layout, n):
 
 def db(x):
     return 10 ** (x / 20)
+
+
+def bands(x):
+    """Split a stereo signal into low / speech-band / high parts that sum back to x."""
+    lo = sosfiltfilt(butter(4, XOVER[0], btype='low', fs=SR, output='sos'), x, axis=0)
+    hi = sosfiltfilt(butter(4, XOVER[1], btype='high', fs=SR, output='sos'), x, axis=0)
+    return lo, x - lo - hi, hi
+
+
+def ducked(x, gain_db, duck, mask):
+    lo, mid, hi = bands(x)
+    return db(gain_db) * (lo * db(duck[0] * mask) + mid * db(duck[1] * mask) + hi * db(duck[2] * mask))
 
 
 def measure(path):
@@ -93,10 +109,17 @@ def main():
     voice, music, sfx = read(a.voice), read(a.music), read(a.sfx)
     n = min(len(voice), len(music), len(sfx))
     voice, music, sfx = voice[:n], music[:n], sfx[:n]
-    mask = speech_mask(layout, n)[:, None]
-    mix = (voice * db(GAIN['voice'])
-           + music * db(GAIN['music']) * db(DUCK['music'] * mask)
-           + sfx * db(GAIN['sfx']) * db(DUCK['sfx'] * mask))
+    mask = speech_mask(layout, n)
+    tl_path = W('timeline.json')
+    if os.path.exists(tl_path):  # the seatbelt click must stay loud: never duck under it
+        click = json.load(open(tl_path))['beat']['click']
+        mask[int((click - 0.1) * SR):int((click + 0.3) * SR)] = 0.0
+        # and the music dips for a moment so the click pops out of the cheer
+        tt = np.arange(n) / SR
+        dip = np.clip(np.minimum((tt - (click - 0.03)) / 0.02, ((click + 0.4) - tt) / 0.25), 0, 1)
+        music = music * db(-9.0 * dip)[:, None]
+    mask = mask[:, None]
+    mix = voice * db(GAIN['voice']) + ducked(music, GAIN['music'], DUCK['music'], mask) + ducked(sfx, GAIN['sfx'], DUCK['sfx'], mask)
     peak = np.max(np.abs(mix))
     if peak > 0.99:
         mix *= 0.99 / peak

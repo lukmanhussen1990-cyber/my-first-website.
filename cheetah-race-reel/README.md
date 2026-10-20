@@ -88,6 +88,10 @@ DISPLAY=:99 node render/render_film.mjs --workers 2 --shadow 2048   # needs Xvfb
 DISPLAY=:99 node render/stills.mjs "mode=film&w=1080&h=1920" still.png 23.2
 ```
 
+The committed `work/master/master.mp4` is an 11.5 Mbps copy of the silent
+master, so it fits GitHub's 100 MB file limit. A fresh render writes the full
+quality version (CRF 15, about 260 MB) to the same path.
+
 Requirements:
 
 - Node 20+

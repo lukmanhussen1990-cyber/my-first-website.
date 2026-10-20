@@ -538,7 +538,8 @@ def make_sfx(tl):
     fanrate = 57 * slow
     fph = 2 * np.pi * np.cumsum(fanrate) / SR
     hum = (np.sin(fph) * 0.5 + 0.3 * np.sin(2 * fph) + 0.15 * np.sin(3 * fph)) + lp(noise(n), 700) * 0.5
-    put(hum * lp(fan, 4) * prox, carPan, 0.10)
+    spin_down = 1 - np.clip((t - B['carStop']) / 1.6, 0, 1) ** 0.7   # the fan winds down once the car stops
+    put(hum * lp(fan, 4) * prox * spin_down, carPan, 0.10)
     # 4) paw thuds (from the gait), with a scuff of sand
     for p in tl['paws']:
         d = max(2.5, p['dist']); g = np.clip(10.0 / d, 0.15, 1.5) * (0.5 + 0.5 * min(1, p['v'] / 12))
@@ -613,12 +614,14 @@ def make_sfx(tl):
                 br = (bp(noise(ln), f1 * 0.8, f1 * 1.25) * 1.0 + bp(noise(ln), f2 * 0.85, f2 * 1.2) * 0.6 + hp(noise(ln), 3000) * 0.25) * e
                 place(out, br, cyc + dt, gain * g * rng.uniform(0.85, 1.1), pan)
     pant(B['chSlow'] + 1.4, B['sly'] - 0.2, 10.5 / (2 * np.pi), 0.5, 0.0)
-    pant(49.8, 54.65, 10.0 / (2 * np.pi), 0.42, 0.25)
+    pant(49.8, 54.65, 10.0 / (2 * np.pi), 0.26, 0.25)   # soft, so the silence after the music lands
     # 10) the seatbelt click: loud, crisp latch + clunk
     ln = sec(0.12); tt = np.arange(ln) / SR
     click = sum(np.sin(2 * np.pi * f * tt) * np.exp(-tt * d) for f, d in ((2550, 160), (4180, 220), (6330, 300), (8100, 380))) * 0.6
     clunk = np.sin(2 * np.pi * 820 * tt) * np.exp(-tt * 90) * 0.7 + bp(noise(ln), 1200, 6000) * np.exp(-tt * 260) * 0.8
-    belt = np.zeros(sec(0.2)); belt[:ln] += clunk; belt[sec(0.016):sec(0.016) + ln] += click
+    ring = sum(np.sin(2 * np.pi * f * tt) * np.exp(-tt * 45) for f in (3400, 5150)) * 0.25
+    belt = np.zeros(sec(0.3)); belt[:ln] += clunk; belt[sec(0.016):sec(0.016) + ln] += click
+    belt[sec(0.058):sec(0.058) + ln] += 0.8 * click + ring   # second "clack" as the latch seats
     belt = add_reverb(np.vstack([belt, belt]), wet=0.18, length=0.4, decay=12)[0]
     place(out, belt, B['click'], 1.0, 0.15)
     # ambience: soft savanna wind bed (quieter in slow motion, gone at the stare)
