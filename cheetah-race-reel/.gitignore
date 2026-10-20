@@ -1,0 +1,21 @@
+node_modules/
+.cache/
+__pycache__/
+.env
+voices_elevenlabs/
+# work/ holds renders and scratch files; keep only what the re-export needs
+work/*
+!work/master/
+work/master/*
+!work/master/master.mp4
+!work/music.wav
+!work/sfx.wav
+!work/timeline.json
+!work/voice_track.wav
+!work/voice_layout.json
+!work/subs.ass
+!work/qa/
+work/qa/*
+!work/qa/final_*.jpg
+out/*
+!out/cheetah_race_reel.mp4

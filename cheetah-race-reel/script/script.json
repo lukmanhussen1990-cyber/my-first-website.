@@ -1,0 +1,109 @@
+{
+  "title": "John vs. the Cheetah (new Roadster)",
+  "note": "Spoken text must stay exactly as written (subtitles are built from 'text'). 'tts_prompt' adds ElevenLabs v4 delivery tags, which are not spoken. 'anchors' are fixed video times (seconds) of the 3D animation: the line is split into sentences (and at '...'), and each piece starts no earlier than its anchor, so the words land on the action.",
+  "voices": {
+    "narrator": {
+      "label": "Narrator (calm, friendly, a little playful, quick pace, neutral accent)",
+      "elevenlabs_voice_name": "Elena Wren",
+      "elevenlabs_voice_id": "N2MNNfQ4izkc8hqG3xMa",
+      "model_id": "eleven_v4"
+    },
+    "john": {
+      "label": "John (confused)",
+      "elevenlabs_voice_name": "Will",
+      "elevenlabs_voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_v4"
+    }
+  },
+  "lines": [
+    {
+      "id": "01_narrator",
+      "speaker": "narrator",
+      "scene": 1,
+      "text": "If you put John in Elon Musk's new Roadster, which goes zero to sixty in under one second, he can beat a cheetah. Sort of.",
+      "tts_prompt": "[warmly] If you put John in Elon Musk's new Roadster, which goes zero to sixty in under one second, he can beat a cheetah. [mischievously] Sort of.",
+      "anchors": [
+        0.34,
+        7.0
+      ]
+    },
+    {
+      "id": "02_narrator",
+      "speaker": "narrator",
+      "scene": 2,
+      "text": "But the track is sand, and the tires just spin. So you turn on the suction fan, which presses the car into the ground for grip.",
+      "tts_prompt": "[warmly] But the track is sand, and the tires just spin. [excited] So you turn on the suction fan, which presses the car into the ground for grip.",
+      "anchors": [
+        7.87,
+        10.95
+      ]
+    },
+    {
+      "id": "03_narrator",
+      "speaker": "narrator",
+      "scene": 3,
+      "text": "But the cheetah turns sharp corners using its tail. So John fires the side thrusters to turn just as fast.",
+      "tts_prompt": "[warmly] But the cheetah turns sharp corners using its tail. [excited] So John fires the side thrusters to turn just as fast.",
+      "anchors": [
+        15.62,
+        18.62
+      ]
+    },
+    {
+      "id": "04_narrator",
+      "speaker": "narrator",
+      "scene": 4,
+      "text": "But the cheetah leaps over a river. So John hits the back thrusters and jumps it too, with a flip.",
+      "tts_prompt": "[warmly] But the cheetah leaps over a river. [excited] So John hits the back thrusters and jumps it too, with a flip.",
+      "anchors": [
+        22.62,
+        24.52
+      ]
+    },
+    {
+      "id": "05_narrator",
+      "speaker": "narrator",
+      "scene": 5,
+      "text": "But a cheetah can only sprint for about thirty seconds. So it slows down... and gets an idea.",
+      "tts_prompt": "[warmly] But a cheetah can only sprint for about thirty seconds. So it slows down... [mischievously] and gets an idea.",
+      "anchors": [
+        31.22,
+        34.24,
+        35.76
+      ]
+    },
+    {
+      "id": "06_narrator",
+      "speaker": "narrator",
+      "scene": 6,
+      "text": "But John is so fast, he can't stop at the finish line. So the thrusters fire forward, like brakes.",
+      "tts_prompt": "[warmly] But John is so fast, he can't stop at the finish line. [excited] So the thrusters fire forward, like brakes.",
+      "anchors": [
+        38.02,
+        41.38
+      ]
+    },
+    {
+      "id": "07_narrator",
+      "speaker": "narrator",
+      "scene": 7,
+      "text": "Congratulations, John beat the fastest animal on land.",
+      "tts_prompt": "[happy] Congratulations, John beat the fastest animal on land.",
+      "anchors": [
+        46.06
+      ]
+    },
+    {
+      "id": "08_john",
+      "speaker": "john",
+      "scene": 7,
+      "text": "Wait... who let you in?",
+      "tts_prompt": "[confused] Wait... [slowly] who let you in?",
+      "anchors": [
+        52.59,
+        53.67
+      ]
+    }
+  ],
+  "music_stop": 52.0
+}
