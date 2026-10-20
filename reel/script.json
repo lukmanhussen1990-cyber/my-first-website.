@@ -1,6 +1,6 @@
 {
   "title": "John drives the new Roadster through the Earth",
-  "notes": "Source of truth for every spoken word. 'text' is spoken AND shown as subtitles (spelled exactly like this). 'eleven_v3_text' adds optional ElevenLabs v3 audio tags; tags are never shown in subtitles.",
+  "notes": "Source of truth for every spoken word. 'text' is spoken AND shown as subtitles (spelled exactly like this). 'tts_text' (optional) is a respelling only for the offline voice, with the same words in the same order. 'eleven_v3_text' adds optional ElevenLabs v3 audio tags; tags are never shown in subtitles.",
   "voices": {
     "narrator": {
       "description": "calm, friendly, a little playful, quick pace, neutral accent",
@@ -39,7 +39,8 @@
       "speaker": "narrator",
       "scene": 1,
       "text": "If you put John in Elon Musk's new Roadster and dig straight down, he can drive to the other side of the Earth. Sort of.",
-      "eleven_v3_text": "If you put John in Elon Musk's new Roadster and dig straight down, he can drive to the other side of the Earth. [playfully] Sort of."
+      "eleven_v3_text": "If you put John in Elon Musk's new Roadster and dig straight down, he can drive to the other side of the Earth. [playfully] Sort of.",
+      "tts_text": "If you put John in Ee-lon Musk's new Roadster and dig straight down, he can drive to the other side of the Earth. Sort of."
     },
     {
       "id": "n2",

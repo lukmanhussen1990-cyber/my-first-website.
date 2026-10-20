@@ -103,7 +103,8 @@ def main():
 
     for line in script["lines"]:
         voice = script["voices"][line["speaker"]]
-        parts = line.get("local_parts") or [{"text": line["text"], "speed": voice["local_speed"]}]
+        # tts_text: optional respelling for this offline voice only (same words, same order)
+        parts = line.get("local_parts") or [{"text": line.get("tts_text", line["text"]), "speed": voice["local_speed"]}]
         chunks, words, sr, pos = [], [], 24000, 0
         for part in parts:
             audio, sr, spoken = kokoro.create_timed(part["text"], voice=voice["local_voice"],
@@ -117,7 +118,10 @@ def main():
                 chunks.append(np.zeros(int(sr * part["pause_after"]), dtype=np.float32))
                 pos += int(sr * part["pause_after"])
         audio = np.concatenate(chunks)
-        assert [w["word"] for w in words] == line["text"].split(), "parts must add up to the line text"
+        shown = line["text"].split()
+        assert len(words) == len(shown), "parts / tts_text must have the same words as the line text"
+        for w, tok in zip(words, shown):  # timings of the spoken words, spelling of the script
+            w["word"] = tok
         json.dump({"source": "kokoro phoneme durations", "words": words},
                   open(os.path.join(out_dir, f"{line['id']}.timing.json"), "w"), indent=1)
         audio = audio / max(1e-6, np.max(np.abs(audio))) * 0.89  # peak -1 dBFS
