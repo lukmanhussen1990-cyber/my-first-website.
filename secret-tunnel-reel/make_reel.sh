@@ -26,8 +26,9 @@ done
 for p in "${pids[@]}"; do wait "$p"; done
 
 ffmpeg -v error -y -f concat -safe 0 -i build/parts.txt -c copy build/video.mp4
-ffmpeg -v error -y -i build/video.mp4 -i build/mix.wav \
-  -vf "ass=build/captions.ass:fontsdir=assets" \
-  -map 0:v -map 1:a -c:v libx264 -preset slow -crf 17 -profile:v high -level 4.1 -pix_fmt yuv420p \
+"$PY" tools/watermark.py # channel badge, a full-frame transparent overlay
+ffmpeg -v error -y -i build/video.mp4 -i build/mix.wav -i build/watermark.png \
+  -filter_complex "[0:v]ass=build/captions.ass:fontsdir=assets[c];[c][2:v]overlay=0:0[v]" \
+  -map "[v]" -map 1:a -c:v libx264 -preset slow -crf 17 -profile:v high -level 4.1 -pix_fmt yuv420p \
   -r 24 -g 48 -c:a aac -b:a 192k -ar 48000 -movflags +faststart -shortest "$OUT"
 echo "done -> $OUT"
