@@ -198,6 +198,45 @@ vec3 soilAt(vec2 p, out float h){
       h += 0.004 * mf;
     }
   }
+  // deep down (only seen in the wide shot): a fossil ammonite, an old bone, boulders
+  {
+    vec2 q = p - vec2(-2.1, -5.4);
+    float r = length(q), R = 0.42;
+    if (r < R + 0.03) {
+      float a = atan(q.y, q.x);
+      float s = log(max(r, 0.01) / 0.02) / 0.42 - a / 6.2832; // log spiral turns
+      float rib = smoothstep(0.06, 0.0, abs(fract(s) - 0.5) - 0.36);
+      float spoke = smoothstep(0.25, 0.0, abs(fract(a * 20.0 / 6.2832 + s * 0.15) - 0.5) - 0.32) * smoothstep(0.05, 0.12, r);
+      float inside = 1.0 - smoothstep(R - 0.012, R + 0.012, r);
+      vec3 shell = s2l(vec3(0.78, 0.71, 0.6)) * (0.8 + 0.25 * vnoise(p * 30.0));
+      shell *= (1.0 - 0.55 * rib - 0.18 * spoke) * (0.75 + 0.35 * smoothstep(0.0, R, r));
+      c = mix(c * (1.0 - 0.35 * (1.0 - smoothstep(R, R + 0.04, r))), shell, inside);
+      h += 0.012 * inside * (1.0 - 0.6 * rib);
+    }
+    // a bone: a shaft with two knobbly ends
+    vec2 b0 = vec2(2.35, -6.55), b1 = vec2(3.25, -6.35);
+    vec2 ba = b1 - b0; float u = clamp(dot(p - b0, ba) / dot(ba, ba), 0.0, 1.0);
+    float sd = length(p - b0 - ba * u) - 0.055;
+    for (int k = 0; k < 2; k++) {
+      vec2 e = k == 0 ? b0 : b1, nb = normalize(vec2(-ba.y, ba.x)) * 0.06, ax = normalize(ba) * (k == 0 ? -0.03 : 0.03);
+      sd = min(sd, min(length(p - e - nb - ax) - 0.075, length(p - e + nb - ax) - 0.075));
+    }
+    float bm = 1.0 - smoothstep(-0.006, 0.006, sd);
+    c = mix(c * (1.0 - 0.3 * (1.0 - smoothstep(0.0, 0.035, sd))), s2l(vec3(0.88, 0.83, 0.71)) * (0.85 + 0.2 * vnoise(p * 25.0)), bm);
+    h += 0.015 * bm;
+    // a few big rounded boulders in the deepest layer, half sunk into the soil colour
+    vec4 cb = cellv(p * 0.75 + 7.0);
+    if (-(p.y + cb.y / 0.75) > 8.7) { // the boulder's centre is deep enough
+      float rb = 0.26 + 0.12 * fract(cb.w * 3.1);
+      float mb = (1.0 - smoothstep(rb - 0.025, rb, cb.z)) * step(0.72, cb.w);
+      vec2 nq = -cb.xy / rb;
+      float dome = sqrt(max(0.0, 1.0 - dot(nq, nq)));
+      float lit = clamp(0.55 + 0.45 * dot(normalize(vec2(-0.6, 0.5)), nq) + 0.25 * dome, 0.0, 1.0);
+      vec3 bc = mix(c * 1.25, s2l(vec3(0.56, 0.51, 0.45)), 0.55) * (0.55 + 0.6 * lit) * (0.85 + 0.25 * vnoise(p * 12.0));
+      c = mix(c * (1.0 - 0.25 * (1.0 - smoothstep(rb, rb + 0.06, cb.z)) * step(0.72, cb.w)), bc, mb);
+      h += 0.05 * mb * dome;
+    }
+  }
   // worm burrows: thin dark wiggly tunnels through the upper layers
   if (d > 0.2 && d < 3.4) {
     vec2 cs = vec2(0.85, 0.62);
