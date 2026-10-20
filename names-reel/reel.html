@@ -1,0 +1,1666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beautiful Names of Allah</title>
+<!--
+  "9 Beautiful Names of Allah" - a 60 s Instagram Reel drawn 100% with code.
+
+  render(t) draws the exact frame for time t (seconds). Everything random is seeded,
+  so every run gives identical frames. Open this file in a browser for the preview
+  (Play + scrub bar). The exporter (render_frames.mjs) loads it with ?export=1.
+
+  URL options:  ?page=Other%20Name         page name shown at the top (default NoorToon)
+                ?t=12.5                     open the preview at a given time
+-->
+<style>
+  @font-face { font-family: "Patrick Hand"; src: url("fonts/PatrickHand-Regular.ttf") format("truetype"); }
+  @font-face { font-family: "Cormorant Garamond"; src: url("fonts/CormorantGaramond-VF.ttf") format("truetype");
+               font-weight: 300 700; font-style: normal; }
+  @font-face { font-family: "Cormorant Garamond"; src: url("fonts/CormorantGaramond-Italic-VF.ttf") format("truetype");
+               font-weight: 300 700; font-style: italic; }
+  @font-face { font-family: "Amiri"; src: url("fonts/Amiri-Regular.ttf") format("truetype"); }
+
+  :root {
+    --bg: #0b0a0f;
+    --panel: #17151d;
+    --line: #2b2833;
+    --ink: #f3e6c4;
+    --muted: #9c937f;
+    --accent: #d9b46a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+               font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #stage { min-height: 100%; display: flex; flex-direction: column; align-items: center;
+           justify-content: center; gap: 12px; padding: 12px 16px; }
+  #reel { display: block; height: calc(100vh - 116px); max-height: 1920px; width: auto;
+          max-width: 100%; aspect-ratio: 9 / 16; background: #000; border-radius: 6px;
+          box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  #ui { width: min(100%, 560px); background: var(--panel); border: 1px solid var(--line);
+        border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  button { background: var(--accent); color: #1a1408; border: 0; border-radius: 8px;
+           padding: 8px 16px; font-weight: 600; cursor: pointer; min-width: 84px; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); min-width: 0; }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  #time { font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+  #info { color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  label { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 4px; }
+
+  body.export { background: #000; overflow: hidden; }
+  body.export #stage { padding: 0; display: block; }
+  body.export #reel { width: 1080px; height: 1920px; max-width: none; max-height: none; border-radius: 0; box-shadow: none; }
+  body.export #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="reel" width="1080" height="1920"></canvas>
+  <div id="ui">
+    <div class="row">
+      <button id="play">Play</button>
+      <input id="scrub" type="range" min="0" max="1799" step="1" value="0" aria-label="Scrub">
+      <span id="time">0:00.00</span>
+    </div>
+    <div id="info">
+      <span id="sceneName">Scene 1</span>
+      <span class="row">
+        <label><input type="checkbox" id="fast"> fast (half-res)</label>
+        <label><input type="checkbox" id="mute"> mute</label>
+        <button class="ghost" id="snap" title="Save this frame as PNG">PNG</button>
+      </span>
+    </div>
+    <div id="audioNote" style="color:var(--muted);font-size:12px;display:none">
+      No sound found: run the build once to create output/audio.m4a, then reload.
+    </div>
+  </div>
+</div>
+<audio id="snd" preload="auto"></audio>
+<script>
+'use strict';
+// ============================================================================
+//  CORE: constants, math, seeded random, colours, cached textures, overlays
+// ============================================================================
+const W = 1080, H = 1920, FPS = 30, DURATION = 60, TOTAL_FRAMES = FPS * DURATION;
+const QS = new URLSearchParams(location.search);
+const EXPORT = QS.has('export');
+const PAGE_NAME = QS.get('page') || 'NoorToon';
+const TAU = Math.PI * 2;
+const CREAM = [243, 230, 196];                       // #F3E6C4
+const FONT_HAND = '"Patrick Hand", "Amiri", cursive';
+const FONT_SERIF = '"Cormorant Garamond", "Amiri", serif';
+const TYPE = { start: 1.2, step: 0.035, fade: 0.12 }; // typewriter timing (seconds)
+const GOLD_AR = [232, 194, 122];                     // #E8C27A
+const Y_ARABIC = 1060, Y_NAME = 1185, Y_QURAN = 1262;   // text layer positions
+const AR_BOTTOM = 1142, AR_MAX_BASELINE = 1100;           // Arabic ink stays clear of the Name line
+const TEXT_MAX_W = 800;   // <= 880; keeps centred text out of the right 140 px
+const FADE = 0.4;         // fade from / to black at every scene edge
+
+// ---------- math ----------
+const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
+const lerp = (a, b, u) => a + (b - a) * u;
+const inv = (a, b, x) => clamp((x - a) / (b - a));
+const smooth = u => u * u * (3 - 2 * u);
+const sstep = (a, b, x) => smooth(inv(a, b, x));
+const easeOut = u => 1 - Math.pow(1 - u, 3);
+const easeIn = u => u * u * u;
+const easeInOut = u => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
+const easeOutBack = (u, s = 1.70158) => 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2);
+
+// ---------- seeded random ----------
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hash2(i, j = 0, s = 0) {                    // deterministic value in [0, 1)
+  let h = (Math.imul(i | 0, 374761393) + Math.imul(j | 0, 668265263) + Math.imul(s | 0, 1442695041)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function noise1(x, s = 0) {                          // smooth 1D value noise in [0, 1]
+  const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f);
+  return lerp(hash2(i, 7, s), hash2(i + 1, 7, s), u);
+}
+
+// ---------- colours ----------
+function hex(h) {
+  h = h.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+const mix = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+const rgba = (c, a = 1) => `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${+a.toFixed(4)})`;
+function vGrad(ctx, y0, y1, stops) {                // stops: [[pos, colour], ...]
+  const g = ctx.createLinearGradient(0, y0, 0, y1);
+  for (const [p, c, a] of stops) g.addColorStop(p, rgba(c, a ?? 1));
+  return g;
+}
+
+// ---------- canvas ----------
+const canvas = document.getElementById('reel');
+const ctx = canvas.getContext('2d', { alpha: false });
+let RS = 1;                                          // render scale (0.5 in fast preview)
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+// ---------- cached textures (built once, deterministically) ----------
+const CACHE = { grain: [], paper: null, dots: new Map() };
+
+function buildGrain(seed) {
+  const w = 580, h = 1000, c = makeCanvas(w, h), g = c.getContext('2d');
+  const img = g.createImageData(w, h), d = img.data, r = mulberry32(seed);
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (r() + r() + r() - 1.5) * 2;           // ~ gaussian, sd 1
+    const v = clamp(128 + n * 40, 0, 255);
+    d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
+function buildPaper(seed) {                          // soft painterly mottling (fbm of upscaled noise)
+  const w = 540, h = 960, c = makeCanvas(w, h), g = c.getContext('2d'), r = mulberry32(seed);
+  g.fillStyle = 'rgb(128,128,128)'; g.fillRect(0, 0, w, h);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  for (const [ow, oh, a] of [[9, 16, 0.5], [20, 36, 0.42], [45, 80, 0.34], [100, 178, 0.26], [270, 480, 0.2]]) {
+    const t = makeCanvas(ow, oh), tg = t.getContext('2d'), img = tg.createImageData(ow, oh);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = 128 + (r() - 0.5) * 255;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    tg.putImageData(img, 0, 0);
+    g.globalAlpha = a; g.drawImage(t, 0, 0, w, h);
+  }
+  g.globalAlpha = 1; g.lineCap = 'round';
+  for (let i = 0; i < 1800; i++) {                   // faint brush fibres
+    const x = r() * w, y = r() * h, len = 4 + r() * 14, ang = (r() - 0.5) * 0.6 + (r() < 0.5 ? 0 : Math.PI / 2);
+    g.strokeStyle = r() < 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+    g.lineWidth = 0.6 + r() * 0.9;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len); g.stroke();
+  }
+  return c;
+}
+
+function dotSprite(col) {                            // soft round light sprite, tinted
+  const key = col.map(Math.round).join(',');
+  let s = CACHE.dots.get(key);
+  if (s) return s;
+  s = makeCanvas(64, 64);
+  const g = s.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, rgba(col, 1)); gr.addColorStop(0.18, rgba(col, 0.85));
+  gr.addColorStop(0.45, rgba(col, 0.3)); gr.addColorStop(0.75, rgba(col, 0.07)); gr.addColorStop(1, rgba(col, 0));
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  CACHE.dots.set(key, s);
+  return s;
+}
+
+function buildCaches() {
+  for (let i = 0; i < 8; i++) CACHE.grain.push(buildGrain(9001 + i * 17));
+  CACHE.paper = buildPaper(4242);
+}
+
+// ---------- drawing helpers ----------
+function drawDot(c, x, y, r, col, a) {
+  if (a <= 0.003 || r <= 0) return;
+  c.globalAlpha = Math.min(1, a);
+  c.drawImage(dotSprite(col), x - r, y - r, r * 2, r * 2);
+  c.globalAlpha = 1;
+}
+
+// big soft light (gaussian-like falloff). mode 'screen' adds light, 'source-over' paints.
+function glow(c, x, y, r, col, a, sy = 1, mode = 'screen') {
+  if (a <= 0.002) return;
+  c.save();
+  c.globalCompositeOperation = mode;
+  c.translate(x, y); c.scale(1, sy);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, r);
+  g.addColorStop(0, rgba(col, a)); g.addColorStop(0.2, rgba(col, a * 0.78));
+  g.addColorStop(0.42, rgba(col, a * 0.42)); g.addColorStop(0.68, rgba(col, a * 0.14));
+  g.addColorStop(0.86, rgba(col, a * 0.035)); g.addColorStop(1, rgba(col, 0));
+  c.fillStyle = g; c.fillRect(-r, -r, r * 2, r * 2);
+  c.restore();
+}
+
+function softShadow(c, x, y, rx, ry, a) {           // contact shadow under objects
+  c.save();
+  c.translate(x, y); c.scale(1, ry / rx);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, rx);
+  g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(0.5, `rgba(0,0,0,${a * 0.55})`);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(0, 0, rx, 0, TAU); c.fill();
+  c.restore();
+}
+
+function rrect(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+
+function makeStars(seed, n, y0, y1) {
+  const r = mulberry32(seed), out = [];
+  for (let i = 0; i < n; i++) {
+    out.push({ x: r() * W, y: y0 + Math.pow(r(), 1.35) * (y1 - y0), s: 0.55 + Math.pow(r(), 3.2) * 2.3,
+               a: 0.25 + r() * 0.75, f: 0.25 + r() * 1.1, ph: r() * TAU });
+  }
+  return out;
+}
+function drawStars(c, stars, t, alpha = 1, col = [232, 236, 255]) {
+  c.save();
+  c.globalCompositeOperation = 'screen';
+  for (const s of stars) {
+    const tw = 0.5 + 0.5 * Math.sin(t * s.f * TAU + s.ph);
+    const a = s.a * (0.35 + 0.65 * tw) * alpha;
+    if (a < 0.015) continue;
+    if (s.s > 1.5) drawDot(c, s.x, s.y, s.s * 5.5, col, a * 0.45);
+    c.fillStyle = rgba(col, Math.min(1, a));
+    c.beginPath(); c.arc(s.x, s.y, s.s * 0.62, 0, TAU); c.fill();
+    if (s.s > 2.1) {                                 // tiny cross glint on the brightest stars
+      c.strokeStyle = rgba(col, a * 0.35); c.lineWidth = 1;
+      const L = s.s * 4 * (0.6 + 0.4 * tw);
+      c.beginPath(); c.moveTo(s.x - L, s.y); c.lineTo(s.x + L, s.y); c.moveTo(s.x, s.y - L); c.lineTo(s.x, s.y + L); c.stroke();
+    }
+  }
+  c.restore();
+}
+
+function makeDust(seed, n, box = { x0: 0, y0: 250, x1: W, y1: 1150 }) {
+  const r = mulberry32(seed), ps = [];
+  for (let i = 0; i < n; i++) {
+    ps.push({ x: box.x0 + r() * (box.x1 - box.x0), y: box.y0 + r() * (box.y1 - box.y0),
+              vx: (r() - 0.5) * 16, vy: -4 - r() * 12, amp: 6 + r() * 18, f: 0.3 + r() * 0.9,
+              tf: 0.8 + r() * 2.2, ph: r() * TAU, size: 1 + Math.pow(r(), 2) * 3, a: 0.18 + r() * 0.42 });
+  }
+  return { box, ps };
+}
+function drawDust(c, dust, t, col, alpha = 1) {
+  const { x0, y0, x1, y1 } = dust.box, bw = x1 - x0, bh = y1 - y0;
+  c.save();
+  c.globalCompositeOperation = 'screen';
+  for (const p of dust.ps) {
+    let x = p.x + p.vx * t + Math.sin(t * p.f + p.ph) * p.amp;
+    let y = p.y + p.vy * t + Math.cos(t * p.f * 0.73 + p.ph) * p.amp * 0.6;
+    x = x0 + (((x - x0) % bw) + bw) % bw;
+    y = y0 + (((y - y0) % bh) + bh) % bh;
+    const edge = Math.min(x - x0, x1 - x, y - y0, y1 - y);
+    const tw = 0.55 + 0.45 * Math.sin(t * p.tf + p.ph * 2);
+    drawDot(c, x, y, p.size * 3.2, col, p.a * tw * alpha * sstep(0, 70, edge));
+  }
+  c.restore();
+}
+
+// ---------- screen overlays ----------
+function paperTexture(c, amount) {
+  if (amount <= 0) return;
+  c.save();
+  c.globalCompositeOperation = 'soft-light';
+  c.globalAlpha = amount;
+  c.drawImage(CACHE.paper, 0, 0, W, H);
+  c.restore();
+}
+
+function vignette(c, strength = 0.8, cy = 860) {
+  c.save();
+  const k = 1.75;
+  c.translate(540, cy); c.scale(1, k);
+  const g = c.createRadialGradient(0, 0, 300, 0, 0, 820);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(0.5, `rgba(0,0,0,${strength * 0.16})`);
+  g.addColorStop(0.8, `rgba(0,0,0,${strength * 0.5})`);
+  g.addColorStop(1, `rgba(0,0,0,${strength})`);
+  c.fillStyle = g; c.fillRect(-540, -cy / k - 10, W, H / k + 20);
+  c.restore();
+}
+
+function textScrim(c, a, cy = 1190) {               // soft darkening behind the text block
+  if (a <= 0) return;
+  c.save();
+  c.translate(540, cy); c.scale(1, 0.5);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, 640);
+  g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g; c.fillRect(-640, -640, 1280, 1280);
+  c.restore();
+}
+
+function drawGrain(c, frame, amount = 0.2) {
+  const g = CACHE.grain[frame % CACHE.grain.length];
+  const ox = -Math.floor(hash2(frame, 1, 77) * 40), oy = -Math.floor(hash2(frame, 2, 77) * 40);
+  c.save();
+  c.globalCompositeOperation = 'soft-light';
+  c.globalAlpha = amount;
+  c.drawImage(g, ox, oy, g.width * 2, g.height * 2);
+  c.restore();
+}
+// ============================================================================
+//  TEXT: balanced wrapping, typewriter reveal, source line, page name
+// ============================================================================
+function wrapBalanced(str, font, maxW) {
+  ctx.font = font;
+  if (ctx.measureText(str).width <= maxW) return [str];
+  const words = str.split(' ');
+  let best = null;
+  for (let i = 1; i < words.length; i++) {           // best single break: shortest longest line
+    const a = words.slice(0, i).join(' '), b = words.slice(i).join(' ');
+    const wa = ctx.measureText(a).width, wb = ctx.measureText(b).width;
+    if (wa > maxW || wb > maxW) continue;
+    const score = Math.max(wa, wb) + (/[.?!]$/.test(a) ? 0 : 200) + (wb > wa ? 0.001 : 0);   // prefer breaking after a sentence end
+    if (!best || score < best.score) best = { score, lines: [a, b] };
+  }
+  if (best) return best.lines;
+  const lines = []; let cur = '';                   // fallback: greedy
+  for (const w of words) {
+    const tryL = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(tryL).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tryL;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+// Lay out a centred block. Every character of `str` gets an index (spaces too), so the
+// typewriter timing is "one character every TYPE.step seconds" across the whole string.
+function layoutBlock(str, px, centerY, opts = {}) {
+  const font = `${opts.weight ? opts.weight + ' ' : ''}${px}px ${opts.family || FONT_HAND}`;
+  const maxW = opts.maxW || TEXT_MAX_W, lineH = opts.lineH || Math.round(px * 1.25);
+  const lines = wrapBalanced(str, font, maxW);
+  ctx.font = font;
+  const block = { str, font, px, lines: [], count: str.length, lineH };
+  const y0 = opts.firstY ?? centerY - (lines.length - 1) * lineH / 2;
+  let gi = 0;
+  lines.forEach((ln, li) => {
+    const w = ctx.measureText(ln).width, x0 = 540 - w / 2, chars = [];
+    for (let k = 0; k < ln.length; k++) {
+      const ch = ln[k];
+      const x = ctx.measureText(ln.slice(0, k + 1)).width - ctx.measureText(ch).width; // keeps kerning
+      chars.push({ ch, x: x0 + x, idx: gi + k });
+    }
+    block.lines.push({ text: ln, w, x0, y: y0 + li * lineH, chars });
+    gi += ln.length + 1;                              // +1: the space where the line breaks
+  });
+  block.top = y0 - px * 0.55;
+  block.bottom = y0 + (lines.length - 1) * lineH + px * 0.55;
+  block.lastY = y0 + (lines.length - 1) * lineH;
+  return block;
+}
+const typedEnd = (block, t0) => t0 + (block.count - 1) * TYPE.step + TYPE.fade;
+
+function setTextShadow(c, px) {
+  c.shadowColor = 'rgba(0,0,0,0.78)';
+  c.shadowBlur = Math.round(px * 0.28);
+  c.shadowOffsetY = Math.max(2, Math.round(px * 0.045));
+}
+
+// Typewriter: char k starts fading in at t0 + k*step, fully visible after `fade` seconds.
+function drawTyped(c, block, lt, t0, alphaMul = 1, col = CREAM) {
+  if (alphaMul <= 0) return;
+  c.save();
+  c.font = block.font; c.textBaseline = 'middle'; c.textAlign = 'left';
+  c.fillStyle = rgba(col, 1);
+  setTextShadow(c, block.px);
+  for (const L of block.lines) {
+    for (const ch of L.chars) {
+      if (ch.ch === ' ') continue;
+      const a = t0 == null ? 1 : clamp((lt - t0 - ch.idx * TYPE.step) / TYPE.fade);
+      if (a <= 0) continue;
+      c.globalAlpha = a * alphaMul;
+      c.fillText(ch.ch, ch.x, L.y + (1 - a) * 5);
+    }
+  }
+  c.restore();
+}
+
+function blockTicks(block, absT0) {                  // one soft tick per visible typed letter
+  const out = [];
+  for (const L of block.lines) for (const ch of L.chars) {
+    if (ch.ch !== ' ') out.push({ t: +(absT0 + ch.idx * TYPE.step).toFixed(5), x: Math.round(ch.x) });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
+// Source line: small serif capitals, 4 px letter-spacing, 45% opacity.
+function layoutSource(str, y) {
+  const font = `600 24px ${FONT_SERIF}`;
+  ctx.font = font;
+  const sp = 4, adv = [...str].map(ch => ctx.measureText(ch).width);
+  const w = adv.reduce((s, a) => s + a, 0) + sp * (adv.length - 1);
+  let x = 540 - w / 2;
+  const chars = [...str].map((ch, i) => { const o = { ch, x }; x += adv[i] + sp; return o; });
+  return { str, font, y, w, chars };
+}
+function drawSource(c, src, alpha) {
+  if (alpha <= 0.003) return;
+  c.save();
+  c.font = src.font; c.textBaseline = 'middle'; c.textAlign = 'left';
+  c.fillStyle = rgba(CREAM, 1); c.globalAlpha = 0.45 * alpha;
+  c.shadowColor = 'rgba(0,0,0,0.8)'; c.shadowBlur = 8; c.shadowOffsetY = 2;
+  for (const ch of src.chars) c.fillText(ch.ch, ch.x, src.y + (1 - alpha) * 4);
+  c.restore();
+}
+
+// A centred line made of differently styled runs (used for "... Muhammad ﷺ").
+function layoutRuns(runs, y) {
+  let w = 0;
+  for (const r of runs) { ctx.font = r.font; r.w = ctx.measureText(r.text).width; w += r.w; }
+  let x = 540 - w / 2;
+  for (const r of runs) { r.x = x; x += r.w; }
+  return { runs, y, w };
+}
+function drawRuns(c, line, alpha, col = CREAM) {
+  c.save();
+  c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+  c.fillStyle = rgba(col, 1); c.globalAlpha = alpha;
+  for (const r of line.runs) {
+    c.font = r.font; setTextShadow(c, 34);
+    c.fillText(r.text, r.x, line.y + (r.dy || 0));
+  }
+  c.restore();
+}
+
+function drawPageName(c, alpha) {
+  if (alpha <= 0) return;
+  c.save();
+  c.font = `italic 500 30px ${FONT_SERIF}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillStyle = rgba(CREAM, 1); c.globalAlpha = 0.55 * alpha;
+  c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = 8; c.shadowOffsetY = 1;
+  c.fillText(PAGE_NAME, 540, 90);
+  c.restore();
+}
+
+// Arabic: drawn as ONE shaped string, right-to-left, so the letters join and the harakat sit
+// where the font puts them. (Drawing it letter by letter, or with letter-spacing, would break it.)
+function layoutArabic(str, px, centerY, opts = {}) {
+  const font = `${px}px "Amiri", serif`;
+  ctx.save();
+  ctx.font = font; ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const m = ctx.measureText(str);
+  ctx.restore();
+  const asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+  let baseline = centerY + (asc - desc) / 2;                      // centre the ink box on centerY ...
+  if (opts.bottom != null) baseline = Math.min(opts.maxBaseline ?? baseline, opts.bottom - desc);   // ... or seat it above the next line
+  return { str, font, px, w: m.width, baseline, top: baseline - asc, bottom: baseline + desc,
+           x0: 540 - m.actualBoundingBoxLeft, x1: 540 + m.actualBoundingBoxRight };
+}
+function drawArabic(c, A, alpha, glowAmt = 1) {
+  if (alpha <= 0.003) return;
+  c.save();
+  c.font = A.font; c.direction = 'rtl'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+  if ('letterSpacing' in c) c.letterSpacing = '0px';
+  c.globalAlpha = alpha;
+  c.fillStyle = 'rgba(0,0,0,1)';                                   // soft contact shadow for legibility
+  c.shadowColor = 'rgba(0,0,0,0.7)'; c.shadowBlur = 14; c.shadowOffsetY = 4;
+  c.globalAlpha = alpha * 0.55; c.fillText(A.str, 540, A.baseline + 2);
+  c.shadowOffsetY = 0; c.globalAlpha = alpha;
+  c.fillStyle = rgba(GOLD_AR, 1);
+  c.shadowColor = rgba([255, 200, 110], 0.6 * glowAmt); c.shadowBlur = 40;   // gentle golden glow
+  c.fillText(A.str, 540, A.baseline);
+  const g = c.createLinearGradient(0, A.top, 0, A.bottom);        // crisp gold letters
+  g.addColorStop(0, '#f8e2a8'); g.addColorStop(0.5, rgba(GOLD_AR, 1)); g.addColorStop(1, '#c99a48');
+  c.fillStyle = g; c.shadowColor = rgba([255, 225, 160], 0.4 * glowAmt); c.shadowBlur = 10;
+  c.fillText(A.str, 540, A.baseline);
+  c.restore();
+}
+// ============================================================================
+//  SCENES  (each: look = camera/overlay settings, init(S) = precompute, draw, cues)
+// ============================================================================
+const SCENE_DEFS = {};
+
+// shared landscape helper: a smooth ridge line y(x) built from seeded sines
+function makeRidge(seed, baseY, amp, waves = 4, step = 12) {
+  const r = mulberry32(seed), comps = [];
+  for (let k = 0; k < waves; k++) comps.push({ f: (0.0025 + r() * 0.006) * (1 + k * 0.9), p: r() * TAU, a: amp / (1 + k * 1.3) });
+  const pts = [];
+  for (let x = -40; x <= W + 40; x += step) {
+    let y = baseY;
+    for (const q of comps) y += Math.sin(x * q.f + q.p) * q.a;
+    pts.push([x, y]);
+  }
+  return pts;
+}
+function ridgePath(c, pts, bottom = H + 10) {
+  c.beginPath(); c.moveTo(pts[0][0], bottom);
+  for (const [x, y] of pts) c.lineTo(x, y);
+  c.lineTo(pts[pts.length - 1][0], bottom); c.closePath();
+}
+function ridgeStroke(c, pts, col, a, lw = 2) {
+  c.save(); c.strokeStyle = rgba(col, a); c.lineWidth = lw; c.lineJoin = 'round';
+  c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke(); c.restore();
+}
+const ridgeY = (pts, x) => {                          // sample ridge height at x
+  const i = clamp(Math.floor((x - pts[0][0]) / (pts[1][0] - pts[0][0])), 0, pts.length - 2);
+  const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+  return lerp(y0, y1, clamp((x - x0) / (x1 - x0)));
+};
+
+// ---- helpers shared with the first reel ----
+const GOLD = ['#fff0b8', '#e9b955', '#9c6a1c'];
+function buildMoon(R) {
+  const s = Math.ceil(R * 2 + 8), c = makeCanvas(s, s), g = c.getContext('2d'), m = s / 2;
+  const gr = g.createRadialGradient(m - R * 0.35, m + R * 0.25, R * 0.05, m, m, R);
+  gr.addColorStop(0, '#fffbea'); gr.addColorStop(0.65, '#ece6cf'); gr.addColorStop(1, '#c8c3ae');
+  g.fillStyle = gr; g.beginPath(); g.arc(m, m, R, 0, TAU); g.fill();
+  const r = mulberry32(77);
+  for (let i = 0; i < 16; i++) {                     // soft lunar maria
+    const a = r() * TAU, d = r() * R * 0.8, rr = R * (0.05 + r() * 0.17);
+    g.fillStyle = `rgba(140,138,124,${0.07 + r() * 0.1})`;
+    g.beginPath(); g.arc(m + Math.cos(a) * d, m + Math.sin(a) * d, rr, 0, TAU); g.fill();
+  }
+  g.globalCompositeOperation = 'destination-out';    // cut the crescent (opens to the upper right)
+  g.fillStyle = '#000';
+  g.beginPath(); g.arc(m + R * 0.44, m - R * 0.24, R * 0.88, 0, TAU); g.fill();
+  return c;
+}
+
+function buildWoodTable(seed, y0, w, h, light, dark) {
+  const c = makeCanvas(w, h), g = c.getContext('2d'), r = mulberry32(seed);
+  g.fillStyle = vGrad(g, 0, h, [[0, light], [1, dark]]); g.fillRect(0, 0, w, h);
+  let y = 0, k = 0;
+  while (y < h) {                                     // planks get wider towards the viewer
+    const ph = 34 + y * 0.22 + r() * 10;
+    g.fillStyle = `rgba(0,0,0,${0.25 + r() * 0.15})`; g.fillRect(0, y, w, 2 + y * 0.004);
+    g.fillStyle = 'rgba(255,200,140,0.06)'; g.fillRect(0, y + 2 + y * 0.004, w, 1.5);
+    for (let i = 0; i < 9; i++) {                    // grain lines
+      const yy = y + 4 + r() * (ph - 6), a = 0.05 + r() * 0.08, f = 0.004 + r() * 0.01, p = r() * TAU;
+      g.strokeStyle = r() < 0.6 ? `rgba(20,8,2,${a})` : `rgba(255,190,120,${a * 0.6})`;
+      g.lineWidth = 0.8 + r() * 1.6; g.beginPath();
+      for (let x = 0; x <= w; x += 24) { const yv = yy + Math.sin(x * f + p) * (2 + r() * 1.5); x ? g.lineTo(x, yv) : g.moveTo(x, yv); }
+      g.stroke();
+    }
+    if (r() < 0.5) {                                  // a knot
+      const kx = r() * w, ky = y + ph * (0.3 + r() * 0.4);
+      for (let q = 0; q < 4; q++) { g.strokeStyle = `rgba(20,8,2,${0.12 - q * 0.02})`; g.lineWidth = 1.2; g.beginPath(); g.ellipse(kx, ky, 10 + q * 7, 3 + q * 2.2, 0, 0, TAU); g.stroke(); }
+    }
+    y += ph; k++;
+  }
+  return c;
+}
+
+function catmull(pts, step) {                        // even spacing along a Catmull-Rom spline
+  const dense = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    for (let k = 0; k < 20; k++) {
+      const t = k / 20, t2 = t * t, t3 = t2 * t;
+      dense.push([0, 1].map(d => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * t + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * t2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * t3)));
+    }
+  }
+  dense.push(pts[pts.length - 1]);
+  const out = [dense[0]]; let acc = 0;
+  for (let i = 1; i < dense.length; i++) {
+    const d = Math.hypot(dense[i][0] - dense[i - 1][0], dense[i][1] - dense[i - 1][1]); acc += d;
+    if (acc >= step) { out.push(dense[i]); acc = 0; }
+  }
+  return out;
+}
+
+function goldGrad(c, x0, y0, x1, y1) {
+  const g = c.createLinearGradient(x0, y0, x1, y1);
+  g.addColorStop(0, GOLD[0]); g.addColorStop(0.45, GOLD[1]); g.addColorStop(1, GOLD[2]);
+  return g;
+}
+
+function archPath(c, x, yb, w, h) {                  // pointed arch, base at yb
+  c.beginPath(); c.moveTo(x - w / 2, yb); c.lineTo(x - w / 2, yb - h + w * 0.55);
+  c.quadraticCurveTo(x - w / 2, yb - h + w * 0.05, x, yb - h);
+  c.quadraticCurveTo(x + w / 2, yb - h + w * 0.05, x + w / 2, yb - h + w * 0.55);
+  c.lineTo(x + w / 2, yb); c.closePath();
+}
+
+function star8(c, x, y, r) {
+  c.beginPath();
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU - Math.PI / 2, rr = i % 2 ? r * 0.45 : r; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  c.closePath();
+}
+
+function glint(c, x, y, s, a) {                      // four-point sparkle
+  if (a <= 0.01) return;
+  c.save(); c.globalCompositeOperation = 'screen'; c.translate(x, y);
+  drawDot(c, 0, 0, s * 1.4, [255, 230, 170], a * 0.6);
+  c.fillStyle = `rgba(255,248,225,${a})`;
+  for (const r of [0, Math.PI / 2]) { c.save(); c.rotate(r); c.beginPath(); c.ellipse(0, 0, s, s * 0.08, 0, 0, TAU); c.fill(); c.restore(); }
+  c.restore();
+}
+
+function buildCloudDeck(seed, w, h, warm, a, body = [[46, 22, 58], [120, 52, 70]]) {
+  const c = makeCanvas(w, h), g = c.getContext('2d'), r = mulberry32(seed);
+  for (let i = 0; i < 70; i++) {
+    const x = r() * w, y = h * (0.15 + r() * 0.6), rad = 70 + r() * 150, k = y / h;
+    const col = mix(body[0], body[1], k * 0.8 + r() * 0.2);
+    glow(g, x, y, rad, col, a * (0.55 + r() * 0.45), 0.55, 'source-over');
+  }
+  for (let i = 0; i < 26; i++) {                     // warm, lit undersides
+    const x = r() * w, y = h * (0.62 + r() * 0.2), rad = 80 + r() * 140;
+    glow(g, x, y, rad, warm, 0.22 * a, 0.3, 'screen');
+  }
+  return c;
+}
+// ---------------------------------------------------------------------------
+//  0. TITLE - deep indigo night, small stars, a soft glow, a gold star rosette
+// ---------------------------------------------------------------------------
+function drawRosette(c, x, y, R, rot, a, glowAmt) {
+  c.save(); c.translate(x, y); c.rotate(rot); c.globalAlpha = a;
+  glow(c, 0, 0, R * 2.4, [255, 200, 120], 0.12 * glowAmt);
+  const star = (r, k) => {                           // eight-point star from two squares
+    c.beginPath();
+    for (let i = 0; i < 16; i++) { const ang = i / 16 * TAU + k, rr = i % 2 ? r * 0.76 : r; c.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); }
+    c.closePath();
+  };
+  c.lineJoin = 'round';
+  star(R, 0); c.fillStyle = 'rgba(232,194,122,0.06)'; c.fill();
+  c.shadowColor = `rgba(255,205,120,${0.7 * glowAmt})`; c.shadowBlur = 18;
+  c.strokeStyle = goldGrad(c, -R, -R, R, R); c.lineWidth = 3; c.stroke();
+  for (const k of [0, Math.PI / 4]) {                // the two squares
+    c.beginPath(); for (let i = 0; i < 4; i++) { const ang = i / 4 * TAU + k + Math.PI / 4; c.lineTo(Math.cos(ang) * R * 0.86, Math.sin(ang) * R * 0.86); }
+    c.closePath(); c.lineWidth = 1.6; c.stroke();
+  }
+  c.beginPath(); c.arc(0, 0, R * 0.5, 0, TAU); c.lineWidth = 1.4; c.stroke();
+  star(R * 0.42, Math.PI / 8); c.lineWidth = 1.6; c.stroke();
+  c.beginPath(); c.arc(0, 0, R * 0.1, 0, TAU); c.fillStyle = 'rgba(255,230,170,0.9)'; c.fill();
+  for (let i = 0; i < 8; i++) {                      // small dots on the star points
+    const ang = i / 8 * TAU; c.beginPath(); c.arc(Math.cos(ang) * R * 1.08, Math.sin(ang) * R * 1.08, 3, 0, TAU); c.fill();
+  }
+  c.restore();
+}
+
+SCENE_DEFS.title = {
+  look: { focusY: 650, vignette: 0.75, scrim: 0.25 },
+  init(S) {
+    const D = S.data;
+    D.stars = makeStars(2001, 320, 0, 930);
+    D.dust = makeDust(2002, 28, { x0: 40, y0: 240, x1: 1040, y1: 940 });
+    D.r1 = makeRidge(2003, 900, 12, 4); D.r2 = makeRidge(2004, 935, 18, 3);
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, br = 0.5 + 0.5 * Math.sin(lt * TAU / 3.6);
+    c.fillStyle = vGrad(c, 0, 950, [[0, hex('#03051a')], [0.45, hex('#0a0e31')], [0.8, hex('#161a48')], [1, hex('#242158')]]);
+    c.fillRect(0, 0, W, 950);
+    glow(c, 540, 600, 820, [80, 90, 210], 0.2 + 0.07 * br);          // soft breathing glow
+    glow(c, 540, 600, 380, [255, 205, 140], 0.07 + 0.05 * br);
+    drawStars(c, D.stars, lt, 1);
+    drawRosette(c, 540, 600, 175, lt * 0.03, 0.95, 0.8 + 0.2 * br);
+    c.fillStyle = '#1b1842'; ridgePath(c, D.r1); c.fill(); ridgeStroke(c, D.r1, [190, 200, 255], 0.16, 2);
+    c.fillStyle = vGrad(c, 920, 1500, [[0, hex('#0e0c27')], [1, hex('#030208')]]);
+    ridgePath(c, D.r2); c.fill(); ridgeStroke(c, D.r2, [190, 200, 255], 0.1, 2);
+    drawDust(c, D.dust, lt, [220, 220, 255], 0.75);
+  },
+  cues: S => [{ type: 'titleSwell', t: S.start, dur: S.end - S.start }],
+};
+
+// ---------------------------------------------------------------------------
+//  1. AR-RAZZAQ - glowing dates drop one by one into an empty clay bowl
+// ---------------------------------------------------------------------------
+const BOWL = { cx: 540, rimY: 760, rx: 212, ry: 46, footY: 906, footRx: 92 };
+const DATE_G = 2600;
+
+function bowlBodyPath(c) {                           // outside wall: front half of the rim down to the foot
+  const { cx, rimY, rx, footY, footRx } = BOWL;
+  c.beginPath();
+  c.moveTo(cx - rx, rimY);
+  c.ellipse(cx, rimY, rx, BOWL.ry, 0, Math.PI, 0, true);
+  c.bezierCurveTo(cx + rx + 6, rimY + 70, cx + footRx + 60, footY - 20, cx + footRx, footY);
+  c.ellipse(cx, footY, footRx, 12, 0, 0, Math.PI);
+  c.bezierCurveTo(cx - footRx - 60, footY - 20, cx - rx - 6, rimY + 70, cx - rx, rimY);
+  c.closePath();
+}
+
+function drawDate(c, x, y, rot, s, glowA) {
+  c.save(); c.translate(x, y); c.rotate(rot);
+  drawDot(c, 0, 0, 40 * s, [255, 175, 80], 0.5 * glowA);         // warm glow around each date
+  const g = c.createRadialGradient(-6 * s, -5 * s, 2, 0, 0, 24 * s);
+  g.addColorStop(0, '#f0a050'); g.addColorStop(0.4, '#b25a1c'); g.addColorStop(1, '#4a1c08');
+  c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, 23 * s, 12.5 * s, 0, 0, TAU); c.fill();
+  c.strokeStyle = 'rgba(40,12,2,0.45)'; c.lineWidth = 1.2;       // fine wrinkles
+  for (const k of [-0.4, 0.1, 0.5]) { c.beginPath(); c.moveTo(-14 * s, k * 9 * s); c.quadraticCurveTo(0, k * 12 * s - 3, 14 * s, k * 8 * s); c.stroke(); }
+  c.fillStyle = 'rgba(255,230,190,0.55)'; c.beginPath(); c.ellipse(-7 * s, -5 * s, 8 * s, 3 * s, -0.2, 0, TAU); c.fill();
+  c.restore();
+}
+
+SCENE_DEFS.razzaq = {
+  look: { focusY: 760 },
+  init(S) {
+    const D = S.data, r = mulberry32(2101);
+    D.table = buildWoodTable(2102, 860, W, 1060, hex('#5c351c'), hex('#170b05'));
+    D.dust = makeDust(2103, 26, { x0: 60, y0: 300, x1: 1020, y1: 960 });
+    const rows = [[792, [418, 470, 522, 574, 626, 668]], [770, [440, 492, 544, 596, 648]], [748, [462, 514, 566, 618]],
+                  [727, [486, 540, 594]], [707, [512, 568]], [690, [540]]];
+    D.dates = []; let t = 0.8, dt = 0.24, k = 0;
+    for (const [y, xs] of rows) for (const x of xs) {
+      D.dates.push({ x: x + (r() - 0.5) * 10, y: y + (r() - 0.5) * 5, rot: (r() - 0.5) * 1.2, s: 0.92 + r() * 0.16, tl: t, spin: (r() - 0.5) * 6, k: k++ });
+      t += dt; dt = Math.max(0.11, dt * 0.93);
+    }
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, { cx, rimY, rx, ry } = BOWL;
+    const full = D.dates.filter(d => lt >= d.tl).length / D.dates.length;
+    c.fillStyle = vGrad(c, 0, 870, [[0, hex('#120a05')], [0.6, hex('#21120a')], [1, hex('#2f1a0d')]]);
+    c.fillRect(0, 0, W, 870);
+    glow(c, cx, 700, 760, [255, 150, 70], 0.18 + 0.12 * full);       // big soft glow behind the bowl
+    glow(c, cx, 690, 330, [255, 190, 110], 0.08 + 0.12 * full);
+    c.drawImage(D.table, 0, 860);
+    c.fillStyle = 'rgba(255,190,120,0.2)'; c.fillRect(0, 860, W, 2);
+    glow(c, cx, 905, 520, [255, 160, 80], 0.16 + 0.08 * full, 0.3);
+    c.save(); c.translate(cx, BOWL.footY); c.scale(1.25, 1.25); c.translate(-cx, -BOWL.footY);   // bowl group, 25% larger
+    softShadow(c, cx + 14, 910, 250, 24, 0.7);
+    // bowl interior (back), then the dates, then the front wall covers what sits inside
+    c.beginPath(); c.ellipse(cx, rimY, rx, ry, 0, 0, TAU);
+    c.fillStyle = vGrad(c, rimY - ry, rimY + ry, [[0, hex('#2a1208')], [1, hex('#6a3216')]]); c.fill();
+    glow(c, cx, rimY + 10, rx * 0.8, [255, 170, 80], 0.1 + 0.25 * full, 0.25);
+    c.save();
+    for (const d of D.dates) {
+      if (lt < d.tl - 1.2) continue;
+      let y = d.y, x = d.x, rot = d.rot;
+      if (lt < d.tl) { const tau = d.tl - lt; y = d.y - 420 * tau - 0.5 * DATE_G * tau * tau; rot = d.rot + d.spin * tau; }
+      else { const b = lt - d.tl; if (b < 0.12) y -= Math.sin(b / 0.12 * Math.PI) * 7; }
+      if (y < -60) continue;
+      drawDate(c, x, y, rot, d.s, 0.6 + 0.4 * full);
+    }
+    c.restore();
+    bowlBodyPath(c);                                    // clay body, lit from the upper left
+    const bg = c.createLinearGradient(cx - rx, rimY, cx + rx, BOWL.footY);
+    bg.addColorStop(0, '#c0703c'); bg.addColorStop(0.45, '#8e4a24'); bg.addColorStop(1, '#3e1c0c');
+    c.fillStyle = bg; c.fill();
+    c.save(); bowlBodyPath(c); c.clip();
+    c.strokeStyle = 'rgba(60,24,8,0.25)'; c.lineWidth = 2;          // throwing rings
+    for (let k = 1; k < 7; k++) { c.beginPath(); c.ellipse(cx, rimY + k * 20, rx - k * 13, ry * 0.9, 0, 0.1, Math.PI - 0.1); c.stroke(); }
+    c.fillStyle = 'rgba(255,220,180,0.12)'; c.fillRect(cx - rx, rimY + 12, 2 * rx, 9);   // glaze band
+    glow(c, cx - 110, rimY + 50, 120, [255, 210, 160], 0.16, 0.7);
+    c.restore();
+    c.strokeStyle = '#d58a52'; c.lineWidth = 6;                       // rim
+    c.beginPath(); c.ellipse(cx, rimY, rx, ry, 0, 0, Math.PI); c.stroke();
+    c.strokeStyle = 'rgba(255,215,170,0.5)'; c.lineWidth = 1.5;
+    c.beginPath(); c.ellipse(cx, rimY - 1.5, rx - 1, ry - 1, 0, 0.15, Math.PI - 0.15); c.stroke();
+    c.restore();
+    drawDust(c, D.dust, lt, [255, 200, 140], 0.7);
+  },
+  cues: S => S.data.dates.map(d => ({ type: 'tok', t: +(S.start + d.tl).toFixed(5), k: d.k, x: Math.round(d.x) })),
+};
+
+// ---------------------------------------------------------------------------
+//  2. AS-SAMI' - rings of light rise from a prayer mat towards the stars
+// ---------------------------------------------------------------------------
+const MAT = { far: 800, near: 918, fx0: 372, fx1: 708, nx0: 296, nx1: 784 };
+const matPt = (u, v) => [lerp(lerp(MAT.fx0, MAT.nx0, v), lerp(MAT.fx1, MAT.nx1, v), u), lerp(MAT.far, MAT.near, v)];
+const RINGS = { t0: 0.8, every: 0.72, n: 6, rise: 2.9 };
+
+function matPoly(c, pts) { c.beginPath(); pts.forEach(([u, v], i) => { const [x, y] = matPt(u, v); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); }
+
+function drawLantern(c, x, y, lit, lt) {             // small brass lantern standing at (x, y)
+  const fl = 0.9 + 0.1 * Math.sin(lt * 23) * Math.sin(lt * 7.3);
+  glow(c, x, y - 52, 260, [255, 170, 80], 0.32 * lit * fl);
+  glow(c, x, y - 52, 90, [255, 210, 140], 0.5 * lit * fl);
+  c.save();
+  c.fillStyle = '#5a3d18'; c.fillRect(x - 26, y - 10, 52, 10);      // base
+  c.fillStyle = `rgba(255,214,150,${0.35 + 0.4 * lit})`; c.fillRect(x - 20, y - 86, 40, 76);   // glass
+  const fg = c.createRadialGradient(x, y - 50, 1, x, y - 50, 16);   // flame
+  fg.addColorStop(0, `rgba(255,255,230,${lit})`); fg.addColorStop(0.5, `rgba(255,190,90,${0.8 * lit})`); fg.addColorStop(1, 'rgba(255,140,40,0)');
+  c.fillStyle = fg; c.beginPath(); c.ellipse(x, y - 50, 7 * fl, 15 * fl, 0, 0, TAU); c.fill();
+  c.strokeStyle = '#8a6228'; c.lineWidth = 3;                        // frame
+  c.strokeRect(x - 20, y - 86, 40, 76);
+  c.beginPath(); c.moveTo(x, y - 86); c.lineTo(x, y - 10); c.stroke();
+  c.fillStyle = '#7a5520'; c.beginPath(); c.moveTo(x - 26, y - 86); c.lineTo(x, y - 110); c.lineTo(x + 26, y - 86); c.closePath(); c.fill();
+  c.strokeStyle = '#a07a38'; c.lineWidth = 2.5; c.beginPath(); c.arc(x, y - 116, 7, 0, TAU); c.stroke();
+  c.restore();
+}
+
+SCENE_DEFS.sami = {
+  look: { focusY: 720 },
+  init(S) {
+    const D = S.data;
+    D.stars = makeStars(2201, 200, 0, 520);
+    D.dust = makeDust(2202, 26, { x0: 60, y0: 260, x1: 1020, y1: 960 });
+    D.floor = buildWoodTable(2203, 780, W, 1140, hex('#16213e'), hex('#03050c'));
+  },
+  ringU: (k, lt) => (lt - (RINGS.t0 + k * RINGS.every)) / RINGS.rise,
+  draw(c, lt, dur, S) {
+    const D = S.data;
+    c.fillStyle = vGrad(c, 0, 790, [[0, hex('#02040f')], [0.45, hex('#061031')], [1, hex('#0c1a44')]]);
+    c.fillRect(0, 0, W, 790);
+    drawStars(c, D.stars, lt, 0.9);                                  // the room opens up to the stars
+    c.fillStyle = vGrad(c, 300, 790, [[0, [6, 16, 49], 0], [1, [12, 26, 68], 0.85]]); c.fillRect(0, 300, W, 490);
+    glow(c, 540, 640, 760, [70, 100, 220], 0.18);
+    c.drawImage(D.floor, 0, 780);
+    c.fillStyle = 'rgba(150,175,255,0.14)'; c.fillRect(0, 780, W, 2);
+    softShadow(c, 540, 872, 300, 50, 0.45);
+    // prayer mat in perspective: deep red field, gold border, arch at the far end, fringe
+    matPoly(c, [[0, 0], [1, 0], [1, 1], [0, 1]]);
+    c.fillStyle = vGrad(c, MAT.far, MAT.near, [[0, hex('#4a0d1a')], [1, hex('#7a1a2a')]]); c.fill();
+    c.save(); matPoly(c, [[0, 0], [1, 0], [1, 1], [0, 1]]); c.clip();
+    c.strokeStyle = rgba(GOLD_AR, 0.75); c.lineWidth = 3;
+    matPoly(c, [[0.06, 0.07], [0.94, 0.07], [0.94, 0.93], [0.06, 0.93]]); c.stroke();
+    c.lineWidth = 1.5; matPoly(c, [[0.11, 0.14], [0.89, 0.14], [0.89, 0.86], [0.11, 0.86]]); c.stroke();
+    c.beginPath();                                                   // mihrab arch motif
+    const arch = []; for (let i = 0; i <= 24; i++) { const a = i / 24; arch.push([0.25 + 0.5 * a, 0.2 + 0.38 * Math.pow(Math.abs(a - 0.5) * 2, 1.6)]); }
+    arch.forEach(([u, v], i) => { const [x, y] = matPt(u, v); i ? c.lineTo(x, y) : c.moveTo(x, y); });
+    for (const [u, v] of [[0.75, 0.82], [0.25, 0.82]]) { const [x, y] = matPt(u, v); c.lineTo(x, y); }
+    c.closePath(); c.lineWidth = 2.5; c.stroke();
+    c.fillStyle = rgba(GOLD_AR, 0.18); c.fill();
+    for (let i = 0; i < 5; i++) { const [x, y] = matPt(0.3 + i * 0.1, 0.7); c.beginPath(); c.moveTo(x, y - 6); c.lineTo(x + 6, y); c.lineTo(x, y + 6); c.lineTo(x - 6, y); c.closePath(); c.fillStyle = rgba(GOLD_AR, 0.6); c.fill(); }
+    glow(c, 640, 860, 260, [255, 170, 90], 0.18, 0.5);               // lamp light on the mat
+    c.restore();
+    c.strokeStyle = rgba(GOLD_AR, 0.7); c.lineWidth = 1.6;           // fringe on the near edge
+    for (let i = 0; i <= 26; i++) { const [x, y] = matPt(i / 26, 1); c.beginPath(); c.moveTo(x, y); c.lineTo(x + (i / 26 - 0.5) * 6, y + 14); c.stroke(); }
+    drawLantern(c, 860, 884, 1, lt);
+    // soft rings of light rising slowly, like a whisper going up to the stars
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < RINGS.n; k++) {
+      const u = this.ringU(k, lt);
+      if (u <= 0 || u >= 1) continue;
+      const e = easeOut(u), y = 858 - 600 * e, rx = 80 + 190 * u, ry = rx * (0.26 + 0.1 * u), a = Math.pow(Math.sin(Math.PI * u), 0.9);
+      c.strokeStyle = `rgba(255,232,190,${0.12 * a})`; c.lineWidth = 16; c.beginPath(); c.ellipse(540, y, rx, ry, 0, 0, TAU); c.stroke();
+      c.strokeStyle = `rgba(255,240,215,${0.5 * a})`; c.lineWidth = 2.2; c.beginPath(); c.ellipse(540, y, rx, ry, 0, 0, TAU); c.stroke();
+      for (let j = 0; j < 6; j++) { const ang = j / 6 * TAU + lt * 0.6 + k; drawDot(c, 540 + Math.cos(ang) * rx, y + Math.sin(ang) * ry, 7, [255, 236, 200], 0.5 * a); }
+    }
+    c.restore();
+    drawDust(c, D.dust, lt, [200, 210, 255], 0.65);
+  },
+  cues(S) { return [...Array(RINGS.n).keys()].map(k => ({ type: 'airRise', t: +(S.start + RINGS.t0 + k * RINGS.every).toFixed(5), dur: RINGS.rise, k })); },
+};
+// ---------------------------------------------------------------------------
+//  3. AL-BASIR - deep layered water; a tiny pearl glows and a thin beam reaches it
+// ---------------------------------------------------------------------------
+const PEARL = { x: 540, y: 880, r: 10, glow0: 1.0, beam0: 1.6, beam1: 2.8, top: [622, -40] };
+
+SCENE_DEFS.basir = {
+  look: { focusY: 760, vignette: 0.8, scrim: 0.25 },
+  init(S) {
+    const D = S.data, r = mulberry32(2301);
+    D.snow = makeDust(2302, 46, { x0: 0, y0: 120, x1: W, y1: 960 });
+    for (const p of D.snow.ps) { p.vy = 6 + Math.abs(p.vy) * 0.5; p.a *= 0.8; }      // marine snow sinks slowly
+    D.bands = Array.from({ length: 6 }, (_, i) => ({ y: 260 + i * 120 + r() * 40, a: 0.1 + r() * 0.12, sp: (r() - 0.5) * 14, f: 0.004 + r() * 0.004, ph: r() * TAU }));
+    D.floor = makeRidge(2303, 905, 10, 4);
+    D.rocks = Array.from({ length: 9 }, () => ({ x: r() * W, y: 905 + r() * 30, rx: 30 + r() * 70, ry: 12 + r() * 20 })).filter(q => Math.abs(q.x - 540) > 120);
+    D.weeds = Array.from({ length: 10 }, () => ({ x: r() * W, h: 60 + r() * 120, ph: r() * TAU })).filter(q => Math.abs(q.x - 540) > 150);
+    D.bubbles = Array.from({ length: 14 }, () => ({ x: 120 + r() * 840, sp: 40 + r() * 50, ph: r(), s: 1.5 + r() * 2.5 }));
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, P = PEARL;
+    c.fillStyle = vGrad(c, 0, 980, [[0, hex('#0b3a66')], [0.35, hex('#06264a')], [0.7, hex('#03142a')], [1, hex('#010710')]]);
+    c.fillRect(0, 0, W, H);
+    c.save(); c.globalCompositeOperation = 'screen';               // faint light from the far surface
+    for (let k = 0; k < 6; k++) {
+      const x = 180 + k * 150 + Math.sin(lt * 0.4 + k) * 30, g = c.createLinearGradient(x, 0, x + 120, 700);
+      g.addColorStop(0, 'rgba(120,180,230,0.10)'); g.addColorStop(1, 'rgba(120,180,230,0)');
+      c.fillStyle = g; c.beginPath(); c.moveTo(x - 30, 0); c.lineTo(x + 30, 0); c.lineTo(x + 170, 700); c.lineTo(x + 60, 700); c.closePath(); c.fill();
+    }
+    c.restore();
+    for (const b of D.bands) {                                       // layers of dark water drifting
+      c.fillStyle = `rgba(0,8,20,${b.a})`; c.beginPath(); c.moveTo(-20, H);
+      for (let x = -20; x <= W + 20; x += 30) c.lineTo(x, b.y + Math.sin(x * b.f + b.ph + lt * 0.3) * 14 + lt * b.sp * 0.2);
+      c.lineTo(W + 20, H); c.closePath(); c.fill();
+    }
+    glow(c, P.x, P.y - 120, 640, [40, 110, 170], 0.16);
+    c.fillStyle = vGrad(c, 890, 1300, [[0, hex('#0d1c24')], [1, hex('#010406')]]);   // the sea floor
+    ridgePath(c, D.floor); c.fill(); ridgeStroke(c, D.floor, [120, 170, 200], 0.1, 2);
+    for (const q of D.rocks) { c.fillStyle = 'rgba(4,10,14,0.9)'; c.beginPath(); c.ellipse(q.x, q.y, q.rx, q.ry, 0, Math.PI, TAU); c.fill(); }
+    c.save(); c.strokeStyle = 'rgba(6,24,30,0.95)'; c.lineCap = 'round';
+    for (const q of D.weeds) {
+      c.lineWidth = 7; c.beginPath(); c.moveTo(q.x, 915);
+      c.quadraticCurveTo(q.x + Math.sin(lt * 0.9 + q.ph) * 18, 915 - q.h * 0.6, q.x + Math.sin(lt * 0.9 + q.ph + 1) * 26, 915 - q.h); c.stroke();
+    }
+    c.restore();
+    const beam = easeInOut(inv(P.beam0, P.beam1, lt)), arrived = sstep(P.beam1, P.beam1 + 0.5, lt);
+    const g0 = sstep(P.glow0, P.glow0 + 1.0, lt) * 0.45 + arrived * 0.55;
+    if (beam > 0) {                                                  // the thin beam reaching down
+      const [tx, ty] = P.top, ex = lerp(tx, P.x, beam), ey = lerp(ty, P.y - 4, beam);
+      c.save(); c.globalCompositeOperation = 'screen';
+      const g = c.createLinearGradient(tx, ty, ex, ey);
+      g.addColorStop(0, 'rgba(200,230,255,0.05)'); g.addColorStop(0.7, 'rgba(210,235,255,0.22)'); g.addColorStop(1, 'rgba(235,248,255,0.45)');
+      c.fillStyle = g; c.beginPath(); c.moveTo(tx - 9, ty); c.lineTo(tx + 9, ty); c.lineTo(ex + 3, ey); c.lineTo(ex - 3, ey); c.closePath(); c.fill();
+      drawDot(c, ex, ey, 18, [220, 240, 255], 0.5 * (1 - arrived));
+      c.restore();
+    }
+    softShadow(c, P.x, P.y + 26, 120, 14, 0.5);
+    // open oyster shell holding the pearl (drawn 1.6x around the pearl)
+    c.save(); c.translate(P.x, P.y); c.scale(1.6, 1.6); c.translate(-P.x, -P.y);
+    c.fillStyle = vGrad(c, P.y - 78, P.y, [[0, hex('#4a5a60')], [1, hex('#1a2328')]]);   // upper shell, opened back
+    c.beginPath(); c.moveTo(P.x - 62, P.y + 4); c.quadraticCurveTo(P.x - 60, P.y - 70, P.x, P.y - 78); c.quadraticCurveTo(P.x + 60, P.y - 70, P.x + 62, P.y + 4); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(170,200,210,0.22)'; c.lineWidth = 1;                         // ridges on the lid
+    for (let k = -4; k <= 4; k++) { c.beginPath(); c.moveTo(P.x + k * 3, P.y - 2); c.quadraticCurveTo(P.x + k * 12, P.y - 40, P.x + k * 7, P.y - 74 + Math.abs(k) * 4); c.stroke(); }
+    const mop = c.createLinearGradient(P.x - 50, P.y - 60, P.x + 50, P.y);              // mother of pearl inside
+    mop.addColorStop(0, `rgba(170,200,230,${0.3 + 0.35 * g0})`); mop.addColorStop(0.5, `rgba(235,205,225,${0.25 + 0.3 * g0})`); mop.addColorStop(1, `rgba(150,220,210,${0.3 + 0.3 * g0})`);
+    c.fillStyle = mop; c.beginPath(); c.moveTo(P.x - 50, P.y); c.quadraticCurveTo(P.x - 48, P.y - 58, P.x, P.y - 64); c.quadraticCurveTo(P.x + 48, P.y - 58, P.x + 50, P.y); c.closePath(); c.fill();
+    glow(c, P.x, P.y - 20, 70, [210, 230, 255], 0.3 * g0, 0.8);
+    c.fillStyle = vGrad(c, P.y - 6, P.y + 24, [[0, hex('#3c4a50')], [1, hex('#10181c')]]);   // lower shell
+    c.beginPath(); c.moveTo(P.x - 66, P.y); c.quadraticCurveTo(P.x, P.y + 40, P.x + 66, P.y); c.quadraticCurveTo(P.x, P.y + 12, P.x - 66, P.y); c.fill();
+    c.strokeStyle = 'rgba(160,190,200,0.25)'; c.lineWidth = 1.2;
+    for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(P.x + k * 8, P.y + 14); c.lineTo(P.x + k * 18, P.y + 2); c.stroke(); }
+    c.restore();
+    // the pearl: tiny, glowing softly, then brighter when the light arrives
+    glow(c, P.x, P.y - 6, 190, [190, 220, 255], 0.35 * g0);
+    drawDot(c, P.x, P.y - 6, 40, [235, 240, 255], 0.55 * g0);
+    const pg = c.createRadialGradient(P.x - 3, P.y - 9, 1, P.x, P.y - 6, P.r);
+    pg.addColorStop(0, '#ffffff'); pg.addColorStop(0.5, rgba(mix([150, 160, 175], [245, 235, 245], g0))); pg.addColorStop(1, rgba(mix([60, 70, 85], [190, 200, 225], g0)));
+    c.fillStyle = pg; c.beginPath(); c.arc(P.x, P.y - 6, P.r, 0, TAU); c.fill();
+    if (arrived > 0) glint(c, P.x, P.y - 6, 34 + 6 * Math.sin(lt * 5), arrived * (0.7 + 0.3 * Math.sin(lt * 7)));
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (const b of D.bubbles) {                                     // a few tiny rising bubbles
+      const y = 900 - ((lt * b.sp + b.ph * 700) % 760), x = b.x + Math.sin(lt * 2 + b.ph * 9) * 6;
+      c.strokeStyle = 'rgba(170,210,240,0.35)'; c.lineWidth = 1; c.beginPath(); c.arc(x, y, b.s, 0, TAU); c.stroke();
+    }
+    c.restore();
+    drawDust(c, D.snow, lt, [150, 200, 230], 0.6);
+  },
+  cues: S => [{ type: 'underwater', t: S.start, end: S.end }, { type: 'pearlShimmer', t: S.start + PEARL.beam1, end: S.end, glow0: S.start + PEARL.glow0 }],
+};
+
+// ---------------------------------------------------------------------------
+//  4. AL-LATIF - a seed cracks, a root goes down, a sprout breaks into the light
+// ---------------------------------------------------------------------------
+const SPROUT = { surf: 560, sx: 540, sy: 760, crack: 1.0, root0: 1.2, root1: 3.0, up0: 1.5, up1: 3.6, leaf0: 3.7, leaf1: 4.4 };
+function polyUpTo(c, pts, frac) {                    // stroke a polyline up to a fraction of its length
+  const n = Math.max(1, Math.floor(frac * (pts.length - 1)));
+  c.beginPath(); for (let i = 0; i <= n; i++) i ? c.lineTo(...pts[i]) : c.moveTo(...pts[i]); c.stroke();
+  return pts[n];
+}
+
+SCENE_DEFS.latif = {
+  look: { focusY: 700, scrim: 0.3 },
+  init(S) {
+    const D = S.data, r = mulberry32(2401), { sx, sy, surf } = SPROUT;
+    D.surface = makeRidge(2402, surf, 5, 5, 8);
+    D.strata = [650, 735, 830, 930, 1040].map((y, i) => makeRidge(2403 + i, y, 10, 3));
+    D.pebbles = Array.from({ length: 46 }, () => ({ x: r() * W, y: surf + 30 + r() * 560, rx: 4 + r() * 14, ry: 3 + r() * 8, a: r() * 6.28, l: r() })).filter(p => Math.hypot(p.x - sx, (p.y - sy) * 1.3) > 70);
+    D.grains = Array.from({ length: 420 }, () => [r() * W, surf + 8 + r() * 640, r()]);
+    D.root = []; for (let i = 0; i <= 40; i++) { const u = i / 40; D.root.push([sx - 4 + Math.sin(u * 5) * 14 - u * 20, sy + 22 + u * 180]); }
+    D.side = [[0.35, -1], [0.5, 1], [0.68, -1], [0.82, 1]].map(([u, d]) => { const [x, y] = D.root[Math.round(u * 40)]; return { u, pts: [0, 1, 2, 3, 4].map(k => [x + d * k * 9, y + k * 6 + k * k * 1.5]) }; });
+    D.stem = []; for (let i = 0; i <= 50; i++) { const u = i / 50; D.stem.push([sx + 6 + Math.sin(u * 3.2) * 18, sy - 20 - u * (sy - surf - 2)]); }
+    D.crumbs = Array.from({ length: 16 }, () => ({ vx: (r() - 0.5) * 220, vy: -(120 + r() * 200), s: 2 + r() * 3 }));
+    D.dust = makeDust(2404, 22, { x0: 60, y0: 120, x1: 1020, y1: 560 });
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, { sx, sy, surf } = SPROUT;
+    c.fillStyle = vGrad(c, 0, surf, [[0, hex('#7a5a34')], [0.5, hex('#4a3420')], [1, hex('#2e1f12')]]);   // morning light above
+    c.fillRect(0, 0, W, surf + 10);
+    glow(c, 540, -40, 760, [255, 215, 150], 0.4);
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 7; k++) {                                    // soft rays of morning light
+      const x = 120 + k * 140, g = c.createLinearGradient(0, 0, 0, surf);
+      g.addColorStop(0, 'rgba(255,220,160,0.12)'); g.addColorStop(1, 'rgba(255,220,160,0)');
+      c.fillStyle = g; c.beginPath(); c.moveTo(x - 20, 0); c.lineTo(x + 30, 0); c.lineTo(x + 90, surf); c.lineTo(x + 20, surf); c.closePath(); c.fill();
+    }
+    c.restore();
+    c.fillStyle = vGrad(c, surf, 1500, [[0, hex('#4a2f19')], [0.2, hex('#33200f')], [0.5, hex('#211408')], [1, hex('#0c0703')]]);   // soil
+    ridgePath(c, D.surface); c.fill();
+    for (const [i, st] of D.strata.entries()) { c.fillStyle = `rgba(${i % 2 ? '0,0,0' : '120,80,45'},0.12)`; ridgePath(c, st); c.fill(); }
+    for (const [x, y, k] of D.grains) { c.fillStyle = k < 0.5 ? 'rgba(150,105,65,0.35)' : 'rgba(0,0,0,0.35)'; c.fillRect(x, y, 2, 2); }
+    for (const p of D.pebbles) {
+      c.save(); c.translate(p.x, p.y); c.rotate(p.a);
+      c.fillStyle = rgba(mix([60, 44, 30], [120, 96, 70], p.l)); c.beginPath(); c.ellipse(0, 0, p.rx, p.ry, 0, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(255,230,200,0.18)'; c.beginPath(); c.ellipse(-p.rx * 0.3, -p.ry * 0.3, p.rx * 0.4, p.ry * 0.3, 0, 0, TAU); c.fill();
+      c.restore();
+    }
+    ridgeStroke(c, D.surface, [255, 210, 150], 0.35, 2);
+    glow(c, sx, sy, 230, [255, 200, 120], 0.08 + 0.1 * sstep(1, 3.5, lt));   // soft glow around the seed
+    // root grows down, with fine side roots
+    const pr = easeOut(inv(SPROUT.root0, SPROUT.root1, lt));
+    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+    if (pr > 0) {
+      c.strokeStyle = 'rgba(240,225,190,0.9)'; c.lineWidth = 7; polyUpTo(c, D.root, pr);
+      c.strokeStyle = 'rgba(240,225,190,0.6)'; c.lineWidth = 2.4;
+      for (const sd of D.side) if (pr > sd.u) polyUpTo(c, sd.pts, clamp((pr - sd.u) / 0.15));
+    }
+    // sprout pushes up (hooked while it is still in the soil)
+    const ps = easeInOut(inv(SPROUT.up0, SPROUT.up1, lt)), out = lt >= SPROUT.up1;
+    if (ps > 0) {
+      c.strokeStyle = '#8cc46a'; c.lineWidth = 11;
+      const [hx, hy] = polyUpTo(c, D.stem, ps);
+      c.strokeStyle = 'rgba(220,255,190,0.5)'; c.lineWidth = 3; polyUpTo(c, D.stem.map(([x, y]) => [x - 3, y]), ps);
+      const above = easeOut(inv(SPROUT.up1, SPROUT.leaf1, lt)), tipY = hy - above * 80;
+      if (!out) {                                                     // the hook-shaped tip
+        c.strokeStyle = '#8cc46a'; c.lineWidth = 11; c.beginPath(); c.moveTo(hx, hy); c.quadraticCurveTo(hx + 6, hy - 24, hx + 24, hy - 12); c.stroke();
+      } else {
+        c.strokeStyle = '#8cc46a'; c.lineWidth = 11; c.beginPath(); c.moveTo(hx, hy); c.lineTo(hx + 2, tipY); c.stroke();
+        glow(c, hx, surf - 20, 160, [255, 230, 160], 0.35 * (1 - clamp((lt - SPROUT.up1) / 1.2)) + 0.15);
+        const lo = easeOutBack(inv(SPROUT.leaf0, SPROUT.leaf1, lt), 1.6);   // two small leaves open in the light
+        for (const d of [-1, 1]) {
+          c.save(); c.translate(hx + 2, tipY); c.rotate(d * (0.15 + 1.05 * lo));
+          const lg = c.createLinearGradient(0, -40, 0, 0); lg.addColorStop(0, '#b8e890'); lg.addColorStop(1, '#4f9a34');
+          c.fillStyle = lg; c.beginPath(); c.ellipse(0, -36 * Math.max(0.2, lo), 18 * Math.max(0.3, lo), 39 * Math.max(0.2, lo), 0, 0, TAU); c.fill();
+          c.strokeStyle = 'rgba(40,90,30,0.5)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -66 * lo); c.stroke();
+          c.restore();
+        }
+        const f = lt - SPROUT.up1;                                    // soil crumbs pop up
+        for (const q of D.crumbs) { const x = hx + q.vx * f, y = surf - 4 + q.vy * f + 0.5 * 900 * f * f; if (y < surf + 4) { c.fillStyle = '#4a2f19'; c.fillRect(x, y, q.s, q.s); } }
+      }
+    }
+    c.restore();
+    // the seed (cracks open at 1 s)
+    const ck = sstep(SPROUT.crack, SPROUT.crack + 0.3, lt), sh = lt < SPROUT.crack ? Math.sin(lt * 40) * sstep(0.5, 1.0, lt) * 1.5 : 0;
+    for (const d of [-1, 1]) {
+      c.save(); c.translate(sx + sh + d * ck * 9, sy); c.rotate(-0.4 + d * ck * 0.18);
+      const g = c.createLinearGradient(-38, -22, 38, 22); g.addColorStop(0, '#d0a066'); g.addColorStop(1, '#5e3c1c');
+      c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, 38, 22, 0, d < 0 ? Math.PI / 2 : -Math.PI / 2, d < 0 ? Math.PI * 1.5 : Math.PI / 2); c.closePath(); c.fill();
+      c.restore();
+    }
+    if (ck > 0) { c.strokeStyle = `rgba(30,15,5,${ck})`; c.lineWidth = 2.5; c.beginPath(); c.moveTo(sx - 8, sy - 20); c.lineTo(sx + 3, sy); c.lineTo(sx - 3, sy + 20); c.stroke(); }
+    drawDust(c, D.dust, lt, [255, 225, 170], 0.7);
+  },
+  cues: S => [{ type: 'soil', t: S.start + 0.6, crack: S.start + SPROUT.crack, end: S.start + SPROUT.up1 }, { type: 'pop', t: S.start + SPROUT.up1 }],
+};
+
+// ---------------------------------------------------------------------------
+//  5. AL-GHAFUR - soft rain washes the ink stains off a sheet of paper
+// ---------------------------------------------------------------------------
+const PAPER = { fy: 470, ny: 900, fx0: 342, fx1: 738, nx0: 268, nx1: 812 };
+const paperPt = (u, v) => [lerp(lerp(PAPER.fx0, PAPER.nx0, v), lerp(PAPER.fx1, PAPER.nx1, v), u), lerp(PAPER.fy, PAPER.ny, v)];
+
+SCENE_DEFS.ghafur = {
+  look: { focusY: 700, scrim: 0.32 },
+  init(S) {
+    const D = S.data, r = mulberry32(2501);
+    D.stains = Array.from({ length: 7 }, (_, i) => {
+      const u = 0.16 + r() * 0.68, v = 0.14 + r() * 0.62, rad = 0.05 + r() * 0.07, n = 14;
+      const shape = Array.from({ length: n }, (_, k) => rad * (0.7 + 0.5 * r()) * (k % 3 === 0 ? 1.15 : 1));
+      const drops = Array.from({ length: 6 }, () => [u + (r() - 0.5) * rad * 4, v + (r() - 0.5) * rad * 3, 0.004 + r() * 0.01]);
+      return { u, v, rad, shape, drops, tw: 1.1 + i * 0.32 + r() * 0.25 };
+    });
+    D.scribbles = Array.from({ length: 3 }, (_, i) => ({ tw: 1.4 + i * 0.5, pts: Array.from({ length: 14 }, (_, k) => [0.2 + k * 0.045, 0.3 + i * 0.2 + Math.sin(k * 1.7 + i) * 0.03 + (r() - 0.5) * 0.02]) }));
+    D.rain = Array.from({ length: 170 }, () => ({ x: r() * (W + 200) - 100, ph: r(), sp: 1.1 + r() * 0.7, len: 26 + r() * 30, a: 0.15 + r() * 0.25 }));
+    D.splash = Array.from({ length: 90 }, () => ({ u: r(), v: r(), t: 0.5 + r() * 4.6 }));
+    D.dust = makeDust(2502, 18, { x0: 60, y0: 300, x1: 1020, y1: 960 });
+  },
+  paperPath(c) { c.beginPath(); for (const [u, v] of [[0, 0], [1, 0], [1, 1], [0, 1]]) c.lineTo(...paperPt(u, v)); c.closePath(); },
+  draw(c, lt, dur, S) {
+    const D = S.data, rain = sstep(0.3, 1.0, lt), clean = sstep(4.0, 4.7, lt);
+    c.fillStyle = vGrad(c, 0, 450, [[0, hex('#070d18')], [1, hex('#142034')]]); c.fillRect(0, 0, W, 450);
+    c.fillStyle = vGrad(c, 440, 1500, [[0, hex('#1b2738')], [0.3, hex('#111a28')], [1, hex('#04070c')]]); c.fillRect(0, 440, W, 1480);
+    c.fillStyle = 'rgba(160,190,220,0.16)'; c.fillRect(0, 440, W, 2);
+    glow(c, 540, 680, 720, [110, 140, 190], 0.2 + 0.12 * clean);
+    softShadow(c, 548, 905, 300, 26, 0.6);
+    this.paperPath(c);
+    c.fillStyle = vGrad(c, PAPER.fy, PAPER.ny, [[0, hex('#d6d2c6')], [1, hex('#ece8dc')]]); c.fill();
+    c.save(); this.paperPath(c); c.clip();
+    for (let k = 0; k < 30; k++) { const [x, y] = paperPt(hash2(k, 1, 2503), hash2(k, 2, 2503)); c.fillStyle = 'rgba(120,110,95,0.05)'; c.fillRect(x, y, 40, 1); }   // paper fibres
+    for (const s of D.stains) {                                       // ink stains, washing away one by one
+      const w = sstep(s.tw, s.tw + 1.4, lt), a = 1 - w;
+      if (a <= 0.01) continue;
+      const grow = 1 + 0.25 * w;
+      const blob = k2 => {                                           // smooth outline through midpoints
+        const pts = s.shape.map((rr, k) => { const ang = k / s.shape.length * TAU; return paperPt(s.u + Math.cos(ang) * rr * grow * k2, s.v + Math.sin(ang) * rr * grow * k2 * 1.3); });
+        const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+        c.beginPath(); c.moveTo(...mid(pts[pts.length - 1], pts[0]));
+        pts.forEach((p, k) => c.quadraticCurveTo(p[0], p[1], ...mid(p, pts[(k + 1) % pts.length])));
+        c.closePath();
+      };
+      blob(1.14); c.fillStyle = `rgba(30,40,80,${0.22 * a})`; c.fill();   // ink bleeding into the paper
+      blob(1); c.fillStyle = `rgba(16,20,40,${0.85 * a})`; c.fill();
+      c.strokeStyle = `rgba(5,8,20,${0.5 * a})`; c.lineWidth = 1.5; c.stroke();
+      for (const [du, dv, dr] of s.drops) { const [x, y] = paperPt(du, dv); c.beginPath(); c.arc(x, y, dr * 600 * (1 - 0.5 * w), 0, TAU); c.fill(); }
+      if (w > 0) {                                                    // ink running towards the edge
+        for (let k = -1; k <= 1; k++) {
+          const [x0, y0] = paperPt(s.u + k * s.rad * 0.5, s.v), [x1, y1] = paperPt(s.u + k * s.rad * 0.6, Math.min(1, s.v + w * 0.4));
+          const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, `rgba(30,40,70,${0.35 * a})`); g.addColorStop(1, 'rgba(30,40,70,0)');
+          c.strokeStyle = g; c.lineWidth = 5; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+        }
+      }
+    }
+    for (const sc of D.scribbles) {
+      const a = 1 - sstep(sc.tw, sc.tw + 1.4, lt); if (a <= 0.01) continue;
+      c.strokeStyle = `rgba(16,20,40,${0.75 * a})`; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath();
+      sc.pts.forEach(([u, v], k) => { const [x, y] = paperPt(u, v); k ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
+    }
+    for (const sp of D.splash) {                                      // little splash rings where drops land
+      const f = lt - sp.t; if (f < 0 || f > 0.35 || rain < 0.5) continue;
+      const [x, y] = paperPt(sp.u, sp.v), rr = 3 + f * 40;
+      c.strokeStyle = `rgba(200,220,240,${0.5 * (1 - f / 0.35)})`; c.lineWidth = 1.2; c.beginPath(); c.ellipse(x, y, rr, rr * 0.45, 0, 0, TAU); c.stroke();
+    }
+    c.fillStyle = `rgba(255,255,250,${0.35 * clean})`; c.fillRect(0, 0, W, H);   // clean and white
+    c.restore();
+    glow(c, 540, 690, 380, [240, 245, 255], 0.22 * clean);
+    c.save(); c.lineCap = 'round';                                    // soft rain over everything
+    for (const d of D.rain) {
+      const y = ((d.ph + lt * d.sp) % 1) * 1100 - 60, x = d.x + y * 0.12;
+      c.strokeStyle = `rgba(200,220,245,${d.a * rain})`; c.lineWidth = 1.4;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(x + d.len * 0.12, y + d.len); c.stroke();
+    }
+    c.restore();
+    drawDust(c, D.dust, lt, [200, 215, 240], 0.4);
+  },
+  cues: S => [{ type: 'rain', t: S.start + 0.3, end: S.end }],
+};
+// ---------------------------------------------------------------------------
+//  6. AN-NUR - a glass lamp in a wall niche lights up and fills the screen softly
+// ---------------------------------------------------------------------------
+const NICHE = { x0: 392, x1: 688, apex: 420, spring: 560, floor: 930, lx: 540, ly: 772 };
+const nurLight = lt => sstep(0.8, 3.6, lt), nurFill = lt => sstep(2.4, 4.8, lt);
+
+function buildStoneWall(seed) {
+  const c = makeCanvas(W, 1120), g = c.getContext('2d'), r = mulberry32(seed);
+  g.fillStyle = '#2a2018'; g.fillRect(0, 0, W, 1120);
+  for (let y = -20, row = 0; y < 1120; row++) {
+    const h = 70 + r() * 26;
+    for (let x = -r() * 120; x < W; ) {
+      const w = 110 + r() * 120, tone = 0.6 + r() * 0.4;
+      g.fillStyle = rgba(mix([52, 40, 30], [118, 96, 72], tone));
+      rrect(g, x + 3, y + 3, w - 6, h - 6, 6); g.fill();
+      g.fillStyle = 'rgba(255,230,190,0.08)'; g.fillRect(x + 6, y + 4, w - 12, 3);          // worn top edge
+      g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(x + 6, y + h - 9, w - 12, 4);
+      for (let k = 0; k < 5; k++) { g.fillStyle = `rgba(0,0,0,${0.08 + r() * 0.1})`; g.beginPath(); g.arc(x + r() * w, y + r() * h, 2 + r() * 6, 0, TAU); g.fill(); }   // pits
+      x += w;
+    }
+    y += h;
+  }
+  return c;
+}
+function nichePath(c, inset = 0) {
+  const { x0, x1, apex, spring, floor } = NICHE, a = x0 + inset, b = x1 - inset, m = (x0 + x1) / 2;
+  c.beginPath(); c.moveTo(a, floor); c.lineTo(a, spring);
+  c.quadraticCurveTo(a, apex + 40 + inset, m, apex + inset); c.quadraticCurveTo(b, apex + 40 + inset, b, spring);
+  c.lineTo(b, floor); c.closePath();
+}
+
+SCENE_DEFS.nur = {
+  look: { focusY: 740, scrim: lt => 0.3 + 0.3 * nurFill(lt) },
+  init(S) {
+    S.data.wall = buildStoneWall(2601);
+    S.data.dust = makeDust(2602, 36, { x0: 120, y0: 360, x1: 960, y1: 1000 });
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, L = nurLight(lt), F = nurFill(lt), { lx, ly } = NICHE;
+    c.fillStyle = '#060403'; c.fillRect(0, 0, W, H);
+    c.drawImage(D.wall, 0, 0);
+    c.fillStyle = `rgba(4,3,2,${0.86 - 0.5 * L - 0.25 * F})`; c.fillRect(0, 0, W, 1120);   // the wall appears as the lamp lights
+    c.fillStyle = vGrad(c, 1110, 1700, [[0, hex('#1c140d')], [1, hex('#030201')]]); c.fillRect(0, 1110, W, 810);
+    glow(c, lx, ly, 900, [255, 180, 90], 0.1 + 0.3 * L);
+    // the niche: a deep recess with its own shading
+    nichePath(c); c.fillStyle = vGrad(c, NICHE.apex, NICHE.floor, [[0, hex('#0d0906')], [1, hex('#1a120b')]]); c.fill();
+    c.save(); nichePath(c); c.clip();
+    for (const [x, d] of [[NICHE.x0, 1], [NICHE.x1, -1]]) {        // inner side walls
+      const g = c.createLinearGradient(x, 0, x + d * 70, 0); g.addColorStop(0, 'rgba(0,0,0,0.7)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.fillRect(Math.min(x, x + d * 70), NICHE.apex, 70, NICHE.floor - NICHE.apex);
+    }
+    glow(c, lx, ly, 330, [255, 200, 120], 0.15 + 0.55 * L);
+    c.restore();
+    c.strokeStyle = `rgba(255,210,150,${0.12 + 0.3 * L})`; c.lineWidth = 3; nichePath(c, -6); c.stroke();
+    c.fillStyle = vGrad(c, NICHE.floor, NICHE.floor + 24, [[0, mix([70, 54, 40], [170, 130, 90], L)], [1, [30, 22, 16]]]);   // stone shelf
+    c.fillRect(NICHE.x0 - 24, NICHE.floor, NICHE.x1 - NICHE.x0 + 48, 24);
+    // the glass lamp
+    c.save();
+    c.fillStyle = '#6a4a1c'; c.beginPath(); c.ellipse(lx, NICHE.floor - 4, 44, 9, 0, 0, TAU); c.fill();   // brass foot
+    c.fillStyle = vGrad(c, 860, 926, [[0, hex('#b08a3c')], [1, hex('#5a3c14')]]);
+    c.beginPath(); c.moveTo(lx - 12, 862); c.lineTo(lx + 12, 862); c.lineTo(lx + 30, 926); c.lineTo(lx - 30, 926); c.closePath(); c.fill();
+    const gl = c.createRadialGradient(lx - 22, ly - 26, 6, lx, ly, 86);   // glass globe, lit from inside
+    gl.addColorStop(0, `rgba(255,252,235,${0.2 + 0.8 * L})`); gl.addColorStop(0.45, `rgba(255,225,160,${0.12 + 0.6 * L})`); gl.addColorStop(1, `rgba(160,190,200,${0.18 + 0.2 * L})`);
+    c.fillStyle = gl; c.beginPath(); c.moveTo(lx - 16, 690);
+    c.bezierCurveTo(lx - 20, 720, lx - 90, 730, lx - 82, 790); c.bezierCurveTo(lx - 76, 846, lx - 30, 862, lx, 862);
+    c.bezierCurveTo(lx + 30, 862, lx + 76, 846, lx + 82, 790); c.bezierCurveTo(lx + 90, 730, lx + 20, 720, lx + 16, 690); c.closePath(); c.fill();
+    c.strokeStyle = `rgba(230,240,245,${0.35 + 0.3 * L})`; c.lineWidth = 2; c.stroke();
+    c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(lx - 44, 770, 9, 36, 0.25, 0, TAU); c.fill();   // glass highlight
+    c.strokeStyle = '#8a6a30'; c.lineWidth = 6; c.beginPath(); c.moveTo(lx - 18, 690); c.lineTo(lx + 18, 690); c.stroke();
+    const fl = L * (0.92 + 0.08 * Math.sin(lt * 21) * Math.sin(lt * 6.3));          // flame
+    const fg = c.createRadialGradient(lx, 800, 1, lx, 796, 26);
+    fg.addColorStop(0, `rgba(255,255,240,${fl})`); fg.addColorStop(0.5, `rgba(255,200,100,${0.85 * fl})`); fg.addColorStop(1, 'rgba(255,140,40,0)');
+    c.fillStyle = fg; c.beginPath(); c.ellipse(lx, 796, 11 * (0.6 + 0.4 * L), 26 * (0.6 + 0.4 * L), 0, 0, TAU); c.fill();
+    c.restore();
+    // it shines like a bright star, then the light fills the whole screen softly
+    const st = sstep(1.8, 3.8, lt);
+    glow(c, lx, 790, 160, [255, 245, 220], 0.6 * st);
+    glint(c, lx, 790, 120 * st * (0.95 + 0.05 * Math.sin(lt * 4)), 0.85 * st);
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 8; k++) {                                   // eight soft rays
+      const a = k / 8 * TAU + lt * 0.05, len = 420 * st;
+      const g = c.createLinearGradient(lx, 790, lx + Math.cos(a) * len, 790 + Math.sin(a) * len);
+      g.addColorStop(0, `rgba(255,236,190,${0.18 * st})`); g.addColorStop(1, 'rgba(255,236,190,0)');
+      c.fillStyle = g; c.beginPath(); c.moveTo(lx, 790); c.lineTo(lx + Math.cos(a - 0.05) * len, 790 + Math.sin(a - 0.05) * len); c.lineTo(lx + Math.cos(a + 0.05) * len, 790 + Math.sin(a + 0.05) * len); c.closePath(); c.fill();
+    }
+    c.restore();
+    glow(c, lx, 790, 1500, [255, 220, 160], 0.42 * F);
+    drawDust(c, D.dust, lt, [255, 225, 170], 0.3 + 0.6 * L);
+  },
+  cues: S => [{ type: 'warmTone', t: S.start + 0.8, peak: S.start + 3.8, end: S.end }],
+};
+
+// ---------------------------------------------------------------------------
+//  7. AL-HAFIZ - a flame shaking in a storm; a glass cover comes down; it calms
+// ---------------------------------------------------------------------------
+const HAFIZ = { x: 540, ledge: 900, drop0: 1.4, drop1: 2.6, gw: 118, gh: 350 };
+const coverY = lt => {                               // offset of the glass cover above its resting place
+  const u = inv(HAFIZ.drop0, HAFIZ.drop1, lt);
+  return -980 * (1 - easeOut(u)) - (lt > HAFIZ.drop1 ? 4 * Math.sin(clamp((lt - HAFIZ.drop1) / 0.18) * Math.PI) : 0);
+};
+const calm = lt => (lt < HAFIZ.drop1 ? 0 : 1 - Math.exp(-(lt - HAFIZ.drop1) / 0.35));
+
+function glassPath(c, x, bottom, w, h) {            // a cloche: straight sides and a domed top
+  c.beginPath(); c.moveTo(x - w, bottom); c.lineTo(x - w, bottom - h + w * 0.9);
+  c.bezierCurveTo(x - w, bottom - h - w * 0.2, x + w, bottom - h - w * 0.2, x + w, bottom - h + w * 0.9);
+  c.lineTo(x + w, bottom); c.closePath();
+}
+
+SCENE_DEFS.hafiz = {
+  look: { focusY: 760, scrim: 0.32 },
+  init(S) {
+    const D = S.data, r = mulberry32(2701);
+    D.decks = [buildCloudDeck(2702, 1700, 520, [140, 160, 190], 0.9, [[22, 30, 40], [66, 80, 96]]), buildCloudDeck(2703, 1700, 460, [120, 140, 170], 0.8, [[30, 38, 50], [80, 94, 110]])];
+    D.rain = Array.from({ length: 220 }, () => ({ x: r() * 1500 - 200, ph: r(), sp: 1.6 + r() * 1.2, len: 40 + r() * 50, a: 0.12 + r() * 0.22 }));
+    D.leaves = Array.from({ length: 9 }, () => ({ y: 200 + r() * 650, sp: 380 + r() * 300, ph: r(), s: 6 + r() * 6, spin: 4 + r() * 8 }));
+    D.dust = makeDust(2704, 20, { x0: 60, y0: 300, x1: 1020, y1: 960 });
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, { x, ledge, gw, gh } = HAFIZ, k = calm(lt), cy = coverY(lt);
+    const flash = Math.exp(-Math.pow((lt - 0.9) / 0.06, 2)) * 0.6 + Math.exp(-Math.pow((lt - 1.05) / 0.05, 2)) * 0.35;
+    c.fillStyle = vGrad(c, 0, 910, [[0, mix(hex('#0a1016'), [70, 85, 105], flash)], [0.6, hex('#141e28')], [1, hex('#22303c')]]);
+    c.fillRect(0, 0, W, 910);
+    c.save(); c.globalAlpha = 0.85;
+    for (const [i, dk] of D.decks.entries()) {                      // storm clouds racing past
+      const sp = i ? 90 : 150, off = -((lt * sp) % 800);
+      c.drawImage(dk, off - 200, i ? 120 : -60); c.drawImage(dk, off + 1500, i ? 120 : -60);
+    }
+    c.restore();
+    glow(c, x, 690, 640, [255, 170, 90], 0.08 + 0.2 * (0.5 + 0.5 * k));
+    c.fillStyle = vGrad(c, ledge, 1600, [[0, hex('#3a3f46')], [0.06, hex('#23282e')], [1, hex('#06080a')]]);   // stone ledge
+    c.fillRect(0, ledge, W, H - ledge);
+    c.fillStyle = 'rgba(200,215,230,0.2)'; c.fillRect(0, ledge, W, 2);
+    softShadow(c, x, ledge + 4, 150, 14, 0.6);
+    // candle
+    c.fillStyle = vGrad(c, 720, ledge, [[0, hex('#f2e6cc')], [1, hex('#b8a888')]]);
+    c.beginPath(); c.moveTo(x - 34, ledge); c.lineTo(x - 34, 732); c.quadraticCurveTo(x - 26, 720, x, 723); c.quadraticCurveTo(x + 26, 720, x + 34, 732); c.lineTo(x + 34, ledge); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.25)'; c.fillRect(x - 24, 738, 8, 150);
+    c.fillStyle = 'rgba(230,215,180,0.9)'; c.beginPath(); c.ellipse(x + 20, 746, 5, 14, 0, 0, TAU); c.fill();   // a wax drip
+    c.fillStyle = '#5a4a3a'; c.fillRect(x - 42, ledge - 12, 84, 12);                       // holder
+    c.strokeStyle = '#2a2018'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(x, 723); c.lineTo(x + 1, 705); c.stroke();   // wick
+    // the flame: shaking in the wind, then calm and still
+    const wind = 1 - k, ang = wind * (0.55 * Math.sin(lt * 9.1) + 0.3 * Math.sin(lt * 17.3 + 1) + 0.25) + k * 0.02 * Math.sin(lt * 3);
+    const sz = 1 + wind * (0.25 * Math.sin(lt * 23) + 0.15 * Math.sin(lt * 31 + 2)) + k * 0.05, dim = 1 - wind * 0.35 * (0.5 + 0.5 * Math.sin(lt * 13));
+    glow(c, x, 680, 340, [255, 170, 80], 0.35 * dim * (0.7 + 0.3 * k));
+    c.save(); c.translate(x + 1, 705); c.rotate(ang); c.scale(1.35, 1.35);
+    const fg = c.createRadialGradient(0, -10 * sz, 1, 0, -14 * sz, 30 * sz);
+    fg.addColorStop(0, `rgba(255,255,235,${dim})`); fg.addColorStop(0.45, `rgba(255,200,100,${0.9 * dim})`); fg.addColorStop(1, 'rgba(255,120,30,0)');
+    c.fillStyle = fg; c.beginPath(); c.moveTo(0, 4); c.bezierCurveTo(14 * sz, -4, 10 * sz, -30 * sz, 0, -46 * sz); c.bezierCurveTo(-10 * sz, -30 * sz, -14 * sz, -4, 0, 4); c.fill();
+    c.restore();
+    // glass cover coming down over the candle
+    const gb = ledge + cy;
+    c.save();
+    glassPath(c, x, gb, gw, gh);
+    c.fillStyle = 'rgba(190,215,235,0.07)'; c.fill();
+    const eg = c.createLinearGradient(x - gw, 0, x + gw, 0);
+    eg.addColorStop(0, 'rgba(220,235,250,0.3)'); eg.addColorStop(0.15, 'rgba(220,235,250,0.04)'); eg.addColorStop(0.85, 'rgba(220,235,250,0.04)'); eg.addColorStop(1, 'rgba(220,235,250,0.26)');
+    c.fillStyle = eg; c.fill();
+    c.strokeStyle = 'rgba(225,240,255,0.55)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = 'rgba(255,255,255,0.32)'; c.fillRect(x - gw + 16, gb - gh + 70, 7, gh - 100);   // highlights
+    c.fillStyle = 'rgba(255,255,255,0.18)'; c.fillRect(x + gw - 26, gb - gh + 90, 4, gh - 130);
+    c.fillStyle = '#4a4038'; c.beginPath(); c.arc(x, gb - gh - gw * 0.05, 9, 0, TAU); c.fill();   // knob
+    c.strokeStyle = 'rgba(230,240,250,0.5)'; c.lineWidth = 3; c.beginPath(); c.ellipse(x, gb, gw, 8, 0, 0, Math.PI); c.stroke();
+    c.restore();
+    // the storm keeps moving outside (nothing inside the glass once it is down)
+    c.save();
+    if (cy > -2) { c.beginPath(); c.rect(0, 0, W, H); glassPath(c, x, gb, gw + 2, gh + 2); c.clip('evenodd'); }
+    c.lineCap = 'round';
+    for (const d of D.rain) {
+      const y = ((d.ph + lt * d.sp) % 1) * 1050 - 80, xx = d.x + y * 0.45 - ((lt * 60) % 40);
+      c.strokeStyle = `rgba(200,215,235,${d.a})`; c.lineWidth = 1.3;
+      c.beginPath(); c.moveTo(xx, y); c.lineTo(xx + d.len * 0.45, y + d.len); c.stroke();
+    }
+    for (const lf of D.leaves) {                                    // leaves blown across
+      const xx = ((lf.ph * 1400 + lt * lf.sp) % 1400) - 160, yy = lf.y + Math.sin(lt * 3 + lf.ph * 9) * 30;
+      c.save(); c.translate(xx, yy); c.rotate(lt * lf.spin);
+      c.fillStyle = 'rgba(120,96,60,0.85)'; c.beginPath(); c.ellipse(0, 0, lf.s * 1.6, lf.s * 0.7, 0, 0, TAU); c.fill(); c.restore();
+    }
+    c.restore();
+    drawDust(c, D.dust, lt, [200, 215, 235], 0.4);
+  },
+  cues: S => [{ type: 'storm', t: S.start, cover: S.start + HAFIZ.drop1, end: S.end }, { type: 'glassSettle', t: S.start + HAFIZ.drop1 }],
+};
+// ---------------------------------------------------------------------------
+//  8. AL-WADUD - a small house in the snow; a warm light turns on and spreads
+// ---------------------------------------------------------------------------
+const HOUSE = { x: 540, base: 884, on: 1.0, spread: [1.0, 4.6] };
+
+function drawPine(c, x, base, h) {
+  for (let k = 0; k < 4; k++) {
+    const y = base - h * (0.18 + k * 0.22), w = h * (0.42 - k * 0.085);
+    c.fillStyle = '#0c1a1e'; c.beginPath(); c.moveTo(x - w, y + h * 0.2); c.lineTo(x, y - h * 0.16); c.lineTo(x + w, y + h * 0.2); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(220,235,255,0.75)'; c.beginPath(); c.moveTo(x - w * 0.8, y + h * 0.14); c.lineTo(x, y - h * 0.13); c.lineTo(x + w * 0.7, y + h * 0.12); c.quadraticCurveTo(x, y, x - w * 0.8, y + h * 0.14); c.fill();
+  }
+  c.fillStyle = '#1a1210'; c.fillRect(x - 5, base - h * 0.08, 10, h * 0.1);
+}
+
+SCENE_DEFS.wadud = {
+  look: { focusY: 760, scrim: 0.3 },
+  init(S) {
+    const D = S.data;
+    D.stars = makeStars(2801, 120, 0, 600);
+    D.far = makeRidge(2802, 846, 16, 3); D.near = makeRidge(2803, 892, 10, 4);
+    D.snow = makeDust(2804, 70, { x0: 0, y0: 0, x1: W, y1: 1000 });
+    for (const p of D.snow.ps) { p.vy = 30 + Math.abs(p.vy) * 2.5; p.vx *= 1.5; p.a = 0.35 + p.a * 0.8; p.size *= 1.2; }   // falling snow
+    D.smoke = Array.from({ length: 8 }, (_, i) => ({ ph: i / 8 }));
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data, { x, base } = HOUSE, on = sstep(HOUSE.on, HOUSE.on + 0.25, lt), Wm = sstep(...HOUSE.spread, lt);
+    const fire = on * (0.88 + 0.12 * Math.sin(lt * 17) * Math.sin(lt * 5.3));
+    c.fillStyle = vGrad(c, 0, 900, [[0, hex('#030816')], [0.6, hex('#0b1631')], [1, hex('#1a2a4c')]]);
+    c.fillRect(0, 0, W, 900);
+    drawStars(c, D.stars, lt, 0.7);
+    glow(c, 540, 700, 760, [90, 130, 220], 0.16);                    // cold night glow
+    glow(c, x, 790, 300 + 600 * Wm, [255, 170, 90], 0.03 + 0.3 * Wm); // the warmth slowly spreads into the night
+    c.fillStyle = vGrad(c, 820, 1000, [[0, hex('#5a6e92')], [1, hex('#2a3a5a')]]); ridgePath(c, D.far); c.fill();
+    ridgeStroke(c, D.far, [230, 240, 255], 0.3, 2);
+    for (const [px, ph] of [[180, 150], [262, 110], [850, 130], [930, 170]]) drawPine(c, px, 860 + (px % 7), ph);
+    // the house (drawn 30% larger around its base)
+    c.save(); c.translate(x, base); c.scale(1.3, 1.3); c.translate(-x, -base);
+    softShadow(c, x + 10, base, 200, 16, 0.5);
+    c.fillStyle = vGrad(c, 720, base, [[0, hex('#4a3428')], [1, hex('#2a1c16')]]); c.fillRect(x - 120, 726, 240, base - 726);   // walls
+    c.fillStyle = 'rgba(0,0,0,0.25)'; for (let y = 740; y < base; y += 22) c.fillRect(x - 120, y, 240, 2);
+    c.fillStyle = '#2a2224'; c.beginPath(); c.moveTo(x - 146, 734); c.lineTo(x, 610); c.lineTo(x + 146, 734); c.closePath(); c.fill();   // roof
+    c.fillStyle = '#3a2c26'; c.fillRect(x + 56, 630, 30, 64);       // chimney
+    c.fillStyle = vGrad(c, 606, 740, [[0, hex('#f4f8ff')], [1, hex('#b8c8e0')]]);   // thick snow on the roof
+    c.beginPath(); c.moveTo(x - 156, 740); c.quadraticCurveTo(x - 150, 726, x - 136, 722); c.lineTo(x, 604); c.lineTo(x + 136, 722);
+    c.quadraticCurveTo(x + 150, 726, x + 156, 740); c.quadraticCurveTo(x + 120, 734, x + 100, 724); c.lineTo(x, 640); c.lineTo(x - 100, 724); c.quadraticCurveTo(x - 120, 734, x - 156, 740); c.fill();
+    c.beginPath(); c.ellipse(x + 71, 628, 20, 8, 0, 0, TAU); c.fill();
+    // window with a warm light (fire inside), door
+    const wx = x - 66, wy = 766, ww = 64, wh = 62;
+    c.fillStyle = rgba(mix([18, 22, 34], [255, 196, 100], fire)); c.fillRect(wx, wy, ww, wh);
+    if (on > 0) { const fg = c.createRadialGradient(wx + ww / 2, wy + wh, 4, wx + ww / 2, wy + wh * 0.6, 60); fg.addColorStop(0, `rgba(255,236,170,${fire})`); fg.addColorStop(1, 'rgba(255,170,70,0)'); c.fillStyle = fg; c.fillRect(wx, wy, ww, wh); }
+    c.strokeStyle = '#1e1410'; c.lineWidth = 6; c.strokeRect(wx, wy, ww, wh);
+    c.lineWidth = 4; c.beginPath(); c.moveTo(wx + ww / 2, wy); c.lineTo(wx + ww / 2, wy + wh); c.moveTo(wx, wy + wh / 2); c.lineTo(wx + ww, wy + wh / 2); c.stroke();
+    c.fillStyle = '#f0f4ff'; c.fillRect(wx - 6, wy + wh, ww + 12, 7);    // snow on the sill
+    c.fillStyle = '#1c120e'; c.fillRect(x + 30, 790, 52, base - 790);
+    c.fillStyle = `rgba(255,190,100,${0.6 * fire})`; c.fillRect(x + 30, 790, 4, base - 790);   // light at the door edge
+    glow(c, wx + ww / 2, wy + wh / 2, 120, [255, 190, 100], 0.55 * fire);
+    c.restore();
+    c.fillStyle = vGrad(c, 870, 1500, [[0, hex('#7a8cae')], [0.12, hex('#42537a')], [1, hex('#0e1424')]]); ridgePath(c, D.near); c.fill();
+    ridgeStroke(c, D.near, [235, 245, 255], 0.45, 2);
+    c.save(); c.globalCompositeOperation = 'screen';                  // warm light pool on the snow
+    glow(c, x - 44, 912, 240 + 220 * Wm, [255, 180, 100], 0.2 * fire + 0.12 * Wm, 0.3);
+    c.restore();
+    if (on > 0) {                                                     // smoke from the chimney
+      for (const sm of D.smoke) {
+        const u = (sm.ph + lt * 0.18) % 1, a = Math.sin(u * Math.PI) * 0.18 * sstep(HOUSE.on, HOUSE.on + 1, lt);
+        glow(c, x + 92 + u * 70 + Math.sin(u * 6) * 10, base - 344 - u * 230, 26 + 50 * u, [190, 200, 215], a, 1, 'source-over');
+      }
+    }
+    drawDust(c, D.snow, lt, [235, 242, 255], 0.9);
+  },
+  cues: S => [{ type: 'winterWind', t: S.start, end: S.end }, { type: 'fire', t: S.start + HOUSE.on, end: S.end }],
+};
+
+// ---------------------------------------------------------------------------
+//  9. AL-QARIB - a lantern on a hill; the stars come down and gather close to it
+// ---------------------------------------------------------------------------
+const QARIB = { lx: 540, ly: 846, g0: 0.8, g1: 3.8 };
+function hillPath(c) { c.beginPath(); c.moveTo(-20, 1000); c.bezierCurveTo(200, 960, 360, 852, 540, 850); c.bezierCurveTo(720, 852, 880, 960, 1100, 1000); c.lineTo(1100, H); c.lineTo(-20, H); c.closePath(); }
+
+SCENE_DEFS.qarib = {
+  look: { focusY: 740, scrim: 0.28 },
+  init(S) {
+    const D = S.data, r = mulberry32(2901);
+    D.stars = makeStars(2902, 240, 0, 900);
+    D.moving = Array.from({ length: 64 }, () => {
+      const x0 = 40 + r() * 1000, y0 = 60 + r() * 520, rad = 46 + Math.pow(r(), 0.8) * 200, th = Math.PI * (1.04 + r() * 0.92);
+      return { x0, y0, xt: QARIB.lx + Math.cos(th) * rad, yt: QARIB.ly - 70 + Math.sin(th) * rad * 0.62, d: r() * 0.55, side: r() < 0.5 ? -1 : 1, s: 0.8 + r() * 1.4, ph: r() * TAU, orb: 4 + r() * 8 };
+    });
+    D.dust = makeDust(2903, 18, { x0: 60, y0: 380, x1: 1020, y1: 980 });
+  },
+  progress(m, lt) { return easeInOut(inv(QARIB.g0 + m.d, QARIB.g1 + m.d, lt)); },
+  draw(c, lt, dur, S) {
+    const D = S.data, { lx, ly } = QARIB;
+    let avg = 0; for (const m of D.moving) avg += this.progress(m, lt); avg /= D.moving.length;
+    c.fillStyle = vGrad(c, 0, 1000, [[0, hex('#06031a')], [0.55, hex('#140a30')], [1, hex('#2a1648')]]);
+    c.fillRect(0, 0, W, 1000);
+    glow(c, 540, 560, 760, [120, 70, 200], 0.14);
+    drawStars(c, D.stars, lt, 0.85, [235, 225, 255]);
+    glow(c, lx, ly - 60, 260 + 160 * avg, [255, 200, 130], 0.12 + 0.22 * avg);   // the light around the lantern grows
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (const m of D.moving) {                                       // stars coming down, gathering close
+      const q = this.progress(m, lt), cx = lerp(m.x0, m.xt, 0.5) + m.side * 90, cyy = Math.min(m.y0, m.yt) - 30;
+      let x = (1 - q) * (1 - q) * m.x0 + 2 * (1 - q) * q * cx + q * q * m.xt, y = (1 - q) * (1 - q) * m.y0 + 2 * (1 - q) * q * cyy + q * q * m.yt;
+      x += Math.cos(lt * 0.8 + m.ph) * m.orb * q; y += Math.sin(lt * 0.8 + m.ph) * m.orb * 0.6 * q;
+      const tw = 0.7 + 0.3 * Math.sin(lt * 3 + m.ph), col = mix([225, 230, 255], [255, 236, 200], q);
+      drawDot(c, x, y, (5 + 9 * q) * m.s, col, (0.35 + 0.4 * q) * tw);
+      c.fillStyle = rgba(col, 0.9 * tw); c.beginPath(); c.arc(x, y, 1.2 * m.s + q, 0, TAU); c.fill();
+    }
+    c.restore();
+    hillPath(c); c.fillStyle = vGrad(c, 850, 1400, [[0, hex('#1a0f26')], [0.25, hex('#0e0818')], [1, hex('#030206')]]); c.fill();
+    c.save(); hillPath(c); c.clip(); glow(c, lx, ly, 380, [255, 180, 110], 0.2 + 0.12 * avg, 0.35); c.restore();
+    c.strokeStyle = `rgba(255,200,150,${0.3 + 0.2 * avg})`; c.lineWidth = 2;   // rim of the hill
+    c.beginPath(); c.moveTo(200, 960); c.bezierCurveTo(360, 852, 360, 852, 540, 850); c.bezierCurveTo(720, 852, 720, 852, 880, 960); c.stroke();
+    c.save(); c.translate(lx, ly + 4); c.scale(1.4, 1.4); c.translate(-lx, -(ly + 4)); drawLantern(c, lx, ly + 4, 1, lt); c.restore();
+    drawDust(c, D.dust, lt, [255, 220, 200], 0.45);
+  },
+  cues(S) {
+    const env = [];
+    for (let k = 0; k <= 5.5 * 40; k++) { const lt = k / 40; let a = 0; for (const m of S.data.moving) a += this.progress(m, lt); env.push(+(a / S.data.moving.length).toFixed(3)); }
+    return [{ type: 'nightAir', t: S.start, end: S.end }, { type: 'starShimmer', t: S.start, rate: 40, env }];
+  },
+};
+
+// ---------------------------------------------------------------------------
+//  10. ENDING - black with faint stars (like the title)
+// ---------------------------------------------------------------------------
+SCENE_DEFS.end = {
+  look: { focusY: 700, scrim: 0.2 },
+  init(S) {
+    S.data.stars = makeStars(3001, 260, 0, 1000);
+    S.data.dust = makeDust(3002, 18, { x0: 60, y0: 300, x1: 1020, y1: 1000 });
+  },
+  draw(c, lt, dur, S) {
+    const D = S.data;
+    c.fillStyle = vGrad(c, 0, 1920, [[0, hex('#020208')], [0.55, hex('#05050e')], [1, hex('#010103')]]);
+    c.fillRect(0, 0, W, H);
+    glow(c, 540, 640, 700, [90, 90, 170], 0.07);
+    drawStars(c, D.stars, lt, 0.55);
+    drawRosette(c, 540, 620, 150, lt * 0.03, 0.22, 0.5);              // a faint echo of the title
+    c.fillStyle = 'rgba(160,170,220,0.06)'; c.fillRect(0, 960, W, 1.5);
+    drawDust(c, D.dust, lt, [200, 210, 255], 0.35);
+  },
+  cues: S => [{ type: 'endAir', t: S.start, end: S.end }],
+};
+// ============================================================================
+//  TIMELINE (Arabic and English text exactly as specified)
+// ============================================================================
+const TITLE_AR = 'أسماء الله الحسنى';
+const TITLE_PART = 'Part 1';
+const TITLE_TEXT = '9 Beautiful Names of Allah';
+const SCENES = [
+  { id: 'title', start: 0, end: 4 },
+  { id: 'razzaq', start: 4, end: 9.5, ar: 'الرَّزَّاق', name: 'Ar-Razzaq – The Provider',
+    quran: 'There is no creature on earth except that Allah provides for it', source: 'SURAH HUD 11:6' },
+  { id: 'sami', start: 9.5, end: 15, ar: 'السَّمِيع', name: "As-Sami' – The All-Hearing",
+    quran: 'You are the All-Hearing, the All-Knowing', source: 'SURAH AL-BAQARAH 2:127' },
+  { id: 'basir', start: 15, end: 20.5, ar: 'البَصِير', name: 'Al-Basir – The All-Seeing',
+    quran: 'Nothing is like Him, and He is the All-Hearing, the All-Seeing', source: 'SURAH ASH-SHURA 42:11' },
+  { id: 'latif', start: 20.5, end: 26, ar: 'اللَّطِيف', name: 'Al-Latif – The Subtle, The Kind',
+    quran: 'Does He who created not know? He is the Subtle, the All-Aware', source: 'SURAH AL-MULK 67:14' },
+  { id: 'ghafur', start: 26, end: 31.5, ar: 'الغَفُور', name: 'Al-Ghafur – The Forgiving',
+    quran: "Do not lose hope in Allah's mercy. He forgives all sins", source: 'SURAH AZ-ZUMAR 39:53' },
+  { id: 'nur', start: 31.5, end: 37, ar: 'النُّور', name: 'An-Nur – The Light',
+    quran: 'Allah is the Light of the heavens and the earth', source: 'SURAH AN-NUR 24:35' },
+  { id: 'hafiz', start: 37, end: 42.5, ar: 'الحَفِيظ', name: 'Al-Hafiz – The Protector',
+    quran: 'Allah is the best Protector', source: 'SURAH YUSUF 12:64' },
+  { id: 'wadud', start: 42.5, end: 48, ar: 'الوَدُود', name: 'Al-Wadud – The Most Loving',
+    quran: 'He is the Forgiving, the Most Loving', source: 'SURAH AL-BURUJ 85:14' },
+  { id: 'qarib', start: 48, end: 53.5, ar: 'القَرِيب', name: 'Al-Qarib – The Near',
+    quran: 'When My servants ask about Me, I am near', source: 'SURAH AL-BAQARAH 2:186' },
+  { id: 'end', start: 53.5, end: 60, text: 'To Allah belong the most beautiful Names, so call on Him by them',
+    source: "SURAH AL-A'RAF 7:180", typeStart: 0.3, text2: 'Which Name do you love most? Comment below', text2At: 3.5 },
+];
+const T_AR = 0.5, T_QURAN = 2.6, T_SOURCE = 3.4;              // when the layers appear (scene time)
+
+function prepareText() {
+  for (const S of SCENES) {
+    if (S.id === 'title') {
+      S.arBlock = layoutArabic(TITLE_AR, 90, 984);
+      S.part = layoutRuns([{ text: TITLE_PART, font: `italic 500 40px ${FONT_SERIF}` }], 1098);
+      S.titleBlock = layoutBlock(TITLE_TEXT, 76, 1174);
+    } else if (S.id === 'end') {
+      S.t0 = S.typeStart;
+      S.block = layoutBlock(S.text, 56, 1112, { lineH: 70 });
+      S.typedEnd = typedEnd(S.block, S.t0);
+      S.src = layoutSource(S.source, S.block.lastY + 68);
+      S.block2 = layoutBlock(S.text2, 56, 1112, { lineH: 70 });
+    } else {
+      S.t0 = TYPE.start;
+      S.arBlock = layoutArabic(S.ar, 120, Y_ARABIC, { bottom: AR_BOTTOM, maxBaseline: AR_MAX_BASELINE });
+      S.block = layoutBlock(S.name, 56, Y_NAME);
+      S.quranBlock = layoutBlock(S.quran, 40, Y_QURAN, { firstY: Y_QURAN, lineH: 52, maxW: 720 });   // long lines wrap to 2
+      S.src = layoutSource(S.source, S.quranBlock.lastY + 56);
+    }
+  }
+}
+
+function drawSceneText(c, S, lt) {
+  if (S.id === 'title') {                            // everything visible from the very first frame
+    drawArabic(c, S.arBlock, 1, 0.8 + 0.2 * Math.sin(lt * TAU / 3.2));
+    const w = S.part.w / 2 + 24, y = 1086;
+    c.save();
+    c.strokeStyle = rgba(GOLD_AR, 0.55); c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(540 - w - 90, y); c.lineTo(540 - w, y); c.moveTo(540 + w, y); c.lineTo(540 + w + 90, y); c.stroke();
+    c.restore();
+    drawRuns(c, S.part, 0.85);
+    drawTyped(c, S.titleBlock, lt, null, 1);
+    return;
+  }
+  if (S.id === 'end') {
+    const out = 1 - sstep(S.text2At - 0.25, S.text2At, lt);   // text 1 gives way to text 2 at 3.5 s
+    drawTyped(c, S.block, lt, S.t0, out);
+    drawSource(c, S.src, sstep(S.typedEnd + 0.1, S.typedEnd + 0.5, lt) * out);
+    drawTyped(c, S.block2, lt, S.text2At, 1);
+    return;
+  }
+  const a = sstep(T_AR, T_AR + 0.6, lt);             // Arabic Name fades in and glows
+  const bloom = Math.exp(-Math.pow((lt - (T_AR + 0.65)) / 0.35, 2));
+  drawArabic(c, S.arBlock, a, a * (0.7 + 0.6 * bloom));
+  drawTyped(c, S.block, lt, S.t0, 1);                // Name + meaning: typewriter from 1.2 s
+  drawTyped(c, S.quranBlock, lt, null, 0.8 * sstep(T_QURAN, T_QURAN + 0.6, lt));
+  drawSource(c, S.src, sstep(T_SOURCE, T_SOURCE + 0.5, lt));
+}
+
+// ============================================================================
+//  RENDER: draws the exact frame for time t (seconds). Pure function of t.
+// ============================================================================
+function sceneIndexAt(t) {
+  for (let i = SCENES.length - 1; i >= 0; i--) if (t >= SCENES[i].start) return i;
+  return 0;
+}
+
+function render(t) {
+  t = clamp(t, 0, DURATION - 1e-9);
+  const i = sceneIndexAt(t), S = SCENES[i], dur = S.end - S.start, lt = t - S.start;
+  const def = SCENE_DEFS[S.id], look = def.look || {};
+  const frame = Math.round(t * FPS);
+  const c = ctx;
+  c.setTransform(RS, 0, 0, RS, 0, 0);
+  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+
+  c.save();                                          // scene layer, very slow push-in 1.00 -> 1.04
+  const z = 1 + 0.04 * (lt / dur), fy = look.focusY ?? 700;
+  c.translate(540, fy); c.scale(z, z); c.translate(-540, -fy);
+  def.draw(c, lt, dur, S);
+  paperTexture(c, look.paper ?? 0.55);
+  c.restore();
+
+  vignette(c, look.vignette ?? 0.72, 760);
+  textScrim(c, typeof look.scrim === 'function' ? look.scrim(lt) : (look.scrim ?? 0.3));
+  drawSceneText(c, S, lt);
+
+  const fin = i === 0 ? 1 : clamp(lt / FADE), fout = clamp((dur - lt) / FADE);
+  const vis = smooth(Math.min(fin, fout));
+  if (vis < 1) { c.fillStyle = `rgba(0,0,0,${1 - vis})`; c.fillRect(0, 0, W, H); }
+
+  drawGrain(c, frame, look.grain ?? 0.2);
+  drawPageName(c, i === SCENES.length - 1 ? smooth(fout) : 1);
+}
+
+// ============================================================================
+//  AUDIO CUES: the sound track is built from the same timeline (see make_audio.py)
+// ============================================================================
+function getCues() {
+  const cues = { fps: FPS, duration: DURATION, scenes: [], boundaries: [], ticks: [], events: [] };
+  SCENES.forEach((S, i) => {
+    cues.scenes.push({ id: S.id, start: S.start, end: S.end });
+    if (i > 0) cues.boundaries.push(S.start);
+    if (S.block) cues.ticks.push(...blockTicks(S.block, S.start + S.t0));
+    if (S.block2) cues.ticks.push(...blockTicks(S.block2, S.start + S.text2At));
+    const def = SCENE_DEFS[S.id];
+    if (def.cues) for (const e of def.cues(S)) cues.events.push({ scene: S.id, ...e });
+  });
+  cues.ticks.sort((a, b) => a.t - b.t);
+  return cues;
+}
+
+// ============================================================================
+//  INIT + EXPORT API
+// ============================================================================
+const READY = (async () => {
+  await Promise.all([
+    document.fonts.load('56px "Patrick Hand"'),
+    document.fonts.load('italic 500 30px "Cormorant Garamond"'),
+    document.fonts.load('600 24px "Cormorant Garamond"'),
+    document.fonts.load('120px "Amiri"', TITLE_AR + SCENES.map(s => s.ar || '').join('')),
+  ]);
+  await document.fonts.ready;
+  buildCaches();
+  for (const S of SCENES) { S.data = {}; SCENE_DEFS[S.id].init?.(S); }
+  prepareText();
+  return true;
+})();
+window.reelReady = READY;
+window.render = render;
+window.getCues = getCues;
+window.fontStatus = () => [...document.fonts].map(f => `${f.family} ${f.style} ${f.weight}: ${f.status}`);
+window.renderFramePNG = i => { render(i / FPS); return canvas.toDataURL('image/png'); };
+window.sceneAt = t => SCENES[sceneIndexAt(t)].id;
+
+// ============================================================================
+//  PREVIEW UI (Play + scrub bar). Hidden in export mode.
+// ============================================================================
+if (EXPORT) {
+  document.body.classList.add('export');
+} else {
+  const $ = id => document.getElementById(id);
+  const playBtn = $('play'), scrub = $('scrub'), timeEl = $('time'), sceneEl = $('sceneName');
+  const snd = $('snd'), muteEl = $('mute'), fastEl = $('fast');
+  let playing = false, t = clamp(+(QS.get('t') || 0), 0, DURATION - 1 / FPS), last = 0, audioOK = false;
+  snd.addEventListener('canplay', () => { audioOK = true; });
+  snd.src = 'output/audio.m4a';            // made by build.sh (same sound as the MP4)
+  snd.addEventListener('error', () => { audioOK = false; $('audioNote').style.display = 'block'; });
+  const fmt = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(2).padStart(5, '0')} / 1:00.00`;
+  function show() {
+    render(t);
+    scrub.value = Math.min(TOTAL_FRAMES - 1, Math.round(t * FPS));
+    timeEl.textContent = fmt(t);
+    const i = sceneIndexAt(t);
+    sceneEl.textContent = `Scene ${i}/${SCENES.length - 1} · ${SCENES[i].id} · frame ${Math.round(t * FPS)}`;
+  }
+  const useAudio = () => audioOK && !muteEl.checked;
+  function loop(now) {
+    if (!playing) return;
+    if (useAudio() && !snd.paused) t = snd.currentTime; else t += (now - last) / 1000;
+    last = now;
+    if (t >= DURATION - 1 / FPS) { t = DURATION - 1 / FPS; pause(); }
+    show();
+    if (playing) requestAnimationFrame(loop);
+  }
+  function play() {
+    if (t >= DURATION - 1 / FPS - 1e-6) t = 0;
+    playing = true; playBtn.textContent = 'Pause'; last = performance.now();
+    if (useAudio()) { snd.currentTime = t; snd.play().catch(() => {}); }
+    requestAnimationFrame(loop);
+  }
+  function pause() { playing = false; playBtn.textContent = 'Play'; snd.pause(); }
+  function seek(nt) { t = clamp(nt, 0, DURATION - 1 / FPS); if (audioOK) snd.currentTime = t; show(); }
+  playBtn.onclick = () => (playing ? pause() : play());
+  scrub.oninput = () => seek(+scrub.value / FPS);
+  muteEl.onchange = () => { if (muteEl.checked) snd.pause(); else if (playing && audioOK) { snd.currentTime = t; snd.play().catch(() => {}); } };
+  fastEl.onchange = () => { RS = fastEl.checked ? 0.5 : 1; canvas.width = W * RS; canvas.height = H * RS; show(); };
+  $('snap').onclick = () => {
+    const keep = RS; RS = 1; canvas.width = W; canvas.height = H; render(t);
+    const a = document.createElement('a'); a.download = `frame_${String(Math.round(t * FPS)).padStart(4, '0')}.png`;
+    a.href = canvas.toDataURL('image/png'); a.click();
+    RS = keep; canvas.width = W * RS; canvas.height = H * RS; show();
+  };
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.code === 'ArrowRight') { e.preventDefault(); pause(); seek(t + (e.shiftKey ? 1 : 1 / FPS)); }
+    if (e.code === 'ArrowLeft') { e.preventDefault(); pause(); seek(t - (e.shiftKey ? 1 : 1 / FPS)); }
+  });
+  READY.then(show);
+}
+</script>
+</body>
+</html>
