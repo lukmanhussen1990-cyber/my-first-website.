@@ -777,10 +777,16 @@ const BULBS = ARCHES.map((a) => {
   scene.add(glow);
   return { ...b, glow, x, y: WD.archY(a, x) - 0.225 };
 });
-const darkU = { uDark: { value: 0 }, uWarm: { value: 0 }, uBulbs: { value: [...BULBS.map(() => new THREE.Vector4()), new THREE.Vector4()] }, uDig: { value: DIG_BACK.tex }, uDigRect: { value: DIG_BACK.rect }, uTime: digTime };
+const darkU = { uDark: { value: 0 }, uAmb: { value: 0.05 }, uWarm: { value: 0 }, uBulbs: { value: [...BULBS.map(() => new THREE.Vector4()), new THREE.Vector4()] }, uDig: { value: DIG_BACK.tex }, uDigRect: { value: DIG_BACK.rect }, uTime: digTime };
 const NL = BULBS.length + 1; // bulbs + the spark running along the wire
 const darkFrag = `uniform sampler2D uDig; uniform vec4 uDigRect; uniform float uTime; uniform float uDark, uWarm; uniform vec4 uBulbs[${NL}];
   varying vec3 vP;
+  uniform float uAmb;
+  vec3 pools(){ vec3 l = vec3(0.0); for (int i = 0; i < ${NL}; i++){ vec2 d = (vP.xy - uBulbs[i].xy) * vec2(0.85, 1.0); float r2 = dot(d, d);
+    l += uBulbs[i].w * (i == ${NL - 1} ? vec3(1.0, 0.82, 0.5) * (1.6 * exp(-r2 / 0.05) + 0.7 * exp(-r2 / 0.22))
+      : vec3(1.0, 0.72, 0.42) * (0.6 * exp(-r2 / 0.05) + 0.8 * exp(-r2 / 0.26) + 0.42 * exp(-r2 / 1.0))); } return l; }
+  vec3 halos(){ vec3 h = vec3(0.0); for (int i = 0; i < ${NL}; i++){ vec2 d = vP.xy - uBulbs[i].xy; float r2 = dot(d, d);
+    h += uBulbs[i].w * (vec3(1.0, 0.9, 0.7) * 1.4 * exp(-r2 / 0.0011) + vec3(1.0, 0.6, 0.24) * (0.3 * exp(-r2 / 0.012) + 0.07 * exp(-r2 / 0.06))); } return h; }
   float light(){ float l = 0.0; for (int i = 0; i < ${NL}; i++){ vec2 d = (vP.xy - uBulbs[i].xy) * vec2(0.8, 1.1); l += uBulbs[i].w * exp(-dot(d, d) / (i == ${NL - 1} ? 0.12 : 0.5)); } return l; }
   bool open(){ vec2 uv = (vP.xy - uDigRect.xy) / (uDigRect.zw - uDigRect.xy); return texture2D(uDig, uv).r <= uTime; }
   float shaftLight(){ return (vP.x < ${SHAFT_L.x1 + 0.05} || vP.x > ${SHAFT_R.x0 - 0.05}) ? smoothstep(-2.4, -1.2, vP.y) : 0.0; }`;
@@ -1026,8 +1032,12 @@ function updateDust(t) {
     if (dt >= 0 && dt < 1.0) for (let k = 0; k < 3; k++) puff(V(x + (k - 1) * 0.25, WD.floorAt(x) + 0.08, ZC + 0.25), V((k - 1) * 0.6, 0.5, 0.2), 0.16, dt, 1.0);
   }
   {
-    const dt = t - (T.lidClose + 0.12);
-    if (dt >= 0 && dt < 1.0) for (let k = 0; k < 4; k++) puff(V(LID.x + Math.cos(k * 1.6) * 0.4, 0.05, LID.z + Math.sin(k * 1.6) * 0.3), V(Math.cos(k * 1.6) * 0.8, 0.3, Math.sin(k * 1.6) * 0.4), 0.13, dt, 1.0);
+    // the slam: small soft wisps squeezed out round the rim (big ones read as solid balls in the close-up)
+    const dt = t - (T.lidClose + 0.1);
+    if (dt >= 0 && dt < 0.6) for (let k = 0; k < 9; k++) {
+      const a = k * 0.698 + 0.35;
+      puff(V(LID.x + Math.cos(a) * 0.42, 0.03, LID.z + Math.sin(a) * 0.32), V(Math.cos(a) * 0.9, 0.18 + 0.06 * (k % 3), Math.sin(a) * 0.45), 0.055 + 0.012 * (k % 2), dt, 0.6);
+    }
   }
   endInst(dustPuffs);
 }
