@@ -38,9 +38,9 @@ It makes all eight lines with ElevenLabs (narrator and John use different
 voices), takes the word timings from ElevenLabs' own timestamps, rebuilds the
 music/effects mix around the new voices, regenerates the word-by-word
 subtitles with the new timing, and writes a new `out/roadster_through_the_earth.mp4`.
-The 3D is **not** re-rendered (it reuses `out/clean_video.mp4`). It takes about a
-minute. If anything fails (no key, no credits, network), your current voices
-are left untouched.
+The 3D is **not** re-rendered (it reuses `out/clean_video.mp4`); the whole run
+takes a few minutes, most of it the final video encode. If anything fails (no
+key, no credits, network), your current voices are left untouched.
 
 - Voices are set in `script.json`: narrator **Elena Wren** (friendly, neutral
   accent, `N2MNNfQ4izkc8hqG3xMa`) and John **Will – Relaxed Optimist**
@@ -56,8 +56,8 @@ are left untouched.
   but the mouth won't follow a new delivery word for word unless the 3D is
   re-rendered (`node tools/render_segments.mjs`, about 40 minutes).
 
-Needs: Python 3 with `numpy scipy soundfile pillow`, and `ffmpeg` built with
-libass (standard on most Linux and Homebrew builds).
+Needs: Python 3 with `numpy scipy soundfile pillow` (`pip install numpy scipy soundfile pillow`),
+and `ffmpeg` built with libass (standard on most Linux and Homebrew builds).
 
 ## How it was made
 

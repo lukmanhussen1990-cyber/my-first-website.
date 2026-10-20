@@ -20,7 +20,8 @@ OUT = os.environ.get("OUT_VIDEO", os.path.join(ROOT, "out", "roadster_through_th
 MIX = os.path.join(ROOT, "build", "mix.wav")
 MASTER = os.path.join(ROOT, "build", "mix_master.wav")
 SUBS = os.path.join(ROOT, "build", "subs.ass")
-LOUD = "I=-14:TP=-1.5:LRA=11"
+LOUD = "I=-14:TP=-1.5:LRA=11"   # only used to measure
+TARGET_LUFS = -14.0
 
 
 def run(cmd, **kw):
@@ -31,14 +32,17 @@ def main():
     for p in (CLEAN, MIX, SUBS):
         if not os.path.exists(p):
             sys.exit(f"missing {os.path.relpath(p, ROOT)}")
-    # 1. loudness, two passes (measure, then apply a linear gain)
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", MIX, "-af", f"loudnorm={LOUD}:print_format=json",
-                        "-f", "null", "-"], capture_output=True, text=True, check=True)
-    m = json.loads(re.findall(r"\{[^{}]*\}", r.stderr, re.S)[-1])
-    af = (f"loudnorm={LOUD}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}"
-          f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample=48000")
+    # 1. loudness: measure, lift to -14 LUFS, and catch the peaks with a limiter (-2.3 dBFS)
+    def measure(path):
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", path, "-af", f"loudnorm={LOUD}:print_format=json",
+                            "-f", "null", "-"], capture_output=True, text=True, check=True)
+        return json.loads(re.findall(r"\{[^{}]*\}", r.stderr, re.S)[-1])
+    m = measure(MIX)
+    gain = TARGET_LUFS - float(m["input_i"]) + 0.4   # +0.4 dB: what the limiter takes back
+    af = f"volume={gain:.2f}dB,alimiter=limit=0.77:attack=5:release=80:level=0,aresample=48000"
     run(["ffmpeg", "-v", "error", "-y", "-i", MIX, "-af", af, "-c:a", "pcm_s16le", MASTER])
-    print(f"audio: {float(m['input_i']):.1f} LUFS -> -14 LUFS")
+    f = measure(MASTER)
+    print(f"audio: {float(m['input_i']):.1f} LUFS -> {float(f['input_i']):.1f} LUFS, true peak {float(f['input_tp']):.1f} dBTP")
     # 2. picture + subtitles + sound
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     fonts = os.path.join(ROOT, "assets", "fonts")

@@ -80,8 +80,9 @@ def main():
         st = STYLE[w["speaker"]]
         fit = min(1.0, MAX_W / width(w["word"], st["size"]))
         sc = lambda p: round(p * fit)  # noqa: E731
-        pop = (f"\\fscx{sc(55)}\\fscy{sc(55)}\\t(0,90,\\fscx{sc(112)}\\fscy{sc(112)})"
-               f"\\t(90,170,\\fscx{sc(96)}\\fscy{sc(96)})\\t(170,240,\\fscx{sc(100)}\\fscy{sc(100)})")
+        # pop-in with a tiny bounce; quick enough that even a 3-frame word is readable
+        pop = (f"\\fscx{sc(70)}\\fscy{sc(70)}\\t(0,70,\\fscx{sc(110)}\\fscy{sc(110)})"
+               f"\\t(70,130,\\fscx{sc(97)}\\fscy{sc(97)})\\t(130,180,\\fscx{sc(100)}\\fscy{sc(100)})")
         text = w["word"].replace("{", "(").replace("}", ")")
         shadow = (f"{{\\an5\\pos({X},{Y + 9})\\fs{st['size']}{pop}\\1c&H000000&\\3c&H000000&"
                   f"\\1a&H78&\\3a&H78&\\bord{BORDER + 2}\\shad0\\blur10}}{text}")
