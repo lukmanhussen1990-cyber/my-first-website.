@@ -1,0 +1,39 @@
+{
+  "title": "The secret snack tunnel",
+  "voices": {
+    "narrator": {
+      "description": "calm, friendly, a little playful, quick pace, neutral accent",
+      "elevenlabs": {
+        "voice_id": "oXpouBLuKFVTJwcJO3YL",
+        "name": "Holden - Warm Midwest Narrator",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.45, "similarity_boost": 0.8, "style": 0.25, "use_speaker_boost": true, "speed": 1.06 }
+      },
+      "kokoro": { "voice": "am_michael", "speed": 1.1 },
+      "piper": { "model": "en_US-ryan-high.onnx", "length_scale": 0.9 },
+      "espeak": { "voice": "en-us+m3", "words_per_minute": 170 }
+    },
+    "mom": {
+      "description": "warm, amused, calm",
+      "elevenlabs": {
+        "voice_id": "QgAHZCKeKxsZTcp84rgh",
+        "name": "Hollie Sue - Expressive, Warm, & Witty",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.4, "similarity_boost": 0.8, "style": 0.45, "use_speaker_boost": true, "speed": 0.95 }
+      },
+      "kokoro": { "voice": "af_heart", "speed": 0.92 },
+      "piper": { "model": "en_US-amy-medium.onnx", "length_scale": 1.05 },
+      "espeak": { "voice": "en-us+f3", "words_per_minute": 150 }
+    }
+  },
+  "lines": [
+    { "id": "n1", "scene": 1, "speaker": "narrator", "text": "If you dig a tunnel from the yard to the kitchen, you get midnight snacks. Sort of." },
+    { "id": "n2", "scene": 2, "speaker": "narrator", "text": "But the dirt roof keeps caving in. So you add wooden frames, like an old gold mine." },
+    { "id": "n3", "scene": 3, "speaker": "narrator", "text": "But the shovel is so loud, it wakes up the dog. So you dig with a spoon... for three weeks." },
+    { "id": "n4", "scene": 4, "speaker": "narrator", "text": "But you pop up in the doghouse. So this time you measure: twelve steps from the back door." },
+    { "id": "n5", "scene": 5, "speaker": "narrator", "text": "But the kitchen floor is solid tile. So you cut one tile and turn it into a secret trapdoor." },
+    { "id": "n6", "scene": 6, "speaker": "narrator", "text": "But the snacks are on the top shelf. So you build a tiny pulley that lowers them straight into the tunnel." },
+    { "id": "n7", "scene": 7, "speaker": "narrator", "text": "Congratulations, you built a secret snack tunnel." },
+    { "id": "mom", "scene": 7, "speaker": "mom", "text": "Looking for these?", "subtitle": "mom" }
+  ]
+}
