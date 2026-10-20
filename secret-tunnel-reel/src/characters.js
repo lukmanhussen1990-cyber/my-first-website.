@@ -349,7 +349,7 @@ export function buildGirl(M) {
     e.add(gm(placed(sph(0.078, 18, 14), 0, 0, 0, 0, 0, 0, 1, 1.15, 1), M.eyeWhite));
     face.add(e);
     eyes.push(e);
-    const p = gm(sph(0.022, 10, 8), M.pupil);
+    const p = gm(sph(0.032, 12, 10), M.pupil);
     p.userData.base = new THREE.Vector3(...onSphere(R + 0.03, s * 0.37, 0.08));
     p.userData.n = p.userData.base.clone().normalize();
     p.position.copy(p.userData.base);
@@ -388,5 +388,15 @@ export function buildGirl(M) {
     body.add(h);
     return h;
   });
-  return { root, body, head, face, eyes, pupils, brows, smile, mouth, hands, pigtails, clip, R };
+  // arms: unit-length sleeves from the shoulders, stretched to the hands each
+  // frame, so the hands on her cheeks and over her mouth read as her own
+  const armG = new THREE.CylinderGeometry(0.043, 0.052, 1, 12);
+  armG.translate(0, 0.5, 0);
+  const arms = [-1, 1].map((s) => {
+    const a = gm(armG, M.girlTop);
+    a.userData.shoulder = new THREE.Vector3(s * 0.15, 0.0, -0.02);
+    body.add(a);
+    return a;
+  });
+  return { root, body, head, face, eyes, pupils, brows, smile, mouth, hands, arms, pigtails, clip, R };
 }

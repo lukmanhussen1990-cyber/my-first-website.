@@ -524,18 +524,27 @@ export function foliageMaterial(hex, key) {
       .replace('#include <color_fragment>', `#include <color_fragment>
         {
           vec3 p = vWPos, n = normalize(vWNrm), an = abs(n);
-          vec4 cs = an.x > an.z ? cellv(p.zy * 5.0 + 1.7) : cellv(p.xy * 5.0);
-          vec4 ct = cellv(p.xz * 5.0 + 4.1);
-          float wt = smoothstep(0.35, 0.8, an.y);
-          float e = mix(cs.z, ct.z, wt), id = mix(cs.w, ct.w, wt);
-          float clump = 1.0 - smoothstep(0.25, 0.66, e);
+          // small leaves (~11 cm cells) projected along the dominant axis
+          bool top = an.y > max(an.x, an.z), side = an.x > an.z;
+          vec2 q = top ? p.xz + 4.1 : (side ? p.zy + 1.7 : p.xy);
+          vec4 ce = cellv(q * 9.0);
+          float id = ce.w;
+          // lacy outlines: towards the silhouette only the leaf cores are left
+          float facing = abs(dot(n, normalize(cameraPosition - p)));
+          float keep = mix(0.2, 1.2, smoothstep(0.04, 0.5, facing)) * (0.85 + 0.3 * fract(id * 7.31));
+          if (ce.z > keep) discard;
           float ao = vFol.x;
           vec3 hue = mix(vec3(0.86, 0.96, 0.84), vec3(1.1, 1.04, 0.76), vFol.y);
-          vec3 c = hue * (0.82 + 0.26 * id) * mix(0.68, 1.0, clump) * mix(0.38, 1.0, ao);
+          float leaf = 1.0 - smoothstep(0.32, 0.64, ce.z);
+          vec3 c = hue * (0.76 + 0.36 * id) * mix(0.6, 1.0, leaf) * mix(0.34, 1.0, ao);
+          c *= 0.88 + 0.24 * vnoise(q * 2.1);
           c *= mix(vec3(1.0), vec3(1.08, 1.05, 0.84), smoothstep(0.35, 0.95, n.y) * ao);
           diffuseColor.rgb *= c;
-          vec3 ps = an.x > an.z ? vec3(0.0, -cs.y, -cs.x) : vec3(-cs.x, -cs.y, 0.0);
-          fPert = mix(ps, vec3(-ct.x, 0.0, -ct.y), wt) * 1.5;
+          // every leaf tilts its own way, over a slight dome
+          vec3 tilt = vec3(fract(id * 17.13), fract(id * 31.71), fract(id * 53.37)) - 0.5;
+          vec2 dv = -ce.xy;
+          vec3 dome = top ? vec3(dv.x, 0.0, dv.y) : (side ? vec3(0.0, dv.y, dv.x) : vec3(dv.x, dv.y, 0.0));
+          fPert = tilt * 1.2 + dome * 0.6;
         }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal = normalize(normal + (viewMatrix * vec4(fPert, 0.0)).xyz);`);
@@ -576,7 +585,7 @@ export function makeSimpleMats(envMap) {
     room: mat('#3a3330'),
     curtain: mat('#f3a7b5'),
     greenShade: mat('#9fb98c'),
-    houseGlass: new THREE.MeshPhysicalMaterial({ color: col('#1d2a3a'), roughness: 0.08, metalness: 0.0, envMap, envMapIntensity: 0.55 }),
+    houseGlass: new THREE.MeshPhysicalMaterial({ color: col('#26364a'), roughness: 0.06, metalness: 0.0, envMap, envMapIntensity: 1.1 }),
     brick: mat('#a35a43'),
     chimneyBrick: brickMaterial(),
     patio: paverMaterial('#cdc6ba'),
@@ -662,10 +671,11 @@ export function makeSimpleMats(envMap) {
     lamp: new THREE.MeshStandardMaterial({ color: col('#fff3c0'), roughness: 0.2, emissive: col('#ffe39a'), emissiveIntensity: 1.6 }),
     sweat: new THREE.MeshPhysicalMaterial({ color: col('#bfe6ff'), roughness: 0.05, transparent: true, opacity: 0.85, envMap, envMapIntensity: 1.2 }),
     // glowing helpers
-    loadDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(3.4, 0.95, 0.08) }),
-    airDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 3.4, 10.0) }),
-    stale: softEdges(new THREE.MeshLambertMaterial({ color: col('#a3a7ad'), transparent: true, opacity: 0.32, depthWrite: false }), 1.0),
-    smoke: softEdges(new THREE.MeshLambertMaterial({ color: col('#b9bbbe'), transparent: true, opacity: 0.6, depthWrite: false }), 1.0),
+    loadDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(2.1, 0.46, 0.03) }),
+    airDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.38, 1.6, 5.2) }),
+    // stale air and candle smoke are soft camera-facing sprites (alpha map set in main.js)
+    stale: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 1.1, 0.98), transparent: true, opacity: 0.5, depthWrite: false }),
+    smoke: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.5, 1.5), transparent: true, opacity: 0.75, depthWrite: false }),
     glowWarm: glowMat(new THREE.Color(2.6, 1.45, 0.45)),
     glowCandle: glowMat(new THREE.Color(2.4, 1.2, 0.3)),
     beam: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.9, 0.6), transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),

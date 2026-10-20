@@ -183,7 +183,8 @@ export function buildHouse(mats, roofMat, { wall = 'wall', shade = 'wallShade', 
     }
   };
   const upY = 4.25, dnY = 1.65;
-  for (const x of [-3.15, 0, 3.15]) win(x, upY, 1.05, 1.4, boxes === 'up' ? 'mixed' : null);
+  // (no window box on the middle one: it would sit right on top of the door canopy)
+  for (const x of [-3.15, 0, 3.15]) win(x, upY, 1.05, 1.4, boxes === 'up' && x !== 0 ? 'mixed' : null);
   for (const x of [-3.15, 3.15]) win(x, dnY, 1.05, 1.4, boxes === 'down' ? 'pair' : null);
   // French doors under a little canopy, lanterns either side, a doormat on the step
   {

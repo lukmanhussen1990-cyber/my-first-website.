@@ -92,10 +92,10 @@ scene.add(sun, sun.target);
 
 const skyL = new THREE.DirectionalLight(new THREE.Color(0.55, 0.68, 1.0), 1.4);
 skyL.castShadow = true;
-skyL.shadow.mapSize.set(512, 512);
+skyL.shadow.mapSize.set(1024, 1024); // finer, so low sky directions don't stair-step on the lawn and walls
 Object.assign(skyL.shadow.camera, { left: -19, right: 19, top: 19, bottom: -19, near: 1, far: 150 });
-skyL.shadow.bias = -0.0006;
-skyL.shadow.normalBias = 0.04;
+skyL.shadow.bias = -0.0004;
+skyL.shadow.normalBias = 0.025;
 skyL.target.position.copy(LIGHT_TARGET);
 scene.add(skyL, skyL.target);
 
@@ -324,7 +324,8 @@ function updateTunFace(t) {
   tunFace.geometry.attributes.position.needsUpdate = true;
   tunFace.geometry.attributes.normal.needsUpdate = true;
 }
-const dipFace = mesh(placed(quad(WD.HALF * 2 + 0.06, TW), 0, 0, 0, -Math.PI / 2, 0, 0), boundaryMat);
+// (dug-soil colour like the back wall: in the floor colour it caught the sun and read as a pale plank)
+const dipFace = mesh(placed(quad(WD.HALF * 2 + 0.06, TW), 0, 0, 0, -Math.PI / 2, 0, 0), wallSideMat);
 const dipFaceG = new THREE.Group();
 dipFaceG.add(dipFace);
 dipFace.position.z = -TW / 2;
@@ -530,8 +531,8 @@ const puffGeom = lumpyBlob(1, 1, 0.12, 9);
 const DUST = [];
 {
   const rnd = U.mulberry32(41);
-  const burst = (t0, p, n, r, spread = 0.4, up = 0.9, vx = 0, vz = 0) => {
-    for (let i = 0; i < n; i++) DUST.push({ t0: t0 + rnd() * 0.12, life: 0.9 + rnd() * 0.5, p: p.clone().add(V((rnd() - 0.5) * spread, (rnd() - 0.5) * spread * 0.5, (rnd() - 0.5) * spread * 0.6)), v: V((rnd() - 0.5) * 1.2 + vx * (0.6 + 0.8 * rnd()), up * (0.5 + rnd() * 0.8), (rnd() - 0.5) * 0.4 + vz * rnd()), r: r * (0.7 + rnd() * 0.6) });
+  const burst = (t0, p, n, r, spread = 0.4, up = 0.9, vx = 0, vz = 0, life = 0.9) => {
+    for (let i = 0; i < n; i++) DUST.push({ t0: t0 + rnd() * 0.12, life: life * (1 + rnd() * 0.55), p: p.clone().add(V((rnd() - 0.5) * spread, (rnd() - 0.5) * spread * 0.5, (rnd() - 0.5) * spread * 0.6)), v: V((rnd() - 0.5) * 1.2 + vx * (0.6 + 0.8 * rnd()), up * (0.5 + rnd() * 0.8), (rnd() - 0.5) * 0.4 + vz * rnd()), r: r * (0.7 + rnd() * 0.6) });
   };
   for (let i = 0; i < T.shaftSteps; i++) burst(T.digStart + i * T.shaftStep + 0.05, V(-3.2, 0.1, -0.5), 2, 0.22);
   burst(T.pileLand, V(PILE.x, 0.1, PILE.z), 4, 0.28, 1.2);
@@ -540,16 +541,28 @@ const DUST = [];
   burst(T.clunk + 0.04, V(FOOT.x0 - 0.2, -2.35, 0.05), 6, 0.2, 0.4, 0.35, -0.9, 0.5);
   burst(T.knock1, V(FOOT.x0 - 0.1, -2.1, -0.2), 3, 0.14, 0.2, 0.5);
   burst(T.knock2, V(FOOT.x0 - 0.1, -2.2, -0.2), 3, 0.14, 0.2, 0.5);
-  burst(T.breakThrough, V(LID.x, 0.08, LID.z), 7, 0.24, 0.7);
+  // breakthrough: a quick puff that clears before the lid drops in
+  burst(T.breakThrough, V(LID.x, 0.12, LID.z), 5, 0.16, 0.45, 1.5, 0, 0, 0.5);
+  // the lid's thump: a low ring of dust squeezed out from under its rim
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2 + rnd() * 0.3;
+    DUST.push({ t0: T.lidLand + rnd() * 0.03, life: 0.45 + rnd() * 0.2, p: V(LID.x + Math.cos(a) * 0.4, 0.04, LID.z + Math.sin(a) * 0.3), v: V(Math.cos(a) * 1.3, 0.25 + rnd() * 0.2, Math.sin(a) * 0.7), r: 0.08 + rnd() * 0.03 });
+  }
   burst(T.pileAway, V(PILE.x, 0.25, PILE.z), 7, 0.32, 1.5);
 }
 const dustPuffs = instanced(puffGeom, M.dust, DUST.length + 60, false);
 dustPuffs.renderOrder = 3;
-// turf + dirt thrown up where the exit breaks through the friend's lawn
+// turf + dirt thrown up and out where the exit breaks through the friend's lawn
+// (fanning outwards fast enough to be clear of the hole before the lid drops in)
 const BREAK = [];
 {
   const rnd = U.mulberry32(17);
-  for (let i = 0; i < 14; i++) BREAK.push({ t0: T.breakThrough + rnd() * 0.1, p: V(LID.x + (rnd() - 0.5) * 0.5, 0.02, LID.z + (rnd() - 0.5) * 0.4), v: V((rnd() - 0.5) * 2.0, 2.2 + rnd() * 1.8, (rnd() - 0.5) * 1.2), s: 0.5 + rnd() * 0.4, rot: V(rnd() * 6, rnd() * 6, rnd() * 6), grass: i % 3 === 0 });
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2 + rnd() * 0.5, r0 = 0.1 + rnd() * 0.2, sp = 1.2 + rnd() * 1.0;
+    const v = V(Math.cos(a) * sp, 2.0 + rnd() * 1.4, Math.sin(a) * sp * 0.6);
+    const tl = (v.y + Math.sqrt(v.y * v.y + 4 * 4.9 * 0.02)) / 9.8; // time to land back on the lawn
+    BREAK.push({ t0: T.breakThrough + rnd() * 0.07, p: V(LID.x + Math.cos(a) * r0, 0.05, LID.z + Math.sin(a) * r0 * 0.7), v, tl, s: 0.38 + rnd() * 0.32, rot: V(rnd() * 6, rnd() * 6, rnd() * 6), grass: i % 3 === 0 });
+  }
 }
 const breakChunks = instanced(chunkGeom, dirtMat, BREAK.length);
 const breakTurf = instanced(new THREE.BoxGeometry(0.16, 0.05, 0.16), M.tuft, BREAK.length);
@@ -562,6 +575,7 @@ ladderR.position.set(LID.x, FLOOR, -TW + 0.12);
 scene.add(ladderL, ladderR);
 const lid = buildLid(M, LID.r);
 add(lid.hinge);
+const POT_Y = lid.pot.position.y;
 
 // ---------------------------------------------------------------------------
 // brick arches: voussoirs fly in one by one, mortar behind, pilasters at the ribs
@@ -573,15 +587,17 @@ for (const a of ARCHES) {
   const n = Math.max(5, Math.round(arc / 0.11));
   for (let i = 0; i < n; i++) {
     const th = a.a0 + ((a.a1 - a.a0) * (i + 0.5)) / n;
-    BRICKS.push({ arch: a.k, x: a.ox + Rm * Math.cos(th), y: a.oy + Rm * Math.sin(th), rz: th - Math.PI / 2, w: arc / n - 0.013, wm: arc / n + 0.004 });
+    BRICKS.push({ arch: a.k, x: a.ox + Rm * Math.cos(th), y: a.oy + Rm * Math.sin(th), rz: th - Math.PI / 2, w: arc / n - 0.013, wm: arc / n + 0.004, side: i < (n - 1) / 2 ? -1 : 1, o: 2 * Math.min(i, n - 1 - i) + (i > (n - 1) / 2 ? 1 : 0), n, key: i === (n - 1) / 2 || (n % 2 === 0 && i === n / 2) });
   }
 }
-BRICKS.sort((p, q) => p.x - q.x);
+// like a real arch: each one is laid from both springings up to the crown, keystone last;
+// the five arches overlap, left to right
 {
   const rnd = U.mulberry32(23);
-  BRICKS.forEach((b, i) => {
-    b.t = T.bricksStart + ((T.bricksEnd - T.bricksStart - 0.3) * i) / (BRICKS.length - 1);
-    b.from = V(b.x + (rnd() - 0.5) * 1.6, b.y + 1.6 + rnd() * 1.4, 2.2 + rnd() * 1.2);
+  const dur = 0.72, gap = (T.bricksEnd - T.bricksStart - dur) / (ARCHES.length - 1);
+  BRICKS.forEach((b) => {
+    b.t = T.bricksStart + b.arch * gap + (dur * b.o) / (b.n - 1);
+    b.from = V(b.x + b.side * (0.35 + rnd() * 0.5), b.y + 1.5 + rnd() * 0.9, 2.3 + rnd() * 0.8);
     b.spin = V(rnd() * 8 - 4, rnd() * 8 - 4, rnd() * 8 - 4);
     b.col = new THREE.Color().setHSL(0.025 + rnd() * 0.02, 0.62 + rnd() * 0.12, 0.36 + rnd() * 0.12).convertSRGBToLinear();
   });
@@ -611,62 +627,97 @@ const CLUMPS = [];
       const top = WD.archY(a, x, a.R + WD.BAND) - 0.08, roof = WD.roofAt(x);
       const y0 = lerp(roof + 0.03, Math.max(roof + 0.05, top), rnd());
       const t0 = WD.CRUMBLE[a.k] + 0.5 * clamp((y0 - roof) / Math.max(0.05, top - roof)) + rnd() * 0.1;
-      CLUMPS.push({ t0, x, y0, z: -0.12 - rnd() * 0.85, floor: WD.floorAt(x) + 0.05, s: 0.6 + rnd() * 0.6, rot: V(rnd() * 6, rnd() * 6, rnd() * 6), spin: V(rnd() * 6 - 3, rnd() * 6 - 3, rnd() * 6 - 3), away: T.clumpsAway + ((x + 3) / 6) * 0.25 });
+      const z = -0.12 - rnd() * 0.85, away = T.clumpsAway + ((x + 3) / 6) * 0.25;
+      CLUMPS.push({ t0, x, y0, z, floor: WD.floorAt(x) + 0.05, s: 0.45 + rnd() * 0.55, rot: V(rnd() * 6, rnd() * 6, rnd() * 6), spin: V(rnd() * 6 - 3, rnd() * 6 - 3, rnd() * 6 - 3), away });
+      // a sprinkle of crumbs trickles down just before each clump lets go
+      for (let j = 0; j < 3; j++) {
+        const xc = x + (rnd() - 0.5) * 0.16;
+        CLUMPS.push({ t0: t0 - 0.06 - rnd() * 0.3, x: xc, y0, z: z + (rnd() - 0.5) * 0.1, floor: WD.floorAt(xc) + 0.02, s: 0.16 + rnd() * 0.16, rot: V(rnd() * 6, rnd() * 6, rnd() * 6), spin: V(rnd() * 9 - 4.5, rnd() * 9 - 4.5, rnd() * 9 - 4.5), away });
+      }
     }
   }
 }
 const clumps = instanced(chunkGeom, dirtMat, CLUMPS.length);
 // orange dots: weight of the soil, down onto each arch, along its curve, down the sides
+// Each arch gets four single-file lanes (two per side): straight down onto the
+// arch, round its back to the springing, then down the side into the ground,
+// so in any frame they read as dotted arrows.
 const LOAD = [];
+const LOAD_GAP = 0.16; // spacing of the dots along a lane (m)
 {
-  const rnd = U.mulberry32(31);
   for (const a of ARCHES) {
-    const xm = (a.xa + a.xb) / 2;
-    for (let i = 0; i < 26; i++) {
-      const side = i % 2 ? 1 : -1;
-      const x0 = xm + side * (0.04 + rnd() * 0.32) * (a.xb - a.xa) * 0.5;
-      const ext = (x) => WD.archY(a, x, a.R + WD.BAND) + 0.03;
-      const pts = [[x0, ext(x0) + (a.k === 2 ? 1.05 : 0.75), 0.03]];
-      const xe = side < 0 ? a.xa + 0.02 : a.xb - 0.02;
-      for (let k = 0; k <= 10; k++) {
-        const x = lerp(x0, xe, k / 10);
-        pts.push([x, ext(x), 0.03]);
+    const xm = (a.xa + a.xb) / 2, half = (a.xb - a.xa) / 2;
+    const ext = (x) => WD.archY(a, x, a.R + WD.BAND) + 0.035;
+    for (const side of [-1, 1]) {
+      for (const lane of [0, 1]) {
+        const x0 = xm + side * (lane ? 0.55 : 0.14) * half;
+        const xe = side < 0 ? a.xa + 0.03 : a.xb - 0.03;
+        const pts = [[x0, ext(x0) + (a.k === 2 ? 1.0 : 0.72) - lane * 0.18, 0.04]];
+        for (let k = 0; k <= 12; k++) pts.push([lerp(x0, xe, k / 12), ext(lerp(x0, xe, k / 12)), 0.04]);
+        pts.push([xe, WD.floorAt(xe) - 0.42, 0.04]);
+        const path = U.polyPath(pts);
+        LOAD.push({ path, n: Math.max(4, Math.round(path.length / LOAD_GAP)), ph: (a.k * 0.31 + lane * 0.5 + (side > 0 ? 0.23 : 0)) % 1, sp: 1.2 });
       }
-      const yb = WD.floorAt(xe) - 0.35;
-      pts.push([xe, yb, 0.03]);
-      LOAD.push({ path: U.polyPath(pts), ph: i / 26 + rnd() * 0.03, sp: 1.15 + rnd() * 0.2 });
     }
   }
 }
-const loadDots = instanced(new THREE.SphereGeometry(0.045, 10, 8), M.loadDot, LOAD.length, false);
+const loadDots = instanced(new THREE.SphereGeometry(0.052, 12, 9), M.loadDot, LOAD.reduce((s, d) => s + d.n, 0), false);
 
 // ---------------------------------------------------------------------------
 // stale air, candle, air pipe, fresh air
 // ---------------------------------------------------------------------------
 const CANDLE = V(0.22, WD.floorAt(0.22), -0.42);
+const CANDLE_S = 1.45; // a bit larger than life so it reads in the wide shot
 const candle = buildCandle(M);
 candle.root.position.copy(CANDLE);
 add(candle.root, true, true);
-const candleGlow = mesh(new THREE.CircleGeometry(0.13, 24), M.glowCandle, false, false);
+// soft round sprites (white in rgb, which alphaMap reads): a lumpy one for
+// haze and smoke, a round one for glows
+const softSprite = (lumpy) => {
+  const n = 64, d = new Uint8Array(n * n * 4);
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const u = ((i + 0.5) / n) * 2 - 1, v = ((j + 0.5) / n) * 2 - 1, th = Math.atan2(v, u);
+      const r = Math.hypot(u, v) * (1 + lumpy * (0.1 * Math.sin(3 * th + 1) + 0.06 * Math.sin(5 * th + 2)));
+      const a = Math.round(255 * Math.pow(smooth(clamp(1 - r)), 1.5));
+      d.set([a, a, a, 255], (j * n + i) * 4);
+    }
+  }
+  const tex = new THREE.DataTexture(d, n, n);
+  tex.magFilter = tex.minFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+};
+const SOFT_LUMPY = softSprite(1), SOFT_ROUND = softSprite(0);
+M.stale.alphaMap = M.smoke.alphaMap = SOFT_LUMPY;
+M.glowCandle.alphaMap = SOFT_ROUND;
+const spriteGeom = new THREE.PlaneGeometry(2, 2);
+// warm halo behind the flame + a hot core in front of it; a glowing ember after it goes out
+const candleGlow = mesh(spriteGeom, M.glowCandle, false, false);
 candleGlow.renderOrder = 7;
-scene.add(candleGlow);
+const candleCore = mesh(spriteGeom, M.glowCandle.clone(), false, false);
+candleCore.renderOrder = 7;
+const ember = mesh(new THREE.SphereGeometry(0.009, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.0, 0.75, 0.12), transparent: true }), false, false);
+scene.add(candleGlow, candleCore, ember);
 const centerY = (x) => (WD.floorAt(x) + WD.ceilingAt(x)) / 2;
+// stale air: a murky grey haze of soft sprites that spreads out from the candle
 const STALE = [];
 {
   const rnd = U.mulberry32(37);
-  for (let i = 0; i < 46; i++) {
-    const x = lerp(-3.3, 3.3, (i + rnd()) / 46);
+  for (let i = 0; i < 64; i++) {
+    const x = lerp(-3.35, 3.35, (i + rnd()) / 64);
     const fl = WD.floorAt(x), ce = WD.ceilingAt(x);
-    STALE.push({ x, y: lerp(fl + 0.3, ce - 0.2, rnd()), z: -0.25 - rnd() * 0.7, r: 0.26 + rnd() * 0.18, ph: rnd() * 10, tin: T.staleStart + (Math.abs(x - CANDLE.x) / 3.5) * (T.staleFull - T.staleStart) * 0.85 + rnd() * 0.2 });
+    STALE.push({ x, y: lerp(fl + 0.22, ce - 0.12, rnd()), z: -0.2 - rnd() * 0.75, r: 0.4 + rnd() * 0.28, ph: rnd() * 10, rz: rnd() * 6.3, spin: (rnd() - 0.5) * 0.7, tin: T.staleStart + (Math.abs(x - CANDLE.x) / 3.5) * (T.staleFull - T.staleStart) * 0.85 + rnd() * 0.2 });
   }
   // nearest the shaft leaves first
-  [...STALE].sort((p, q) => p.x - q.x).forEach((p, k) => (p.tout = T.staleOut + (k / STALE.length) * (T.airClear - T.staleOut - 1.0)));
+  [...STALE].sort((p, q) => p.x - q.x).forEach((p, k) => (p.tout = T.staleOut + (k / STALE.length) * (T.airClear - T.staleOut - 1.45)));
 }
-const staleAir = instanced(puffGeom, M.stale, STALE.length, false);
+const staleAir = instanced(spriteGeom, M.stale, STALE.length, false);
 staleAir.renderOrder = 3;
+// a curl of smoke off the wick when the candle goes out
 const SMOKE = [];
-for (let i = 0; i < 9; i++) SMOKE.push({ t0: T.candleOut + i * 0.09, life: 1.2 + (i % 3) * 0.2, dx: Math.sin(i * 2.3) * 0.1 });
-const smokeWisp = instanced(puffGeom, M.smoke, SMOKE.length, false);
+for (let i = 0; i < 18; i++) SMOKE.push({ t0: T.candleOut + 0.03 + i * 0.055, life: 1.3 + (i % 3) * 0.25, ph: i * 0.9 });
+const smokeWisp = instanced(spriteGeom, M.smoke, SMOKE.length, false);
 smokeWisp.renderOrder = 4;
 const PIPE_X = 1.3, PIPE_BOT = WD.ceilingAt(1.3) - 0.04, PIPE_TOP = 0.45;
 const pipe = new THREE.Group();
@@ -682,6 +733,27 @@ const ventCap = new THREE.Group();
 ventCap.add(mesh(mergeAll([placed(new THREE.ConeGeometry(0.16, 0.12, 22), 0, 0.12, 0), placed(new THREE.CylinderGeometry(0.075, 0.075, 0.07, 18), 0, 0.035, 0)]), M.pvcDark));
 ventCap.position.set(PIPE_X, PIPE_TOP, -0.02);
 scene.add(ventCap);
+// dirt and turf kicked up the moment the pipe breaks through the lawn
+const PIPE_BREAK = (() => {
+  const want = -PIPE_BOT / (PIPE_TOP - PIPE_BOT);
+  let lo = 0, hi = 0.7;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (easeOutBack(mid, 1.4) < want) lo = mid;
+    else hi = mid;
+  }
+  return T.pipeStart + lo * (T.pipeTop - T.pipeStart);
+})();
+const PIPE_BITS = [];
+{
+  const rnd = U.mulberry32(41);
+  for (let i = 0; i < 12; i++) {
+    const a = rnd() * Math.PI * 2;
+    PIPE_BITS.push({ grass: i % 3 === 0, v: V(Math.cos(a) * (0.5 + rnd() * 0.6), 1.5 + rnd() * 1.1, -0.1 - rnd() * 0.5), s: 0.3 + rnd() * 0.35, rot: V(rnd() * 6, rnd() * 6, rnd() * 6), spin: V(rnd() * 10 - 5, rnd() * 10 - 5, rnd() * 10 - 5) });
+  }
+}
+const pipeChunks = instanced(chunkGeom, dirtMat, PIPE_BITS.length);
+const pipeTurf = instanced(new THREE.BoxGeometry(0.1, 0.035, 0.1), M.tuft, PIPE_BITS.length);
 const AIR_PATH = (() => {
   const pts = [[PIPE_X, PIPE_TOP + 0.35, 0.1], [PIPE_X, PIPE_BOT - 0.1, 0.1], [PIPE_X - 0.15, PIPE_BOT - 0.35, -0.25]];
   for (let x = 1.0; x >= -3.0; x -= 0.25) pts.push([x, centerY(x) + 0.05, -0.3]);
@@ -856,14 +928,15 @@ function updateDigging(t) {
   const ps = pileScale(t) * popOut(t, T.pileAway, 0.32);
   pile.visible = ps > 0.002;
   pile.position.copy(PILE);
-  // "Sort of." - the pile gives a little shrug
+  // "Sort of." - the pile gives a so-so waggle (one way on "Sort", the other on "of") and a shrug
   const shrug = bump(t, 5.5, 6.02, 0.1), shrugW = wobble(t, 6.0, 3.2, 6);
+  const hopS = Math.abs(Math.sin((t - 5.5) * 11)) * shrug;
   pile.scale.set(
-    1.25 * Math.max(ps, 0.001) * (1 - 0.05 * shrug + 0.03 * shrugW),
-    0.75 * Math.max(ps, 0.001) * (1 - 0.12 * wobble(t, T.pileLand + 0.2, 3, 6) + 0.16 * shrug - 0.08 * shrugW),
-    0.95 * Math.max(ps, 0.001) * (1 - 0.05 * shrug + 0.03 * shrugW)
+    1.25 * Math.max(ps, 0.001) * (1 - 0.06 * shrug - 0.04 * hopS + 0.04 * shrugW),
+    0.75 * Math.max(ps, 0.001) * (1 - 0.12 * wobble(t, T.pileLand + 0.2, 3, 6) + 0.14 * shrug + 0.1 * hopS - 0.1 * shrugW),
+    0.95 * Math.max(ps, 0.001) * (1 - 0.06 * shrug - 0.04 * hopS + 0.04 * shrugW)
   );
-  pile.rotation.z = 0.07 * shrug * Math.sin((t - 5.5) * 11);
+  pile.rotation.z = 0.14 * shrug * Math.sin((t - 5.5) * 11);
   // bits tumbling off the dig face
   beginInst(faceChunks);
   for (const c of FACE) {
@@ -907,11 +980,12 @@ function updateDigging(t) {
   beginInst(breakTurf);
   for (const c of BREAK) {
     const dt = t - c.t0;
-    if (dt < 0 || dt > 1.0) continue;
-    const y = Math.max(0.03, c.p.y + c.v.y * dt - 4.9 * dt * dt);
-    const sc = c.s * (1 - smooth(clamp((dt - 0.6) / 0.4)));
+    if (dt < 0 || dt > 0.95) continue;
+    const df = Math.min(dt, c.tl); // flies, then lies on the lawn and shrinks away
+    const y = Math.max(0.03, c.p.y + c.v.y * df - 4.9 * df * df);
+    const sc = c.s * Math.min(1, dt / 0.05) * (1 - smooth(clamp((dt - c.tl - 0.12) / 0.25)));
     const im = c.grass ? breakTurf : breakChunks;
-    setInst(im, c.p.x + c.v.x * dt * 0.5, y, c.p.z + c.v.z * dt * 0.5, sc, sc, sc, c.rot.x + dt * 7, c.rot.y + dt * 5, c.rot.z);
+    setInst(im, c.p.x + c.v.x * df, y, Math.min(-0.1, c.p.z + c.v.z * df), sc, sc, sc, c.rot.x + df * 9, c.rot.y + df * 6, c.rot.z); // (stay on the lawn, never in front of the cut)
   }
   endInst(breakChunks);
   endInst(breakTurf);
@@ -959,18 +1033,31 @@ function updateDust(t) {
 }
 
 function updateLid(t) {
-  // drops in after the breakthrough, opens for the boy, closes after him
-  const land = U.easeOutBounce(prog(t, T.lidLand - 0.4, 0.55));
-  lid.hinge.visible = t >= T.lidLand - 0.4;
-  lid.hinge.position.set(LID.x - LID.r, (1 - land) * 1.6 + 0.0, LID.z);
+  // pops into view above the hole as the burst clears, drops, thumps down on lidLand,
+  // one little hop (second knock at lidLand + 0.2) and settles; opens for the boy, closes after him
+  const tA = T.lidLand - 0.24;
+  const fall = prog(t, tA + 0.06, 0.18);
+  const hop = t > T.lidLand ? prog(t, T.lidLand, 0.2) : 0;
+  const ly = t < T.lidLand ? 1.1 * (1 - fall * fall) : 0.07 * 4 * hop * (1 - hop);
+  const la = popIn(t, tA, 0.16, 2.0);
+  lid.hinge.visible = la > 0.002;
+  lid.hinge.position.set(LID.x - LID.r, ly, LID.z);
+  // squash on each contact, a slight tumble on the way down
+  const sq = wobble(t, T.lidLand, 3.5, 9) + 0.5 * wobble(t, T.lidLand + 0.2, 4, 10);
+  lid.disc.scale.set(Math.max(la, 0.001) * (1 + 0.1 * sq), Math.max(la, 0.001) * (1 - 0.35 * sq), Math.max(la, 0.001) * (1 + 0.1 * sq));
+  lid.disc.rotation.x = t < T.lidLand ? 0.35 * (1 - fall) * Math.sin((t - tA) * 9) : 0;
   // flips open sideways on its left edge (the flower pot clings on), slams shut at the end
   let ang = 0;
   if (t >= T.lidOpen) ang = 1.75 * Math.min(1.08, easeOutBack(prog(t, T.lidOpen, 0.36), 1.6));
   if (t >= T.lidClose) ang = 1.75 * (1 - U.easeOutBounce(prog(t, T.lidClose, 0.42)));
   lid.hinge.rotation.z = ang;
-  const potK = popIn(t, T.potLand, 0.4, 2.4);
+  // flower pot: pops in above the lid, plonks down on potLand, squash and stretch
+  const potK = popIn(t, T.potLand - 0.24, 0.16, 2.0);
+  const pf = prog(t, T.potLand - 0.17, 0.17);
   lid.pot.visible = potK > 0.002;
-  lid.pot.scale.setScalar(Math.max(potK, 0.001));
+  lid.pot.position.y = POT_Y + 0.75 * (1 - pf * pf);
+  const psq = wobble(t, T.potLand, 3.2, 7);
+  lid.pot.scale.set(Math.max(potK, 0.001) * (1 + 0.2 * psq), Math.max(potK, 0.001) * (1 - 0.32 * psq), Math.max(potK, 0.001) * (1 + 0.2 * psq));
   lid.pot.rotation.z = 0.12 * wobble(t, T.lidOpen + 0.1, 2.2, 3.5) + 0.1 * wobble(t, T.lidClose + 0.3, 2.6, 4) + 0.08 * wobble(t, T.potLand + 0.3, 3, 5);
 }
 
@@ -991,14 +1078,15 @@ function updateArches(t) {
   beginInst(bricks);
   beginInst(mortar);
   for (const b of BRICKS) {
-    const f = 0.34;
-    const u = prog(t, b.t - f, f);
+    const f = 0.36;
     if (t < b.t - f) continue;
-    const e = easeOutCubic(u);
-    const x = lerp(b.from.x, b.x, e), y = lerp(b.from.y, b.y, e) + Math.sin(u * Math.PI) * 0.35, z = lerp(b.from.z, -0.12, e);
-    const land = t >= b.t ? popIn(t, b.t, 0.24, 3.2) : 0.9;
-    const r = 1 - e;
-    const i = setInst(bricks, x, y, z, b.w * land, (WD.BAND - 0.014) * land, 0.24 * (t >= b.t ? 1 : 0.9), b.spin.x * r, b.spin.y * r, b.rz + b.spin.z * r);
+    const u = prog(t, b.t - f, f);
+    // arcs in, overshoots the slot a touch and springs back; squashes on the snap
+    const e = easeOutBack(u, 1.25);
+    const x = lerp(b.from.x, b.x, e), y = lerp(b.from.y, b.y, e) + Math.sin(u * Math.PI) * 0.4, z = lerp(b.from.z, -0.12, e);
+    const sq = (b.key ? 0.3 : 0.16) * wobble(t, b.t, 4.5, 9);
+    const r = 1 - easeOutCubic(u);
+    const i = setInst(bricks, x, y, z, b.w * (1 + sq), (WD.BAND - 0.014) * (1 - sq), 0.24, b.spin.x * r, b.spin.y * r, b.rz + b.spin.z * r);
     if (i >= 0) bricks.setColorAt(i, b.col);
     if (t >= b.t) setInst(mortar, b.x, b.y, -0.13, b.wm, WD.BAND - 0.002, 0.2, 0, 0, b.rz);
   }
@@ -1011,16 +1099,19 @@ function updateArches(t) {
   }
   // load dots
   beginInst(loadDots);
-  if (t > T.loadStart && t < T.loadEnd + 1.2) {
+  if (t > T.loadStart && t < T.loadEnd + 1.0) {
+    const fadeAll = 1 - smooth(prog(t, T.loadEnd + 0.2, 0.6));
     for (const d of LOAD) {
       const travel = d.path.length / d.sp;
-      const cyc = (t - T.loadStart) / travel + d.ph;
-      const u = cyc - Math.floor(cyc);
-      const emitted = t - u * travel;
-      if (emitted < T.loadStart - travel * 0.1 || emitted > T.loadEnd) continue;
-      const p = d.path.at(u);
-      const fade = clamp(Math.min(u / 0.05, (1 - u) / 0.12)) * (1 - smooth(prog(t, T.loadEnd + 0.2, 0.7)));
-      setInst(loadDots, p[0], p[1], p[2], fade);
+      for (let j = 0; j < d.n; j++) {
+        // evenly spaced, single file; lanes fill from the top as the flow starts
+        const cyc = (t - T.loadStart) / travel + d.ph + j / d.n;
+        const u = cyc - Math.floor(cyc);
+        const emitted = t - u * travel;
+        if (emitted < T.loadStart || emitted > T.loadEnd) continue;
+        const p = d.path.at(u);
+        setInst(loadDots, p[0], p[1], p[2], clamp(Math.min(u / 0.04, (1 - u) / 0.1)) * fadeAll);
+      }
     }
   }
   endInst(loadDots);
@@ -1246,16 +1337,22 @@ function updateCharacters(t) {
       const k = smooth(prog(t, T.headOut + 0.05, 0.2));
       rx = lerp(-3.05, rim, k);
       rz = s * 0.28 * k;
-      if (t >= T.sink && shoulderY < RIM - ARM + 0.01) rx = -Math.PI + 0.05; // let go
+      if (t >= T.sink && shoulderY < RIM - ARM + 0.01) {
+        // let go: hands up on the ladder rails, elbows out; they jerk up when the lid slams
+        const slam = t > T.lidClose ? Math.exp(-6 * (t - T.lidClose)) * Math.min(1, (t - T.lidClose) / 0.05) : 0;
+        rx = -Math.PI + 0.22 - 0.12 * slam;
+        rz = s * (0.2 - 0.1 * slam + 0.02 * Math.sin(t * 31 + i));
+      }
     }
     arm.rotation.set(rx, 0, rz);
   });
-  // sheepish wave with the right hand on "Hi, Aunty..."
-  const wv = bump(t, T.wave, T.wave + 1.35, 0.22);
+  // sheepish wave on "Hi, Aunty...": the hand on Aunty's side comes up beside
+  // his head (in the picture plane, so it reads), a small stiff waggle
+  const wv = bump(t, T.wave, T.wave + 1.35, 0.2);
   if (wv > 0) {
     const ra = boy.arms[1];
-    ra.rotation.x = lerp(ra.rotation.x, -2.35, wv);
-    ra.rotation.z = lerp(ra.rotation.z, 0.42 + 0.3 * Math.sin((t - T.wave) * 15), wv);
+    ra.rotation.x = lerp(ra.rotation.x, 0.32, wv);
+    ra.rotation.z = lerp(ra.rotation.z, 2.45 + 0.2 * Math.sin((t - T.wave) * 14), wv);
   }
   // head: looking up the shaft, cheeky grin bob, the look up at Aunty
   const look = smooth(prog(t, T.lookUp, 0.28));
@@ -1315,7 +1412,7 @@ function updateGirl(t) {
   const lookAt = t < T.girlAway ? V(0.006, -0.012, 0) : t < T.girlTake ? V(-0.02, -0.004, 0) : V(0.006, -0.013, 0);
   girl.pupils.forEach((p) => {
     p.position.copy(p.userData.base).addScaledVector(p.userData.n, 0.025 * clamp(shockK, 0, 1)).add(lookAt);
-    p.scale.setScalar(1 - 0.3 * clamp(shockK, 0, 1));
+    p.scale.setScalar(1 - 0.45 * clamp(shockK, 0, 1));
   });
   girl.brows.forEach((br, i) => {
     const s = i ? 1 : -1;
@@ -1346,8 +1443,16 @@ function updateGirl(t) {
     // flatter, wider hands when they cover her mouth, so they read as two hands
     h.scale.set(1 + 0.3 * toMouth, 1 - 0.22 * toMouth, 1);
     h.rotation.z = -s * 0.35 * toMouth;
+    // sleeve from the shoulder to the wrist
+    const arm = girl.arms[i];
+    arm.position.copy(arm.userData.shoulder);
+    const d = h.position.clone().sub(arm.position);
+    const len = d.length();
+    arm.quaternion.setFromUnitVectors(UP_Y, d.divideScalar(len));
+    arm.scale.set(1, Math.max(0.001, len - 0.035), 1);
   });
 }
+const UP_Y = new THREE.Vector3(0, 1, 0);
 
 function update(t) {
   updateDigging(t);
@@ -1366,13 +1471,19 @@ function update(t) {
   grade.uniforms.warm.value = 0.35 + 0.65 * warm;
 }
 
+// the push-in aims at the hatch: its screen position glides straight from where
+// it sits in the wide shot to where it sits in the close-up (lerping the camera
+// x instead swung it out to the right edge and back, cutting Aunty off)
+const CAM_AIM = V(LID.x + 0.2, 0, LID.z);
+const aimPx = (c) => (c.f * (CAM_AIM.x - c.cx)) / (c.cz - CAM_AIM.z);
 function updateCamera(t) {
-  const k = easeInOutCubic(prog(t, T.pushIn, T.pushInEnd - T.pushIn));
+  const k = U.smoother(prog(t, T.pushIn, T.pushInEnd - T.pushIn));
   // zoom evenly: interpolate 1/distance, and keep the target framing consistent
   const iz = lerp(1 / CAM_WIDE.cz, 1 / CAM_CLOSE.cz, k);
   const c = {};
   for (const key of Object.keys(CAM_WIDE)) c[key] = lerp(CAM_WIDE[key], CAM_CLOSE[key], k);
   c.cz = 1 / iz;
+  c.cx = CAM_AIM.x - (lerp(aimPx(CAM_WIDE), aimPx(CAM_CLOSE), k) * (c.cz - CAM_AIM.z)) / c.f;
   applyCam(c);
 }
 

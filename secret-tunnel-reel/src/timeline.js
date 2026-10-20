@@ -83,7 +83,7 @@ export const T = {
   // 7 — finale
   momIn: 47.45,
   boyIn: 49.7,
-  pushIn: 49.6,
+  pushIn: 49.25, // on "...to your best friend's house"
   pushInEnd: 51.45,
   lidOpen: 51.55,
   headOut: 51.78,
