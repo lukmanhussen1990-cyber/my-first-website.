@@ -204,6 +204,19 @@ vec3 floorColor(vec3 p, vec3 n){
   c *= 0.85 + 0.25 * vnoise(p.xz * 21.0 + p.y * 3.0);
   return c;
 }
+// turf and roots along the top of the shafts, matching the cut face's top band
+vec3 turfBand(vec3 p, vec3 n, vec3 c){
+  if (p.y < -0.65) return c;
+  float u = abs(n.x) > 0.5 ? p.z : p.x;
+  float d = -p.y + (vnoise(vec2(u * 6.0, 2.7)) - 0.5) * 0.05 + (vnoise(vec2(u * 21.0, 5.3)) - 0.5) * 0.025;
+  vec3 grass = s2l(vec3(0.38, 0.62, 0.20));
+  if (d < 0.09) return mix(grass, grass * 0.55, smoothstep(0.0, 0.09, d));
+  vec3 roots = s2l(vec3(0.30, 0.20, 0.12)) * (0.8 + 0.4 * vnoise(vec2(u * 37.0, p.y * 19.0)));
+  vec3 r = mix(roots, c, smoothstep(0.12, 0.5, d));
+  // a few pale root threads hanging into the hole
+  float th = smoothstep(0.8, 0.93, vnoise(vec2(u * 55.0, 0.3))) * (1.0 - smoothstep(0.1, 0.18 + 0.4 * vnoise(vec2(u * 13.0, 7.0)), d));
+  return mix(r, s2l(vec3(0.6, 0.47, 0.33)), th * 0.75);
+}
 `;
 
 function patch(mat, { uniforms = {}, colorFn, defines = '', extraFrag = '', perturb = '', discard = '', selfLit = null }) {
@@ -346,8 +359,9 @@ export function soilFrontMaterial(bake, dig) {
 // back wall of the tunnel (z = -W): only where it is open
 export function tunnelBackMaterial(dig) {
   const uniforms = digUniforms(dig);
-  const discard = '!dug(vWPos.xy)';
-  const frag = GLSL_DIG + GLSL_TUNNEL + 'vec3 backColor(vec3 p, vec3 n){ return tunnelColor(p, n) * mix(0.32, 1.0, digAO(p.xy)); }';
+  // (the shafts' dig field reaches above the lawn so the openings stay clean; the wall stops at the lawn)
+  const discard = '!dug(vWPos.xy) || vWPos.y > 0.0';
+  const frag = GLSL_DIG + GLSL_TUNNEL + 'vec3 backColor(vec3 p, vec3 n){ return turfBand(p, n, tunnelColor(p, n) * mix(0.32, 1.0, digAO(p.xy))); }';
   const m = patch(new THREE.MeshLambertMaterial({ color: 0xffffff }), { uniforms, colorFn: 'backColor', extraFrag: frag, discard, selfLit: tunnelGlow });
   m.userData.depth = maskedDepth(uniforms, GLSL_DIG, discard);
   return m;
@@ -357,16 +371,40 @@ export function tunnelBackMaterial(dig) {
 export function tunnelBoundaryMaterial(dig, colorFn = 'floorColor') {
   const uniforms = digUniforms(dig);
   const discard = '!(dug(vWPos.xy + normalize(vWNrm.xy + vec2(1e-5)) * 0.035) && !dug(vWPos.xy - normalize(vWNrm.xy + vec2(1e-5)) * 0.035))';
-  const frag = GLSL_DIG + GLSL_TUNNEL + `vec3 bColor(vec3 p, vec3 n){ return ${colorFn}(p, n) * mix(0.45, 1.0, digAO(p.xy + n.xy * 0.05)); }`;
+  const frag = GLSL_DIG + GLSL_TUNNEL + `vec3 bColor(vec3 p, vec3 n){ return turfBand(p, n, ${colorFn}(p, n) * mix(0.45, 1.0, digAO(p.xy + n.xy * 0.05))); }`;
   const m = patch(new THREE.MeshLambertMaterial({ color: 0xffffff }), { uniforms, colorFn: 'bColor', extraFrag: frag, discard, selfLit: tunnelGlow });
   m.userData.depth = maskedDepth(uniforms, GLSL_DIG, discard);
   return m;
+}
+// dark soil just behind the tunnel's back wall: rays slipping through hairline
+// seams between the masked tunnel surfaces land on soil instead of the sky
+export function seamMaterial() {
+  const frag = GLSL_TUNNEL + 'vec3 seamColor(vec3 p, vec3 n){ return tunnelColor(p, n) * 0.5; }';
+  return patch(new THREE.MeshLambertMaterial({ color: 0xffffff }), { colorFn: 'seamColor', extraFrag: frag, selfLit: tunnelGlow });
 }
 // lawn with the shaft opening and the hatch hole
 export function lawnMaterial(bake, holes) {
   const uniforms = { uLawnTex: { value: bake.lawnTex }, uLawnRect: { value: bake.lawnRect }, uTime: digTime, uShaft: { value: holes.shaft }, uHatch: { value: holes.hatch }, uOpen: { value: holes.open } };
   const frag = `uniform sampler2D uLawnTex; uniform vec4 uLawnRect; uniform float uTime; uniform vec4 uShaft; uniform vec3 uHatch; uniform vec2 uOpen;
-    vec3 lawnTop(vec3 p, vec3 n){ return texture2D(uLawnTex, (p.xz - uLawnRect.xy) / (uLawnRect.zw - uLawnRect.xy)).rgb; }
+    vec3 lawnTop(vec3 p, vec3 n){
+      vec3 c = texture2D(uLawnTex, (p.xz - uLawnRect.xy) / (uLawnRect.zw - uLawnRect.xy)).rgb;
+      // loose dirt spilled round the shaft opening (it builds up as the digging starts)
+      vec2 q = vec2(max(uShaft.x - p.x, p.x - uShaft.y), uShaft.z - p.z);
+      float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
+      float k = smoothstep(uOpen.x, uOpen.x + 1.4, uTime);
+      if (k > 0.0 && d < 0.4) {
+        float w = (0.07 + 0.14 * k) * (0.75 + 0.5 * vnoise(p.xz * 9.0)) + 0.05 * (vnoise(p.xz * 31.0) - 0.5);
+        float m = 1.0 - smoothstep(w - 0.02, w + 0.02, d);
+        vec3 dirt = mix(s2l(vec3(0.47, 0.31, 0.18)), s2l(vec3(0.62, 0.43, 0.27)), vnoise(p.xz * 17.0));
+        dirt *= 0.82 + 0.3 * vnoise(p.xz * 43.0);
+        c *= 1.0 - 0.28 * k * (1.0 - smoothstep(0.0, 0.32, d)); // trampled, shaded grass round the hole
+        c = mix(c, dirt, m * smoothstep(0.0, 0.25, k));
+        // a few crumbs scattered further out
+        vec4 ce = cellv(p.xz * 11.0);
+        if (ce.w > 0.7 && d < 0.38 * k) c = mix(c, dirt * 0.85, (1.0 - smoothstep(0.05, 0.09, ce.z)) * k);
+      }
+      return c;
+    }
     bool hole(vec3 p){
       if (uTime >= uOpen.x && p.x > uShaft.x && p.x < uShaft.y && p.z > uShaft.z && p.z < uShaft.w) return true;
       return uTime >= uOpen.y && length(p.xz - uHatch.xy) < uHatch.z;
@@ -428,6 +466,21 @@ export function roofTileMaterial(base = [0.74, 0.25, 0.14], key = 'red') {
   return mat;
 }
 
+// puffs (dust, stale air, smoke): fade out towards the silhouette so they read
+// as soft clouds rather than solid balls
+function softEdges(mat, power = 1.0) {
+  mat.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <opaque_fragment>',
+      `{ float facing = abs(dot(normalize(normal), normalize(vViewPosition)));
+         diffuseColor.a *= pow(smoothstep(0.0, 0.85, facing), ${power.toFixed(2)}); }
+       #include <opaque_fragment>`
+    );
+  };
+  mat.customProgramCacheKey = () => 'soft' + power;
+  return mat;
+}
+
 export function makeSimpleMats(envMap) {
   const std = (hex, rough = 0.7, metal = 0, extra = {}) =>
     new THREE.MeshStandardMaterial({ color: col(hex), roughness: rough, metalness: metal, ...extra });
@@ -462,7 +515,7 @@ export function makeSimpleMats(envMap) {
     coping: mat('#d3cbbd'),
     stone: mat('#8b847a'),
     stoneDark: mat('#6f675d'),
-    dust: new THREE.MeshLambertMaterial({ color: col('#c4ab8c'), transparent: true, opacity: 0.42, depthWrite: false }),
+    dust: softEdges(new THREE.MeshLambertMaterial({ color: col('#c9b195'), transparent: true, opacity: 0.6, depthWrite: false }), 1.2),
     // tunnel kit
     archBrick: mat('#ffffff'),
     mortar: mat('#c8bfb1'),
@@ -523,8 +576,8 @@ export function makeSimpleMats(envMap) {
     // glowing helpers
     loadDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(3.4, 0.95, 0.08) }),
     airDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.75, 3.4, 10.0) }),
-    stale: new THREE.MeshLambertMaterial({ color: col('#a3a7ad'), transparent: true, opacity: 0.32, depthWrite: false }),
-    smoke: new THREE.MeshLambertMaterial({ color: col('#b9bbbe'), transparent: true, opacity: 0.5, depthWrite: false }),
+    stale: softEdges(new THREE.MeshLambertMaterial({ color: col('#a3a7ad'), transparent: true, opacity: 0.32, depthWrite: false }), 1.0),
+    smoke: softEdges(new THREE.MeshLambertMaterial({ color: col('#b9bbbe'), transparent: true, opacity: 0.6, depthWrite: false }), 1.0),
     glowWarm: glowMat(new THREE.Color(2.6, 1.45, 0.45)),
     glowCandle: glowMat(new THREE.Color(2.4, 1.2, 0.3)),
     beam: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.9, 0.6), transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),

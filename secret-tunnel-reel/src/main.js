@@ -8,7 +8,7 @@ import { T, FPS, DURATION } from './timeline.js';
 import * as WD from './world.js';
 import {
   concreteMaterial, roofTileMaterial, makeSimpleMats, bakeGround, digTime, tunnelGlow, groundMaterial,
-  soilFrontMaterial, tunnelBackMaterial, tunnelBoundaryMaterial, lawnMaterial, brickMaterial,
+  soilFrontMaterial, tunnelBackMaterial, tunnelBoundaryMaterial, lawnMaterial, brickMaterial, seamMaterial,
 } from './materials.js';
 import { buildHouse, buildTree, buildBush, box, boxMM, placed, mergeAll, lumpyBlob } from './builders.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -247,6 +247,8 @@ const DIG_FRONT = digTexture(false), DIG_BACK = digTexture(true);
   const R = WD.DIG_RECT;
   const back = mesh(placed(quad(R.x1 - R.x0, R.y1 - R.y0), (R.x0 + R.x1) / 2, (R.y0 + R.y1) / 2, -TW), tunnelBackMaterial(DIG_BACK));
   scene.add(back);
+  // soil right behind it, so hairline seams between the tunnel surfaces never show the sky
+  scene.add(mesh(placed(quad(R.x1 - R.x0, -0.004 - R.y0), (R.x0 + R.x1) / 2, (R.y0 - 0.004) / 2, -TW - 0.012), seamMaterial(), false, true));
 }
 const boundaryMat = tunnelBoundaryMaterial(DIG_BACK);
 const wallSideMat = tunnelBoundaryMaterial(DIG_BACK, 'tunnelColor');
@@ -290,6 +292,38 @@ floorStrip([[SHAFT_L.x0, FLOOR], [FOOT.x0, FLOOR]], boundaryMat);
 // moving dig faces: bottom of the shaft while it goes down, front of the dip
 const shaftFace = mesh(placed(quad(SHAFT_L.x1 - SHAFT_L.x0, TW), (SHAFT_L.x0 + SHAFT_L.x1) / 2, 0, -TW / 2, -Math.PI / 2, 0, 0), boundaryMat);
 scene.add(shaftFace);
+// rounded dig face of the first tunnel (same profile as in WD.digTime), rebuilt as it advances
+const TF_N = 24;
+const tunFace = (() => {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(TF_N * 18), 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(TF_N * 18), 3));
+  const m = mesh(g, boundaryMat);
+  m.frustumCulled = false;
+  scene.add(m);
+  return m;
+})();
+function updateTunFace(t) {
+  const xa = WD.tunnelX(t);
+  const r = 0.14 * (1 - smooth(clamp((xa + 1.25) / 0.4)));
+  tunFace.visible = t > T.tunnelStart && r > 0.004;
+  if (!tunFace.visible) return;
+  const P = tunFace.geometry.attributes.position.array, N = tunFace.geometry.attributes.normal.array;
+  let o = 0;
+  for (let i = 0; i < TF_N; i++) {
+    const ya = FLOOR + ((ROOF - FLOOR) * i) / TF_N, yb = FLOOR + ((ROOF - FLOOR) * (i + 1)) / TF_N;
+    const qa = (ya - WD.YA) / WD.HALF, qb = (yb - WD.YA) / WD.HALF;
+    const x0 = xa - r * qa * qa, x1 = xa - r * qb * qb;
+    const l = Math.hypot(x1 - x0, yb - ya), nx = -(yb - ya) / l, ny = (x1 - x0) / l; // into the open tunnel
+    for (const [x, y, z] of [[x0, ya, 0], [x1, yb, 0], [x1, yb, -TW], [x0, ya, 0], [x1, yb, -TW], [x0, ya, -TW]]) {
+      P[o] = x; P[o + 1] = y; P[o + 2] = z;
+      N[o] = nx; N[o + 1] = ny; N[o + 2] = 0;
+      o += 3;
+    }
+  }
+  tunFace.geometry.attributes.position.needsUpdate = true;
+  tunFace.geometry.attributes.normal.needsUpdate = true;
+}
 const dipFace = mesh(placed(quad(WD.HALF * 2 + 0.06, TW), 0, 0, 0, -Math.PI / 2, 0, 0), boundaryMat);
 const dipFaceG = new THREE.Group();
 dipFaceG.add(dipFace);
@@ -300,7 +334,7 @@ scene.add(dipFaceG);
 const concMat = concreteMaterial();
 concMat.emissive = new THREE.Color(1.0, 0.85, 0.6);
 concMat.emissiveIntensity = 0;
-{
+const footing = (() => {
   const s = new THREE.Shape();
   s.moveTo(FOOT.x0, FOOT.y0);
   s.lineTo(FOOT.x1, FOOT.y0);
@@ -313,8 +347,9 @@ concMat.emissiveIntensity = 0;
   s.closePath();
   const g = new THREE.ShapeGeometry(s);
   g.translate(0, 0, 0.003);
-  scene.add(mesh(g, concMat, false, true));
-}
+  return mesh(g, concMat, false, true);
+})();
+scene.add(footing);
 const brickMat = brickMaterial();
 const wallGroup = new THREE.Group();
 {
@@ -462,19 +497,34 @@ const FACE = [];
     for (let k = 0; k < 3; k++) FACE.push({ t0: t0 + rnd() * 0.15, kind: 'b', off: (rnd() - 0.5) * 0.6, z: -0.15 - rnd() * 0.8, vx: -0.5 - rnd() * 0.6, s: 0.4 + rnd() * 0.3, rot: rnd() * 6 });
   }
   // the clunk: bits bounce back off the concrete
-  for (let k = 0; k < 7; k++) FACE.push({ t0: T.clunk + rnd() * 0.08, kind: 'c', y: -2.3 + rnd() * 0.3, z: -0.15 - rnd() * 0.8, vx: -1.2 - rnd() * 1.2, s: 0.4 + rnd() * 0.3, rot: rnd() * 6 });
+  for (let k = 0; k < 11; k++) FACE.push({ t0: T.clunk + rnd() * 0.08, kind: 'c', y: -2.3 + rnd() * 0.3, z: -0.15 - rnd() * 0.8, vx: -1.2 - rnd() * 1.4, s: 0.4 + rnd() * 0.35, rot: rnd() * 6 });
 }
 const faceChunks = instanced(chunkGeom, dirtMat, FACE.length);
+// grey chips knocked off the footing, and cartoon impact streaks
+const CHIPS = [];
+{
+  const rnd = U.mulberry32(43);
+  for (let k = 0; k < 7; k++) CHIPS.push({ t0: T.clunk + rnd() * 0.04, y: -2.28 + rnd() * 0.26, z: -0.1 - rnd() * 0.6, vx: -1.6 - rnd() * 1.6, vy: 1.0 + rnd() * 1.6, s: 0.016 + rnd() * 0.014, rot: V(rnd() * 6, rnd() * 6, rnd() * 6) });
+}
+const chips = instanced(new THREE.IcosahedronGeometry(1, 0), M.coping, CHIPS.length);
+const STREAK_A = [-1.15, -0.62, -0.1, 0.42, 0.95].map((a) => Math.PI + a);
+const streakGeom = new THREE.BufferGeometry(); // tapered dash: a thin diamond
+streakGeom.setAttribute('position', new THREE.Float32BufferAttribute([-0.5, 0, 0, 0, -0.5, 0, 0.5, 0, 0, -0.5, 0, 0, 0.5, 0, 0, 0, 0.5, 0], 3));
+streakGeom.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+const streaks = instanced(streakGeom, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.32, 1.05), transparent: true, depthWrite: false }), STREAK_A.length * 3, false);
+streaks.renderOrder = 4;
 const puffGeom = lumpyBlob(1, 1, 0.12, 9);
 const DUST = [];
 {
   const rnd = U.mulberry32(41);
-  const burst = (t0, p, n, r, spread = 0.4, up = 0.9) => {
-    for (let i = 0; i < n; i++) DUST.push({ t0: t0 + rnd() * 0.12, life: 0.9 + rnd() * 0.5, p: p.clone().add(V((rnd() - 0.5) * spread, (rnd() - 0.5) * spread * 0.5, (rnd() - 0.5) * spread * 0.6)), v: V((rnd() - 0.5) * 1.2, up * (0.5 + rnd() * 0.8), (rnd() - 0.5) * 0.4), r: r * (0.7 + rnd() * 0.6) });
+  const burst = (t0, p, n, r, spread = 0.4, up = 0.9, vx = 0, vz = 0) => {
+    for (let i = 0; i < n; i++) DUST.push({ t0: t0 + rnd() * 0.12, life: 0.9 + rnd() * 0.5, p: p.clone().add(V((rnd() - 0.5) * spread, (rnd() - 0.5) * spread * 0.5, (rnd() - 0.5) * spread * 0.6)), v: V((rnd() - 0.5) * 1.2 + vx * (0.6 + 0.8 * rnd()), up * (0.5 + rnd() * 0.8), (rnd() - 0.5) * 0.4 + vz * rnd()), r: r * (0.7 + rnd() * 0.6) });
   };
   for (let i = 0; i < T.shaftSteps; i++) burst(T.digStart + i * T.shaftStep + 0.05, V(-3.2, 0.1, -0.5), 2, 0.22);
   burst(T.pileLand, V(PILE.x, 0.1, PILE.z), 4, 0.28, 1.2);
-  burst(T.clunk, V(FOOT.x0 - 0.12, -2.15, -0.2), 7, 0.2, 0.3, 0.6);
+  // the clunk: a cloud that rolls back out along the tunnel and puffs out of the cut
+  burst(T.clunk, V(FOOT.x0 - 0.14, -2.2, -0.25), 9, 0.22, 0.35, 0.45, -1.3);
+  burst(T.clunk + 0.04, V(FOOT.x0 - 0.2, -2.35, 0.05), 6, 0.2, 0.4, 0.35, -0.9, 0.5);
   burst(T.knock1, V(FOOT.x0 - 0.1, -2.1, -0.2), 3, 0.14, 0.2, 0.5);
   burst(T.knock2, V(FOOT.x0 - 0.1, -2.2, -0.2), 3, 0.14, 0.2, 0.5);
   burst(T.breakThrough, V(LID.x, 0.08, LID.z), 7, 0.24, 0.7);
@@ -767,6 +817,7 @@ const setGrow = (m, k) => {
 
 function updateDigging(t) {
   digTime.value = t;
+  updateTunFace(t);
   const ys = WD.shaftY(t);
   shaftFace.visible = t > T.digStart && ys > FLOOR + 0.01;
   shaftFace.position.y = ys;
@@ -792,7 +843,14 @@ function updateDigging(t) {
   const ps = pileScale(t) * popOut(t, T.pileAway, 0.32);
   pile.visible = ps > 0.002;
   pile.position.copy(PILE);
-  pile.scale.set(1.25 * Math.max(ps, 0.001), 0.75 * Math.max(ps, 0.001) * (1 - 0.12 * wobble(t, T.pileLand + 0.2, 3, 6)), 0.95 * Math.max(ps, 0.001));
+  // "Sort of." - the pile gives a little shrug
+  const shrug = bump(t, 5.5, 6.02, 0.1), shrugW = wobble(t, 6.0, 3.2, 6);
+  pile.scale.set(
+    1.25 * Math.max(ps, 0.001) * (1 - 0.05 * shrug + 0.03 * shrugW),
+    0.75 * Math.max(ps, 0.001) * (1 - 0.12 * wobble(t, T.pileLand + 0.2, 3, 6) + 0.16 * shrug - 0.08 * shrugW),
+    0.95 * Math.max(ps, 0.001) * (1 - 0.05 * shrug + 0.03 * shrugW)
+  );
+  pile.rotation.z = 0.07 * shrug * Math.sin((t - 5.5) * 11);
   // bits tumbling off the dig face
   beginInst(faceChunks);
   for (const c of FACE) {
@@ -808,6 +866,29 @@ function updateDigging(t) {
     setInst(faceChunks, x + c.vx * Math.min(dt, 0.5), y, c.z, sc, sc, sc, c.rot + dt * 6, c.rot * 0.5, dt * 4);
   }
   endInst(faceChunks);
+  beginInst(chips);
+  for (const c of CHIPS) {
+    const dt = t - c.t0;
+    if (dt < 0 || dt > 0.8) continue;
+    const x = FOOT.x0 - 0.03 + c.vx * Math.min(dt, 0.45) * (1 - 0.6 * Math.min(dt, 0.45));
+    const y = Math.max(FLOOR + c.s, c.y + c.vy * dt - 4.9 * dt * dt);
+    const sc = c.s * (1 - smooth(clamp((dt - 0.5) / 0.3)));
+    setInst(chips, x, y, c.z, sc, sc * 0.8, sc, c.rot.x + dt * 9, c.rot.y + dt * 7, c.rot.z);
+  }
+  endInst(chips);
+  // impact streaks fan out from the hit, then a smaller pair of fans on the knocks
+  beginInst(streaks);
+  for (const [t0, amp, y0] of [[T.clunk, 1, -2.16], [T.knock1, 0.55, -2.1], [T.knock2, 0.55, -2.2]]) {
+    const dt = t - t0;
+    if (dt < 0 || dt > 0.26) continue;
+    const u = dt / 0.26;
+    STREAK_A.forEach((a, i) => {
+      const r = (0.1 + 0.32 * easeOutCubic(u)) * amp, len = (0.2 * (1 - u) + 0.03) * amp * (i === 2 ? 1.25 : 1);
+      setInst(streaks, FOOT.x0 - 0.02 + Math.cos(a) * (r + len / 2), y0 + Math.sin(a) * (r + len / 2), 0.03, len, 0.034 * amp * (1 - 0.5 * u), 1, 0, 0, a);
+    });
+  }
+  endInst(streaks);
+  streaks.material.opacity = 0.9;
   // breakthrough on the friend's lawn
   beginInst(breakChunks);
   beginInst(breakTurf);
@@ -822,9 +903,11 @@ function updateDigging(t) {
   endInst(breakChunks);
   endInst(breakTurf);
   // the boundary wall shivers at the clunk and the knocks
-  const shiver = 0.012 * (wobble(t, T.clunk, 14, 9) + 0.5 * wobble(t, T.knock1, 14, 10) + 0.5 * wobble(t, T.knock2, 14, 10));
+  const shiver = 0.022 * wobble(t, T.clunk, 13, 8) + 0.008 * (wobble(t, T.knock1, 14, 10) + wobble(t, T.knock2, 14, 10));
   wallGroup.position.x = shiver;
-  concMat.emissiveIntensity = 0.35 * bump(t, 8.05, 9.2, 0.25) * (0.75 + 0.25 * Math.sin((t - 8.05) * 9));
+  footing.position.x = 0.5 * shiver;
+  const hit = (t0, a) => (t > t0 ? a * Math.exp(-14 * (t - t0)) : 0);
+  concMat.emissiveIntensity = 0.35 * bump(t, 8.05, 9.2, 0.25) * (0.75 + 0.25 * Math.sin((t - 8.05) * 9)) + hit(T.clunk, 0.55) + hit(T.knock1, 0.2) + hit(T.knock2, 0.2);
   // ladders, lid, flower pot
   for (const [l, t0] of [[ladderL, 5.85], [ladderR, T.lidLand - 0.25]]) {
     const k = popIn(t, t0, 0.42, 2.0);
