@@ -101,7 +101,7 @@ if (mode === 'stills') {
   const f0 = +argv[1], f1 = +argv[2], out = path.join(ROOT, argv[3]);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(fps), '-i', '-',
-    '-vf', 'vflip', '-c:v', 'libx264', '-preset', 'medium', '-crf', '10', '-pix_fmt', 'yuv444p', out]);
+    '-vf', 'vflip', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '10', '-pix_fmt', 'yuv444p', out]);
   const closed = new Promise((r) => ff.on('close', r));
   onFrame = (buf) => new Promise((r) => (ff.stdin.write(buf) ? r() : ff.stdin.once('drain', r)));
   const tStart = Date.now();
