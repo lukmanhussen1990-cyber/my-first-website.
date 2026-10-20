@@ -22,27 +22,21 @@ eased motion, never robotic. Invisible things are soft glowing shapes.
 
 **No flicker, no jagged lines:** nothing finer than ~2 px at 1080x1920 in the shot it
 appears in (texture detail and geometry), fade patterns out before they alias (see
-`aaF` in `src/ref/env_snack.js`), slow twinkles only, no strobing.
+`aaF` in `src/env.js`), slow twinkles only, no strobing.
 
-## Files and who owns them
+## Files
 
-| file | owner | what |
-| --- | --- | --- |
-| `src/main.js` | lead | engine, camera, lights, storm, soil cut face, the hole, dirt chunks + dust + piles + Dad's dust cloud, rain, water dots, worms, the lump, paw-reach line, suspicious outline, twinkle |
-| `src/world.js`, `src/timeline.js`, `src/materials.js` | lead | layout, hole state, beats (`T`), camera (`CAM`), VO slots, shared GLSL |
-| `src/env.js` | env agent | sky (sunset + storm clouds), grass blades, yard dressing, fence, trees, doghouse, the house (+ back door that opens) |
-| `src/kid.js` | kid agent | the kid (+ the kid's shovel) and all the kid's acting |
-| `src/family.js` | family agent | Dad (+ Dad's shovel, glasses, humming notes) and the dog, all their acting |
-| `src/props.js` | props agent | report card, metal box, flowers, garden roller, metal detector (+ beep rings), ladder |
-| `tools/*.py`, `*.sh`, `README.md` | audio agent | music, sound effects, mix, subtitles, export and revoice scripts |
-
-`src/ref/` holds the previous reel's modules (`env_snack.js`, `characters_snack.js`):
-copy and adapt anything useful (the grass, boards, shingles, the toy character rigs,
-eyes, materials). They are not imported.
-
-Shared files (`main.js`, `materials.js`, `world.js`, `timeline.js`): do **not** edit
-them; if you need a new `T` key or a world constant, define it locally in your module
-and say so in your summary (the lead will merge it).
+| file | what |
+| --- | --- |
+| `src/main.js` | engine, camera, lights, storm, soil cut face, the hole, dirt chunks + dust + piles + Dad's dust cloud, rain, water dots, worms, the lump, paw-reach line, suspicious outline, twinkle |
+| `src/world.js`, `src/timeline.js` | layout, hole state, beats (`T`), camera (`CAM`), VO slots |
+| `src/materials.js` | shared GLSL, `patch()`, soil bake, the hole / lawn / fill materials |
+| `src/env.js` | sky (sunset + storm clouds), grass blades, yard dressing, fence, trees, doghouse, the house (+ back door that opens) |
+| `src/toy.js` | the toy-character kit: materials, eyes, mouths, limbs, blinks |
+| `src/kid.js` | the kid (+ the kid's shovel) and all the kid's acting |
+| `src/family.js` | Dad (+ Dad's shovel, glasses, humming notes) and the dog, all their acting |
+| `src/props.js` | report card, metal box, flowers, garden roller, metal detector (+ beep rings), ladder |
+| `tools/*.py`, `*.sh` | music, sound effects, mix, subtitles, export and revoice scripts |
 
 ## Module API
 
