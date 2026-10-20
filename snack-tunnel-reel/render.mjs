@@ -61,7 +61,7 @@ page.on('console', (m) => {
   if (m.type() === 'error') pageErrors++;
   if (m.type() === 'error' || m.type() === 'warning') console.log('[page]', m.text().slice(0, 2000));
 });
-page.on('pageerror', (e) => { pageErrors++; console.log('[pageerror]', e.message); });
+page.on('pageerror', (e) => { pageErrors++; console.log('[pageerror]', e.message, '\n', (e.stack || '').split('\n').slice(0, 6).join('\n')); });
 await page.goto(`http://127.0.0.1:${port}/src/index.html?scale=${opt('scale', 1)}`);
 await page.waitForFunction(() => window.READY === true, null, { timeout: 120000 });
 // compile every program up front and refuse to render with a broken shader

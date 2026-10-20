@@ -398,9 +398,18 @@ function pileH(t) {
 // ---------------------------------------------------------------------------
 // glowing "invisible things": the snack dream bubble, sound rings
 // ---------------------------------------------------------------------------
-const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.7, 1.0, 1.4), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+// sound rings: soft glowing bands (a gaussian across the ring, not a hard white
+// stroke) that spread from the rock through the soil and fade as they grow
 const RINGS = [0, 1, 2].map((k) => {
-  const m = new THREE.Mesh(new THREE.RingGeometry(0.94, 1.0, 96), ringMat.clone());
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uR: { value: 1 }, uW: { value: 0.05 }, uA: { value: 0 }, uC: { value: new THREE.Color(0.55, 0.85, 1.25) } },
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform float uR, uW, uA; uniform vec3 uC; varying vec2 vP;
+      void main(){ float d = (length(vP) - uR) / uW; float g = exp(-d * d * 2.2) + 0.25 * exp(-d * d * 0.25);
+        gl_FragColor = vec4(uC * g * uA, 1.0); }`,
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), mat);
   m.position.set(WD.ROCK.x, WD.ROCK.y, 0.02);
   m.renderOrder = 10;
   scene.add(m);
@@ -408,11 +417,12 @@ const RINGS = [0, 1, 2].map((k) => {
 });
 function updateRings(t) {
   RINGS.forEach((m, k) => {
-    const u = prog(t, T.clang + 0.03 + k * 0.2, 1.25);
+    const u = prog(t, T.clang + 0.03 + k * 0.22, 1.35);
     m.visible = u > 0 && u < 1;
-    const r = 0.15 + 2.4 * easeOutCubic(u);
-    m.scale.setScalar(r);
-    m.material.opacity = 2.2 * (1 - u) * smooth(clamp(u * 8));
+    const U2 = m.material.uniforms;
+    U2.uR.value = 0.12 + 2.5 * easeOutCubic(u);
+    U2.uW.value = 0.03 + 0.05 * u;
+    U2.uA.value = (0.75 - 0.18 * k) * (1 - u) * (1 - u) * smooth(clamp(u * 9));
   });
 }
 const dream = new THREE.Group();
@@ -467,12 +477,24 @@ function updateDream(t) {
 const ctx = { THREE, scene, renderer, camera, envMap, SCALE, T, WD, MAT, G, U, add, mesh, instanced, beginInst, setInst, endInst, moon, camAt };
 const modules = [ENV.build(ctx), KITCHEN.build(ctx), PROPS.build(ctx), CHARS.build(ctx)];
 
+// the finale: as the camera pushes into the kitchen the night closes in (hemisphere,
+// fill and sky light dim; the moon is already shadowed out of the kitchen), so the
+// kitchen is dark when the kid peeks in and the fridge light really reveals Mom
+const BASE = { skyL: skyL.intensity, hemi: hemi.intensity, fill: fill.intensity };
+function updateNight(t) {
+  const k = 1 - 0.62 * smooth(prog(t, T.push0, T.peek0 - T.push0));
+  skyL.intensity = BASE.skyL * k;
+  hemi.intensity = BASE.hemi * k;
+  fill.intensity = BASE.fill * (0.3 + 0.7 * k);
+}
+
 function update(t) {
   MAT.digTime.value = t;
   updateDigFaces(t);
   updateDirt(t);
   updateRings(t);
   updateDream(t);
+  updateNight(t);
   for (const m of modules) m?.update?.(t);
 }
 
@@ -490,7 +512,11 @@ class AccumPass extends Pass {
       new THREE.ShaderMaterial({
         uniforms: { tex: { value: null }, w: { value: 1 } },
         vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }',
-        fragmentShader: 'uniform sampler2D tex; uniform float w; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(tex, vUv).rgb * w, 1.0); }',
+        // a NaN or Inf from any material must never blank the frame (bloom would spread it)
+        fragmentShader: `uniform sampler2D tex; uniform float w; varying vec2 vUv;
+          void main(){ vec3 c = texture2D(tex, vUv).rgb;
+            if (!(c.r == c.r && c.g == c.g && c.b == c.b) || max(c.r, max(c.g, c.b)) > 6.0e4) c = vec3(0.0);
+            gl_FragColor = vec4(min(c, vec3(512.0)) * w, 1.0); }`,
         blending: THREE.CustomBlending,
         blendEquation: THREE.AddEquation,
         blendSrc: THREE.OneFactor,

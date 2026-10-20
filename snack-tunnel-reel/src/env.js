@@ -44,7 +44,7 @@ vec3 shingles(float u, float v, vec3 base, out float h){
 const SRC = (s) => new THREE.Color(s); // sRGB hex -> linear
 
 export function build(ctx) {
-  const { scene, T, WD, MAT, G, U, add, mesh, envMap } = ctx;
+  const { scene, T, WD, MAT, G, U, add, mesh, envMap, SCALE } = ctx;
   const { HOUSE, DOGHOUSE, PATCH } = WD;
   const rnd = U.mulberry32(97);
   const std = (hex, rough = 0.8, extra = {}) => new THREE.MeshStandardMaterial({ color: SRC(hex), roughness: rough, metalness: 0, ...extra });
@@ -82,7 +82,7 @@ export function build(ctx) {
             float d = length(q - sp) / px;
             float m = h21(c + 7.3);
             float b = bright * (0.25 + 1.6 * m * m * m);
-            float r = 0.85 + 0.9 * m;
+            float r = 1.0 + 0.8 * m;
             float tw = 0.82 + 0.18 * sin(uTime * (0.9 + 1.4 * h21(c + 5.0)) + 6.283 * h21(c + 9.0));
             vec3 tint = mix(vec3(0.75, 0.85, 1.25), vec3(1.25, 1.0, 0.8), h21(c + 2.2));
             acc += tint * b * tw * exp(-d * d / (r * r));
@@ -92,16 +92,16 @@ export function build(ctx) {
         void main(){
           vec3 d = normalize(vD);
           float h = d.y;
-          vec3 zen = vec3(0.004, 0.008, 0.040), mid = vec3(0.009, 0.019, 0.075), hor = vec3(0.028, 0.050, 0.130);
+          vec3 zen = vec3(0.003, 0.007, 0.040), mid = vec3(0.007, 0.016, 0.078), hor = vec3(0.022, 0.044, 0.125);
           vec3 c = mix(hor, mid, smoothstep(0.0, 0.10, h));
           c = mix(c, zen, smoothstep(0.08, 0.55, h));
-          if (h < 0.0) c = mix(hor * 0.75, vec3(0.012, 0.018, 0.03), smoothstep(0.0, -0.15, h));
+          if (h < 0.0) c = mix(hor, vec3(0.010, 0.016, 0.026), smoothstep(0.0, -0.035, h));
           float md = acos(clamp(dot(d, uMoon), -1.0, 1.0));
-          c += vec3(0.05, 0.07, 0.13) * exp(-md * 7.0) + vec3(0.12, 0.15, 0.22) * exp(-md * 28.0);
+          c += vec3(0.03, 0.042, 0.085) * exp(-md * 8.0) + vec3(0.11, 0.14, 0.21) * exp(-md * 30.0);
           vec2 q = vec2(atan(d.x, -d.z), asin(clamp(h, -1.0, 1.0)));
-          float px = 1.0 / 2600.0;
-          vec3 st = starLayer(q, 0.016, 0.6, 0.09, px) + starLayer(q + 3.7, 0.041, 0.7, 0.26, px);
-          c += st * smoothstep(0.01, 0.07, h) * (1.0 - 0.85 * exp(-md * 16.0));
+          float px = ${(1 / (2600 * SCALE)).toFixed(9)}; // one pixel, in radians
+          vec3 st = starLayer(q, 0.0085, 0.55, 0.11, px) + starLayer(q + 1.3, 0.017, 0.6, 0.3, px) + starLayer(q + 3.7, 0.041, 0.75, 0.75, px);
+          c += st * smoothstep(0.0, 0.035, h) * (1.0 - 0.85 * exp(-md * 16.0));
           float cl = fb(vec2(q.x * 9.0 + uTime * 0.012, q.y * 26.0));
           float wisp = smoothstep(0.55, 0.85, cl) * smoothstep(0.02, 0.06, h) * (1.0 - smoothstep(0.12, 0.2, h));
           c = mix(c, vec3(0.06, 0.08, 0.14) + vec3(0.12, 0.13, 0.17) * exp(-md * 9.0), wisp * 0.55);
@@ -297,25 +297,39 @@ export function build(ctx) {
       if (kind < 0.35) {
         // pointed evergreen: stacked cones
         for (let k = 0; k < 3; k++) {
-          const cg = new THREE.ConeGeometry(0.75 - k * 0.18, hgt * 0.42, 9);
+          const cg = new THREE.ConeGeometry(0.75 - k * 0.18, hgt * 0.42, 14);
           far.push(G.placed(cg, x, 0.55 + k * hgt * 0.24 + hgt * 0.21, z, 0, rnd(), 0));
         }
       } else {
         const r = 0.75 + rnd() * 0.55;
-        far.push(G.placed(G.lumpyBlob(r, 1, 0.22, 200 + i), x, hgt - r * 0.6, z, 0, 0, 0, 1, 1.15, 1));
-        far.push(G.placed(G.lumpyBlob(r * 0.7, 1, 0.22, 260 + i), x + r * 0.6, hgt - r * 1.05, z + 0.3));
+        far.push(G.placed(G.lumpyBlob(r, 2, 0.22, 200 + i), x, hgt - r * 0.6, z, 0, 0, 0, 1, 1.15, 1));
+        far.push(G.placed(G.lumpyBlob(r * 0.7, 2, 0.22, 260 + i), x + r * 0.6, hgt - r * 1.05, z + 0.3));
         farTrunks.push(G.rod(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, hgt - r, z), 0.12, 0.08, 6));
       }
     }
     for (let i = 0; i < 30; i++) {
       const x = -70 + i * 5 + rnd() * 3, z = -34 - rnd() * 12, r = 2.2 + rnd() * 1.6;
-      far.push(G.placed(G.lumpyBlob(r, 1, 0.25, 300 + i), x, r * 0.35, z, 0, 0, 0, 1.4, 0.75, 1));
+      far.push(G.placed(G.lumpyBlob(r, 2, 0.25, 300 + i), x, r * 0.35, z, 0, 0, 0, 1.4, 0.75, 1));
     }
+    // a hazy ridge on the horizon, so the far edge of the ground never shows
+    const ridge = [];
+    for (let i = 0; i < 14; i++) {
+      const x = -150 + i * 23 + rnd() * 8, z = -135 - rnd() * 30, r = 15 + rnd() * 8;
+      ridge.push(G.placed(G.lumpyBlob(r, 2, 0.12, 400 + i), x, -r * 0.08, z, 0, 0, 0, 1.6, 0.48, 1));
+    }
+    add(mesh(G.mergeAll(ridge), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.011, 0.02, 0.046) })), false, false);
     add(mesh(G.mergeAll(far), leafMat('#1d3527', 'farTree')), false, true);
     add(mesh(G.mergeAll(farTrunks), std('#2a221c', 0.9)), false, true);
     // the ground out to the trees, and the lawn behind the house
     const lawnFar = MAT.lawnMaterial({ shaft: new THREE.Vector4(99, 99.1, 99, 99.1), open: 999 });
-    add(mesh(G.placed(new THREE.PlaneGeometry(160, 70), 0, -0.002, -49, -Math.PI / 2, 0, 0), lawnFar), false, true);
+    // open meadow out to the ridge, fading into the night with distance
+    const meadow = P(std('#ffffff', 0.95), {
+      key: 'meadow', colorFn: 'mdC',
+      extraFrag: `vec3 mdC(vec3 p, vec3 n){
+          vec3 c = s2l(vec3(0.21, 0.37, 0.16)) * (0.8 + 0.3 * fbm(p.xz * 0.45));
+          return mix(c, s2l(vec3(0.09, 0.15, 0.12)), 0.8 * smoothstep(-15.0, -70.0, p.z)); }`,
+    });
+    add(mesh(G.placed(new THREE.PlaneGeometry(420, 290), 0, -0.002, -159, -Math.PI / 2, 0, 0), meadow), false, true);
     add(mesh(G.placed(new THREE.PlaneGeometry(HOUSE.x1 - HOUSE.x0, 14 + HOUSE.z0), (HOUSE.x0 + HOUSE.x1) / 2, 0, (HOUSE.z0 - 14) / 2, -Math.PI / 2, 0, 0), lawnFar), false, true);
     // pale flowers along the fence
     const fl = [];
@@ -375,9 +389,9 @@ export function build(ctx) {
       rg.push(b);
     }
     add(mesh(G.mergeAll(rg), roofMat), true, true);
-    // a cushion inside (left, where the dog sleeps), a bowl outside
-    const cushion = new RoundedBoxGeometry(0.42, 0.07, 0.9, 3, 0.03);
-    cushion.translate(x0 + 0.27, fl + 0.035, -0.62);
+    // a flat cushion under the sleeping dog (clear of the patch), a bowl outside
+    const cushion = new RoundedBoxGeometry(0.3, 0.035, 0.62, 3, 0.015);
+    cushion.translate(-0.59, fl + 0.0175, -0.86);
     add(mesh(cushion, P(std('#5b6fa8', 0.95), { key: 'cushion', colorFn: 'cuC', extraFrag: `vec3 cuC(vec3 p, vec3 n){ return vec3(0.85 + 0.25 * step(0.5, fract((p.x + p.z) * 9.0)) * aaF(9.0)); }` })), true, true);
     const bowl = new THREE.LatheGeometry([new THREE.Vector2(0.0, 0.0), new THREE.Vector2(0.1, 0.0), new THREE.Vector2(0.12, 0.05), new THREE.Vector2(0.105, 0.055), new THREE.Vector2(0.085, 0.015), new THREE.Vector2(0.0, 0.015)], 24);
     bowl.translate(x1 + 0.28, 0, -0.45);

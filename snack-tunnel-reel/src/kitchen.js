@@ -411,17 +411,20 @@ export function basketAt(t) {
     out.y = lerp(UPY, LANDY, easeInQuad(u) * 0.35 + smooth(u) * 0.65);
     if (t >= T.basket2_1) out.y = LANDY + 0.05 * Math.abs(Math.sin((t - T.basket2_1) * 14)) * Math.exp(-(t - T.basket2_1) * 9);
   }
-  // pushed off the trapdoor when the kid opens it: a little hop to the left, tips over
+  // pushed off the trapdoor when the kid opens it: a little hop to the left, tips onto its side
   const s0 = T.peek0 + 0.08;
   if (t >= s0) {
     const u = prog(t, s0, 0.45);
     out.x = lerp(BX, BX - 0.36, easeOutCubic(u));
     out.z = lerp(BZ, BZ + 0.05, u);
-    out.y = LANDY + 0.16 * Math.sin(Math.PI * Math.min(1, u * 1.1)) * (1 - u);
-    out.tilt = 0.95 * easeOutBack(u, 1.6) + 0.06 * wobble(t, s0 + 0.45, 3, 7);
+    out.tilt = 1.45 * easeOutBack(u, 1.3) + 0.05 * wobble(t, s0 + 0.45, 3, 7);
+    out.y = LANDY + 0.16 * Math.sin(Math.PI * Math.min(1, u * 1.1)) * (1 - u) + tipLift(out.tilt);
   }
   return out;
 }
+// how far a basket tilted by th must rise to rest on the floor (bowl profile and rim, left side)
+const BOWL_EDGE = [[0.08, 0], [0.1, 0.03], [0.108, 0.08], [0.119, 0.115]];
+const tipLift = (th) => Math.max(0, ...BOWL_EDGE.map(([r, y]) => r * Math.sin(th) - y * Math.cos(th)));
 const wheelAngle = (t) => (UPY - clamp(basketAt(t).y, DOWNY, UPY)) / WR;
 
 // ---------------------------------------------------------------------------
@@ -492,10 +495,10 @@ export function build(ctx) {
   });
 
   // glowing cut line round the tile, sparks at its tip
-  const cutMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 1.6, 0.55), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+  const cutMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.6, 1.8, 0.6), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
   const EDGE = [[HX0, HZ1, HX1, HZ1], [HX1, HZ1, HX1, HZ0], [HX1, HZ0, HX0, HZ0], [HX0, HZ0, HX0, HZ1]];
   const cutSegs = EDGE.map(() => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.004, 0.014), cutMat);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.004, 0.024), cutMat);
     m.renderOrder = 9;
     scene.add(m);
     return m;
@@ -503,7 +506,7 @@ export function build(ctx) {
   const sparkMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(4.0, 2.2, 0.8), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const sparks = ctx.instanced(new THREE.SphereGeometry(1, 6, 4), sparkMat, 40, false);
   sparks.renderOrder = 9;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 8), sparkMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 8), sparkMat);
   scene.add(head);
   const perimeter = (u) => {
     // u in [0, 4): position along the four edges
@@ -679,6 +682,30 @@ export function build(ctx) {
     scene.add(fridgeLight, fridgeLight.target);
   }
 
+  // --- night lighting: the room's missing front wall still stops the moon (it casts
+  // shadows but is never drawn) except through one window; a dim blue fill turns warm
+  // when the fridge light clicks on
+  {
+    const x0 = HOUSE.x0 + HOUSE.wall, x1 = HOUSE.x1 - HOUSE.wall, y0 = FY + 0.03, y1 = HOUSE.ceil;
+    const V2 = (x, y) => new THREE.Vector2(x, y);
+    const front = new THREE.Shape([V2(x0, y0), V2(x1, y0), V2(x1, y1), V2(x0, y1)]);
+    const WX0 = 1.15, WX1 = 1.95, WY0 = 1.05, WY1 = 2.15, mull = 0.025; // four panes round a cross
+    const xm = (WX0 + WX1) / 2, ym = (WY0 + WY1) / 2;
+    for (const [a, b] of [[WX0, xm - mull], [xm + mull, WX1]]) {
+      for (const [c, d] of [[WY0, ym - mull], [ym + mull, WY1]]) front.holes.push(new THREE.Path([V2(a, c), V2(b, c), V2(b, d), V2(a, d)]));
+    }
+    // a strip under the ceiling's front edge closes the gap between this plane and the ceiling slab
+    const strip = placed(new THREE.PlaneGeometry(x1 - x0, 0.12), (x0 + x1) / 2, y1 - 0.002, -0.03, -Math.PI / 2, 0, 0);
+    const occ = new THREE.Mesh(mergeAll([new THREE.ShapeGeometry(front).translate(0, 0, 0.03), strip]), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide }));
+    occ.castShadow = true;
+    occ.userData.cast = true;
+    scene.add(occ);
+  }
+  const FILL_NIGHT = new THREE.Color(0.42, 0.52, 1.0), FILL_WARM = new THREE.Color(1.0, 0.8, 0.6);
+  const nightFill = new THREE.PointLight(FILL_NIGHT.clone(), 0.9, 3.4, 1.2);
+  nightFill.position.set(3.1, 1.75, -0.8);
+  scene.add(nightFill);
+
   // --- twelve glowing footprints from the back door to the tile ----------------
   const footGeo = (() => {
     const parts = [];
@@ -756,10 +783,15 @@ export function build(ctx) {
     return m;
   };
   const ropeGrp = new THREE.Group();
-  const ropeL = strand(), ropeR = strand();
+  const ropeL = strand(), ropeR = strand(), ropeT = strand();
   const wrap = new THREE.Mesh(new THREE.TorusGeometry(WR - 0.006, 0.0085, 6, 24, Math.PI), ropeMat);
   wrap.position.set(P.x, P.y, P.z);
-  ropeGrp.add(ropeL, ropeR, wrap);
+  // once the basket tips over, the slack drops to the floor beside the trapdoor and trails to it
+  const SLACK = V(TILE.x0 - 0.09, FY + 0.012, BZ + 0.04);
+  const coil = new THREE.Mesh(mergeAll([0, 1].map((i) => placed(new THREE.TorusGeometry(0.05 - i * 0.012, 0.0085, 6, 20), 0.01 * i, 0.012 * i, -0.008 * i, Math.PI / 2 + 0.15 * i, 0, 0))), ropeMat);
+  coil.position.copy(SLACK);
+  coil.castShadow = true;
+  ropeGrp.add(ropeL, ropeR, ropeT, wrap, coil);
   add(ropeGrp);
   // 4 the basket: wicker bowl, rim, two bridle cords up to a ring
   const basket = new THREE.Group();
@@ -769,17 +801,23 @@ export function build(ctx) {
     const bowl = new THREE.LatheGeometry([[0.0, 0.0], [0.08, 0.0], [0.1, 0.03], [0.108, 0.08], [0.11, 0.115]].map(([r, y]) => new THREE.Vector2(r, y)), 28);
     basket.add(meshOf(bowl, wmat));
     basket.add(meshOf(new THREE.TorusGeometry(0.11, 0.009, 8, 32).rotateX(Math.PI / 2).translate(0, 0.115, 0), std('#8b5d33', 0.8)));
-    const ringY = 0.5;
+    const ringY = 0.5, rimY = 0.115;
+    // the bridle hangs from the rim so it can fold down when the rope goes slack
+    const bridle = new THREE.Group();
+    bridle.position.y = rimY;
     const cords = [-1, 1].map((s) => {
-      const a = V(s * 0.108, 0.115, 0), b = V(0, ringY, 0);
+      const a = V(s * 0.108, rimY, 0), b = V(0, ringY, 0);
       const d = b.clone().sub(a);
       const c = new THREE.CylinderGeometry(0.005, 0.005, d.length(), 6, 1, true);
       c.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), d.normalize()));
-      c.translate((a.x + b.x) / 2, (a.y + b.y) / 2, 0);
+      c.translate((a.x + b.x) / 2, (a.y + b.y) / 2 - rimY, 0);
       return c;
     });
-    basket.add(meshOf(cords, ropeMat));
-    basket.add(meshOf(new THREE.TorusGeometry(0.016, 0.004, 6, 16).translate(0, ringY + 0.012, 0), M.iron));
+    bridle.add(meshOf(cords, ropeMat));
+    bridle.add(meshOf(new THREE.TorusGeometry(0.016, 0.004, 6, 16).translate(0, ringY + 0.012 - rimY, 0), M.iron));
+    basket.add(bridle);
+    basket.userData.bridle = bridle;
+    basket.userData.rimY = rimY;
     basket.userData.ringY = ringY + 0.024;
     add(basket);
   }
@@ -797,7 +835,7 @@ export function build(ctx) {
     m.scale.set(1, Math.max(l, 1e-4), 1);
     m.quaternion.setFromUnitVectors(_up, _d.multiplyScalar(1 / Math.max(l, 1e-6)));
   };
-  const _to = new THREE.Vector3();
+  const _to = new THREE.Vector3(), _s = new THREE.Vector3();
   // a snack waits on the shelf, hops into the basket on t0, rides it, and is hidden at keepUntil
   function snack(obj, from, t0, off, t, keepUntil) {
     const ry0 = obj.userData.ry0 ?? 0;
@@ -863,7 +901,7 @@ export function build(ctx) {
       const vx = (h1 - 0.5) * 1.6, vz = (h2 - 0.3) * 1.2, vy = 0.9 + 1.2 * h3;
       const y = FY + 0.01 + vy * age - 4.9 * age * age;
       if (y < FY) continue;
-      ctx.setInst(sparks, sx + vx * age, y, sz + vz * age, 0.0055 * (1 - age / 0.32));
+      ctx.setInst(sparks, sx + vx * age, y, sz + vz * age, 0.008 * (1 - age / 0.32));
     }
     ctx.endInst(sparks);
     hinges.forEach((h, i) => {
@@ -901,12 +939,28 @@ export function build(ctx) {
     const ropeK = popIn(t, T.pulley0 + 3 * T.pulleyGap, 0.34, 1.8);
     ropeGrp.visible = ropeK > 0.001;
     wheel.userData.rim.rotation.z = wheelAngle(t);
+    // tipped over: the bridle folds down and the rope goes slack
+    const slackU = t >= T.peek0 + 0.08 ? easeOutCubic(prog(t, T.peek0 + 0.08, 0.45)) : 0;
+    const fold = 1 - 0.85 * slackU;
+    basket.userData.bridle.scale.y = Math.max(fold, 0.001);
     if (ropeGrp.visible) {
       // the basket's ring (after its tilt) up to the wheel's left side; the kid's end hangs down the shaft
-      if (basket.visible) _a.set(0, basket.userData.ringY * b.vis, 0).applyAxisAngle(_zAxis, b.tilt).add(basket.position);
+      const { rimY, ringY } = basket.userData;
+      if (basket.visible) _a.set(0, (rimY + (ringY - rimY) * fold) * b.vis, 0).applyAxisAngle(_zAxis, b.tilt).add(basket.position);
       else _a.set(BX, P.y - 0.4, BZ);
       const k = Math.min(1, ropeK);
-      placeStrand(ropeL, topL, _e.copy(topL).lerp(_a, k));
+      if (slackU > 0) {
+        // the slack drops from where the ring was to the floor beside the trapdoor, then trails to the basket
+        _s.set(BX, LANDY + ringY, BZ).lerp(SLACK, slackU);
+        placeStrand(ropeL, topL, _s);
+        placeStrand(ropeT, _s, _a);
+      } else {
+        placeStrand(ropeL, topL, _e.copy(topL).lerp(_a, k));
+        ropeT.visible = false;
+      }
+      const ck = smooth(prog(t, T.peek0 + 0.2, 0.3));
+      coil.visible = ck > 0.001;
+      coil.scale.setScalar(Math.max(ck, 0.0001));
       placeStrand(ropeR, topR, _e.copy(topR).lerp(endR, k));
       wrap.scale.setScalar(Math.max(ropeK, 0.0001));
     }
@@ -916,8 +970,13 @@ export function build(ctx) {
     door.rotation.y = 1.85 * Math.min(1.05, easeOutBack(dU, 1.4)) - 0.04 * wobble(t, T.fridgeOpen + 0.42, 2.5, 6);
     const on = t >= T.fridgeOn ? 1 : 0;
     fridgeLight.visible = on > 0;
-    fridgeLight.intensity = 26 * on;
-    linerMat.emissiveIntensity = 1.6 * on;
+    fridgeLight.intensity = 18 * on;
+    linerMat.emissiveIntensity = 0.9 * on;
+    nightFill.color.copy(on ? FILL_WARM : FILL_NIGHT);
+    // once Mom has crept in (the wide shot) the kitchen goes dark, darker still as
+    // we push in, so she is hidden until the fridge light clicks on
+    const dark = 1 - 0.68 * smooth(prog(t, T.wide0, T.wide1 - T.wide0)) - 0.2 * smooth(prog(t, T.push0, T.peek0 - T.push0));
+    nightFill.intensity = on ? 1.6 : 0.9 * dark;
 
     // --- footprints pop one by one, then fade out together
     const fadeT = T.steps0 + 12 * T.stepGap + 1.9;

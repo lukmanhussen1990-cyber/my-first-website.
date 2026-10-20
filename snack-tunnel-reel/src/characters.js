@@ -241,9 +241,9 @@ function standInJar(M) {
   }
   return g;
 }
-function chipsBag(ctx, M) {
+function chipsBag(ctx, M, variant = 0) {
   try {
-    if (typeof KITCHEN.makeChipsBag === 'function') return KITCHEN.makeChipsBag(ctx);
+    if (typeof KITCHEN.makeChipsBag === 'function') return KITCHEN.makeChipsBag(ctx, variant);
   } catch (e) { /* fall back to the stand-in */ }
   return standInChips(M);
 }
@@ -418,8 +418,10 @@ function buildKid(ctx, M) {
   });
   const beamG = new THREE.ConeGeometry(0.42, 1.9, 32, 1, true);
   beamG.translate(0, -0.95, 0); // apex at the lamp
-  beamG.rotateX(-Math.PI / 2 - 0.18); // forward, a little down
+  beamG.rotateX(-Math.PI / 2 + 0.18); // forward, a little down
   const beam = new THREE.Mesh(beamG, beamMat);
+  beam.userData.cast = false;
+  beam.castShadow = false;
   beam.renderOrder = 20;
   beam.position.z = 0.03;
   lamp.add(beam);
@@ -489,22 +491,16 @@ function buildKid(ctx, M) {
     cutter.userData.disc = disc;
     hands[0].add(cutter);
   }
-  const heldChips = new THREE.Group();
-  const kidChips = chipsBag(ctx, M);
-  kidChips.position.set(0, -0.06, 0.04);
-  kidChips.scale.setScalar(0.9);
-  heldChips.add(kidChips);
+  // his copies of the delivered snacks (scene-level: they hop from the basket into
+  // his hands, onto the floor and back, placed in world space each frame)
+  const heldChips = chipsBag(ctx, M, 0), heldJar = cookieJar(ctx, M);
+  heldChips.position.set(0.02, -0.13, 0.06);
+  heldChips.scale.setScalar(0.8);
   hands[0].add(heldChips);
-  const heldJar = new THREE.Group();
-  const kidJar = cookieJar(ctx, M);
-  kidJar.position.set(0, -0.08, 0.05);
-  kidJar.scale.setScalar(0.85);
-  heldJar.add(kidJar);
+  heldJar.position.set(0, -0.11, 0.05);
+  heldJar.scale.setScalar(0.8);
   hands[1].add(heldJar);
-  // the snacks once he puts them down on the tunnel floor
-  const floorChips = chipsBag(ctx, M), floorJar = cookieJar(ctx, M);
-  floorChips.scale.setScalar(0.9);
-  floorJar.scale.setScalar(0.85);
+  const floorChips = chipsBag(ctx, M, 0), floorJar = cookieJar(ctx, M);
   // a chip on its way to the mouth, a puff when tools appear and vanish
   const chip = mesh(sph(0.026, 10, 6), M.chip, false);
   chip.scale.set(1, 0.25, 0.8);
@@ -577,7 +573,7 @@ function buildMom(ctx, M) {
   const head = new THREE.Group();
   head.position.y = 0.15;
   neck.add(head);
-  const R = 0.165;
+  const R = 0.18;
   head.add(mesh(sph(R, 40, 30), M.momSkin));
   const hairCap = sph(R * 1.06, 40, 18, 0, Math.PI * 2, 0, Math.PI * 0.5);
   hairCap.rotateX(-0.5);
@@ -626,11 +622,8 @@ function buildMom(ctx, M) {
   mouths.talk = talk;
   for (const k in mouths) head.add(mouths[k]);
   // her bag of chips (left hand) and a chip (right hand)
-  const held = new THREE.Group();
-  const bag = chipsBag(ctx, M);
-  bag.position.set(0, -0.09, 0.05);
-  held.add(bag);
-  hands[1].add(held);
+  // her bag of chips (the second one from the shelf), placed at her left hand
+  const held = chipsBag(ctx, M, 1);
   const chip = mesh(sph(0.024, 10, 6), M.chip, false);
   chip.scale.set(1, 0.25, 0.8);
   chip.position.set(0, -0.03, 0.04);
@@ -741,12 +734,12 @@ function buildDog(ctx, M) {
 // ---------------------------------------------------------------------------
 export function build(ctx) {
   const { T, WD, U } = ctx;
-  const { clamp, lerp, prog, smooth, popIn, easeOutBack, easeInOutCubic, wobble, bump } = U;
+  const { clamp, lerp, prog, smooth, popIn, easeOutBack, easeOutCubic, easeInOutCubic, wobble, bump } = U;
   const M = makeMats(ctx.envMap);
   const kid = buildKid(ctx, M);
   const mom = buildMom(ctx, M);
   const dog = buildDog(ctx, M);
-  for (const o of [kid.root, mom.root, dog.root, kid.floorChips, kid.floorJar]) ctx.add(o);
+  for (const o of [kid.root, mom.root, dog.root, kid.floorChips, kid.floorJar, mom.held]) ctx.add(o);
   const ramp = (t, a, d) => smooth(prog(t, a, d));
   const win = (t, a, b, f = 0.2) => bump(t, a, b, f);
   const FLOOR = WD.FLOOR, KID_H = WD.KID_H;
@@ -759,6 +752,12 @@ export function build(ctx) {
   const kitX = (WD.TILE.x0 + WD.TILE.x1) / 2, kitZ = (WD.TILE.z0 + WD.TILE.z1) / 2;
   const slabTop = WD.HOUSE.floor;
   const feetTop = WD.HOUSE.slab0 - KID_H - 0.02; // standing with the head just under the slab
+  const SHAFT_Z = -1.06; // in the kitchen up-shaft, in front of the ladder
+  const WAIT = { x: 3.0, z: -0.86, ry: 1.25 }; // waiting under the trapdoor for the basket
+  const SIT = { x: 2.92, z: -0.62, ry: 0.35 }; // sitting by the snacks
+  const SIT_MUNCH = [47.1, 47.85];
+  const PEEK_TOP0 = 0.1, PEEK_TOP = 0.49, PEEK_SINK = WD.HOUSE.slab0 - 0.15; // head top: under the lid, peeking, gone
+  const PEEK_Z = -0.98; // his head just clears the open lid and the floor edge
 
   // natural blinks (pure function of time)
   function blinkAt(t, period, dur, seed = 0) {
@@ -795,6 +794,7 @@ export function build(ctx) {
       hYaw: 0, hPitch: 0, hRoll: 0,
       open: 1, wide: 0, gx: 0, gy: 0, browL: 0, browR: 0, worry: 0,
       mouth: 'smile', tool: 'shovel', lamp: 0, shake: 0, squash: 0, q: 0, sweat: -1, chip: 0,
+      reachR: 1, reachL: 1, // arm stretch when reaching overhead
     };
     // ---- 1: sneaky on the lawn, down the shaft, then sideways ----
     if (t < T.shaft0) {
@@ -1005,9 +1005,9 @@ export function build(ctx) {
     if (t >= T.kitUp0 && t < 37.8) {
       const into = ramp(t, T.kitUp0, 0.4);
       P.x = lerp(WD.tunX(T.kitUp0 - 0.15) - 0.42, kitX, into);
-      P.z = lerp(-0.68, kitZ + 0.05, into);
+      P.z = lerp(-0.68, SHAFT_Z, into);
       P.y = clamp(WD.kitUpY(t) - KID_H - 0.03, FLOOR, feetTop);
-      P.ry = lerp(1.05, 0.3, into);
+      P.ry = lerp(1.05, 0.12, into);
       P.spread = into;
       P.crouch = lerp(0.45, 0, into);
       P.lean = lerp(0.5, 0, into);
@@ -1022,26 +1022,32 @@ export function build(ctx) {
         P.aL = [lerp(2.7, 0.6, k), 0.1];
         P.hPitch = 0.55;
       }
-      // two taps: "solid tile", then a sore hand
+      // two taps with the spoon on the floor above: solid tile
       for (const tt of [T.tap1, T.tap2]) {
-        const k = win(t, tt - 0.22, tt + 0.12, 0.1);
-        if (k > 0) P.aR = [lerp(P.aR[0], t < tt ? 2.65 : 2.95, k), -0.12];
+        const k = win(t, tt - 0.24, tt + 0.14, 0.1);
+        if (k > 0) {
+          P.aR = [lerp(P.aR[0], t < tt ? 2.7 : 3.02, k), lerp(P.aR[1], 0.12, k)];
+          P.reachR = lerp(1, t < tt ? 1.12 : 1.32, k);
+        }
       }
-      const ouch = win(t, T.tap2 + 0.1, T.tap2 + 0.8, 0.12);
-      if (ouch > 0) {
-        P.aR = [lerp(P.aR[0], 1.1 + 0.25 * Math.sin(t * 40), ouch), -0.3];
-        P.open = lerp(1, 0.25, ouch);
-        P.mouth = 'o';
+      const hmm = win(t, T.tap2 + 0.15, T.tap2 + 0.9, 0.15);
+      if (hmm > 0) {
+        P.hYaw += 0.28 * Math.sin((t - T.tap2) * 17) * hmm;
+        P.browL -= 0.5 * hmm;
+        P.browR -= 0.5 * hmm;
+        P.mouth = 'flat';
       }
       // thinking, then the tile cutter traces round the tile above
       const think = win(t, T.tap2 + 0.8, T.cut0 - 0.15, 0.2);
       P.hRoll += 0.18 * think;
       P.aL = [lerp(P.aL[0], 1.55, think), lerp(P.aL[1], -0.3, think)];
-      if (t >= T.cut0 - 0.3 && t < T.cut1 + 0.2) P.tool = 'cutter';
+      if (t >= T.cut0 - 0.3) P.tool = t < T.cut1 + 0.2 ? 'cutter' : 'none';
       const cut = win(t, T.cut0 - 0.12, T.cut1 + 0.1, 0.12);
       if (cut > 0) {
         const a = prog(t, T.cut0, T.cut1 - T.cut0) * Math.PI * 2;
-        P.aR = [lerp(P.aR[0], 2.85 + 0.12 * Math.sin(a), cut), lerp(P.aR[1], 0.05 + 0.2 * Math.cos(a), cut)];
+        P.aR = [lerp(P.aR[0], 2.9 + 0.1 * Math.sin(a), cut), lerp(P.aR[1], 0.08 + 0.18 * Math.cos(a), cut)];
+        P.reachR = lerp(1, 1.28, cut);
+        P.aL = [lerp(P.aL[0], 2.5, cut), lerp(P.aL[1], 0.2, cut)];
         P.shake += 0.25 * cut;
         P.hPitch = 0.6;
         P.browL = -0.5;
@@ -1063,158 +1069,190 @@ export function build(ctx) {
       const down = ramp(t, 37.0, 0.8);
       if (down > 0) {
         P.y = lerp(P.y, FLOOR, down);
-        P.x = lerp(P.x, 3.02, down);
-        P.z = lerp(P.z, -0.72, down);
-        P.ry = lerp(P.ry, 0.7, down);
+        P.x = lerp(P.x, WAIT.x, down);
+        P.z = lerp(P.z, WAIT.z, down);
+        P.ry = lerp(P.ry, WAIT.ry, down);
         P.spread *= 1 - down;
         P.hPitch = lerp(P.hPitch, 0.55, down);
       }
     }
     // ---- 6: wait, the basket, the snacks, munch, shut the trapdoor, sit ----
     if (t >= 37.8 && t < 48.3) {
-      P.x = 3.02;
+      P.x = WAIT.x;
       P.y = FLOOR;
-      P.z = -0.72;
-      P.ry = 0.7;
+      P.z = WAIT.z;
+      P.ry = WAIT.ry;
       P.tool = 'none';
-      P.hPitch = 0.55;
-      P.hYaw = 0.15;
+      P.hPitch = 0.6;
+      P.hYaw = -0.25;
       const rub = win(t, 38.0, T.pulley0 - 0.2, 0.3);
       P.aR = [lerp(0.25, 1.05, rub), lerp(-0.08, 0.35 + 0.08 * Math.sin(t * 16), rub)];
       P.aL = [lerp(0.25, 1.05, rub), lerp(0.08, -0.35 - 0.08 * Math.sin(t * 16), rub)];
       P.mouth = 'grin';
       P.wide = 0.3 * win(t, T.shelfGlow, T.shelfGlow + 1.2, 0.2);
+      // follow the basket down; hands out to catch
       const fol = ramp(t, T.lower0, T.lower1 - T.lower0);
-      P.hPitch = lerp(0.6, 0.05, fol);
-      const reach = win(t, T.lower1 - 0.4, T.lower1 + 0.25, 0.15);
-      P.aR = [lerp(P.aR[0], 1.9, reach), lerp(P.aR[1], -0.05, reach)];
-      P.aL = [lerp(P.aL[0], 1.9, reach), lerp(P.aL[1], 0.05, reach)];
-      if (t >= T.lower1 + 0.15) P.tool = 'snacks';
-      const hold = win(t, T.lower1 + 0.15, T.basketUp0 + 0.15, 0.15);
+      P.hPitch = lerp(0.65, -0.05, fol);
+      P.hYaw = lerp(-0.25, 0.05, fol);
+      const reach = win(t, T.lower1 - 0.45, T.lower1 + 0.3, 0.15);
+      P.aR = [lerp(P.aR[0], 1.55, reach), lerp(P.aR[1], 0.05, reach)];
+      P.aL = [lerp(P.aL[0], 1.55, reach), lerp(P.aL[1], -0.05, reach)];
+      P.wide = Math.max(P.wide, 0.5 * reach);
+      const hold = win(t, T.lower1 + 0.2, T.basketUp0 + 0.12, 0.12);
       if (hold > 0) {
-        P.aR = [lerp(P.aR[0], 0.95, hold), -0.1];
-        P.aL = [lerp(P.aL[0], 0.9, hold), 0.25];
-        P.hPitch = lerp(P.hPitch, -0.1, hold);
-        P.hYaw = lerp(P.hYaw, -0.35, hold);
+        P.aR = [lerp(P.aR[0], 0.85, hold), lerp(P.aR[1], 0.12, hold)];
+        P.aL = [lerp(P.aL[0], 0.85, hold), lerp(P.aL[1], -0.1, hold)];
+        P.hPitch = lerp(P.hPitch, -0.15, hold);
+        P.hYaw = lerp(P.hYaw, -0.75, hold);
       }
-      // munch: a chip to the mouth, eyes shut with bliss
-      const m = win(t, T.munch - 0.25, T.munch + 0.4, 0.12);
+      // munch: the bag up to his face, eyes shut with bliss
+      const m = win(t, T.munch - 0.18, T.munch + 0.3, 0.1);
       if (m > 0) {
-        P.aR = [lerp(P.aR[0], 2.05, m), lerp(P.aR[1], 0.38, m)];
-        P.open = lerp(1, 0.12, m);
-        P.mouth = t > T.munch ? 'smile' : 'o';
-        P.chip = t < T.munch ? m : 0;
-        P.hYaw = lerp(P.hYaw, -0.5, m);
+        P.aR = [lerp(P.aR[0], 1.75, m), lerp(P.aR[1], 0.35, m)];
+        P.open = lerp(1, 0.08, m);
+        P.mouth = t > T.munch ? 'grin' : 'o';
+        P.hPitch = lerp(P.hPitch, 0.0, m);
+        P.squash += 0.05 * m;
       }
       // put the snacks down, climb up, pull the trapdoor shut, climb down
       if (t >= T.basketUp0) {
-        P.tool = 'none';
-        const up = ramp(t, T.basketUp0 + 0.2, T.trapClose0 - T.basketUp0 - 0.25);
-        const dn = ramp(t, T.trapClose1 + 0.05, 0.6);
+        const up = ramp(t, T.basketUp0 + 0.25, T.trapClose0 - T.basketUp0 - 0.3);
+        const dn = ramp(t, T.trapClose1 + 0.08, 0.55);
         const k = up * (1 - dn);
-        P.x = lerp(3.02, kitX, k) - 0.12 * dn;
-        P.z = lerp(-0.72, kitZ + 0.05, k);
+        P.x = lerp(WAIT.x, kitX, k);
+        P.z = lerp(WAIT.z, SHAFT_Z, k);
         P.y = lerp(FLOOR, feetTop, k);
-        P.ry = lerp(0.7, 0.3, k);
-        P.spread = k;
+        P.ry = lerp(WAIT.ry, 0.12, k);
+        P.spread = 0.7 * k;
         P.aR = [lerp(0.4, 2.85, k), lerp(-0.1, 0.05, k)];
         P.aL = [lerp(0.4, 2.8, k), lerp(0.1, -0.05, k)];
-        P.hPitch = 0.55 * k;
-        const pull = win(t, T.trapClose0, T.trapClose1 + 0.1, 0.1);
+        P.hPitch = lerp(0.1, 0.55, k);
+        P.hYaw = 0;
+        const pull = win(t, T.trapClose0 - 0.1, T.trapClose1 + 0.1, 0.1);
         if (pull > 0) {
           const pk = ramp(t, T.trapClose0, T.trapClose1 - T.trapClose0);
-          P.aR = [2.95 - 0.25 * pk, 0.05];
-          P.aL = [2.95 - 0.25 * pk, -0.05];
+          P.aR = [lerp(P.aR[0], 3.0 - 0.3 * pk, pull), 0.05];
+          P.aL = [lerp(P.aL[0], 3.0 - 0.3 * pk, pull), -0.05];
+          P.reachR = P.reachL = lerp(1, 1.3 - 0.2 * pk, pull);
+        }
+        // the thud of the trapdoor shutting
+        if (t > T.trapClose1) {
+          P.squash += 0.12 * Math.max(0, wobble(t, T.trapClose1, 3, 7));
+          P.open = Math.min(P.open, 1 - win(t, T.trapClose1, T.trapClose1 + 0.3, 0.06));
         }
       }
       // sit down by the snacks and munch, content (the wide shot)
-      const sit = ramp(t, T.trapClose1 + 0.7, 0.4);
+      const sit = ramp(t, T.trapClose1 + 0.65, 0.4);
       if (sit > 0) {
         P.sit = sit;
-        P.x = lerp(P.x, 2.92, sit);
-        P.z = lerp(P.z, -0.62, sit);
-        P.ry = lerp(P.ry, 0.35, sit);
+        P.x = lerp(P.x, SIT.x, sit);
+        P.z = lerp(P.z, SIT.z, sit);
+        P.ry = lerp(P.ry, SIT.ry, sit);
         P.hPitch = lerp(P.hPitch, -0.05, sit);
         P.hYaw = lerp(P.hYaw, -0.25, sit);
         P.mouth = 'smile';
-        if (sit > 0.5) P.tool = 'chips';
-        P.aR = [lerp(P.aR[0], 0.9, sit), lerp(P.aR[1], -0.25, sit)];
+        P.spread *= 1 - sit;
+        P.aR = [lerp(P.aR[0], 0.9, sit), lerp(P.aR[1], 0.15, sit)];
         P.aL = [lerp(P.aL[0], 0.75, sit), lerp(P.aL[1], 0.25, sit)];
-        for (const mt of [47.1, 47.85]) {
-          const mm = win(t, mt - 0.22, mt + 0.3, 0.1);
+        for (const mt of SIT_MUNCH) {
+          const mm = win(t, mt - 0.3, mt + 0.25, 0.1);
           if (mm > 0) {
-            P.aR = [lerp(P.aR[0], 2.0, mm), lerp(P.aR[1], 0.38, mm)];
+            P.aL = [lerp(P.aL[0], 2.0, mm), lerp(P.aL[1], -0.42, mm)];
             P.open = lerp(1, 0.3, mm);
+            P.chip = t < mt ? mm : 0;
+            if (t > mt) P.mouth = 'grin';
           }
         }
       }
     }
     // ---- 7: the empty basket lands overhead, confused, peek, Mom! ----
     if (t >= 48.3) {
-      P.x = 2.92;
+      P.tool = 'none';
+      P.x = SIT.x;
       P.y = FLOOR;
-      P.z = -0.62;
-      P.ry = 0.35;
+      P.z = SIT.z;
+      P.ry = SIT.ry;
       P.sit = 1;
-      P.tool = 'chips';
-      P.aR = [0.9, -0.25];
+      P.aR = [0.9, 0.15];
       P.aL = [0.75, 0.25];
       P.mouth = 'smile';
+      P.hYaw = -0.25;
+      // the thunk overhead: look up
       const look = ramp(t, T.basket2_1 + 0.03, 0.15);
-      P.hPitch = 0.55 * look;
-      P.hYaw = 0.25 * look;
-      const conf = win(t, T.confused, T.peek0 + 0.1, 0.12);
+      P.hPitch = 0.6 * look;
+      P.hYaw = lerp(-0.25, 0.35, look);
+      P.wide = 0.6 * win(t, T.basket2_1, T.basket2_1 + 0.5, 0.05);
+      const conf = win(t, T.confused, T.peek0 + 0.05, 0.12);
       P.hRoll += 0.3 * conf;
       P.browL += 0.7 * conf;
       P.browR -= 0.2 * conf;
       P.q = conf;
       if (conf > 0.2) P.mouth = 'o';
-      const rise = ramp(t, T.confused + 0.1, 0.3);
+      // up the ladder, head just under the trapdoor
+      const rise = ramp(t, T.confused + 0.05, 0.25);
       P.sit = 1 - rise;
-      if (rise > 0.5) P.tool = 'none';
-      const climb = ramp(t, T.confused + 0.3, T.peek0 - T.confused - 0.3);
-      const peek = ramp(t, T.peek0, T.peek1 - T.peek0);
-      const sinkA = ramp(t, T.close0, T.close1 - T.close0);
-      const top0 = lerp(FLOOR + KID_H, WD.HOUSE.slab0 - 0.02, climb);
-      const headTop = sinkA > 0 ? lerp(slabTop + 0.35, WD.HOUSE.slab0 - 0.15, sinkA) : lerp(top0, slabTop + 0.35, peek);
+      const climb = smooth(prog(t, T.confused + 0.15, T.peek0 - T.confused - 0.15));
       if (climb > 0) {
-        P.x = lerp(2.92, kitX, climb);
-        P.z = lerp(-0.62, kitZ, climb);
-        P.y = lerp(FLOOR, headTop - KID_H, Math.min(1, climb * 3));
-        P.ry = lerp(0.35, 0.62, climb);
-        P.spread = climb * (1 - 0.6 * peek);
-        P.aR = [lerp(0.9, 2.85, climb), lerp(-0.25, 0.05, climb)];
-        P.aL = [lerp(0.75, 2.8, climb), lerp(0.25, -0.05, climb)];
+        P.x = lerp(SIT.x, kitX, climb);
+        P.z = lerp(SIT.z, SHAFT_Z, climb);
+        P.y = lerp(FLOOR, PEEK_TOP0 - KID_H, climb);
+        P.ry = lerp(SIT.ry, 0.1, climb);
+        P.spread = 0.6 * climb;
+        P.aR = [lerp(0.9, 2.85, climb) + 0.15 * Math.sin(t * 26) * (1 - climb), lerp(0.15, 0.05, climb)];
+        P.aL = [lerp(0.75, 2.8, climb) - 0.15 * Math.sin(t * 26) * (1 - climb), lerp(0.25, -0.05, climb)];
         P.hPitch = lerp(P.hPitch, 0.35, climb);
+        P.hYaw = lerp(P.hYaw, 0, climb);
       }
       if (t >= T.peek0) {
-        P.aR = [2.9, 0.05];
-        P.aL = [2.9, -0.05];
-        P.lamp = ramp(t, T.peek0 + 0.05, 0.12) * (1 - ramp(t, T.close1 - 0.05, 0.12));
+        // push the trapdoor up with his head, hands on the floor at the edge of the hole
+        const pu = easeOutCubic(prog(t, T.peek0, T.peek1 - T.peek0));
+        const su = U.easeInOutSine(prog(t, T.close0, T.close1 - T.close0));
+        const top = t < T.close0 ? lerp(PEEK_TOP0, PEEK_TOP, pu) : lerp(PEEK_TOP, PEEK_SINK, su);
+        P.y = top - KID_H;
+        P.x = kitX;
+        P.z = lerp(SHAFT_Z, PEEK_Z, smooth(prog(t, T.peek0, T.peek1 - T.peek0 + 0.1)));
+        P.ry = 0.1;
+        P.spread = 0.6;
+        const hands = smooth(prog(t, T.peek1 - 0.2, 0.3)) * (1 - smooth(prog(t, T.close0, 0.3)));
+        P.aR = [lerp(2.95, 2.33, hands), lerp(0.05, -0.08, hands)];
+        P.aL = [lerp(2.95, 2.33, hands), lerp(-0.05, 0.08, hands)];
+        P.reachR = P.reachL = lerp(1.15, 1.0, hands);
+        P.lamp = ramp(t, T.peek0 + 0.12, 0.12) * (1 - ramp(t, T.close1 - 0.12, 0.12));
         // look round the dark kitchen; the beam sweeps
-        const sweep = prog(t, T.peek1 - 0.1, T.fridgeOn - T.peek1 + 0.05);
-        P.hPitch = 0.05 - 0.05 * Math.sin(sweep * Math.PI);
-        P.hYaw = lerp(-0.55, -0.15, smooth(sweep)) + 0.2 * Math.sin(sweep * Math.PI * 2) * (1 - sweep);
+        const sweep = prog(t, T.peek1 - 0.15, T.fridgeOn - T.peek1 + 0.1);
+        P.hPitch = 0.04 + 0.05 * Math.sin(sweep * Math.PI);
+        P.hYaw = lerp(-0.6, -0.1, smooth(sweep)) + 0.22 * Math.sin(sweep * Math.PI * 2) * (1 - sweep);
+        P.hRoll = 0;
         P.mouth = 'smile';
         P.open = 1;
         P.q = 0;
+        P.browL = P.browR = 0.15;
         // the fridge light: snap round to Mom, eyes wide, frozen
         const snap = ramp(t, T.fridgeOn + 0.04, 0.16);
-        P.hYaw = lerp(P.hYaw, 0.5, snap);
-        P.hPitch = lerp(P.hPitch, 0.12, snap);
-        P.wide = snap * (1 - 0.5 * ramp(t, T.fridgeOn + 0.9, 0.5));
-        P.gx = 0.12 * snap;
+        P.hYaw = lerp(P.hYaw, 0.55, snap);
+        P.hPitch = lerp(P.hPitch, 0.1, snap);
+        P.wide = snap * (1 - 0.55 * ramp(t, T.fridgeOn + 0.9, 0.5));
+        P.gx = 0.15 * snap;
+        P.browL = P.browR = lerp(0.15, 0.9, snap);
         if (snap > 0.5) P.mouth = 'o';
         if (t > T.brow) P.mouth = 'flat';
         if (t > T.musicStop) P.worry = 0.5;
         P.squash += 0.05 * win(t, T.musicStop + 0.05, T.musicStop + 0.3, 0.1);
+        // "these": a little flinch, glance at the bag
+        const these = win(t, T.these + 0.05, T.these + 0.7, 0.12);
+        P.gy -= 0.12 * these;
+        P.wide += 0.2 * these;
         if (t > T.nervous) {
           P.mouth = 'nervous';
           P.worry = 1;
-          P.browL = 0.45;
-          P.browR = 0.45;
+          P.browL = P.browR = 0.45;
           P.sweat = prog(t, T.nervous + 0.1, 1.4);
           P.wide = 0.15;
+          P.gx = 0.1;
+        }
+        if (t > T.close0) {
+          P.hYaw = lerp(0.55, 0.3, ramp(t, T.close0, 0.5));
+          P.hPitch = 0.1;
         }
       }
     }
@@ -1281,11 +1319,13 @@ export function build(ctx) {
       k.puff.material.opacity = 0.55 * (1 - u);
     }
     // snacks
-    k.heldChips.visible = P.tool === 'snacks' || P.tool === 'chips';
-    k.heldJar.visible = P.tool === 'snacks';
+    // he holds the delivered snacks from the basket until it goes back up
+    const holding = t >= T.lower1 + 0.15 && t < T.basketUp0 + 0.05;
+    k.heldChips.visible = holding;
+    k.heldJar.visible = holding;
     k.chip.visible = P.chip > 0.05;
     const down = t >= T.basketUp0 + 0.05;
-    k.floorChips.visible = down && P.tool !== 'chips';
+    k.floorChips.visible = down;
     k.floorJar.visible = down;
     k.floorChips.position.set(2.66, FLOOR, -0.42);
     k.floorChips.rotation.set(0, 0.5, 0);

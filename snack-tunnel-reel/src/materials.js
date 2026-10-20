@@ -332,7 +332,8 @@ export function lawnMaterial(holes) {
   const uniforms = { uTime: digTime, uShaft: { value: holes.shaft }, uOpen: { value: holes.open } };
   const frag = `uniform float uTime; uniform vec4 uShaft; uniform float uOpen;
     vec3 lawnTop(vec3 p, vec3 n){
-      float s = smoothstep(0.46, 0.54, abs(fract(p.x / 1.6) - 0.5) * 2.0);
+      // mowing stripes in the yard only, none on the neighbours' side of the fence
+      float s = smoothstep(0.46, 0.54, abs(fract(p.x / 1.6) - 0.5) * 2.0) * smoothstep(-9.0, -7.6, p.z);
       vec3 c = mix(s2l(vec3(0.22, 0.40, 0.17)), s2l(vec3(0.30, 0.49, 0.21)), s);
       c *= 0.85 + 0.25 * fbm(p.xz * 0.9);
       c *= 0.9 + 0.18 * vnoise(p.xz * 13.0);
