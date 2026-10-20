@@ -9,9 +9,10 @@
     "timeline": "node scripts/timeline.mjs",
     "sfx": "python3 scripts/sfx.py",
     "test-render": "node scripts/render.mjs --test",
-    "render": "node scripts/render.mjs --workers 2",
+    "render": "node scripts/render.mjs --segments --workers 2",
     "mix": "node scripts/mix.mjs",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "qa": "python3 scripts/qa.py"
   },
   "dependencies": {
     "puppeteer": "^24.43.1",

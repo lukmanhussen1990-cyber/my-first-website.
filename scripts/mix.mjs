@@ -58,6 +58,6 @@ if (!args.includes('--audio-only')) {
   const video = path.resolve(ROOT, opt('video', 'frames/video.mp4'));
   const out = path.resolve(ROOT, opt('out', 'final/night_shift.mp4'));
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  run('ffmpeg', ['-y', '-v', 'error', '-i', video, '-i', finalWav, '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', String(SR), '-shortest', '-movflags', '+faststart', out]);
+  run('ffmpeg', ['-y', '-v', 'error', '-i', video, '-i', finalWav, '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', String(SR), '-movflags', '+faststart', out]);
   console.log(`Final: ${path.relative(ROOT, out)}`);
 }

@@ -804,54 +804,43 @@ export function phoneUICanvas() {
 }
 
 export function drawPhoneUI(ctx, t) {
+  // Kept white/amber (red is reserved for the caption words) and with its text
+  // low enough to land inside the reel's safe zone when the screen fills the frame.
   const W = ctx.canvas.width;
   const H = ctx.canvas.height;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.fillRect(0, 0, W, 70);
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(0, 118, W, 64);
   ctx.fillRect(0, H - 150, W, 150);
-  // REC
   const blink = Math.floor(t * 2) % 2 === 0;
-  ctx.fillStyle = blink ? '#ff3b30' : 'rgba(255,59,48,0.35)';
+  ctx.fillStyle = blink ? '#ffb347' : 'rgba(255,179,71,0.3)';
   ctx.beginPath();
-  ctx.arc(30, 36, 9, 0, Math.PI * 2);
+  ctx.arc(34, 150, 9, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#fff';
   ctx.font = '26px Oswald';
-  const secs = Math.max(0, Math.floor(t));
-  ctx.fillText(`REC  00:0${secs}`, 48, 46);
-  // grid
+  ctx.fillText(`REC  00:0${Math.max(0, Math.floor(t))}`, 52, 160);
   ctx.strokeStyle = 'rgba(255,255,255,0.22)';
   ctx.lineWidth = 1.5;
   for (const f of [1 / 3, 2 / 3]) {
     ctx.beginPath();
-    ctx.moveTo(W * f, 70);
+    ctx.moveTo(W * f, 182);
     ctx.lineTo(W * f, H - 150);
-    ctx.moveTo(0, 70 + (H - 220) * f);
-    ctx.lineTo(W, 70 + (H - 220) * f);
+    ctx.moveTo(0, 182 + (H - 332) * f);
+    ctx.lineTo(W, 182 + (H - 332) * f);
     ctx.stroke();
   }
-  // focus box
   ctx.strokeStyle = '#ffd60a';
   ctx.lineWidth = 3;
-  const fx = W * 0.38;
-  const fy = H * 0.36;
-  const fs = 70;
-  ctx.strokeRect(fx, fy, fs, fs);
-  // shutter
+  ctx.strokeRect(W * 0.38, H * 0.36, 70, 70);
   ctx.fillStyle = '#fff';
   ctx.beginPath();
   ctx.arc(W / 2, H - 75, 38, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#ff3b30';
+  ctx.fillStyle = '#d9d9d9';
   ctx.beginPath();
-  roundRect(ctx, W / 2 - 16, H - 91, 32, 32, 6);
+  ctx.arc(W / 2, H - 75, 30, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  ctx.font = '20px Oswald';
-  ctx.textAlign = 'center';
-  ctx.fillText('VIDEO', W / 2, H - 14);
-  ctx.textAlign = 'left';
 }
 
 export function uniformPatchTexture() {

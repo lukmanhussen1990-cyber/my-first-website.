@@ -214,6 +214,11 @@ export class Director {
     W.herFill.intensity = 0;
     this['shot' + sc.id](t, lt, sc, st);
     // the steel door only shows the planar mirror when that pass actually runs this frame
+    // lights at zero intensity still cost shader time per pixel: take them out of the frame entirely
+    W.S.lights.rim.visible = W.S.lights.rim.intensity > 0;
+    W.herFill.visible = W.herFill.intensity > 0;
+    // the sodium lamp cannot reach the kitchen: skip its light + shadow pass in interior-only shots
+    W.S.lights.sodium.visible = ![8, 11, 12].includes(sc.id);
     const gate = (mat, on) => (mat.userData.refl.uReflStrength.value = on ? mat.userData.reflBase : 0);
     gate(W.R.fridgeDoorMat, st.fridgeMirror);
     for (const m of [W.R.floor, ...W.S.mirrorSurfaces]) gate(m.material, st.floorMirror);
@@ -343,7 +348,6 @@ export class Director {
     const u = range(t, c.s5_cutToLock, sc.end);
     this.setCam(vlerp(V(2.8, 1.18, 4.58), V(2.86, 1.13, 4.66), easeOut(u)), V(3.1, 1.03, 4.95), 32);
     this.breathe(t, 0.8);
-    this.shake(t, c.s5_lockClick, 0.18);
     this.placeBoy({ pos: SPOT.door, rotY: -0.1, pose: { head: { r: [0.45, 0.2, 0] }, spine: { r: [0.15, 0, 0] } }, expr: 'scared' });
     const K = this.w.keys.root;
     K.visible = true;
@@ -398,8 +402,8 @@ export class Director {
     const gz = GLASS_Z + 0.04;
     const hl = head.clone().add(side.clone().multiplyScalar(0.3));
     const hr = head.clone().add(side.clone().multiplyScalar(-0.28));
-    armIK(her, 'L', V(hl.x, 1.66, gz), her.root.localToWorld(V(0.7, -0.2, 0.0)));
-    armIK(her, 'R', V(hr.x, 1.48, gz), her.root.localToWorld(V(-0.7, -0.3, 0.0)));
+    armIK(her, 'L', V(hl.x, 1.66, gz), her.root.localToWorld(V(0.4, 0.3, -0.25)));
+    armIK(her, 'R', V(hr.x, 1.48, gz), her.root.localToWorld(V(-0.4, 0.1, -0.25)));
     her.j.handL.rotation.set(-1.3, 0, 0.25);
     her.j.handR.rotation.set(-1.35, 0, -0.3);
     her.fingers.L.forEach((f) => {
@@ -457,7 +461,6 @@ export class Director {
     }
     // she is still out at the glass (out of view), tapping
     this.pressHer(t, V(-1.35, 0.8, -1.8));
-    st.cctv = true;
     st.floorMirror = true;
     st.post = { ...st.post, focus: this.cam.position.distanceTo(headPos), aperture: 0.06, maxBlur: 12, bloom: 0.56, exposure: 0.95 };
   }
@@ -505,7 +508,6 @@ export class Director {
       expr: real > 0.4 ? 'gasp' : 'tense',
     });
     this.hideHer();
-    st.cctv = true;
     st.post = { ...st.post, focus: camPos.distanceTo(face), aperture: 0.06, maxBlur: 14, bloom: 0.5, exposure: 0.98, vignette: 0.75 };
   }
 
@@ -552,14 +554,17 @@ export class Director {
     const mirrorZ = LAYOUT.fridge.frontZ + 0.006;
     const camMirror = this.cam.position.clone();
     camMirror.z = 2 * mirrorZ - camMirror.z;
-    this.placeHer({ pos: SPOT.herBehind, t, mode: 'ear', amp: 0.7, armAmp: 0.5, look: camMirror, outside: false });
-    // focus pull on the reflection reveals her
-    const focus = easeInOut(range(t, sc.start + 0.4, c.s10_reveal));
+    // nobody behind you... until the reveal frame: she moved while you looked away
+    if (t >= c.s10_reveal) this.placeHer({ pos: SPOT.herBehind, t, mode: 'ear', amp: 0.7, armAmp: 0.5, look: camMirror, outside: false });
+    else this.hideHer();
+    // the focus pull lands just before the reveal, so you clearly see the empty kitchen behind you
+    const focus = easeInOut(range(t, sc.start + 0.4, c.s10_reveal - 0.2));
     this.w.R.fridgeDoorMat.userData.refl.uReflBlur.value = lerp(3.6, 0.45, focus);
     st.fridgeMirror = true;
     st.povHideHead = true;
     this.setKeyLight(V(-1.25, 3.12, -2.25), V(-1.3, 0.8, -2.4));
     // bubble anchor: her face as seen in the mirror
+    this.w.her.root.updateMatrixWorld(true);
     const head = this.w.her.head.localToWorld(V(0, 0.02, 0.1));
     head.z = 2 * mirrorZ - head.z;
     this.cam.updateMatrixWorld(true);

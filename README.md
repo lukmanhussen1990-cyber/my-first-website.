@@ -22,10 +22,14 @@ Steps can also be run one by one:
 | timeline | `npm run timeline` | `src/timeline.json` (scene lengths from the real voice lengths) |
 | sound design | `npm run sfx` | `audio/mix/sfx.wav` |
 | test render | `npm run test-render` | `frames/test_scene3.mp4`, `frames/test_scene10.mp4`, 3 PNG stills each |
-| full render | `npm run render` | `frames/video.mp4` (H.264 CRF 18, yuv420p) |
+| full render | `npm run render` | one segment per scene in `frames/seg/`, joined into `frames/video.mp4` (H.264 CRF 18, yuv420p) |
 | mix + mux | `npm run mix` | `final/night_shift.mp4` (AAC 192k, -14 LUFS, +faststart) |
+| watch-back QA | `npm run qa` | frames every 3 s in `frames/qa/`, caption-vs-voice table, scare timing, loudness |
 
 Quick looks: `node scripts/render.mjs --stills 14,50.5 --scale 0.5`.
+Re-render only some scenes after a change: `node scripts/render.mjs --segments --only 3,10`
+(finished scenes are kept, so an interrupted render resumes where it stopped).
+Without a GPU (SwiftShader) the full film takes about 3 hours on 4 CPU cores.
 
 ## Voice
 
@@ -34,6 +38,7 @@ Quick looks: `node scripts/render.mjs --stills 14,50.5 --scale 0.5`.
   similarity 0.8, style 0.3), one file per line. Voices: `ELEVENLABS_VOICE_ID` /
   `ELEVENLABS_WHISPER_ID`, else the ids in `src/story.json`, else the best match from your voice list.
 - Without a key it falls back to the local Kokoro-82M model (also with word timestamps).
+  The current cut uses this fallback (narrator: blend of `am_michael` + `am_onyx`, whisper: `af_nicole`).
 - Every line is cached by a hash of engine + voice + settings + text, so re-renders never
   spend credits twice. Change a line and only that line is regenerated.
 - After changing the voice, run `npm run build` again: the timeline, captions and cues all

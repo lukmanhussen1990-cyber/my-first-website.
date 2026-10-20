@@ -340,12 +340,12 @@ place(crackle(1.25) * 0.18, C['s7_flicker'])
 
 # --- fridge hum (kitchen scenes), close and loud by the fridge
 hum = fridge_hum(DUR)
-g = curve([(0, 0.0), (s[7]['start'], 0.0), (s[7]['start'] + 0.01, 0.06), (s[8]['start'], 0.05), (s[9]['start'], 0.05), (s[10]['start'], 0.12), (DUR, 0.08)])
+g = curve([(0, 0.0), (s[7]['start'], 0.0), (s[7]['start'] + 0.01, 0.045), (s[8]['start'], 0.035), (s[9]['start'], 0.04), (s[10]['start'], 0.07), (DUR, 0.045)])
 bed += stereo(hum * g, -0.2)
 
 # --- fryer bubbling (soft, kitchen side)
 fr = fryer(DUR)
-g = curve([(0, 0.035), (s[2]['start'], 0.02), (s[3]['start'], 0.0), (s[7]['start'], 0.0), (s[7]['start'] + 0.01, 0.05), (s[8]['start'], 0.03), (s[9]['start'], 0.03), (s[10]['start'], 0.02), (DUR, 0.02)])
+g = curve([(0, 0.035), (s[2]['start'], 0.02), (s[3]['start'], 0.0), (s[7]['start'], 0.0), (s[7]['start'] + 0.01, 0.035), (s[8]['start'], 0.02), (s[9]['start'], 0.02), (s[10]['start'], 0.015), (DUR, 0.015)])
 bed += stereo(fr * g, 0.35)
 
 # --- night outside, through the glass (scenes 2-4, 6)
@@ -355,8 +355,8 @@ bed += stereo(ct * g, 0.0)
 
 # --- horror drone: fades in from scene 3, builds to the fridge, returns softly under the choice
 dr = drone(DUR)
-g = curve([(0, 0), (s[3]['start'], 0.0), (s[3]['start'] + 3.0, 0.05), (s[4]['start'], 0.06), (s[6]['start'], 0.09),
-           (s[7]['start'], 0.1), (s[8]['start'], 0.07), (s[9]['start'], 0.09), (s[10]['start'], 0.12), (silence_a - 0.02, 0.17), (DUR, 0.06)])
+g = curve([(0, 0), (s[3]['start'], 0.0), (s[3]['start'] + 3.0, 0.05), (s[4]['start'], 0.06), (s[6]['start'], 0.07),
+           (s[7]['start'], 0.06), (s[8]['start'], 0.045), (s[9]['start'], 0.055), (s[10]['start'], 0.07), (silence_a - 0.02, 0.11), (s[11]['start'], 0.045), (DUR, 0.04)])
 bed += np.stack([dr * g, np.roll(dr, 2400) * g], axis=1)
 
 # --- scene 1: mop strokes squeak on the wet tiles
@@ -413,7 +413,7 @@ for k in range(6):
 hb = C['s7_heartbeat']
 while hb < silence_a - 0.2:
     bpm = 72 + 22 * max(0.0, (hb - C['s7_heartbeat']) / (silence_a - C['s7_heartbeat']))
-    place(stereo(heartbeat_one(), 0.0), hb, 0.32)
+    place(stereo(heartbeat_one(), 0.0), hb, 0.24)
     hb += 60.0 / bpm
 
 # --- scene 10: reveal hit, then TOTAL silence before the whisper
