@@ -140,6 +140,32 @@ async function init() {
     return cv.width;
   };
   window.ready = true;
+  if (params.has('preview')) startPreview(renderFrame, overlay, renderer, timeline);
+}
+
+// Real-time preview in a normal browser (not used by the deterministic capture).
+function startPreview(renderFrame, overlay, renderer, timeline) {
+  renderer.domElement.style.display = 'none';
+  const cv = overlay.canvas;
+  cv.style.cssText = 'height:100vh;display:block;margin:0 auto;cursor:pointer';
+  document.body.appendChild(cv);
+  const audio = new Audio('/audio/mix/master.wav');
+  let haveAudio = true, playing = false, t = Number(params.get('t') || 0), last = performance.now();
+  audio.addEventListener('error', () => { haveAudio = false; });
+  const toggle = () => { playing = !playing; if (haveAudio) { audio.currentTime = t; playing ? audio.play().catch(() => { haveAudio = false; }) : audio.pause(); } };
+  cv.addEventListener('click', toggle);
+  addEventListener('keydown', (e) => {
+    if (e.code === 'Space') toggle();
+    if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { t = Math.max(0, t + (e.code === 'ArrowRight' ? 1 : -1)); if (haveAudio) audio.currentTime = t; }
+  });
+  const loop = (now) => {
+    if (playing) t = haveAudio && !audio.paused ? audio.currentTime : t + (now - last) / 1000;
+    if (t >= timeline.duration) { t = 0; if (haveAudio) audio.currentTime = 0; }
+    last = now;
+    renderFrame(t);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 }
 
 init().catch((e) => { console.error('INIT FAILED', e && e.stack ? e.stack : e); window.initError = String(e && e.stack ? e.stack : e); });

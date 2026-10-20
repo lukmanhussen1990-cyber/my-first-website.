@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Lay out the voice and sound-effect stems on the timeline (build/timeline.json).
 
-Writes audio/mix/vo.wav (mono) and audio/mix/sfx.wav (stereo). Door-Mom's line is muffled
+Writes audio/mix/vo.wav (mono), audio/mix/sfx.wav and audio/mix/stingers.wav (stereo; stingers are not ducked). Door-Mom's line is muffled
 with an ffmpeg low-pass before it is placed. Ducking + loudness happen afterwards in ffmpeg.
 """
 import json
@@ -92,7 +92,7 @@ def main():
                 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', src, '-af', DOOR_FILTER, out], check=True)
                 src = out
             sig = decode(src).astype(np.float64)
-            gain = VO_LEVEL / speech_rms(sig) * (0.85 if L.get('fx') == 'door' else 1.0)
+            gain = VO_LEVEL / speech_rms(sig) * (1.25 if L.get('fx') == 'door' else 1.0)
             gain = min(gain, 10 ** (-1 / 20) / (np.max(np.abs(sig)) + 1e-9))
             vo.place(sig, L['start'], gain)
     write_wav(P('audio', 'mix', 'vo.wav'), vo.x[: int(dur * SR) + int(0.5 * SR)])
@@ -175,26 +175,36 @@ def main():
     # low horror drone: fades in from scene 4 and grows with the fear
     dr = load('drone.wav')
     d0 = ev['droneStart']
+    door = S['doorbell']
     dr_gain = curve(n, [(0, 0), (d0, 0), (d0 + 3, 0.22), (S['shadow']['start'], 0.32), (sil0 - 0.03, 0.36), (sil0, 0),
                         (texting['lines'][0]['start'], 0), (texting['lines'][0]['start'] + 0.4, 0.3),
-                        (S['doorbell']['start'], 0.42), (S['turn']['end'], 0.45), (dur, 0.42), (dur + 1, 0.42)])
+                        (door['start'], 0.42), (door['lines'][0]['start'] - 0.2, 0.42), (door['lines'][0]['start'], 0.26),
+                        (door['end'] - 0.3, 0.3), (door['end'], 0.42), (S['turn']['end'], 0.45), (dur, 0.42), (dur + 1, 0.42)])
     fx.place(dr[: n] * dr_gain[: len(dr)], 0, 1.0)
 
-    # knocks after door-Mom's fallback line
+    # stingers bypass the voice ducking so they always hit on the frame (doorbell, hits, risers, knocks)
+    st = Bus(dur, 2)
     for k in ev.get('knocks', []):
-        fx.place(load('knock.wav'), k, 0.8, pan=0.35)
-
-    # doorbell + scare hits + risers
-    fx.place(load('doorbell.wav'), ev['doorbell'], 0.95, pan=0.35)
+        st.place(load('knock.wav'), k, 0.8, pan=0.35)
+    st.place(load('doorbell.wav'), ev['doorbell'], 0.95, pan=0.35)
     hit = load('bass_hit.wav')
     riser = load('riser.wav')
+    line_starts = [L['start'] for sc in tl['scenes'] for L in sc['lines']]
     for s in ev['scares']:
-        fx.place(hit, s, 0.95)
+        s = np.ceil(s * tl['fps'] - 1e-6) / tl['fps']  # first frame that shows the scare
+        h = hit.copy()
+        nxt = [ls for ls in line_starts if s < ls < s + 1.5]
+        if nxt:  # let the boom get out of the way of the next spoken word
+            tt = np.arange(len(h)) / SR
+            h *= np.interp(tt, [0, nxt[0] - s - 0.08, nxt[0] - s + 0.06, 99], [1, 1, 0.3, 0.3])
+        st.place(h, s, 0.95)
         if abs(s - ev['doorbell']) > 0.5:
-            fx.place(riser, s - len(riser) / SR, 0.35)
+            st.place(riser, s - len(riser) / SR, 0.35)
 
-    write_wav(P('audio', 'mix', 'sfx.wav'), np.clip(fx.x[: int(dur * SR) + int(0.5 * SR)] * SFX_MASTER, -1, 1))
-    print(f'  stems: vo.wav + sfx.wav ({dur:.2f}s)')
+    end = int(dur * SR) + int(0.5 * SR)
+    write_wav(P('audio', 'mix', 'sfx.wav'), np.clip(fx.x[:end] * SFX_MASTER, -1, 1))
+    write_wav(P('audio', 'mix', 'stingers.wav'), np.clip(st.x[:end] * SFX_MASTER, -1, 1))
+    print(f'  stems: vo.wav + sfx.wav + stingers.wav ({dur:.2f}s)')
 
 
 if __name__ == '__main__':

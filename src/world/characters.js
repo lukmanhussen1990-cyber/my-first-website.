@@ -113,7 +113,6 @@ export function buildMom({ shadowOnly = false } = {}) {
     cuff: std(0x9c6f48, { roughness: 0.95 }),
     jeans: std(0xffffff, { map: T.denim({ seed: 82 }), roughness: 0.85 }),
     apron: std(0x4f8a86, { roughness: 0.8 }),
-    top: std(0x5d7f9a, { roughness: 0.8 }),
     hair: std(P.hair, { roughness: 0.55 }),
     slipper: std(0x8c5a3c, { roughness: 0.9 }),
     wood: std(0xc49260, { roughness: 0.5 }),

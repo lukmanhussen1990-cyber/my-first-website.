@@ -22,11 +22,13 @@ automatically (`--use-gl=angle`, then `--use-angle=swiftshader`).
 |---|---|---|
 | voice | `npm run voice` | ElevenLabs `text-to-speech/{voice}/with-timestamps`, one file per line, cached in `audio/vo/` |
 | list voices | `node scripts/voice.mjs --list` | lists your voices and suggests a narrator and a Mom |
-| sfx | `npm run sfx` | ElevenLabs Sound Effects if a key is set (`scripts/sfx-eleven.mjs`), else numpy synthesis (`scripts/sfx.py`) |
+| sfx | `npm run sfx` | numpy synthesis of every effect (`scripts/sfx.py`). With a key, `node scripts/sfx-eleven.mjs` fetches ElevenLabs Sound Effects, which are used instead (the build runs both) |
 | timeline | `npm run timeline` | scene lengths = voice length + 0.4 s, from the real audio → `build/timeline.json` |
 | scene 6 test | `npm run test-scene6` | 5 s test render + 3 PNG stills in `frames/` |
 | render | `npm run render` | deterministic headless render → `build/video.mp4` |
-| mix | `npm run mix` | stems → sidechain ducking → loudnorm −14 LUFS → mux → `final/two_moms.mp4` |
+| mix | `npm run mix` | stems → sidechain ducking (the doorbell and the hits skip it) → loudnorm −14 LUFS → mux → `final/two_moms.mp4` |
+| qa | `npm run qa` | spec, faststart and loudness check, scare sync (hit vs. scare frame), frames every 3 s → `frames/qa_sheet_*.png` |
+| preview | `npm run preview` | live in-browser preview with the mixed audio (space = play/pause, arrows = seek) |
 
 ## How it works
 
@@ -68,3 +70,39 @@ automatically (`--use-gl=angle`, then `--use-angle=swiftshader`).
 - **Sound:** levels and automation are in `scripts/stems.py`. The door-Mom muffling is
   `DOOR_FILTER` (ffmpeg `lowpass`/`highpass`/`aecho`). Ducking and loudness are in
   `scripts/mix.mjs`.
+
+## Re-rendering a single scene
+
+Full renders are written as one segment per scene (`build/segments/scene_XX.mp4`, each starting
+on a keyframe) and then concatenated without re-encoding. To fix one scene:
+
+```bash
+node scripts/render.mjs --scenes 8      # re-render scene 8 only, then re-concat build/video.mp4
+npm run mix                              # remix + mux -> final/two_moms.mp4
+node scripts/render.mjs --resume        # continue an interrupted full render
+```
+
+Previews: `node scripts/render.mjs --times 3,36.5,62.6` writes PNG stills to `frames/`.
+
+## Notes on this build
+
+- **Voices.** `ELEVENLABS_API_KEY` was not set in the build container, so the voice lines were
+  generated with the same voices and model through the ElevenLabs connector and imported into the
+  cache as *pinned* takes (`audio/vo/takes/manifest.json`, `node scripts/import-takes.mjs`). Word
+  timings for those takes come from a local pause/phrase alignment (`scripts/align_local.py`). The
+  API path uses the exact `with-timestamps` alignment. The connector does not expose stability,
+  similarity or style, so those takes use the voices' default settings. Run
+  `node scripts/voice.mjs --refresh` with a key to re-voice everything with the configured
+  settings (this spends credits).
+- **Door-Mom's line.** The account ran out of credits before *"Honey, open the door. It's me."*
+  could be generated. Until it exists, `L08.fallback` is used: door-Mom calls *"Sweetie?"*, cut from
+  kitchen-Mom's own take (same voice), followed by knocks. With a key that has credits, `npm run
+  voice` generates the real line automatically. Then run `node scripts/render.mjs --scenes 8` and
+  `npm run mix`; scene 8 is a fixed 4.5 s slot, so nothing else moves.
+- **Sound effects** are synthesized in numpy (`scripts/sfx.py`) because the Sound Effects API had
+  no credits left. `scripts/sfx-eleven.mjs` swaps in ElevenLabs effects when a key is available.
+- **Performance.** On a CPU-only container (SwiftShader) one frame takes about 4 s, so the full
+  render took 2 h 9 min. On a machine with a GPU, `--use-gl=angle` is picked automatically and
+  renders much faster.
+- **The video file** is about 128 MB (CRF 18 keeps the film grain), which is over GitHub's 100 MB
+  limit, so `final/*.mp4` is stored with Git LFS. Run `git lfs pull` after cloning.

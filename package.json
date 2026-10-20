@@ -12,7 +12,9 @@
     "render": "node scripts/render.mjs",
     "mix": "node scripts/mix.mjs",
     "build": "node scripts/build.mjs",
-    "preview": "node scripts/serve.mjs"
+    "preview": "node scripts/serve.mjs",
+    "qa": "python3 scripts/qa.py",
+    "import-takes": "node scripts/import-takes.mjs"
   },
   "dependencies": {
     "puppeteer": "^24.43.1",

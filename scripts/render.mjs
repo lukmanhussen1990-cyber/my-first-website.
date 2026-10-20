@@ -128,7 +128,14 @@ async function main() {
   }
   if (arg('start')) from = Math.round(Number(arg('start')) * fps);
   if (arg('end')) to = Math.round(Number(arg('end')) * fps);
-  if (arg('seconds')) to = Math.min(to, from + Math.round(Number(arg('seconds')) * fps));
+  if (arg('seconds')) {
+    const want = Math.round(Number(arg('seconds')) * fps);
+    if (arg('scene') && want > to - from) { // e.g. a 5 s test of a 4.2 s scene: pad evenly around it
+      const pad = Math.floor((want - (to - from)) / 2);
+      from = Math.max(0, from - pad);
+    }
+    to = Math.min(tl.frames, from + want);
+  }
 
   const sinks = [];
   const server = await startServer(sinks);

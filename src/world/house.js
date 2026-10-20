@@ -407,7 +407,7 @@ function buildKitchen(g, M, refs) {
   add(tb, new THREE.CylinderGeometry(0.004, 0.004, 1.0, 6), M.plasticDark, 0, 2.2, 0, { cast: false });
   const pendShadePts = [new THREE.Vector2(0.02, 0.2), new THREE.Vector2(0.06, 0.17), new THREE.Vector2(0.17, 0.02), new THREE.Vector2(0.18, 0)];
   add(tb, new THREE.LatheGeometry(pendShadePts, 32), std(0x2f4b48, { side: THREE.DoubleSide, roughness: 0.5 }), 0, 1.5, 0, { cast: false });
-  refs.diningBulb = add(tb, new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 2, 1) }), 0, 1.53, 0, { cast: false, receive: false });
+  add(tb, new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 2, 1) }), 0, 1.53, 0, { cast: false, receive: false });
   // island pendant: the kitchen key light hangs here (casts Mom's shadow onto the right-hand wall)
   const ip = new THREE.Group();
   ip.position.set(-0.6, 0, -1.95);
