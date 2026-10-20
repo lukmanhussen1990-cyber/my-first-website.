@@ -36,7 +36,7 @@ export const COUNTER = { x0: 2.3, x1: 4.4, z0: -2.6, z1: -2.0, h: 0.92 };
 export const BACKDOOR = { z0: -2.0, z1: -1.1, h: 2.05 }; // in the house's left wall
 export const WINDOW = { x0: 0.95, x1: 1.95, y0: 1.1, y1: 2.1 }; // kitchen window, back wall
 export const PULLEY = { x: 3.45, y: 2.55, z: -1.05 }; // wheel over the trapdoor
-export const ROCK = { x: -1.72, y: -1.72, z: -1.22, r: 0.24 }; // the shovel clangs on it
+export const ROCK = { x: -1.95, y: -1.98, z: -1.05, r: 0.24 }; // the shovel clangs on it, right at the dig face
 export const MOM_POS = { x: 4.22, z: -1.28 }; // sits on the floor by the fridge
 export const LANTERNS = [{ x: -2.95, t: T.lantern }, { x: 0.55, t: 29.0 }, { x: 2.6, t: 30.15 }];
 // mine frames: posts at both sides of the tunnel depth, a beam under the roof

@@ -694,8 +694,12 @@ def build_cues():
         cue(c["t"], sfx("crumble", 1.0 + 0.1 * k), -11, c["x"])
         for m in range(4):
             cue(c["t"] + 0.43 + 0.07 * m + 0.1 * rng.uniform(), sfx("thud", 0.45), -20, c["x"])
+    # frames land ~0.18 s after they pop (props.js): the first ones on the beat,
+    # the last of run A and all of run B once the dig face is 0.85 m past them
     for i, x in enumerate(WD["FRAMES_A"]):
-        cue(T["frames0"] + i * T["frameGap"], sfx("frame"), -10, x)
+        tf = T["frames0"] + i * T["frameGap"] if i < len(WD["FRAMES_A"]) - 1 else t_tun_passes(x + 0.85)
+        if tf is not None:
+            cue(tf + 0.18, sfx("frame"), -10, x)
     lan = WD["LANTERNS"]
     cue(lan[0]["t"], sfx("lantern"), -13, lan[0]["x"])
     # 3 - the clang, the rings, the dog wakes, spoon, calendar
@@ -712,7 +716,7 @@ def build_cues():
     cue(T["spoonSwap"] + 0.12, sfx("pop", 1.6), -13, tunx(T["spoonSwap"]))
     for ts in WD["SPOON_T"]:
         cue(ts, sfx("spoon"), -16, tunx(ts))
-    cue(T["cal0"], sfx("pages", T["cal1"] - T["cal0"]), -12, tunx(T["cal0"]) - 0.6)
+    cue(T["cal0"], sfx("pages", T["cal1"] - T["cal0"]), -12, -2.48)  # the calendar on the back wall (props.js)
     # 4 - up into the doghouse, the stare, the sink, measuring, on under the house
     for k in range(3):
         cue(T["dogUp0"] + 0.06 + k * 0.25, sfx("dig_soft"), -12, DOG_X)
@@ -732,9 +736,9 @@ def build_cues():
         ts = T["steps0"] + i * T["stepGap"]
         cue(ts, sfx("ping", i), -18, BACKDOOR_X + (TRAP_X - BACKDOOR_X) * i / 11)
     for x in WD["FRAMES_B"]:
-        tp = t_tun_passes(x + 0.3)
+        tp = t_tun_passes(x + 0.85)
         if tp is not None:
-            cue(tp + 0.05, sfx("frame"), -14, x)
+            cue(tp + 0.18, sfx("frame"), -14, x)
     for l in lan[1:]:
         cue(l["t"], sfx("lantern"), -17, l["x"])
     # 5 - up under the kitchen, solid tile, the cut, hinges, trapdoor

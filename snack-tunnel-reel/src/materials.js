@@ -72,7 +72,9 @@ export function patch(mat, { uniforms = {}, colorFn = '', roughFn = '', bumpFn =
           vec3 r1 = cross(dpy, normal), r2 = cross(normal, dpx);
           float det = dot(dpx, r1);
           vec3 g = sign(det) * (dFdx(hh) * r1 + dFdy(hh) * r2);
-          normal = normalize(abs(det) * normal - g * ${bump.toFixed(3)});
+          vec3 nb = abs(det) * normal - g * ${bump.toFixed(3)};
+          // degenerate derivatives (edge-on pixels) would normalise a zero vector into a NaN
+          if (dot(nb, nb) > 1e-24) normal = normalize(nb);
         }`
       );
     }

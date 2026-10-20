@@ -100,7 +100,7 @@ export function build(ctx) {
           c += vec3(0.05, 0.07, 0.13) * exp(-md * 7.0) + vec3(0.12, 0.15, 0.22) * exp(-md * 28.0);
           vec2 q = vec2(atan(d.x, -d.z), asin(clamp(h, -1.0, 1.0)));
           float px = 1.0 / 2600.0;
-          vec3 st = starLayer(q, 0.016, 0.55, 0.045, px) + starLayer(q + 3.7, 0.041, 0.65, 0.12, px);
+          vec3 st = starLayer(q, 0.016, 0.6, 0.09, px) + starLayer(q + 3.7, 0.041, 0.7, 0.26, px);
           c += st * smoothstep(0.01, 0.07, h) * (1.0 - 0.85 * exp(-md * 16.0));
           float cl = fb(vec2(q.x * 9.0 + uTime * 0.012, q.y * 26.0));
           float wisp = smoothstep(0.55, 0.85, cl) * smoothstep(0.02, 0.06, h) * (1.0 - smoothstep(0.12, 0.2, h));
@@ -286,18 +286,33 @@ export function build(ctx) {
     }
     crown.push(G.placed(G.lumpyBlob(1.2, 2, 0.18, 77), -0.4, 4.2, -6.4));
     add(mesh(G.mergeAll(crown), leafMat('#2c5329', 'crown')), true, true);
-    // tree line and neighbours' trees beyond the fence (fill the view up to the horizon)
-    const far = [];
-    for (let i = 0; i < 26; i++) {
-      const x = -26 + i * 2.2 + rnd() * 1.2, z = -12 - rnd() * 6;
-      const r = 1.3 + rnd() * 1.4;
-      far.push(G.placed(G.lumpyBlob(r, 1, 0.25, 200 + i), x, r * 0.9 + rnd() * 1.6, z, 0, 0, 0, 1, 1.25, 1));
+    // neighbours' trees beyond the fence: separate round and pointed trees with gaps
+    // of sky between them, kept low so the stars and the moon stay clear
+    const far = [], farTrunks = [];
+    for (let i = 0; i < 24; i++) {
+      const x = -22 + i * 1.95 + (rnd() - 0.5) * 1.1, z = -11.5 - rnd() * 5.5;
+      if (rnd() < 0.18) continue;
+      const kind = rnd();
+      const hgt = 2.4 + rnd() * 1.9;
+      if (kind < 0.35) {
+        // pointed evergreen: stacked cones
+        for (let k = 0; k < 3; k++) {
+          const cg = new THREE.ConeGeometry(0.75 - k * 0.18, hgt * 0.42, 9);
+          far.push(G.placed(cg, x, 0.55 + k * hgt * 0.24 + hgt * 0.21, z, 0, rnd(), 0));
+        }
+      } else {
+        const r = 0.75 + rnd() * 0.55;
+        far.push(G.placed(G.lumpyBlob(r, 1, 0.22, 200 + i), x, hgt - r * 0.6, z, 0, 0, 0, 1, 1.15, 1));
+        far.push(G.placed(G.lumpyBlob(r * 0.7, 1, 0.22, 260 + i), x + r * 0.6, hgt - r * 1.05, z + 0.3));
+        farTrunks.push(G.rod(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, hgt - r, z), 0.12, 0.08, 6));
+      }
     }
-    for (let i = 0; i < 22; i++) {
-      const x = -60 + i * 6 + rnd() * 3, z = -34 - rnd() * 14, r = 3 + rnd() * 3;
-      far.push(G.placed(G.lumpyBlob(r, 1, 0.25, 300 + i), x, r * 0.6, z, 0, 0, 0, 1.3, 1.1, 1));
+    for (let i = 0; i < 30; i++) {
+      const x = -70 + i * 5 + rnd() * 3, z = -34 - rnd() * 12, r = 2.2 + rnd() * 1.6;
+      far.push(G.placed(G.lumpyBlob(r, 1, 0.25, 300 + i), x, r * 0.35, z, 0, 0, 0, 1.4, 0.75, 1));
     }
-    add(mesh(G.mergeAll(far), leafMat('#1f3a26', 'farTree')), false, true);
+    add(mesh(G.mergeAll(far), leafMat('#1d3527', 'farTree')), false, true);
+    add(mesh(G.mergeAll(farTrunks), std('#2a221c', 0.9)), false, true);
     // the ground out to the trees, and the lawn behind the house
     const lawnFar = MAT.lawnMaterial({ shaft: new THREE.Vector4(99, 99.1, 99, 99.1), open: 999 });
     add(mesh(G.placed(new THREE.PlaneGeometry(160, 70), 0, -0.002, -49, -Math.PI / 2, 0, 0), lawnFar), false, true);

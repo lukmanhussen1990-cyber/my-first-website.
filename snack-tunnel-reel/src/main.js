@@ -310,8 +310,17 @@ const dirtMat = MAT.patch(MAT.std('#6b4a30', 0.95), {
 });
 const chunkGeo = G.lumpyBlob(1, 1, 0.32, 7);
 const chunks = instanced(chunkGeo, dirtMat, 160);
-const puffMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.42, 0.33, 0.25), roughness: 1, transparent: true, opacity: 0.32, depthWrite: false });
-const puffs = instanced(G.lumpyBlob(1, 2, 0.18, 3), puffMat, 90, false);
+// dust: soil-coloured, thin, and fading out towards its silhouette so it reads as
+// a soft cloud instead of solid balls
+const puffMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.3, 0.22, 0.15), roughness: 1, transparent: true, opacity: 0.3, depthWrite: false });
+puffMat.onBeforeCompile = (sh) => {
+  sh.fragmentShader = sh.fragmentShader.replace(
+    '#include <opaque_fragment>',
+    '{ float f = abs(dot(normalize(normal), normalize(vViewPosition))); diffuseColor.a *= pow(smoothstep(0.0, 0.95, f), 2.2); }\n#include <opaque_fragment>'
+  );
+};
+puffMat.customProgramCacheKey = () => 'puff';
+const puffs = instanced(G.lumpyBlob(1, 2, 0.22, 3), puffMat, 90, false);
 const pile = mesh(G.lumpyBlob(1, 3, 0.16, 11), dirtMat);
 pile.position.set(WD.PILE.x, 0, WD.PILE.z);
 scene.add(pile);
@@ -350,9 +359,10 @@ function updateDirt(t) {
         y = Math.max(FLOOR + 0.04, y);
         z = -0.25 - q.c * (TW - 0.5);
         sc = (0.05 + 0.045 * q.d) * (1 - smooth(clamp((dt - tl - 0.2) / 0.45)));
-        if (dt > tl && dt < tl + 0.5) {
-          const pu = (dt - tl) / 0.5;
-          setInst(puffs, x, FLOOR + 0.06 + 0.12 * pu, z, 0.06 + 0.12 * pu);
+        if (dt > tl && dt < tl + 0.6) {
+          const pu = (dt - tl) / 0.6;
+          const ps = (0.05 + 0.15 * easeOutCubic(pu)) * (1 - smooth(clamp((pu - 0.55) / 0.45)));
+          setInst(puffs, x, FLOOR + 0.05 + 0.1 * pu, z, ps, ps * 0.7, ps, 0, q.a * 6, 0);
         }
       }
       setInst(chunks, x, y, z, sc, sc * 0.8, sc, q.a * 9 + dt * 5, q.b * 9, q.c * 9);
@@ -365,7 +375,11 @@ function updateDirt(t) {
     const y = dt < tf ? ROOF - 0.5 * GRAV * dt * dt : FLOOR + c.s * 0.8 + 0.05 * Math.max(0, Math.sin((dt - tf) * 12)) * Math.exp(-(dt - tf) * 6);
     const sc = c.s * (1 - smooth(clamp((dt - 1.0) / 0.45)));
     setInst(chunks, c.x, y, c.z, sc, sc * 0.8, sc, c.r + dt * 4, c.r * 2, c.r);
-    if (dt > tf && dt < tf + 0.6) setInst(puffs, c.x, FLOOR + 0.07, c.z, 0.08 + 0.2 * (dt - tf));
+    if (dt > tf && dt < tf + 0.7) {
+      const pu = (dt - tf) / 0.7;
+      const ps = (0.06 + 0.16 * easeOutCubic(pu)) * (1 - smooth(clamp((pu - 0.5) / 0.5)));
+      setInst(puffs, c.x, FLOOR + 0.06 + 0.06 * pu, c.z, ps, ps * 0.65, ps, 0, c.r, 0);
+    }
   }
   endInst(chunks);
   endInst(puffs);

@@ -11,7 +11,12 @@ import { patch, std, col } from './materials.js';
 import { placed, box, boxMM, mergeAll } from './geom.js';
 
 const { clamp, lerp, prog, popIn, smooth, easeOutBack, easeInOutCubic, easeOutCubic, easeInQuad, wobble, bump } = U;
-const { HOUSE, TILE, SHELF, FRIDGE, COUNTER, PULLEY } = WD;
+const { HOUSE, TILE, PULLEY } = WD;
+// env.js builds the back wall from HOUSE.z0 to HOUSE.z0 + wall, so everything that
+// stands against it starts at its inner face
+const ZW = HOUSE.z0 + HOUSE.wall;
+const onWall = (o) => ({ ...o, z0: ZW, z1: ZW + (o.z1 - o.z0) });
+const SHELF = onWall(WD.SHELF), COUNTER = onWall(WD.COUNTER), FRIDGE = onWall(WD.FRIDGE);
 const FY = HOUSE.floor; // top of the tiles (0.18)
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -453,7 +458,7 @@ export function build(ctx) {
 
   // --- floor slab + tiles, with the trapdoor hole --------------------------
   const HX0 = TILE.x0, HX1 = TILE.x1, HZ0 = TILE.z0, HZ1 = TILE.z1;
-  const SB = HOUSE.slab0, ZB = HOUSE.z0 - HOUSE.wall; // runs on under the back wall
+  const SB = HOUSE.slab0, ZB = HOUSE.z0; // runs on under the back wall
   add(meshOf([
     boxMM(HOUSE.x0, SB, HZ1, HOUSE.x1, FY, 0), // front
     boxMM(HOUSE.x0, SB, ZB, HOUSE.x1, FY, HZ0), // back
@@ -551,13 +556,13 @@ export function build(ctx) {
   }
   // a small herb pot and a stack of plates keep the shelf cozy once the snacks are gone
   const shelfTop = S.y + 0.03;
-  add(meshOf(new THREE.LatheGeometry([[0, 0], [0.045, 0], [0.055, 0.09], [0.06, 0.1], [0.0, 0.1]].map(([r, y]) => new THREE.Vector2(r, y)), 24).translate(S.x0 + 0.1, shelfTop, -2.46), std('#c2673f', 0.8)));
-  add(meshOf([0, 1, 2].map((i) => placed(new THREE.SphereGeometry(0.04, 12, 10), S.x0 + 0.1 + (i - 1) * 0.03, shelfTop + 0.13 + 0.02 * (i % 2), -2.46 + 0.01 * i, 0, 0, 0, 1, 1.3, 1)), std('#4f8a3c', 0.7)));
-  add(meshOf([0, 1, 2, 3].map((i) => placed(new THREE.CylinderGeometry(0.1, 0.085, 0.012, 32), S.x1 - 0.14, shelfTop + 0.006 + i * 0.013, -2.46)), std('#e8e4da', 0.3, 0, { envMap })));
+  add(meshOf(new THREE.LatheGeometry([[0, 0], [0.045, 0], [0.055, 0.09], [0.06, 0.1], [0.0, 0.1]].map(([r, y]) => new THREE.Vector2(r, y)), 24).translate(S.x0 + 0.1, shelfTop, S.z0 + 0.14), std('#c2673f', 0.8)));
+  add(meshOf([0, 1, 2].map((i) => placed(new THREE.SphereGeometry(0.04, 12, 10), S.x0 + 0.1 + (i - 1) * 0.03, shelfTop + 0.13 + 0.02 * (i % 2), S.z0 + 0.14 + 0.01 * i, 0, 0, 0, 1, 1.3, 1)), std('#4f8a3c', 0.7)));
+  add(meshOf([0, 1, 2, 3].map((i) => placed(new THREE.CylinderGeometry(0.1, 0.085, 0.012, 32), S.x1 - 0.14, shelfTop + 0.006 + i * 0.013, S.z0 + 0.14)), std('#e8e4da', 0.3, 0, { envMap })));
 
   // snacks on the shelf
   const bagA = makeChipsBag(ctx, 0), bagB = makeChipsBag(ctx, 1), jar = makeCookieJar(ctx);
-  const SA = V(3.12, shelfTop, -2.45), SBp = V(2.84, shelfTop, -2.45), SJ = V(3.66, shelfTop, -2.45);
+  const SA = V(3.12, shelfTop, S.z0 + 0.15), SBp = V(2.84, shelfTop, S.z0 + 0.15), SJ = V(3.66, shelfTop, S.z0 + 0.15);
   bagA.position.copy(SA);
   bagB.position.copy(SBp);
   bagB.rotation.y = 0.12;
@@ -585,16 +590,16 @@ export function build(ctx) {
 
   // --- counter dressing: kettle, fruit bowl, herb pot, dish towel --------------
   {
-    const kx = 2.52, kz = -2.33;
+    const kx = 2.52, kz = C.z0 + 0.27;
     const kettle = new THREE.LatheGeometry([[0, 0], [0.07, 0], [0.085, 0.03], [0.088, 0.08], [0.07, 0.13], [0.035, 0.15], [0.0, 0.15]].map(([r, y]) => new THREE.Vector2(r, y)), 32).translate(kx, ctop, kz);
     const spout = new THREE.CylinderGeometry(0.012, 0.02, 0.1, 10).rotateZ(-0.9).translate(kx + 0.1, ctop + 0.1, kz);
     add(meshOf([kettle, spout], std('#c8442f', 0.3, 0.1, { envMap, envMapIntensity: 1.2 })));
     add(meshOf([new THREE.TorusGeometry(0.06, 0.009, 8, 20, Math.PI).translate(kx, ctop + 0.15, kz), placed(new THREE.SphereGeometry(0.014, 10, 8), kx, ctop + 0.158, kz)], M.iron));
-    const bx = 3.0, bz = -2.32;
+    const bx = 3.0, bz = C.z0 + 0.28;
     add(meshOf(new THREE.LatheGeometry([[0, 0.005], [0.05, 0.0], [0.11, 0.05], [0.12, 0.065], [0.112, 0.065], [0.1, 0.05], [0.0, 0.012]].map(([r, y]) => new THREE.Vector2(r, y)), 32).translate(bx, ctop, bz), std('#3b6fa8', 0.35, 0, { envMap })));
     const fruit = [[0.04, 0.05, 0.0, '#f08a24'], [-0.045, 0.048, 0.02, '#f08a24'], [0.0, 0.055, -0.04, '#d6382e'], [0.005, 0.09, 0.0, '#e9a22b']];
     for (const [fx, fy, fz, c] of fruit) add(meshOf(new THREE.SphereGeometry(0.036, 18, 14).translate(bx + fx, ctop + fy, bz + fz), std(c, 0.45)));
-    const px = 4.22, pz = -2.36;
+    const px = 4.22, pz = C.z0 + 0.24;
     add(meshOf(new THREE.LatheGeometry([[0, 0], [0.05, 0], [0.065, 0.11], [0.07, 0.12], [0.0, 0.12]].map(([r, y]) => new THREE.Vector2(r, y)), 24).translate(px, ctop, pz), std('#c2673f', 0.8)));
     const leaves = [];
     for (let i = 0; i < 8; i++) {
@@ -641,17 +646,17 @@ export function build(ctx) {
     add(meshOf(boxMM(ix0 + 0.02, iy0, iz0 + 0.02, ix1 - 0.02, FY + 0.4, F.z1 - 0.1), new THREE.MeshStandardMaterial({ color: col('#dfeee9'), roughness: 0.1, transparent: true, opacity: 0.45, depthWrite: false }), false));
     // food: milk, bottles, a cake, jars, apples, eggs
     const shelf1 = FY + 0.728, shelf2 = FY + 1.128, shelf3 = FY + 1.528;
-    add(meshOf([boxMM(4.56, shelf1, -2.42, 4.66, shelf1 + 0.22, -2.32), placed(new THREE.CylinderGeometry(0.001, 0.07, 0.05, 4, 1), 4.61, shelf1 + 0.245, -2.37, 0, Math.PI / 4, 0)], std('#f6f4ef', 0.5)));
+    add(meshOf([boxMM(4.56, shelf1, F.z0 + 0.18, 4.66, shelf1 + 0.22, F.z0 + 0.28), placed(new THREE.CylinderGeometry(0.001, 0.07, 0.05, 4, 1), 4.61, shelf1 + 0.245, F.z0 + 0.23, 0, Math.PI / 4, 0)], std('#f6f4ef', 0.5)));
     for (const [bx, c] of [[4.78, '#3f8f4a'], [4.86, '#c47b28']]) {
-      add(meshOf(new THREE.LatheGeometry([[0, 0], [0.032, 0], [0.032, 0.17], [0.012, 0.22], [0.011, 0.26], [0, 0.26]].map(([r, y]) => new THREE.Vector2(r, y)), 20).translate(bx, shelf1, -2.4), std(c, 0.15, 0.0, { envMap })));
+      add(meshOf(new THREE.LatheGeometry([[0, 0], [0.032, 0], [0.032, 0.17], [0.012, 0.22], [0.011, 0.26], [0, 0.26]].map(([r, y]) => new THREE.Vector2(r, y)), 20).translate(bx, shelf1, F.z0 + 0.2), std(c, 0.15, 0.0, { envMap })));
     }
-    add(meshOf(new THREE.CylinderGeometry(0.11, 0.11, 0.09, 32).translate(4.95, shelf2 + 0.045, -2.35), std('#f3d9e4', 0.6)));
-    add(meshOf(new THREE.CylinderGeometry(0.112, 0.112, 0.02, 32).translate(4.95, shelf2 + 0.1, -2.35), std('#d94e6f', 0.4)));
-    add(meshOf(new THREE.SphereGeometry(0.025, 12, 10).translate(4.95, shelf2 + 0.13, -2.35), std('#c8102e', 0.3)));
-    for (const [jx, c] of [[4.58, '#c33b2f'], [4.68, '#e2b13c']]) add(meshOf(new THREE.CylinderGeometry(0.035, 0.035, 0.1, 16).translate(jx, shelf2 + 0.05, -2.38), std(c, 0.3)));
-    for (let i = 0; i < 5; i++) add(meshOf(new THREE.SphereGeometry(0.038, 14, 10).translate(4.62 + i * 0.12, FY + 0.18, -2.3 + 0.03 * (i % 2)), std(i % 2 ? '#7ab845' : '#d6382e', 0.45)));
-    add(meshOf(boxMM(4.6, shelf3, -2.45, 4.9, shelf3 + 0.06, -2.3), std('#d8c2a2', 0.9)));
-    for (let i = 0; i < 6; i++) add(meshOf(new THREE.SphereGeometry(0.022, 10, 8).translate(4.63 + (i % 3) * 0.06, shelf3 + 0.075, -2.42 + Math.floor(i / 3) * 0.06), std('#f2ead8', 0.6)));
+    add(meshOf(new THREE.CylinderGeometry(0.11, 0.11, 0.09, 32).translate(4.95, shelf2 + 0.045, F.z0 + 0.25), std('#f3d9e4', 0.6)));
+    add(meshOf(new THREE.CylinderGeometry(0.112, 0.112, 0.02, 32).translate(4.95, shelf2 + 0.1, F.z0 + 0.25), std('#d94e6f', 0.4)));
+    add(meshOf(new THREE.SphereGeometry(0.025, 12, 10).translate(4.95, shelf2 + 0.13, F.z0 + 0.25), std('#c8102e', 0.3)));
+    for (const [jx, c] of [[4.58, '#c33b2f'], [4.68, '#e2b13c']]) add(meshOf(new THREE.CylinderGeometry(0.035, 0.035, 0.1, 16).translate(jx, shelf2 + 0.05, F.z0 + 0.22), std(c, 0.3)));
+    for (let i = 0; i < 5; i++) add(meshOf(new THREE.SphereGeometry(0.038, 14, 10).translate(4.62 + i * 0.12, FY + 0.18, F.z0 + 0.3 + 0.03 * (i % 2)), std(i % 2 ? '#7ab845' : '#d6382e', 0.45)));
+    add(meshOf(boxMM(4.6, shelf3, F.z0 + 0.15, 4.9, shelf3 + 0.06, F.z0 + 0.3), std('#d8c2a2', 0.9)));
+    for (let i = 0; i < 6; i++) add(meshOf(new THREE.SphereGeometry(0.022, 10, 8).translate(4.63 + (i % 3) * 0.06, shelf3 + 0.075, F.z0 + 0.18 + Math.floor(i / 3) * 0.06), std('#f2ead8', 0.6)));
 
     // the door: pivots on its right edge at the front; bins on its inside
     door.position.set(F.x1, FY + 0.01, F.z1);
@@ -721,8 +726,8 @@ export function build(ctx) {
     return g;
   };
   // 0 bracket post with a brace, 1 the arm out over the trapdoor
-  part(meshOf([boxMM(P.x - 0.018, shelfTop, -2.44, P.x + 0.018, yArm + 0.018, -2.405), placed(new THREE.BoxGeometry(0.03, 0.3, 0.03), P.x, yArm - 0.1, -2.3, -0.75, 0, 0)], M.oakY), V(P.x, shelfTop, -2.42));
-  part(meshOf(boxMM(P.x - 0.018, yArm - 0.018, -2.44, P.x + 0.018, yArm + 0.018, P.z + 0.06), M.oakZ), V(P.x, yArm, -2.42));
+  part(meshOf([boxMM(P.x - 0.018, shelfTop, S.z0 + 0.06, P.x + 0.018, yArm + 0.018, S.z0 + 0.095), placed(new THREE.BoxGeometry(0.03, 0.3, 0.03), P.x, yArm - 0.1, S.z0 + 0.2, -0.75, 0, 0)], M.oakY), V(P.x, shelfTop, S.z0 + 0.08));
+  part(meshOf(boxMM(P.x - 0.018, yArm - 0.018, S.z0 + 0.06, P.x + 0.018, yArm + 0.018, P.z + 0.06), M.oakZ), V(P.x, yArm, S.z0 + 0.08));
   // 2 the wheel (axis along z, so its face shows), in a fork hanging from the arm
   const wheel = new THREE.Group();
   {
