@@ -247,6 +247,8 @@ export function makeCameraTrack(TL) {
   const keys = [
     k(0.0, { follow: 0, ax: 1.85, ay: 2.3, az: -4.6, fh: 15.5, sy: 0.5, yaw: 12, pitch: 9 }),
     k(4.3, { follow: 0, ax: 1.7, ay: 1.4, az: -3.6, fh: 12.5, sy: 0.5, yaw: 12, pitch: 8 }),
+    // frame rides up while the car tips over the rim, so its tail stays under the subtitles
+    k(5.3, { follow: 0, ax: 1.3, ay: 2.6, az: -2.9, fh: 13.5, sy: 0.5, yaw: 12, pitch: 6 }),
     k(6.4, { follow: 0, ax: 0.5, ay: -0.6, az: -2.2, fh: 12.0, sy: 0.5, yaw: 11, pitch: 5 }),
     k(8.4, { follow: 0, ax: 0.3, ay: -1.45, az: -1.8, fh: 12.0, sy: 0.5, yaw: 10, pitch: 3 }),
     k(11.3, { follow: 0, ax: 0.2, ay: -1.6, az: -1.6, fh: 12.0, sy: 0.5, yaw: 9, pitch: 2 }),
