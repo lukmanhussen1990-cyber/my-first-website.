@@ -35,5 +35,5 @@ for p in "${pids[@]}"; do wait "$p"; done
 filter=""
 for ((j = 0; j < JOBS; j++)); do filter+="[$j:v]"; done
 ffmpeg -v error -y "${inputs[@]}" -filter_complex "${filter}concat=n=$JOBS:v=1:a=0,format=yuv420p[v]" -map "[v]" \
-  -c:v libx264 -preset slow -crf 14 -profile:v high -pix_fmt yuv420p -r 30 -movflags +faststart render/clean.mp4
+  -c:v libx264 -preset slow -crf 17 -profile:v high -pix_fmt yuv420p -r 30 -movflags +faststart render/clean.mp4
 tools/export.sh
