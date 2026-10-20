@@ -20,9 +20,19 @@ const dur = Number(probe.format.duration);
 const ebu = spawnSync('ffmpeg', ['-hide_banner', '-i', file, '-af', 'ebur128=peak=true', '-f', 'null', '-'], { encoding: 'utf8' }).stderr;
 const lufs = ebu.match(/I:\s+(-?[\d.]+) LUFS/g)?.pop();
 const tp = ebu.match(/Peak:\s+(-?[\d.]+) dBFS/g)?.pop();
+// walk the top-level atoms: +faststart means moov comes before mdat
 const faststart = (() => {
-  const head = fs.readFileSync(file).subarray(0, 64 * 1024).toString('latin1');
-  return head.indexOf('moov') >= 0 && head.indexOf('moov') < head.indexOf('mdat');
+  const buf = fs.readFileSync(file);
+  const order = [];
+  for (let pos = 0; pos + 8 <= buf.length; ) {
+    let size = buf.readUInt32BE(pos);
+    const type = buf.toString('latin1', pos + 4, pos + 8);
+    if (size === 1) size = Number(buf.readBigUInt64BE(pos + 8));
+    if (size === 0) size = buf.length - pos;
+    order.push(type);
+    pos += size;
+  }
+  return order.indexOf('moov') >= 0 && order.indexOf('moov') < order.indexOf('mdat');
 })();
 const checks = [
   ['resolution 1080x1920', v.width === 1080 && v.height === 1920, `${v.width}x${v.height}`],
