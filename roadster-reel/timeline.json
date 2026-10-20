@@ -1,0 +1,200 @@
+{
+  "fps": 30,
+  "duration": 55.5,
+  "width": 1080,
+  "height": 1920,
+  "scenes": [
+    {
+      "id": 1,
+      "start": 0.0,
+      "end": 8.0,
+      "title": "Stuck in the jam, first hop"
+    },
+    {
+      "id": 2,
+      "start": 8.0,
+      "end": 16.0,
+      "title": "Bonk on the bus, 45-degree launch"
+    },
+    {
+      "id": 3,
+      "start": 16.0,
+      "end": 24.0,
+      "title": "Ten blocks: suction-fan wall climb"
+    },
+    {
+      "id": 4,
+      "start": 24.0,
+      "end": 31.5,
+      "title": "Spin, squish, side thrusters"
+    },
+    {
+      "id": 5,
+      "start": 31.5,
+      "end": 39.0,
+      "title": "Too fast: landing burn"
+    },
+    {
+      "id": 6,
+      "start": 39.0,
+      "end": 46.0,
+      "title": "Slow-motion flip over the skyline"
+    },
+    {
+      "id": 7,
+      "start": 46.0,
+      "end": 55.5,
+      "title": "Car wash twist"
+    }
+  ],
+  "voice_slots": [
+    {
+      "line": 1,
+      "speaker": "narrator",
+      "start": 0.35,
+      "latest_end": 7.95
+    },
+    {
+      "line": 2,
+      "speaker": "narrator",
+      "start": 8.15,
+      "latest_end": 16.1
+    },
+    {
+      "line": 3,
+      "speaker": "narrator",
+      "start": 16.35,
+      "latest_end": 24.0
+    },
+    {
+      "line": 4,
+      "speaker": "narrator",
+      "start": 24.25,
+      "latest_end": 31.45
+    },
+    {
+      "line": 5,
+      "speaker": "narrator",
+      "start": 31.75,
+      "latest_end": 39.7
+    },
+    {
+      "line": 6,
+      "speaker": "narrator",
+      "start": 40.4,
+      "latest_end": 45.9
+    },
+    {
+      "line": 7,
+      "speaker": "john",
+      "start": 52.35,
+      "latest_end": 55.35
+    }
+  ],
+  "music": {
+    "bpm": 123.08,
+    "start": 0.0,
+    "stop": 51.75,
+    "slowmo_start": 40.0,
+    "slowmo_end": 44.6
+  },
+  "events": {
+    "jam_honks": [
+      0.5,
+      1.15,
+      1.75
+    ],
+    "john_honks": [
+      2.15,
+      2.45
+    ],
+    "john_sigh": 2.95,
+    "button_press": 3.45,
+    "motor_whine": [
+      3.4,
+      4.9
+    ],
+    "hop_ignite": 3.75,
+    "hop_launch": 4.75,
+    "hop_thrust_end": 5.1,
+    "bus_bonk": 7.0,
+    "arc_draw": [
+      9.6,
+      10.9
+    ],
+    "nozzle_tilt": [
+      11.2,
+      12.7
+    ],
+    "launch2_ignite": 13.2,
+    "launch2": 13.6,
+    "launch2_thrust_end": 14.15,
+    "plaza_land": 17.0,
+    "fan_on": 18.15,
+    "drive_to_wall": [
+      18.4,
+      19.4
+    ],
+    "wall_contact": 19.4,
+    "climb": [
+      19.85,
+      21.7
+    ],
+    "roof_crest": 21.7,
+    "roof_thrust": 22.55,
+    "roof_launch": 23.0,
+    "spin": [
+      23.5,
+      28.8
+    ],
+    "face_squish": [
+      25.0,
+      26.6
+    ],
+    "side_puffs": [
+      26.8,
+      27.1,
+      27.4,
+      27.7,
+      28.0,
+      28.3,
+      28.6
+    ],
+    "steady": 28.8,
+    "drop": [
+      31.5,
+      33.9
+    ],
+    "landing_burn": [
+      33.9,
+      37.6
+    ],
+    "smoke_ring": 34.5,
+    "hover": [
+      37.6,
+      39.3
+    ],
+    "flip_kick": 39.35,
+    "slowmo": [
+      40.0,
+      44.6
+    ],
+    "carwash_land": 46.0,
+    "wash": [
+      46.55,
+      50.3
+    ],
+    "wash_exit": [
+      50.3,
+      51.3
+    ],
+    "ding": 51.0,
+    "music_stop": 51.75,
+    "john_line": 52.35,
+    "end": 55.5,
+    "carwash_burn": [
+      45.2,
+      46.0
+    ]
+  }
+}

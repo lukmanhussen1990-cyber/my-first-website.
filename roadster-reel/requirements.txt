@@ -1,0 +1,9 @@
+# Python 3.10+ ; ffmpeg (with libx264, aac; librubberband optional) must be on PATH
+numpy
+scipy
+soundfile
+pyloudnorm
+pillow
+# local TTS fallback (only needed when ElevenLabs is unavailable)
+piper-tts
+onnx

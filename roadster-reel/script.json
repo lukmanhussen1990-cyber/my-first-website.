@@ -1,0 +1,26 @@
+{
+  "title": "John jumps the traffic jam in the new Roadster",
+  "voices": {
+    "narrator": {
+      "description": "Calm, friendly, a little playful, quick pace, neutral accent",
+      "elevenlabs": { "voice_id": "cgSgspJ2msm6clMCkdW9", "voice_name": "Jessica", "model_id": "eleven_multilingual_v2",
+                      "voice_settings": { "stability": 0.45, "similarity_boost": 0.8, "style": 0.3, "use_speaker_boost": true, "speed": 1.08 } },
+      "piper": { "model": "en_US-lessac-high", "length_scale": 0.9, "noise_scale": 0.6, "noise_w_scale": 0.75 }
+    },
+    "john": {
+      "description": "Friendly young guy; calm, a little proud",
+      "elevenlabs": { "voice_id": "bIHbv24MWmeRgasZH58o", "voice_name": "Will", "model_id": "eleven_multilingual_v2",
+                      "voice_settings": { "stability": 0.55, "similarity_boost": 0.8, "style": 0.25, "use_speaker_boost": true, "speed": 0.95 } },
+      "piper": { "model": "en_US-ryan-high", "length_scale": 1.0, "noise_scale": 0.6, "noise_w_scale": 0.7 }
+    }
+  },
+  "lines": [
+    { "id": 1, "speaker": "narrator", "text": "If you put John in Elon Musk's new Roadster and hit the SpaceX thrusters, he can jump over the traffic jam. Sort of." },
+    { "id": 2, "speaker": "narrator", "text": "But he only clears three cars and lands on a bus. So you tilt the thrusters to forty-five degrees, the best angle for a long jump." },
+    { "id": 3, "speaker": "narrator", "text": "But the jam is ten blocks long. So John uses the suction fan to drive up a building and jumps from the roof." },
+    { "id": 4, "speaker": "narrator", "text": "But the car spins wildly in the air. So small side thrusters fire to keep it steady, like a rocket." },
+    { "id": 5, "speaker": "narrator", "text": "But he's coming down way too fast. So the thrusters fire down for a soft landing, just like a SpaceX rocket." },
+    { "id": 6, "speaker": "narrator", "text": "Congratulations, John jumped the whole traffic jam." },
+    { "id": 7, "speaker": "john", "text": "Well... it did need a wash." }
+  ]
+}
