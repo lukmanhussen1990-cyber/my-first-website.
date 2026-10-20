@@ -466,6 +466,84 @@ export function roofTileMaterial(base = [0.74, 0.25, 0.14], key = 'red') {
   return mat;
 }
 
+// House walls: smooth sand render (beige house) or lap siding (green house),
+// weathered: faint streaks, splash-back at the bottom, shadow under the eaves
+const GLSL_HOUSE = /* glsl */ `
+vec3 houseWall(vec3 p, vec3 n){
+  vec2 uv = abs(n.x) > 0.5 ? p.zy : p.xy;
+  float c = 1.0;
+#ifdef SIDING
+  float f = fract(uv.y / 0.15);
+  c *= mix(0.72, 1.0, smoothstep(0.0, 0.16, f)) * (1.0 - 0.07 * f);
+  c *= 0.95 + 0.08 * vnoise(vec2(uv.x * 0.7, floor(uv.y / 0.15) * 7.3));
+  c *= 0.97 + 0.05 * vnoise(vec2(uv.x * 26.0, uv.y * 3.0));
+#else
+  c *= 0.95 + 0.08 * fbm(uv * 2.2);
+  c *= 0.97 + 0.06 * vnoise(uv * 47.0);
+#endif
+  c *= 1.0 - 0.07 * smoothstep(0.6, 0.95, vnoise(vec2(uv.x * 2.7, uv.y * 0.25)));
+  c *= mix(0.83, 1.0, smoothstep(0.3, 1.1, p.y));
+  c *= mix(1.0, 0.85, smoothstep(3.9, 4.58, p.y));
+  return vec3(c);
+}
+vec3 paver(vec3 p, vec3 n){
+  vec2 uv = p.xz / 0.42 + vec2(0.5 * step(0.5, fract(p.z / 0.84)), 0.0);
+  vec2 f = fract(uv);
+  float e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
+  return vec3((0.9 + 0.13 * h21(floor(uv))) * mix(0.72, 1.0, smoothstep(0.0, 0.06, e)) * (0.94 + 0.08 * vnoise(p.xz * 13.0)));
+}
+vec3 barkColor(vec3 p, vec3 n){
+  float s = vnoise(vec2((p.x + p.z) * 15.0, p.y * 1.5)) * 0.6 + vnoise(vec2((p.x - p.z) * 37.0, p.y * 4.0)) * 0.4;
+  return vec3(0.7 + 0.42 * smoothstep(0.3, 0.75, s)) * (0.9 + 0.15 * vnoise(p.xy * 3.0)) * mix(0.72, 1.0, smoothstep(0.0, 0.7, p.y));
+}
+`;
+export function houseWallMaterial(hex, siding = false) {
+  return patch(new THREE.MeshLambertMaterial({ color: col(hex) }), { colorFn: 'houseWall', extraFrag: GLSL_HOUSE, defines: siding ? '#define SIDING' : '' });
+}
+export function paverMaterial(hex) {
+  return patch(new THREE.MeshLambertMaterial({ color: col(hex) }), { colorFn: 'paver', extraFrag: GLSL_HOUSE });
+}
+export function barkMaterial(hex) {
+  return patch(new THREE.MeshLambertMaterial({ color: col(hex) }), { colorFn: 'barkColor', extraFrag: GLSL_HOUSE });
+}
+
+// Foliage: leafy clumps from world-space cell noise (bright clump centres, dark
+// gaps, each clump bulging its normal out), per-vertex crown occlusion baked in
+// uv.x and a per-cluster hue in uv.y (see shadeFoliage in builders.js)
+export function foliageMaterial(hex, key) {
+  const mat = new THREE.MeshLambertMaterial({ color: col(hex) });
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWNrm;\nvarying vec2 vFol;')
+      .replace('#include <project_vertex>', `#include <project_vertex>
+        vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        vWNrm = normalize(mat3(modelMatrix) * objectNormal);
+        vFol = uv;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\n${GLSL_VARY}\nvarying vec2 vFol;\n${GLSL_COMMON}\nvec3 fPert = vec3(0.0);`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        {
+          vec3 p = vWPos, n = normalize(vWNrm), an = abs(n);
+          vec4 cs = an.x > an.z ? cellv(p.zy * 5.0 + 1.7) : cellv(p.xy * 5.0);
+          vec4 ct = cellv(p.xz * 5.0 + 4.1);
+          float wt = smoothstep(0.35, 0.8, an.y);
+          float e = mix(cs.z, ct.z, wt), id = mix(cs.w, ct.w, wt);
+          float clump = 1.0 - smoothstep(0.25, 0.66, e);
+          float ao = vFol.x;
+          vec3 hue = mix(vec3(0.86, 0.96, 0.84), vec3(1.1, 1.04, 0.76), vFol.y);
+          vec3 c = hue * (0.82 + 0.26 * id) * mix(0.68, 1.0, clump) * mix(0.38, 1.0, ao);
+          c *= mix(vec3(1.0), vec3(1.08, 1.05, 0.84), smoothstep(0.35, 0.95, n.y) * ao);
+          diffuseColor.rgb *= c;
+          vec3 ps = an.x > an.z ? vec3(0.0, -cs.y, -cs.x) : vec3(-cs.x, -cs.y, 0.0);
+          fPert = mix(ps, vec3(-ct.x, 0.0, -ct.y), wt) * 1.5;
+        }`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        normal = normalize(normal + (viewMatrix * vec4(fPert, 0.0)).xyz);`);
+  };
+  mat.customProgramCacheKey = () => 'foliage' + key;
+  return mat;
+}
+
 // puffs (dust, stale air, smoke): fade out towards the silhouette so they read
 // as soft clouds rather than solid balls
 function softEdges(mat, power = 1.0) {
@@ -489,23 +567,33 @@ export function makeSimpleMats(envMap) {
   const glowMat = (c, opacity = 0) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending });
   return {
     // houses
-    wall: mat('#e9d9b9'),
-    wallShade: mat('#d8c6a2'),
+    wall: houseWallMaterial('#ebdcbd'),
+    wallShade: mat('#cfc0a2'),
     trim: mat('#fbfaf6'),
     shutter: mat('#3c6aa8'),
     shutterDark: mat('#2f5690'),
-    greenWall: mat('#b7d8a0'),
+    greenWall: houseWallMaterial('#b9daa2', true),
     room: mat('#3a3330'),
     curtain: mat('#f3a7b5'),
-    greenShade: mat('#a3c58c'),
+    greenShade: mat('#9fb98c'),
     houseGlass: new THREE.MeshPhysicalMaterial({ color: col('#1d2a3a'), roughness: 0.08, metalness: 0.0, envMap, envMapIntensity: 0.55 }),
     brick: mat('#a35a43'),
-    patio: mat('#c9c3b8'),
+    chimneyBrick: brickMaterial(),
+    patio: paverMaterial('#cdc6ba'),
+    sillStone: mat('#ddd3c2'),
+    gutter: mat('#eeede8'),
+    curtainCream: mat('#efe4d0'),
+    blind: mat('#e4d9c2'),
+    doormat: mat('#5b4532'),
+    lampGlass: new THREE.MeshLambertMaterial({ color: col('#f6e6bd'), emissive: col('#ffcf7a'), emissiveIntensity: 0.3 }),
+    acUnit: mat('#d6d8d5'),
+    grille: mat('#3a3d42'),
+    hose: mat('#3f8f3a'),
     // garden
-    trunk: mat('#6b4a32'),
-    leaf: mat('#62a646'),
-    leafDark: mat('#4c913a'),
-    hedge: mat('#559a39'),
+    trunk: barkMaterial('#6e5038'),
+    leaf: foliageMaterial('#5fa443', 'leaf'),
+    leafDark: foliageMaterial('#3f7f35', 'leafDark'),
+    hedge: foliageMaterial('#4f9637', 'hedge'),
     flowerPink: mat('#f08bb0'),
     flowerYellow: mat('#f6d04d'),
     flowerWhite: mat('#fbf7ef'),

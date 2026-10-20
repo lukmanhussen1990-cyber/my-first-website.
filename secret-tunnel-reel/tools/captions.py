@@ -25,7 +25,6 @@ POS_Y = 870  # a little above the middle (960)
 BOY_SIZE = 178
 # the boy's line inside its clip (speech 0.08-1.40 s, see the energy envelope)
 BOY_SPEECH = (0.08, 1.40)
-font = ImageFont.truetype(FONT, SIZE)
 
 
 def letters(s):
@@ -80,17 +79,20 @@ try:
 except FileNotFoundError:
     pass
 
-LEAD = 0.02  # show each word a hair before it is heard
+LEAD = 0.042  # show each word one frame before it is heard
 MIN_ON = 0.125  # at least 3 frames on screen
+HOLD = 0.3  # a word stays up this long after it ends...
+HOLD_FINAL = 0.55  # ...a sentence-final word a little longer
+GAP_CLEAR = 0.5  # in continuous speech words hand over without a gap; longer pauses clear the screen
 spans = []
 for i, ev in enumerate(events):
     start = ev["s"] - LEAD
     nxt = events[i + 1]["s"] - LEAD if i + 1 < len(events) else None
-    end = ev["e"] + 0.3
-    if nxt is not None and nxt - ev["e"] < 0.7:
-        end = nxt  # continuous speech: hand over exactly at the next word (never overlap)
-    elif nxt is not None:
-        end = min(end, nxt)
+    final = re.search(r"[.?!]$", ev["text"]) is not None
+    end = ev["e"] + (HOLD_FINAL if final else HOLD)
+    if nxt is not None:
+        if nxt - ev["e"] < (0.0 if final else GAP_CLEAR) or end >= nxt:
+            end = nxt  # hand over exactly at the next word (never overlap, never flicker)
     spans.append([start, end])
 # borrow a little time from the following word so quick words stay readable
 for i in range(len(spans) - 1):
@@ -113,31 +115,58 @@ for i in range(1, len(spans)):
         shift = min(short, max(0.0, (p[1] - p[0]) - MIN_ON))
         p[1] -= shift
         a[0] -= shift
-def pop_tags(k, extra=""):
-    return (f"{{\\an5\\pos(540,{POS_Y}){extra}\\fscx{k * 0.82:.0f}\\fscy{k * 0.82:.0f}"
-            f"\\t(0,70,\\fscx{k * 1.06:.0f}\\fscy{k * 1.06:.0f})\\t(70,140,\\fscx{k:.0f}\\fscy{k:.0f})}}")
 
 
-def soft_shadow(k, extra=""):
-    # blurred dark copy, offset down-right, under the outlined word
-    return (f"{{\\an5\\pos(546,{POS_Y + 9}){extra}\\bord8\\shad0\\blur9\\1c&H000000&\\3c&H000000&\\alpha&H90&"
-            f"\\fscx{k * 0.82:.0f}\\fscy{k * 0.82:.0f}\\t(0,70,\\fscx{k * 1.06:.0f}\\fscy{k * 1.06:.0f})\\t(70,140,\\fscx{k:.0f}\\fscy{k:.0f})}}")
+def fit(text, size, max_w=980):
+    """x/y scale (%) that fits a word: long words are condensed a little before
+    they are shrunk, so CONGRATULATIONS stays big enough to read"""
+    w = ImageFont.truetype(FONT, size).getlength(text) + 2 * len(text)
+    kx = min(1.0, max_w / w)
+    ky = min(1.0, kx + 0.15)
+    return kx * 100, ky * 100
+
+
+def pop(kx, ky, dur_ms, dx=0, dy=0, keys=((0, 0.76), (55, 1.13), (115, 0.95), (190, 1.0)), drift=14):
+    """springy pop (overshoot, undershoot, settle) and a slight upward drift"""
+    up = min(drift, 40 * dur_ms / 1000)
+    tags = f"\\an5\\move({540 + dx},{POS_Y + dy + up / 2:.0f},{540 + dx},{POS_Y + dy - up / 2:.0f},0,{dur_ms})"
+    tags += f"\\fscx{kx * keys[0][1]:.0f}\\fscy{ky * keys[0][1]:.0f}"
+    for (t0, _), (t1, k) in zip(keys, keys[1:]):
+        tags += f"\\t({t0},{t1},\\fscx{kx * k:.0f}\\fscy{ky * k:.0f})"
+    return tags
+
+
+SHADOW = "\\bord10\\shad0\\blur12\\1c&H000000&\\3c&H000000&"
 
 
 lines = []
 for ev, (start, end) in zip(events, spans):
     text = re.sub(r"[.,!?;:]+$", "", ev["text"]).upper()
-    width = font.getlength(text)
-    k = min(1.0, MAX_W / width) * 100
-    lines.append(f"Dialogue: 0,{ts(start)},{ts(end)},Word,,0,0,0,,{soft_shadow(k)}{text}")
-    lines.append(f"Dialogue: 1,{ts(start)},{ts(end)},Word,,0,0,0,,{pop_tags(k)}{text}")
+    kx, ky = fit(text, SIZE)
+    sp = "\\fsp0" if kx < 100 else ""
+    dur = round((end - start) * 1000)
+    # soft shadow: a blurred dark copy, offset down-right, under the outlined word
+    lines.append(f"Dialogue: 0,{ts(start)},{ts(end)},Word,,0,0,0,,{{{pop(kx, ky, dur, 5, 10)}{SHADOW}{sp}\\alpha&HFF&\\t(0,60,\\alpha&H78&)}}{text}")
+    lines.append(f"Dialogue: 1,{ts(start)},{ts(end)},Word,,0,0,0,,{{{pop(kx, ky, dur)}\\blur0.7{sp}\\alpha&H60&\\t(0,45,\\alpha&H00&)}}{text}")
 if boy:
-    text = boy["text"].upper()  # "HI, AUNTY..." - punctuation kept, it is the line
-    big = ImageFont.truetype(FONT, BOY_SIZE)
-    k = min(1.0, MAX_W / big.getlength(text)) * 100
-    start, end = boy["s"] - LEAD, boy["e"] + 0.45
-    lines.append(f"Dialogue: 0,{ts(start)},{ts(end)},Boy,,0,0,0,,{soft_shadow(k)}{text}")
-    lines.append(f"Dialogue: 1,{ts(start)},{ts(end)},Boy,,0,0,0,,{pop_tags(k)}{text}")
+    # "HI, AUNTY..." - punctuation kept, it is the line: a bigger pop, a nervous
+    # little shiver, then it sinks away with him
+    text = boy["text"].upper()
+    kx, ky = fit(text, BOY_SIZE)
+    start = boy["s"] - LEAD
+    sink, end = TL["T"]["sink"], TL["T"]["sink"] + 0.7
+    dur, t_sink = round((end - start) * 1000), round((sink - start) * 1000)
+    keys = ((0, 0.6), (80, 1.24), (160, 0.93), (240, 1.04), (320, 1.0))
+    shiver = ""
+    t, k = 340, 0
+    while t < t_sink:
+        shiver += f"\\t({t},{t + 45},\\frz{1.6 if k % 2 == 0 else -1.6})"
+        t, k = t + 45, k + 1
+    out = f"\\t({t_sink},{dur},0.6,\\frz0\\fscx{kx * 0.82:.0f}\\fscy{ky * 0.82:.0f})\\fad(0,300)"
+    for layer, dx, dy, extra in ((0, 5, 10, SHADOW + "\\alpha&H78&"), (1, 0, 0, "\\blur0.7")):
+        tags = pop(kx, ky, dur, dx, dy, keys, drift=0)
+        tags = tags.replace(f"\\move({540 + dx},{POS_Y + dy},{540 + dx},{POS_Y + dy},0,{dur})", f"\\move({540 + dx},{POS_Y + dy},{540 + dx},{POS_Y + dy + 90},{t_sink},{dur})")
+        lines.append(f"Dialogue: {layer},{ts(start)},{ts(end)},Boy,,0,0,0,,{{{tags}{extra}{shiver}{out}}}{text}")
     events.append(boy)
 
 header = f"""[Script Info]
@@ -149,8 +178,8 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Word,Fredoka,{SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,2,0,1,11,0,5,40,40,0,1
-Style: Boy,Fredoka,{BOY_SIZE},&H0026D8FF,&H0026D8FF,&H00000000,&H64000000,-1,0,0,0,100,100,2,0,1,12,0,5,40,40,0,1
+Style: Word,Fredoka,{SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,2,0,1,12,0,5,40,40,0,1
+Style: Boy,Fredoka,{BOY_SIZE},&H0026D8FF,&H0026D8FF,&H00000000,&H64000000,-1,0,0,0,100,100,2,0,1,13,0,5,40,40,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

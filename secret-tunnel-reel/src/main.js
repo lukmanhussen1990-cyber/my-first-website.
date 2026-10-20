@@ -10,7 +10,7 @@ import {
   concreteMaterial, roofTileMaterial, makeSimpleMats, bakeGround, digTime, tunnelGlow, groundMaterial,
   soilFrontMaterial, tunnelBackMaterial, tunnelBoundaryMaterial, lawnMaterial, brickMaterial, seamMaterial,
 } from './materials.js';
-import { buildHouse, buildTree, buildBush, box, boxMM, placed, mergeAll, lumpyBlob } from './builders.js';
+import { buildHouse, buildTree, buildBush, box, boxMM, placed, mergeAll, lumpyBlob, shadeFoliage } from './builders.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { buildCart, buildBat, buildCandle, buildBulb, buildLid, buildLadder, railGeom, buildSnail } from './props.js';
 import { buildBoy, buildMom, buildGirl } from './characters.js';
@@ -372,25 +372,38 @@ const GIRL_WIN = new THREE.Vector3(); // centre of the open window in the friend
   const far = mesh(new THREE.PlaneGeometry(900, 900).rotateX(-Math.PI / 2), M.farGround, false, true);
   far.position.set(0, -0.02, -30 - 450);
   scene.add(far);
-  const houseL = buildHouse(M, roofTileMaterial());
+  const houseL = buildHouse(M, roofTileMaterial(), { dress: ['curtains', 'blind', 'curtains', 'half', 'none'] });
   houseL.position.set(-HOUSE_X, 0, HOUSE_Z);
   houseL.scale.setScalar(HOUSE_S);
   add(houseL);
-  const houseR = buildHouse(M, roofTileMaterial([0.36, 0.38, 0.43], 'slate'), { wall: 'greenWall', shade: 'greenShade', shutters: false, chimney: -1, open: [-3.15, 4.25] });
+  const houseR = buildHouse(M, roofTileMaterial([0.36, 0.38, 0.43], 'slate'), {
+    wall: 'greenWall', shade: 'greenShade', shutters: false, chimney: -1, open: [-3.15, 4.25],
+    lintel: 'trim', boxes: 'down', dress: ['none', 'blind', 'curtains', 'half', 'none'], extras: 'ac',
+  });
   GIRL_WIN.copy(houseR.userData.open).multiplyScalar(HOUSE_S).add(V(HOUSE_X, 0, HOUSE_Z));
   houseR.position.set(HOUSE_X, 0, HOUSE_Z);
   houseR.scale.setScalar(HOUSE_S);
   add(houseR);
+  // back hedge: two staggered rows of small clusters along a clipped, slightly wavy top
   const hedgeParts = [];
-  for (let i = -10; i <= 10; i++) hedgeParts.push(placed(lumpyBlob(1.1, 2, 0.07, 40 + i), i * 1.55, 0.85, -31.5, 0, 0, 0, 1, 0.95, 0.75));
+  {
+    const rnd = U.mulberry32(40);
+    const C = V(0, 0.95, -31.5), R = V(1.0, 1.0, 0.85);
+    for (let x = -16; x <= 16; x += 0.62) {
+      for (const [dz, dy] of [[0.25, 0.5], [-0.15, 1.15], [0.3, 1.55]]) {
+        const g = placed(lumpyBlob(0.5 + rnd() * 0.12, 1, 0.12, 400 + Math.round(x * 10) + dy * 7), x + (rnd() - 0.5) * 0.3, dy + (rnd() - 0.5) * 0.12, -31.5 + dz, rnd() * 3, rnd() * 3, 0, 1, 0.85, 1);
+        hedgeParts.push(shadeFoliage(g, V(x, C.y, C.z), R, 0.35 + 0.3 * rnd()));
+      }
+    }
+  }
   add(mesh(mergeAll(hedgeParts), M.hedge));
   const trees = [
-    [-9.6, -21.5, 1.1, 3], [9.8, -22.0, 1.15, 5], [-0.2, -29.0, 1.5, 7], [-12.0, -27.0, 1.4, 9], [12.5, -27.5, 1.35, 11],
-    [-5.5, -33.5, 1.8, 13], [5.0, -34.5, 1.9, 15], [-15.0, -35.0, 1.8, 17], [15.5, -36.0, 1.8, 19],
+    [-9.6, -21.5, 1.1, 3, 'broad'], [9.8, -22.0, 1.15, 5, 'broad'], [-0.2, -29.0, 1.5, 7, 'tall'], [-12.0, -27.0, 1.4, 9, 'oak'], [12.5, -27.5, 1.35, 11, 'tall'],
+    [-5.5, -33.5, 1.8, 13, 'oak'], [5.0, -34.5, 1.9, 15, 'broad'], [-15.0, -35.0, 1.8, 17, 'broad'], [15.5, -36.0, 1.8, 19, 'oak'],
   ];
   const tl = { trunk: [], leaf: [], leafDark: [] };
-  for (const [x, z, sc, seed] of trees) {
-    const parts = buildTree(seed, sc);
+  for (const [x, z, sc, seed, kind] of trees) {
+    const parts = buildTree(seed, sc, kind);
     for (const k of Object.keys(tl)) tl[k].push(...parts[k].map((g) => placed(g, x, 0, z, 0, seed, 0)));
   }
   for (const k of Object.keys(tl)) add(mesh(mergeAll(tl[k]), M[k]));
