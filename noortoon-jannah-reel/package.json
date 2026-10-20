@@ -1,0 +1,15 @@
+{
+  "name": "noortoon-jannah-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "How BIG is Jannah? 45-second Instagram Reel for NoorToon, drawn and scored 100% with code.",
+  "type": "module",
+  "scripts": {
+    "frames": "node render_frames.mjs --frames",
+    "stills": "node render_frames.mjs --stills",
+    "build": "bash build.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
