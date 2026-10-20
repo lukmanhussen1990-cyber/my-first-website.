@@ -637,6 +637,7 @@ export function makeSimpleMats(envMap) {
     snailShell: mat('#c98a4b'),
     snailShellDark: mat('#8a5a2e'),
     snailBody: mat('#d9c39b'),
+    snailSlime: std('#d8eef2', 0.08, 0.0, { envMap, envMapIntensity: 1.4, transparent: true, opacity: 0.5, depthWrite: false }),
     // characters
     skinBoy: mat('#b97a46'),
     skinMom: mat('#a8693a'),

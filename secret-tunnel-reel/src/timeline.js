@@ -101,4 +101,5 @@ export const T = {
   girlTake: 52.42, // ...double-take back to the hole
   girlShock: 52.55, // eyes pop, mouth drops, hands to her cheeks
   girlCover: 53.42, // hands over her mouth on "Hi, Aunty..."
+  chappalUp: 52.68, // Aunty whips the chappal up out of her crossed arms as he looks up
 };

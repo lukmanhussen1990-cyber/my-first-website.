@@ -199,27 +199,39 @@ export function buildMom(M) {
   ];
   body.add(mesh(mergeAll(top), M.momTop));
   body.add(mesh(placed(new THREE.TorusGeometry(0.06, 0.012, 6, 20, Math.PI), 0, 1.31, 0.075, -0.2, 0, Math.PI), M.momTopDark, false)); // neckline
-  // crossed arms, a watch and a bangle, slipper in her right hand
+  // crossed arms, a watch and a bangle; the camera-right arm holds the flip-flop
+  // (its hand rests on the other arm) and whips it up to brandish it, so its two
+  // bones are separate groups the animation aims (see `brandish`)
   const arms = new THREE.Group();
   body.add(arms);
   const skinA = [
-    limb([0.19, 1.26, 0.0], [0.2, 1.08, 0.06], 0.045), limb([-0.19, 1.26, 0.0], [-0.2, 1.08, 0.06], 0.045),
-    limb([0.2, 1.08, 0.08], [-0.1, 1.13, 0.2], 0.042), limb([-0.2, 1.1, 0.08], [0.1, 1.17, 0.18], 0.042),
-    placed(sph(0.05, 12, 10), -0.13, 1.15, 0.2), placed(sph(0.05, 12, 10), 0.13, 1.19, 0.17),
+    limb([-0.19, 1.26, 0.0], [-0.2, 1.08, 0.06], 0.045),
+    limb([-0.2, 1.1, 0.08], [0.1, 1.17, 0.18], 0.042),
+    placed(sph(0.05, 12, 10), 0.13, 1.19, 0.17),
   ];
   arms.add(mesh(mergeAll(skinA), M.skinMom));
-  const watch = new THREE.TorusGeometry(0.047, 0.011, 6, 18);
-  watch.rotateY(Math.PI / 2);
-  watch.rotateZ(0.17);
-  watch.translate(-0.05, 1.125, 0.19);
   const bangle = new THREE.TorusGeometry(0.047, 0.007, 6, 18);
   bangle.rotateY(Math.PI / 2);
   bangle.rotateZ(-0.2);
   bangle.translate(0.05, 1.163, 0.17);
-  arms.add(mesh(watch, M.batGrip, false), mesh(bangle, M.gold, false));
-  // classic rubber flip-flop: white sole, blue V strap
+  arms.add(mesh(bangle, M.gold, false));
+  // brandishing arm: shoulder S, crossed elbow E0 and hand H0; each bone is a
+  // capsule along +y in its own group (rotationally symmetric, so only its aim matters)
+  const S = new THREE.Vector3(0.19, 1.26, 0.0), E0 = new THREE.Vector3(0.2, 1.08, 0.07), H0 = new THREE.Vector3(-0.13, 1.15, 0.2);
+  const Lu = S.distanceTo(E0), Lf = E0.distanceTo(H0);
+  const upper = new THREE.Group(), fore = new THREE.Group();
+  upper.add(mesh(limb([0, 0, 0], [0, Lu, 0], 0.045), M.skinMom));
+  fore.add(mesh(mergeAll([limb([0, 0, 0], [0, Lf - 0.03, 0], 0.042), placed(sph(0.05, 12, 10), 0, Lf, 0)]), M.skinMom));
+  const watch = new THREE.TorusGeometry(0.047, 0.011, 6, 18);
+  watch.rotateX(Math.PI / 2);
+  watch.translate(0, Lf - 0.085, 0);
+  fore.add(mesh(watch, M.batGrip, false));
+  arms.add(upper, fore);
+  const brandish = { upper, fore, S, Lu, Lf, dU0: E0.clone().sub(S).normalize(), dF0: H0.clone().sub(E0).normalize() };
+  // classic rubber hawai chappal: white sole on a blue base, blue V strap and toe
+  // plug; origin at the grip, the heel end in her hand
   const slipper = new THREE.Group();
-  slipper.position.set(-0.15, 1.17, 0.21); // in her right hand (camera left)
+  slipper.position.copy(H0);
   const sole = new THREE.Shape();
   sole.moveTo(0, -0.12);
   sole.bezierCurveTo(0.05, -0.12, 0.045, -0.02, 0.05, 0.05);
@@ -233,10 +245,12 @@ export function buildMom(M) {
   rim.translate(0, 0, -0.012);
   const fl = new THREE.Group();
   fl.rotation.z = 0.3;
-  fl.position.y = 0.08;
+  fl.position.y = 0.09;
+  fl.scale.setScalar(1.15); // a touch bigger than life so it reads in the wide shot
   fl.add(mesh(soleG, M.chappalSole), mesh(rim, M.chappalStrap, false));
   const strapPts = [[-0.042, 0.0, 0.012], [-0.02, 0.07, 0.04], [0.0, 0.11, 0.02], [0.02, 0.07, 0.04], [0.042, 0.0, 0.012]];
   fl.add(mesh(line(strapPts, 0.011), M.chappalStrap, false));
+  fl.add(mesh(mergeAll([placed(sph(0.014, 10, 8), 0, 0.11, 0.02), placed(sph(0.012, 10, 8), -0.042, 0.0, 0.013), placed(sph(0.012, 10, 8), 0.042, 0.0, 0.013)]), M.chappalStrap, false));
   slipper.add(fl);
   arms.add(slipper);
   // neck + head
@@ -295,7 +309,7 @@ export function buildMom(M) {
   face.add(mesh(line(frownPts.map((p) => [p[0], p[1] + 0.0, p[2]]), 0.008), M.mouth, false));
   face.add(mesh(placed(sph(0.012, 10, 8), ...onSphere(R + 0.002, 0, 0.36)), M.bindi, false));
   face.add(mesh(mergeAll([placed(sph(0.016, 10, 8), R * 0.96, -0.06, 0.01), placed(sph(0.016, 10, 8), -R * 0.96, -0.06, 0.01), placed(sph(0.006, 8, 6), ...onSphere(R + 0.01, 0.12, -0.12))]), M.gold, false));
-  return { root, body, head, face, arms, slipper, pupils, eyes, brows, footR };
+  return { root, body, head, face, arms, slipper, brandish, pupils, eyes, brows, footR };
 }
 
 // ---------------------------------------------------------------------------

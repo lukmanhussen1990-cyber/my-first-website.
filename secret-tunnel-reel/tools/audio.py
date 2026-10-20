@@ -840,6 +840,7 @@ def build_cues():
         cue(T["boyIn"] + 0.15 + k * 0.42, sfx("creak"), -20, x2pan(3.2))
     cue(T["girlUp"], sfx("pop", 1.35), -16, x2pan(2.0))  # girl at the window
     cue(T["girlTake"], sfx("swish"), -19, x2pan(2.0))
+    cue(T["chappalUp"] + 0.04, sfx("swish"), -12, x2pan(3.7))  # Aunty whips the chappal up
     cue(T["lookUp"] + 0.25, sfx("gulp"), -11, x2pan(3.2))
     cue(T["sink"], sfx("slide_down", T["sinkBottom"] - T["sink"] + 0.1), -15, x2pan(3.2))
     for k, g in enumerate((-4, -13, -19)):

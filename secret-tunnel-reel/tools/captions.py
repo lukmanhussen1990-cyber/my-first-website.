@@ -174,6 +174,11 @@ if boy:
         lines.append(f"Dialogue: {layer},{ts(start)},{ts(end)},Boy,,0,0,0,,{{{tags}{extra}{shiver}{out}}}{text}")
     events.append(boy)
 
+# quiet channel watermark for the whole reel: small, see-through, low on the left over
+# the plain soil, clear of the captions, the action and Instagram's buttons and caption
+MARK = "Garden_reels"
+mark = f"Dialogue: 2,{ts(0)},{ts(TL['DURATION'])},Mark,,0,0,0,,{{\\an1\\pos(46,1496)\\blur0.8}}{MARK}"
+
 header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -185,10 +190,11 @@ ScaledBorderAndShadow: yes
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Word,Fredoka,{SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,2,0,1,12,0,5,40,40,0,1
 Style: Boy,Fredoka,{BOY_SIZE},&H0026D8FF,&H0026D8FF,&H00000000,&H64000000,-1,0,0,0,100,100,2,0,1,13,0,5,40,40,0,1
+Style: Mark,Fredoka,38,&H70FFFFFF,&H70FFFFFF,&H9C000000,&HFF000000,-1,0,0,0,100,100,1,0,1,2,0,1,40,40,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-open(B("captions.ass"), "w").write(header + "\n".join(lines) + "\n")
+open(B("captions.ass"), "w").write(header + "\n".join(lines + [mark]) + "\n")
 json.dump(events, open(B("caption_words.json"), "w"), indent=1)
 print(f"wrote {B('captions.ass')} ({len(lines)} words)")

@@ -169,20 +169,27 @@ export function railGeom(pts, z, w = 0.035, h = 0.045) {
   return g;
 }
 
-// garden snail: origin under the body, facing +x
+// garden snail: origin under the body, facing +x; the eye stalks pivot on the head
 export function buildSnail(M) {
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
   body.add(mesh(mergeAll([
     placed(new THREE.CapsuleGeometry(0.045, 0.2, 6, 14), 0.02, 0.04, 0, 0, 0, Math.PI / 2, 1, 1, 0.8),
-    placed(new THREE.SphereGeometry(0.055, 14, 10), 0.14, 0.075, 0),
-    placed(cyl(0.008, 0.01, 0.09, 6), 0.165, 0.14, 0.022, 0, 0, -0.35),
-    placed(cyl(0.008, 0.01, 0.09, 6), 0.165, 0.14, -0.022, 0, 0, -0.35),
+    placed(new THREE.SphereGeometry(0.058, 16, 12), 0.14, 0.078, 0),
   ]), M.snailBody));
-  const eyes = mergeAll([placed(new THREE.SphereGeometry(0.016, 10, 8), 0.182, 0.185, 0.026), placed(new THREE.SphereGeometry(0.016, 10, 8), 0.182, 0.185, -0.026)]);
-  const pupils = mergeAll([placed(new THREE.SphereGeometry(0.008, 8, 6), 0.194, 0.187, 0.03), placed(new THREE.SphereGeometry(0.008, 8, 6), 0.194, 0.187, -0.03)]);
-  body.add(mesh(eyes, M.eyeWhite, false), mesh(pupils, M.pupil, false));
+  // googly eyes on wiggly stalks, pupils turned to the camera
+  const stalks = [];
+  for (const s of [-1, 1]) {
+    const st = new THREE.Group();
+    st.position.set(0.158, 0.118, s * 0.024);
+    st.rotation.set(s * 0.28, 0, -0.32);
+    st.add(mesh(placed(cyl(0.008, 0.011, 0.1, 6), 0, 0.05, 0), M.snailBody, false));
+    st.add(mesh(placed(new THREE.SphereGeometry(0.023, 12, 10), 0, 0.106, 0), M.eyeWhite, false));
+    st.add(mesh(placed(new THREE.SphereGeometry(0.0115, 10, 8), 0.011, 0.109, 0.016), M.pupil, false));
+    body.add(st);
+    stalks.push(st);
+  }
   // spiral shell
   const shell = new THREE.Group();
   shell.position.set(-0.03, 0.135, 0);
@@ -195,5 +202,5 @@ export function buildSnail(M) {
   }
   shell.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 120, 0.01, 6, false), M.snailShellDark, false));
   body.add(shell);
-  return { root, body, shell };
+  return { root, body, shell, stalks };
 }

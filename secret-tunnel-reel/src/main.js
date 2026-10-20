@@ -1337,6 +1337,18 @@ const _cv = new THREE.Vector3();
 function reachX(shoulderY, y, len) {
   return -Math.acos(clamp((shoulderY - y) / len, -1, 1));
 }
+// slerp between unit vectors a and b into out (k may overshoot 1 a little)
+function slerpDir(a, b, k, out) {
+  const th = Math.acos(clamp(a.dot(b), -1, 1));
+  if (th < 1e-4) return out.copy(a).lerp(b, k).normalize();
+  const s = Math.sin(th);
+  return out.copy(a).multiplyScalar(Math.sin((1 - k) * th) / s).addScaledVector(b, Math.sin(k * th) / s);
+}
+// Aunty's chappal brandish: upper arm out and up, forearm mid-sweep out across her chest, then straight up
+const CH_U1 = V(0.75, 0.55, 0.15).normalize();
+const CH_FM = V(0.55, 0.35, 0.75).normalize();
+const CH_F1 = V(0.12, 1.0, 0.05).normalize();
+const _du = new THREE.Vector3(), _df = new THREE.Vector3(), _Y = V(0, 1, 0);
 
 function updateCharacters(t) {
   // --- Aunty: pops in with a squashy settle, arms crossed, taps her foot on the
@@ -1360,9 +1372,25 @@ function updateCharacters(t) {
   for (const ts of [T.momIn + 1.05, T.momIn + 2.3, T.momIn + 3.45, T.momIn + 4.5]) {
     if (t > ts && ts < T.lookUp) slap += Math.exp(-9 * (t - ts)) * Math.sin(Math.min(Math.PI * 3, (t - ts) * 22));
   }
-  const raise = smooth(prog(t, T.sink - 0.25, 0.55));
-  mom.slipper.rotation.z = 0.3 * slap + 0.6 * raise + 0.05 * Math.sin(t * 17) * raise;
-  mom.slipper.position.set(-0.15, 1.17 + 0.12 * raise, 0.21 + 0.03 * raise);
+  // the chappal: whipped up out of the crossed arms as he looks up at her (the
+  // forearm sweeps out across her chest, then up), held high and cocked with a
+  // menacing little shake, and a jolt when the lid slams on him
+  const B = mom.brandish;
+  const bk = t < T.chappalUp ? 0 : easeOutBack(prog(t, T.chappalUp, 0.36), 1.6);
+  slerpDir(B.dU0, CH_U1, bk, _du);
+  if (bk < 0.5) slerpDir(B.dF0, CH_FM, bk / 0.5, _df);
+  else slerpDir(CH_FM, CH_F1, (bk - 0.5) / 0.5, _df);
+  B.upper.position.copy(B.S);
+  B.upper.quaternion.setFromUnitVectors(_Y, _du);
+  B.fore.position.copy(B.S).addScaledVector(_du, B.Lu);
+  B.fore.quaternion.setFromUnitVectors(_Y, _df);
+  mom.slipper.position.copy(B.fore.position).addScaledVector(_df, B.Lf);
+  const held = smooth(prog(t, T.chappalUp + 0.3, 0.3));
+  const shake = 0.07 * Math.sin((t - T.chappalUp) * 13) * held;
+  const tj = t - (T.lidClose + 0.15);
+  const jolt = tj > 0 ? Math.exp(-8 * tj) * Math.sin(tj * 32) : 0;
+  const kk = clamp(bk, 0, 1.15);
+  mom.slipper.rotation.set(-0.12 * kk, 0, lerp(0.42 * slap, -0.72 + shake + 0.18 * jolt, kk));
   mom.body.rotation.x = 0.11 * glare;
   mom.head.rotation.x = 0.16 + 0.14 * glare; // looking down at the hole
   mom.head.rotation.y = 0.22 - 0.06 * glare;
