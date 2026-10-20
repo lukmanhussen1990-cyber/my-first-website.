@@ -145,19 +145,36 @@ vec3 soilAt(vec2 p, out float h){
   c *= 0.9 + 0.16 * g2;
   c *= 1.0 - 0.18 * step(0.84, g3);
   h += 0.004 * g1 + 0.0018 * g2 - 0.002 * step(0.84, g3);
-  // roots in the top layers: thin, wiggly, branching threads
-  if (d > 0.06 && d < 1.5) {
+  // roots: hang down from the turf in thin threads that taper, wander and branch
+  if (d > 0.06 && d < 1.3) {
     float rr = 0.0;
-    for (int k = 0; k < 3; k++) {
-      float fk = float(k);
-      vec2 q = p * (1.8 + fk * 1.3) + vec2(fk * 7.3, 0.0);
-      float v = vnoise(q + vec2(0.0, vnoise(q * 2.1) * 1.4));
-      float thread = 1.0 - smoothstep(0.0, 0.028 + 0.012 * fk, abs(v - 0.5));
-      float fade = (1.0 - smoothstep(0.45 + 0.35 * fk, 1.25, d)) * smoothstep(0.06, 0.16, d);
-      rr = max(rr, thread * fade * step(0.35, vnoise(q * 0.6 + 3.1)));
+    for (int L = 0; L < 2; L++) {
+      float cw = L == 0 ? 0.47 : 0.29;      // one root per cell this wide (some cells skip)
+      float maxD = L == 0 ? 1.15 : 0.6;     // how deep they reach
+      float ci = floor(p.x / cw);
+      for (int k = -1; k <= 1; k++) {
+        float cc = ci + float(k);
+        float id = h21(vec2(cc, float(L) * 7.0 + 1.3));
+        if (id < 0.42) continue;
+        float len = maxD * (0.45 + 0.55 * fract(id * 7.7));
+        float u = (d - 0.06) / len;
+        if (u > 1.0) continue;
+        float x0 = (cc + 0.2 + 0.6 * fract(id * 3.3)) * cw;
+        float xr = x0 + (0.05 * sin(d * (5.0 + 3.0 * id) + id * 20.0) + 0.02 * sin(d * 17.0 + id * 9.0)) * (0.3 + u);
+        float w = mix(0.012, 0.003, u) * (L == 0 ? 1.0 : 0.7);
+        rr = max(rr, (1.0 - smoothstep(w * 0.45, w, abs(p.x - xr))) * (1.0 - smoothstep(0.8, 1.0, u)));
+        // one side branch
+        float bd = len * (0.3 + 0.35 * fract(id * 5.1));
+        float bu = (d - 0.06 - bd) / 0.32;
+        if (bu > 0.0 && bu < 1.0) {
+          float xb = xr + (fract(id * 9.3) > 0.5 ? 1.0 : -1.0) * bu * 0.17 + 0.015 * sin(bu * 9.0);
+          float wb = mix(0.0055, 0.0018, bu);
+          rr = max(rr, (1.0 - smoothstep(wb * 0.45, wb, abs(p.x - xb))) * (1.0 - bu));
+        }
+      }
     }
-    c = mix(c, s2l(vec3(0.55, 0.40, 0.26)) * (0.8 + 0.3 * g2), rr * 0.85);
-    h += 0.006 * rr;
+    c = mix(c, s2l(vec3(0.38, 0.27, 0.17)) * (0.85 + 0.25 * g2), rr * 0.8);
+    h += 0.004 * rr;
   }
   // small stones and pebbles
   if (d > 0.35) {
@@ -314,7 +331,7 @@ export function lawnMaterial(holes) {
   const frag = `uniform float uTime; uniform vec4 uShaft; uniform float uOpen;
     vec3 lawnTop(vec3 p, vec3 n){
       float s = smoothstep(0.46, 0.54, abs(fract(p.x / 1.6) - 0.5) * 2.0);
-      vec3 c = mix(s2l(vec3(0.26, 0.47, 0.18)), s2l(vec3(0.34, 0.56, 0.22)), s);
+      vec3 c = mix(s2l(vec3(0.22, 0.40, 0.17)), s2l(vec3(0.30, 0.49, 0.21)), s);
       c *= 0.85 + 0.25 * fbm(p.xz * 0.9);
       c *= 0.9 + 0.18 * vnoise(p.xz * 13.0);
       // loose dirt spilled round the shaft opening
@@ -331,7 +348,10 @@ export function lawnMaterial(holes) {
       return c;
     }
     float lawnRough(vec3 p, vec3 n){ return 0.88 + 0.1 * vnoise(p.xz * 7.0); }
-    bool hole(vec3 p){ return uTime >= uOpen && p.x > uShaft.x && p.x < uShaft.y && p.z > uShaft.z && p.z < uShaft.w; }`;
+    bool hole(vec3 p){
+      // the doghouse floor patch's opening (always there, hidden under the patch at rest)
+      if (p.x > -1.22 && p.x < -0.78 && p.z > -0.86 && p.z < -0.42) return true;
+      return uTime >= uOpen && p.x > uShaft.x && p.x < uShaft.y && p.z > uShaft.z && p.z < uShaft.w; }`;
   const discard = 'hole(vWPos)';
   const m = patch(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }), { uniforms, colorFn: 'lawnTop', roughFn: 'lawnRough', extraFrag: frag, discard, key: 'lawn' });
   m.userData.depth = maskedDepth(uniforms, frag, discard);

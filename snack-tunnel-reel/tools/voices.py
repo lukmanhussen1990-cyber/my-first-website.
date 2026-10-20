@@ -8,10 +8,11 @@ Engines, tried in this order with --engine auto (the default):
               (default /home/user/tts-models: kokoro-v1.0.onnx, voices-v1.0.bin)
   piper       local TTS: pip install piper-tts, voice .onnx files in $PIPER_DIR
   espeak      espeak-ng on the PATH
-When an engine fails (no key, an HTTP error, no credits, missing models) the next one
-is used, so the reel always gets a voice. Local engines get their word times from
-faster-whisper, matched onto the script's own words and refined with the energy
-envelope, so the subtitles always spell the script exactly.
+When an engine fails on any line (no key, an HTTP error, no credits, missing models)
+the whole script goes to the next one, so all lines always share one voice and the
+reel always gets a voice. Files are only written once every line is voiced. Local
+engines get their word times from faster-whisper, matched onto the script's own words
+and refined with the energy envelope, so the subtitles always spell the script exactly.
 
 Writes assets/vo/<id>.wav (48 kHz mono, silence trimmed), assets/vo/<id>.words.json
 (word, start, end in seconds from the start of the file) and assets/vo/manifest.json.
@@ -310,42 +311,49 @@ def main():
     only = set(filter(None, args.only.split(",")))
     order = ENGINES if args.engine == "auto" else [args.engine]
     lines = script["lines"]
-    for i, line in enumerate(lines):
-        if only and line["id"] not in only:
+    todo = [l for l in lines if not only or l["id"] in only]
+    done = None
+    for eng in order:
+        # one engine for the whole script, so every line has the same voice
+        if any(eng not in script["voices"][l["speaker"]] for l in todo):
             continue
-        same = [l for l in lines if l["speaker"] == line["speaker"]]
-        k = same.index(line)
-        ctx = {"prev": same[k - 1]["text"] if k > 0 else "", "next": same[k + 1]["text"] if k + 1 < len(same) else ""}
-        voices = script["voices"][line["speaker"]]
-        audio = words = used = None
-        for eng in order:
-            if eng not in voices:
-                continue
-            try:
-                audio, words = TTS[eng](line, voices[eng], ctx)
-                used = eng
-                break
-            except Exception as e:  # fall through to the next engine
-                print(f"  {line['id']}: {eng} failed: {e}", file=sys.stderr)
-        if audio is None:
-            sys.exit(f"no engine could voice {line['id']}")
-        script_words = line["text"].split()
-        if words:
-            # API alignment: map onto the script's words (spelling stays the script's)
-            words = match_script(script_words, words)
-        audio, words = trim(audio, words)
-        if not words:
-            words = anchor_to_pauses(audio, match_script(script_words, whisper_words(audio)))
-        peak = np.abs(audio).max()
-        if peak > 0:
-            audio = audio * (0.89 / peak)
+        try:
+            done = [(line, *voice_line(eng, line, lines, script)) for line in todo]
+            break
+        except Exception as e:  # fall through to the next engine
+            print(f"  {eng} failed: {e}", file=sys.stderr)
+    if done is None:
+        sys.exit("no engine could voice the script (" + ", ".join(order) + ")")
+    for line, audio, words, used in done:
         sf.write(os.path.join(VO, line["id"] + ".wav"), audio, SR, subtype="PCM_16")
         json.dump(words, open(os.path.join(VO, line["id"] + ".words.json"), "w"), indent=1)
-        cfg = voices[used]
+        cfg = script["voices"][line["speaker"]][used]
         manifest["lines"][line["id"]] = {"engine": used, "voice": cfg.get("name") or cfg.get("voice") or cfg.get("model"),
                                          "duration": round(len(audio) / SR, 3), "speech": [words[0]["s"], words[-1]["e"]]}
         print(f"{line['id']:4s} {used:10s} {len(audio) / SR:5.2f}s  " + " ".join(f"{w['w']}@{w['s']:.2f}" for w in words))
     json.dump(manifest, open(mpath, "w"), indent=1)
+
+
+def voice_line(eng, line, lines, script):
+    """one line with one engine -> (audio, words, engine); raises if the engine fails"""
+    same = [l for l in lines if l["speaker"] == line["speaker"]]
+    k = same.index(line)
+    ctx = {"prev": same[k - 1]["text"] if k > 0 else "", "next": same[k + 1]["text"] if k + 1 < len(same) else ""}
+    try:
+        audio, words = TTS[eng](line, script["voices"][line["speaker"]][eng], ctx)
+    except Exception as e:
+        raise RuntimeError(f"{line['id']}: {e}") from e
+    script_words = line["text"].split()
+    if words:
+        # API alignment: map onto the script's words (spelling stays the script's)
+        words = match_script(script_words, words)
+    audio, words = trim(audio, words)
+    if not words:
+        words = anchor_to_pauses(audio, match_script(script_words, whisper_words(audio)))
+    peak = np.abs(audio).max()
+    if peak > 0:
+        audio = audio * (0.89 / peak)
+    return audio, words, eng
 
 
 if __name__ == "__main__":
