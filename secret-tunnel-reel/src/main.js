@@ -761,7 +761,7 @@ const AIR_PATH = (() => {
   return U.polyPath(pts);
 })();
 const ADOTS = 70;
-const airDots = instanced(new THREE.SphereGeometry(0.04, 10, 8), M.airDot, ADOTS, false);
+const airDots = instanced(new THREE.SphereGeometry(0.046, 12, 9), M.airDot, ADOTS, false);
 
 // ---------------------------------------------------------------------------
 // darkness, wire and bulbs
@@ -783,7 +783,7 @@ const darkFrag = `uniform sampler2D uDig; uniform vec4 uDigRect; uniform float u
   varying vec3 vP;
   uniform float uAmb;
   vec3 pools(){ vec3 l = vec3(0.0); for (int i = 0; i < ${NL}; i++){ vec2 d = (vP.xy - uBulbs[i].xy) * vec2(0.85, 1.0); float r2 = dot(d, d);
-    l += uBulbs[i].w * (i == ${NL - 1} ? vec3(1.0, 0.82, 0.5) * (1.6 * exp(-r2 / 0.05) + 0.7 * exp(-r2 / 0.22))
+    l += (uBulbs[i].w + uBulbs[i].z) * (i == ${NL - 1} ? vec3(1.0, 0.82, 0.5) * (1.6 * exp(-r2 / 0.05) + 0.7 * exp(-r2 / 0.22))
       : vec3(1.0, 0.72, 0.42) * (0.6 * exp(-r2 / 0.05) + 0.8 * exp(-r2 / 0.26) + 0.42 * exp(-r2 / 1.0))); } return l; }
   vec3 halos(){ vec3 h = vec3(0.0); for (int i = 0; i < ${NL}; i++){ vec2 d = vP.xy - uBulbs[i].xy; float r2 = dot(d, d);
     h += uBulbs[i].w * (vec3(1.0, 0.9, 0.7) * 1.4 * exp(-r2 / 0.0011) + vec3(1.0, 0.6, 0.24) * (0.3 * exp(-r2 / 0.012) + 0.07 * exp(-r2 / 0.06))); } return h; }
@@ -792,12 +792,12 @@ const darkFrag = `uniform sampler2D uDig; uniform vec4 uDigRect; uniform float u
   float shaftLight(){ return (vP.x < ${SHAFT_L.x1 + 0.05} || vP.x > ${SHAFT_R.x0 - 0.05}) ? smoothstep(-2.4, -1.2, vP.y) : 0.0; }`;
 const darkVert = 'varying vec3 vP; void main(){ vP = (modelMatrix * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0); }';
 const darkMat = new THREE.ShaderMaterial({
-  uniforms: darkU, transparent: true, depthWrite: false, vertexShader: darkVert,
-  fragmentShader: `${darkFrag} void main(){ if (!open()) discard; float a = uDark * (1.0 - 0.88 * clamp(light(), 0.0, 1.0)) * (1.0 - shaftLight()); gl_FragColor = vec4(0.012, 0.008, 0.006, a); }`,
+  uniforms: darkU, transparent: true, depthWrite: false, blending: THREE.MultiplyBlending, vertexShader: darkVert,
+  fragmentShader: `${darkFrag} void main(){ if (!open()) discard; gl_FragColor = vec4(mix(vec3(1.0), vec3(uAmb) + pools(), uDark * (1.0 - shaftLight())), 1.0); }`,
 });
 const warmMat = new THREE.ShaderMaterial({
   uniforms: darkU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexShader: darkVert,
-  fragmentShader: `${darkFrag} void main(){ if (!open()) discard; float l = light(); gl_FragColor = vec4(vec3(1.0, 0.62, 0.26) * uWarm * l * (1.0 - shaftLight()), 1.0); }`,
+  fragmentShader: `${darkFrag} void main(){ if (!open()) discard; gl_FragColor = vec4(halos() * uWarm * (1.0 - shaftLight()), 1.0); }`,
 });
 {
   const R = WD.DIG_RECT;
@@ -810,7 +810,24 @@ const warmMat = new THREE.ShaderMaterial({
 const WIRE_PTS = [];
 for (let x = SHAFT_L.x1 + 0.02; x <= SHAFT_R.x0 - 0.02; x += 0.04) WIRE_PTS.push(V(x, WD.ceilingAt(x) - 0.035, -0.08));
 const WIRE_CURVE = new THREE.CatmullRomCurve3(WIRE_PTS);
-const wire = mesh(new THREE.TubeGeometry(WIRE_CURVE, 300, 0.009, 6, false), M.wire, false, true);
+const wire = mesh(new THREE.TubeGeometry(WIRE_CURVE, 300, 0.013, 6, false), M.wire, false, true);
+// spark fizz: short bright streaks thrown off the tip of the wire
+const SPARKS = 22;
+const sparkBits = instanced(new THREE.BoxGeometry(1, 0.008, 0.008), new THREE.MeshBasicMaterial({ color: new THREE.Color(6.0, 4.0, 1.4), transparent: true, depthWrite: false }), SPARKS, false);
+sparkBits.renderOrder = 9;
+const SPARK_DIRS = Array.from({ length: SPARKS }, (_, j) => {
+  const a = U.hash1(j * 3.1 + 1) * Math.PI * 2, v = 0.5 + 0.9 * U.hash1(j * 7.7 + 2);
+  return { vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 + 0.35, vz: 0.1 + 0.25 * U.hash1(j + 9), ph: U.hash1(j * 1.37 + 5) };
+});
+function sparkFizz(t, tip, sp) {
+  // each streak lives 0.2 s, thrown off the tip and falling
+  beginInst(sparkBits);
+  if (sp > 0.01) for (const d of SPARK_DIRS) {
+    const age = ((t * 5 + d.ph) % 1) * 0.2, k = (1 - age / 0.2) * sp, vy = d.vy - 9 * age;
+    setInst(sparkBits, tip.x + d.vx * age, tip.y + d.vy * age - 4.5 * age * age, tip.z + d.vz * age, 0.015 + 0.03 * Math.hypot(d.vx, vy), k, k, 0, 0, Math.atan2(vy, d.vx));
+  }
+  endInst(sparkBits);
+}
 const spark = mesh(new THREE.SphereGeometry(0.028, 12, 10), M.flame, false, false);
 spark.renderOrder = 9;
 const sparkGlow = mesh(new THREE.CircleGeometry(0.12, 20), M.glowWarm.clone(), false, false);
@@ -1032,8 +1049,9 @@ function updateDust(t) {
     if (dt >= 0 && dt < 1.0) for (let k = 0; k < 3; k++) puff(V(x + (k - 1) * 0.25, WD.floorAt(x) + 0.08, ZC + 0.25), V((k - 1) * 0.6, 0.5, 0.2), 0.16, dt, 1.0);
   }
   {
-    // the slam: small soft wisps squeezed out round the rim (big ones read as solid balls in the close-up)
-    const dt = t - (T.lidClose + 0.1);
+    // the slam: small soft wisps squeezed out round the rim (big ones read as solid balls in the close-up),
+    // on the lid's first bounce impact (easeOutBounce first touches down at 1 / 2.75 of its 0.42 s)
+    const dt = t - (T.lidClose + 0.42 / 2.75);
     if (dt >= 0 && dt < 0.6) for (let k = 0; k < 9; k++) {
       const a = k * 0.698 + 0.35;
       puff(V(LID.x + Math.cos(a) * 0.42, 0.03, LID.z + Math.sin(a) * 0.32), V(Math.cos(a) * 0.9, 0.18 + 0.06 * (k % 3), Math.sin(a) * 0.45), 0.055 + 0.012 * (k % 2), dt, 0.6);
@@ -1131,48 +1149,67 @@ function updateAir(t) {
   // candle: lit, flickers as the air goes stale, fizzles out
   const ck = popIn(t, T.candleIn, 0.4, 2.2) * popOut(t, T.darkStart + 0.2, 0.3);
   candle.root.visible = ck > 0.002;
-  candle.root.scale.setScalar(Math.max(ck, 0.001));
+  const cs = ck * CANDLE_S;
+  candle.root.scale.setScalar(Math.max(cs, 0.001));
   const stale = smooth(prog(t, T.staleStart, T.staleFull - T.staleStart));
-  const flick = t > T.flicker ? 0.35 * Math.sin(t * 37) * Math.sin(t * 23 + 1) * prog(t, T.flicker, 0.6) : 0;
-  const lit = t < T.candleOut ? (1 - 0.45 * prog(t, T.flicker, T.candleOut - T.flicker)) * (1 + flick) : Math.max(0, 1 - (t - T.candleOut) / 0.12);
+  // the flame shrinks and gutters as the air goes bad, gasps once, then fizzles out
+  const flick = t > T.flicker ? 0.4 * Math.sin(t * 37) * Math.sin(t * 23 + 1) * prog(t, T.flicker, 0.6) : 0;
+  const gasp = 1 - 0.65 * bump(t, T.candleOut - 0.5, T.candleOut - 0.26, 0.08);
+  const lit = t < T.candleOut ? (1 - 0.5 * prog(t, T.flicker, T.candleOut - T.flicker)) * (1 + flick) * gasp : Math.max(0, 1 - (t - T.candleOut) / 0.12);
   candle.flame.visible = lit > 0.01 && ck > 0.01;
   candle.flame.scale.set(lit * (0.9 + 0.1 * Math.sin(t * 19)), lit * (1 + 0.15 * Math.sin(t * 13)), lit);
   candle.flame.rotation.z = 0.12 * Math.sin(t * 7.3) + flick * 0.4;
-  candleGlow.visible = candle.flame.visible;
-  candleGlow.position.set(CANDLE.x, CANDLE.y + 0.21 * ck, CANDLE.z + 0.05);
-  M.glowCandle.opacity = 0.75 * lit * Math.min(1, ck);
+  const fy = CANDLE.y + 0.212 * cs; // middle of the flame
+  candleGlow.visible = candleCore.visible = candle.flame.visible;
+  const gs = 0.62 * (0.8 + 0.2 * lit) * (1 + 0.25 * flick);
+  candleGlow.position.set(CANDLE.x, fy, CANDLE.z - 0.08);
+  candleGlow.scale.set(gs, gs * 0.9, 1);
+  M.glowCandle.opacity = 0.34 * lit * Math.min(1, ck);
+  candleCore.position.set(CANDLE.x, fy, CANDLE.z + 0.04);
+  candleCore.scale.set(0.085 * lit * cs, 0.11 * lit * cs, 1);
+  candleCore.material.opacity = 0.55 * lit * Math.min(1, ck);
+  // the wick glows for a moment after the flame dies
+  const ek = t > T.candleOut ? 1 - smooth(prog(t, T.candleOut + 0.05, 0.9)) : 0;
+  ember.visible = ek > 0.01 && ck > 0.01;
+  ember.position.set(CANDLE.x, CANDLE.y + 0.196 * cs, CANDLE.z + 0.012);
+  ember.scale.setScalar(Math.max(cs, 0.001));
+  ember.material.opacity = ek;
   beginInst(smokeWisp);
   for (const p of SMOKE) {
     const dt = t - p.t0;
     if (dt < 0 || dt > p.life) continue;
     const u = dt / p.life;
-    const r = 0.035 * (0.5 + 2.2 * u) * (1 - smooth(clamp((u - 0.6) / 0.4)));
-    setInst(smokeWisp, CANDLE.x + p.dx * u + 0.03 * Math.sin(dt * 6), CANDLE.y + 0.21 + u * 0.55, CANDLE.z, r);
+    const h = 0.8 * easeOutCubic(u); // rises fast off the wick, then slows
+    const r = 0.026 * (0.6 + 3.4 * u) * (1 - smooth(clamp((u - 0.5) / 0.5)));
+    // a lazy S-curl drifting off to one side
+    const x = CANDLE.x + 0.09 * Math.sin(h * 7.5 + 0.3) * Math.min(1, h * 2.5) + 0.12 * h * h + 0.015 * Math.sin(dt * 5 + p.ph);
+    setInst(smokeWisp, x, CANDLE.y + 0.2 * CANDLE_S + 0.02 + h, CANDLE.z + 0.03, r, r * 1.1, 1, 0, 0, p.ph);
   }
   endInst(smokeWisp);
   // stale air fills the tunnel, then flows out of the shaft
   beginInst(staleAir);
   for (const p of STALE) {
     if (t < p.tin) continue;
-    let k = smooth(prog(t, p.tin, 1.0));
-    let x = p.x + 0.08 * Math.sin(t * 0.7 + p.ph), y = p.y + 0.05 * Math.sin(t * 1.1 + p.ph * 2), z = p.z;
-    let r = p.r * (0.3 + 0.7 * k);
-    const c = prog(t, p.tout, 1.5);
+    let k = smooth(prog(t, p.tin, 1.2));
+    let x = p.x + 0.1 * Math.sin(t * 0.6 + p.ph), y = p.y + 0.06 * Math.sin(t * 0.9 + p.ph * 2);
+    let r = p.r * (0.45 + 0.55 * k);
+    const c = prog(t, p.tout, 1.3);
+    if (c >= 1) continue;
     if (c > 0) {
-      // along the tunnel to the shaft, up and out into the garden
+      // along the tunnel to the shaft, up and out into the garden, drifting off in the breeze
       const e = easeInQuad(c);
       const xs = lerp(x, -3.2, Math.min(1, e * 1.6));
-      x = xs;
-      y = e < 0.62 ? lerp(y, centerY(xs), Math.min(1, e * 2)) : lerp(centerY(-3.2), 1.4, (e - 0.62) / 0.38);
-      r *= 1 + e * 0.6;
-      k *= 1 - smooth(clamp((e - 0.8) / 0.2));
-      if (c >= 1) continue;
+      const up = clamp((e - 0.62) / 0.38);
+      x = xs + 0.6 * up * up;
+      y = e < 0.62 ? lerp(y, centerY(xs), Math.min(1, e * 2)) : lerp(centerY(-3.2), 1.7, up);
+      r *= 1 + e * 0.5;
+      k *= 1 - smooth(clamp((e - 0.72) / 0.28));
     }
     if (k <= 0.01) continue;
-    setInst(staleAir, x, y, z, r * k, r * k * 0.8, r * k);
+    setInst(staleAir, x, y, p.z, r * k, r * k * 0.82, 1, 0, 0, p.rz + p.spin * t);
   }
   endInst(staleAir);
-  M.stale.opacity = 0.42 + 0.2 * stale;
+  M.stale.opacity = 0.3 + 0.14 * stale;
   // air pipe pushes up through the soil and out of the lawn, cap pops on
   const pg = prog(t, T.pipeStart, T.pipeTop - T.pipeStart);
   const pk = pg > 0 ? Math.min(1.06, easeOutBack(pg, 1.4)) : 0;
@@ -1181,6 +1218,23 @@ function updateAir(t) {
   const cap = popIn(t, T.capPop, 0.35, 2.6);
   ventCap.visible = cap > 0.002;
   ventCap.scale.setScalar(Math.max(cap, 0.001));
+  ventCap.rotation.y = 2.5 * (1 - cap);
+  beginInst(pipeChunks);
+  beginInst(pipeTurf);
+  {
+    const dt = t - PIPE_BREAK;
+    if (dt >= 0 && dt < 1.6) {
+      for (const b of PIPE_BITS) {
+        const tl = (b.v.y + Math.sqrt(b.v.y * b.v.y + 4 * 4.9 * 0.02)) / 9.8; // lands back on the lawn
+        const d = Math.min(dt, tl), k = d / tl;
+        const y = Math.max(0.02, 0.02 + b.v.y * d - 4.9 * d * d) + (b.grass ? 0 : 0.02);
+        const s = b.s * (b.grass ? 1.6 : 1) * popOut(t, PIPE_BREAK + tl + 0.45, 0.3) * Math.min(1, dt / 0.04);
+        setInst(b.grass ? pipeTurf : pipeChunks, PIPE_X + b.v.x * d, y, -0.02 + b.v.z * d, s, s, s, b.rot.x + b.spin.x * k, b.rot.y + b.spin.y * k, b.rot.z + b.spin.z * k);
+      }
+    }
+  }
+  endInst(pipeChunks);
+  endInst(pipeTurf);
   // fresh air dots
   beginInst(airDots);
   if (t > T.freshStart && t < T.airClear + 1.0) {
@@ -1206,29 +1260,33 @@ function updateLights(t) {
   setGrow(wire, wk);
   const sp = t > T.wireStart && t < T.wireEnd + 0.25 ? Math.min(1, (t - T.wireStart) / 0.1) * (1 - smooth(prog(t, T.wireEnd, 0.25))) : 0;
   const tip = WIRE_CURVE.getPointAt(clamp(wk, 0.001, 0.999));
-  spark.visible = sparkGlow.visible = sp > 0.01;
+  spark.visible = sp > 0.01;
+  sparkGlow.visible = false;
   spark.position.copy(tip);
-  spark.scale.setScalar(0.8 + 0.4 * Math.abs(Math.sin(t * 47)));
+  spark.scale.setScalar(0.6 + 0.35 * Math.abs(Math.sin(t * 47)));
+  sparkFizz(t, tip, sp);
   sparkGlow.position.set(tip.x, tip.y, tip.z + 0.06);
   sparkGlow.material.opacity = 0.8 * sp;
-  darkU.uBulbs.value[BULBS.length].set(tip.x, tip.y, 0, 0.9 * sp);
+  darkU.uBulbs.value[BULBS.length].set(tip.x, tip.y, 0, sp * (0.85 + 0.15 * Math.sin(t * 61)));
   let lit = 0;
   BULBS.forEach((b, i) => {
     const hang = popIn(t, T.bulbsHang + i * 0.08, 0.35, 2.4);
     b.root.visible = hang > 0.002;
     b.root.scale.setScalar(Math.max(hang, 0.001));
+    // swings on its cord after popping on, and shivers as the cart rattles by
+    const shiver = bump(t, T.cartGo, T.cartArrive + 0.5, 0.2) * Math.exp(-1.6 * Math.abs(cart.root.position.x - b.x));
+    b.root.rotation.z = 0.3 * wobble(t, T.bulbsHang + i * 0.08, 1.4, 2.0) + 0.07 * shiver * Math.sin(t * 23 + i * 1.7);
     const t0 = T.bulbsOn + i * T.bulbGap;
     const on = t < t0 ? 0 : Math.min(1, (t - t0) / 0.05) * (t - t0 < 0.12 ? 0.6 + 0.4 * Math.sin((t - t0) * 160) : 1);
-    b.glass.material.emissiveIntensity = 2.6 * on;
-    b.glow.visible = on > 0.01;
-    b.glow.material.opacity = 0.75 * on;
-    b.glow.scale.setScalar(1 + 0.06 * Math.sin(t * 9 + i));
-    darkU.uBulbs.value[i].set(b.x, b.y, 0, Math.max(on, 0.18 * hang) * hang);
+    b.glass.material.emissiveIntensity = 1.3 * on;
+    const sw = b.root.rotation.z; // the light swings with the bulb; a faint pool shows it hanging
+    darkU.uBulbs.value[i].set(b.x + 0.19 * Math.sin(sw), b.y + 0.19 * (1 - Math.cos(sw)), 0.1 * hang * (1 - on), on * (0.97 + 0.03 * Math.sin(t * 9 + i)));
     lit += on / BULBS.length;
   });
-  darkU.uDark.value = 0.93 * dark * (1 - 0.62 * lit);
-  darkU.uWarm.value = 0.3 * dark;
-  tunnelGlow.value = 0.3 * (1 - 0.8 * dark) + 0.32 * lit * dark;
+  darkU.uDark.value = dark;
+  darkU.uAmb.value = 0.05 + 0.33 * lit;
+  darkU.uWarm.value = dark;
+  tunnelGlow.value = 0.3 * (1 - 0.8 * dark) + 0.24 * lit * dark;
 }
 
 function updateCart(t) {
@@ -1386,9 +1444,11 @@ function updateCharacters(t) {
   });
   boy.sweat.scale.setScalar(Math.max(0.001, popIn(t, T.nervous + 0.15, 0.3, 2.2)));
   boy.sweat.position.y = 0.035 * prog(t, T.nervous + 0.3, 2.0);
-  // the beam only shows once he looks up (towards the camera it would read as a flat disc)
-  boy.beam.material.opacity = 0.075 * look;
-  boy.beam.visible = look > 0.01;
+  // the beam only shows once he looks up (towards the camera it would read as a flat disc),
+  // and fades as his head drops back into the hole so it never pokes through the shut lid
+  const beamK = look * (1 - smooth(prog(t, T.sink + 0.15, 0.5)));
+  boy.beam.material.opacity = 0.075 * beamK;
+  boy.beam.visible = beamK > 0.01;
 }
 
 function updateGirl(t) {

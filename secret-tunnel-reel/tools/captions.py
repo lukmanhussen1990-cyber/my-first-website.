@@ -58,7 +58,7 @@ for clip in TL["VO"]:
 assert wi == len(WORDS)
 
 # nudge words that start in silence (leading pause, stop-consonant closure) to
-# their audible onset in the assembled voice track (max 0.15 s)
+# their audible onset in the assembled (level-matched) voice track (max 0.12 s)
 try:
     import numpy as np
     import soundfile as sf
@@ -71,16 +71,21 @@ try:
         return 20 * np.log10(np.sqrt(np.mean(seg ** 2)) + 1e-9) if len(seg) else -120
 
     for ev in events:
-        if level(ev["s"], 0.06) < -45:
-            for k in range(1, 16):
-                if level(ev["s"] + k * 0.01) > -38:
-                    ev["s"] += k * 0.01
+        # a pause or stop closure (well below the word's own peak) right at the
+        # aligned start: the word is heard where the level comes back up
+        lv = [level(ev["s"] + k * 0.01, 0.01) for k in range(13)]
+        peak = max(level(ev["s"] + k * 0.01, 0.01) for k in range(int((ev["e"] - ev["s"]) / 0.01) + 1))
+        m = int(np.argmin(lv[:9]))
+        if lv[m] < peak - 32:
+            for k in range(m + 1, 13):
+                if lv[k] > max(lv[m] + 10, peak - 30):
+                    ev["s"] = min(ev["s"] + (k - 1) * 0.01, ev["e"] - 0.06)
                     break
 except FileNotFoundError:
     pass
 
 LEAD = 0.042  # show each word one frame before it is heard
-MIN_ON = 0.125  # at least 3 frames on screen
+MIN_ON = 0.135  # at least 3 frames on screen (0.13 s after centisecond rounding)
 HOLD = 0.3  # a word stays up this long after it ends...
 HOLD_FINAL = 0.55  # ...a sentence-final word a little longer
 GAP_CLEAR = 0.5  # in continuous speech words hand over without a gap; longer pauses clear the screen

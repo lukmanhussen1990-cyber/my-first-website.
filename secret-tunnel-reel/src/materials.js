@@ -674,8 +674,8 @@ export function makeSimpleMats(envMap) {
     loadDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(2.1, 0.46, 0.03) }),
     airDot: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.38, 1.6, 5.2) }),
     // stale air and candle smoke are soft camera-facing sprites (alpha map set in main.js)
-    stale: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 1.1, 0.98), transparent: true, opacity: 0.5, depthWrite: false }),
-    smoke: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.5, 1.5), transparent: true, opacity: 0.75, depthWrite: false }),
+    stale: new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 0.54, 0.43), transparent: true, opacity: 0.4, depthWrite: false }),
+    smoke: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.9, 1.9, 1.85), transparent: true, opacity: 0.9, depthWrite: false }),
     glowWarm: glowMat(new THREE.Color(2.6, 1.45, 0.45)),
     glowCandle: glowMat(new THREE.Color(2.4, 1.2, 0.3)),
     beam: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.9, 0.6), transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
