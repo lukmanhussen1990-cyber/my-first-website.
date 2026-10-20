@@ -4,6 +4,8 @@ Everything here is made from code: the 3D world, the car, the characters, the
 animation, the music and every sound effect. No stock footage, no samples, no
 screen recording — each of the 1,668 frames is rendered on its own.
 
+![One frame from each scene](out/contact_sheet.jpg)
+
 ## What's in this folder
 
 | File | What it is |
@@ -14,6 +16,7 @@ screen recording — each of the 1,668 frames is rendered on its own.
 | `voices/j1.wav` | **John's line** ("Hi... is there a charger around here?") |
 | `voices/*.timing.json` | Word timings for each line (used for the subtitles) |
 | `out/clean_video.mp4` | The 3D picture only (no text, no sound), used to re-export without re-rendering |
+| `out/contact_sheet.jpg` | One frame from each of the seven scenes |
 | `remake_with_elevenlabs.sh` | One command: new ElevenLabs voices → new mix → new subtitle timing → new MP4 |
 
 ## Voices: swapping in ElevenLabs later
