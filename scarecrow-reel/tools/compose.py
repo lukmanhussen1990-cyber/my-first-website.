@@ -167,7 +167,7 @@ def compose_video(words, src, dst, crf):
     enc = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
                             "-i", str(BUILD / "mix.wav"),
                             "-filter:a", "loudnorm=I=-14:TP=-1.5:LRA=11",
-                            "-c:v", "libx264", "-preset", "slow", "-crf", str(crf), "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.2",
+                            "-c:v", "libx264", "-preset", "slow", "-crf", str(crf), "-maxrate", "10M", "-bufsize", "20M", "-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.2",
                             "-movflags", "+faststart", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-shortest", str(dst)], stdin=subprocess.PIPE)
     fsize = W * H * 3
     for f in range(nframes):
@@ -194,7 +194,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--video", help="clean rendered video (default: build/video_clean.mp4 or out/master_no_subs.mp4)")
     ap.add_argument("--out", default=str(OUT / "scarecrow_reel.mp4"))
-    ap.add_argument("--crf", type=int, default=18)
+    ap.add_argument("--crf", type=int, default=19)
     args = ap.parse_args()
     script = json.loads((ROOT / "script" / "voiceover.json").read_text())
     cues = json.loads((ROOT / "audio" / "cues.json").read_text())

@@ -4,7 +4,7 @@ A vertical Instagram Reel (1080×1920, 9:16, 30 fps, ~50 s), made entirely with 
 A kid builds a scarecrow, the crows keep outsmarting it, and every problem gets a smart fix.
 Then the crows move in.
 
-**Final video:** `out/scarecrow_reel.mp4` (H.264 + AAC, subtitles burned in)
+**Final video:** `out/scarecrow_reel.mp4` (H.264 High + AAC 48 kHz, 1080×1920, 30 fps, 50.5 s, −14 LUFS, subtitles burned in)
 
 | What | Where |
 |---|---|
@@ -35,6 +35,14 @@ Then the crows move in.
 * **Subtitles and export:** `tools/compose.py` mixes the voices, ducks the music under them,
   normalises loudness to −14 LUFS and burns in the word-by-word subtitles. Each word pops in
   with a small bounce; the kid's line is yellow and larger. It then encodes the MP4.
+
+## About the current voices
+
+The ElevenLabs account had **0 credits** when this was made (the generation request returned
+"quota exceeded"), so, as planned, the voices in this version are local **Piper** neural TTS:
+`en_US-lessac-high` for the narrator, and `en_US-hfc_female-medium` pitch- and formant-shifted
+to a ~10-year-old for the kid. A Whisper transcription of each file matched the script word
+for word. Swap in ElevenLabs with the command below.
 
 ## Swap in the ElevenLabs voices later (one command, no 3D re-render)
 
