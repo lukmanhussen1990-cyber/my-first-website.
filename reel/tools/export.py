@@ -11,7 +11,7 @@ voice, subtitles, music and sound effects on top.
 Inputs
   output/clean_plate_no_subs.part1.mp4 + part2.mp4   3D render without subtitles/audio
                                    (split in two so each file stays under GitHub's 100 MB limit)
-  audio/stems/music.flac, sfx.flac code-synthesized music + effects
+  audio/stems/sfx.flac             code-synthesized sound effects (music.flac only with --with-music)
   voice/lines/line_XX.wav          narration, one file per script line
   voice/timings/line_XX.json       word timings for each line (seconds from the start of its wav)
   script/voiceover.json            the script (spelling, scene windows, anchor words)
@@ -154,16 +154,27 @@ def build_srt(placed, path):
 
 # ------------------------------------------------------------------ mix
 def mix_audio(voice, music, sfx, total, tmp):
-    graph = (
-        '[0:a]aformat=channel_layouts=stereo,volume=1.0,asplit=3[v][vk1][vk2];'
-        '[1:a]aformat=channel_layouts=stereo,volume=0.7[m];'
-        '[2:a]aformat=channel_layouts=stereo,volume=0.72[s];'
-        '[m][vk1]sidechaincompress=threshold=0.02:ratio=3.5:attack=20:release=420:makeup=1[md];'
-        '[s][vk2]sidechaincompress=threshold=0.03:ratio=2.2:attack=15:release=300:makeup=1[sd];'
-        f'[v][md][sd]amix=inputs=3:normalize=0:dropout_transition=0,atrim=0:{total:.3f}[mix]'
-    )
+    """Voice + sound effects (+ optional music); effects and music duck under the voice."""
+    if music is None:  # default: no music
+        inputs = ['-i', voice, '-i', sfx]
+        graph = (
+            '[0:a]aformat=channel_layouts=stereo,volume=1.0,asplit=2[v][vk];'
+            '[1:a]aformat=channel_layouts=stereo,volume=0.72[s];'
+            '[s][vk]sidechaincompress=threshold=0.03:ratio=2.2:attack=15:release=300:makeup=1[sd];'
+            f'[v][sd]amix=inputs=2:normalize=0:dropout_transition=0,atrim=0:{total:.3f}[mix]'
+        )
+    else:
+        inputs = ['-i', voice, '-i', music, '-i', sfx]
+        graph = (
+            '[0:a]aformat=channel_layouts=stereo,volume=1.0,asplit=3[v][vk1][vk2];'
+            '[1:a]aformat=channel_layouts=stereo,volume=0.7[m];'
+            '[2:a]aformat=channel_layouts=stereo,volume=0.72[s];'
+            '[m][vk1]sidechaincompress=threshold=0.02:ratio=3.5:attack=20:release=420:makeup=1[md];'
+            '[s][vk2]sidechaincompress=threshold=0.03:ratio=2.2:attack=15:release=300:makeup=1[sd];'
+            f'[v][md][sd]amix=inputs=3:normalize=0:dropout_transition=0,atrim=0:{total:.3f}[mix]'
+        )
     pre = os.path.join(tmp, 'premix.wav')
-    run(['ffmpeg', '-y', '-loglevel', 'error', '-i', voice, '-i', music, '-i', sfx, '-filter_complex', graph, '-map', '[mix]', '-ar', '48000', '-c:a', 'pcm_s24le', pre])
+    run(['ffmpeg', '-y', '-loglevel', 'error', *inputs, '-filter_complex', graph, '-map', '[mix]', '-ar', '48000', '-c:a', 'pcm_s24le', pre])
     # two-pass loudness normalisation to -14 LUFS (social video), true peak -1 dBTP
     r = subprocess.run(['ffmpeg', '-hide_banner', '-i', pre, '-af', 'loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json', '-f', 'null', '-'], capture_output=True, text=True)
     js = r.stderr[r.stderr.rfind('{'):r.stderr.rfind('}') + 1]
@@ -180,6 +191,7 @@ def main():
     ap.add_argument('--plate', default=None, help='subtitle-free render (default: output/clean_plate_no_subs.part*.mp4 joined)')
     ap.add_argument('--voice-dir', default=os.path.join(ROOT, 'voice'))
     ap.add_argument('--out', default=os.path.join(ROOT, 'output/john_powers_the_city.mp4'))
+    ap.add_argument('--with-music', action='store_true', help='also mix in audio/stems/music.flac (off by default: no music)')
     ap.add_argument('--crf', default='19')
     ap.add_argument('--maxrate', default='11M', help='bitrate cap so the Reel stays under ~100 MB')
     args = ap.parse_args()
@@ -210,7 +222,9 @@ def main():
         n = build_ass(placed, ass, metrics)
         build_srt(placed, os.path.join(ROOT, 'output/subtitles.srt'))
         print(f'subtitles: {n} words -> {os.path.relpath(ass, ROOT)}')
-        mix = mix_audio(voice, os.path.join(ROOT, 'audio/stems/music.flac'), os.path.join(ROOT, 'audio/stems/sfx.flac'), total, tmp)
+        music = os.path.join(ROOT, 'audio/stems/music.flac') if args.with_music else None
+        print('audio: voice + sound effects' + (' + music' if music else ' (no music)'))
+        mix = mix_audio(voice, music, os.path.join(ROOT, 'audio/stems/sfx.flac'), total, tmp)
         shutil.copy(mix, os.path.join(ROOT, 'output/final_mix.wav'))
         fontsdir = os.path.join(ROOT, 'assets/fonts')
         vf = f"ass='{ass}':fontsdir='{fontsdir}'"

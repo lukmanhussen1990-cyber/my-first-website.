@@ -1,20 +1,23 @@
 # John Powers the City — code-rendered 3D Instagram Reel
 
 A 66-second vertical Reel (1080×1920, 30 fps, H.264 + AAC) made entirely with code:
-a Three.js scene rendered frame-by-frame in headless Chromium, a code-synthesized score and
-sound effects, a narrator voice, and word-by-word burned-in subtitles.
+a Three.js scene rendered frame-by-frame in headless Chromium, code-synthesized sound effects,
+a narrator voice, and word-by-word burned-in subtitles. **No music** (by request): the soundtrack is
+voice + sound effects only. At the twist, all sound cuts to silence the moment the battery hits empty,
+then a single sad power-down sound plays.
 
 ## Deliverables
 
 | File | What it is |
 |---|---|
 | `output/john_powers_the_city.mp4` | **The final Reel** (subtitles burned in, full mix) |
-| `output/clean_plate_no_subs.mp4` | The 3D render only (no subtitles, no audio) — used for re-exports |
+| `output/clean_plate_no_subs.part1.mp4`, `part2.mp4` | The 3D render only (no subtitles, no audio), split at 33.4 s to stay under GitHub's 100 MB file limit — used for re-exports |
 | `voice/lines/line_01.wav … line_10.wav` | One narration file per script line |
 | `voice/timings/line_XX.json` | Word-level timings for each line (drive the subtitles) |
 | `script/voiceover.json` | The script (text, scene windows, sync anchors, emphasised words) |
 | `output/subtitles.ass` / `.srt` | The subtitle files that were burned in |
-| `audio/stems/music.flac`, `sfx.flac` | Synthesized music and sound-effect stems |
+| `audio/stems/sfx.flac` | All synthesized sound effects (used in the Reel) |
+| `audio/stems/music.flac` | Synthesized score — **not used**; add it with `tools/export.py --with-music` if ever wanted |
 
 ## Swapping in the ElevenLabs voice later (one command)
 
@@ -42,8 +45,9 @@ What it does:
 2. `tools/export.py` re-places each line in its scene (each line's "anchor" word lands on its
    visual event, e.g. "So" on the moment the generator snaps in; lines that would overflow their
    scene are gently time-compressed), rebuilds the subtitles from the new timings, re-mixes
-   (music ducks under the voice, loudness normalised to −14 LUFS), and encodes
-   `output/john_powers_the_city.mp4` over `output/clean_plate_no_subs.mp4`.
+   (sound effects duck slightly under the voice, loudness normalised to −14 LUFS), and encodes
+   `output/john_powers_the_city.mp4` over the subtitle-free render
+   (`output/clean_plate_no_subs.part1.mp4` + `part2.mp4`, joined automatically).
 
 ## How it is built
 
@@ -57,7 +61,7 @@ src/characters.js      John, Dad, neighbours (toy-like, expressive faces)
 src/fx.js              cables with flowing electricity dots, rain, smoke/steam/sparks, lightning
 src/textures.js        all textures generated procedurally (wood, soil strata, copper wire, knit fabric…)
 tools/render.mjs       renders exact frames in headless Chromium (stills or lossless video segments)
-audio/make_audio.py    synthesizes the score and every sound effect from the timeline
+audio/make_audio.py    synthesizes every sound effect (and an optional, unused score) from the timeline
 voice/make_voice_local.py   offline narrator (Piper) with exact phoneme-based word timings
 tools/export.py        voice placement, subtitles, mix and final encode (stdlib Python + ffmpeg)
 ```
@@ -73,11 +77,11 @@ recording), so motion is perfectly smooth.
 cd reel
 npm install                                  # three.js + playwright (uses the system Chromium)
 node tools/dump_timeline.mjs                 # timeline -> build/timeline.json (for audio)
-python3 audio/make_audio.py                  # music + sfx stems
+python3 audio/make_audio.py                  # sound-effect stem (+ unused music stem)
 python3 voice/make_voice_local.py            # local narrator (needs: pip install piper-tts onnx soundfile,
                                              #  and the en_US-norman-medium voice in build/piper/)
 tools/render_all.sh                          # 1980 frames -> build/seg/*.mkv (lossless)
-tools/make_plate.sh                          # -> output/clean_plate_no_subs.mp4
+tools/make_plate.sh                          # -> output/clean_plate_no_subs.part1/2.mp4
 python3 tools/export.py                      # -> output/john_powers_the_city.mp4
 ```
 

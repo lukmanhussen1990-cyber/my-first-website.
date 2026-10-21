@@ -417,10 +417,12 @@ def sfx():
     d = E['batteryFull'] - E['batteryFill']
     n = int(d * SR); tt = np.arange(n) / SR
     f = 260 * 2 ** (tt / d * 2.0)
-    ch = (sine(f, n) + 0.5 * sine(f * 1.5, n) + 0.25 * sine(f * 2.01, n)) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * tt)) * np.minimum(1, tt * 3)
+    ch = (sine(f, n) + 0.5 * sine(f * 1.37, n) + 0.25 * sine(f * 2.21, n)) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * tt)) * np.minimum(1, tt * 3)
     S.add(E['batteryFill'], ch, 0.06, 0.3); Wt.add(E['batteryFill'], ch, 0.03)
-    for j, m in enumerate([84, 91]):
-        S.add(E['batteryFull'] + j * 0.08, glock(midi(m), 1.2), 0.18, 0.3); Wt.add(E['batteryFull'] + j * 0.08, glock(midi(m), 1.2), 0.08)
+    # battery full: a solid electric 'clunk' + short zap (no musical notes)
+    clunk(E['batteryFull'], 0.35, 0.3, 0.8)
+    n = int(0.35 * SR); tt = np.arange(n) / SR
+    S.add(E['batteryFull'] + 0.02, bp(noise(n), 1500, 7000) * np.exp(-tt * 14) * (0.6 + 0.4 * np.sin(2 * np.pi * 90 * tt)), 0.12, 0.3)
     # ---------- heavy panting (scene 5) ----------
     pant_t = E['tiredStart'] + 0.4
     while pant_t < E['eyesWide']:
@@ -555,7 +557,11 @@ def sfx():
     n = int(0.3 * SR); tt = np.arange(n) / SR
     S.add(E['tvOn'], sine(15700, n) * 0.05 * np.exp(-tt * 3) + hp(noise(n), 2000) * np.exp(-tt * 40) * 0.6, 0.3, 0.3)  # TV on
     d = CRASH - E['tvOn']; n = int(d * SR); tt = np.arange(n) / SR
-    tvaudio = bp(sum(sine(midi(m), n) * (0.5 + 0.5 * np.sin(2 * np.pi * (2 + j) * tt)) for j, m in enumerate([72, 76, 79])), 400, 3000)
+    # TV audio: muffled chatter from a small speaker (speech-like, no music)
+    f0 = 150 + 40 * np.interp(tt, np.arange(0, d + 0.2, 0.18), rng.uniform(-1, 1, len(np.arange(0, d + 0.2, 0.18))))
+    syl = np.clip(np.sin(2 * np.pi * 4.3 * tt + 2 * np.sin(2 * np.pi * 0.9 * tt)), 0, 1) ** 0.6
+    tvaudio = bp(formant_voice(f0, d, 'e', vib=0.0, breath=0.6), 350, 3200) * syl
+    tvaudio = tvaudio / (np.abs(tvaudio).max() + 1e-9) * 0.5
     S.add(E['tvOn'] + 0.05, tvaudio, 0.03, 0.3)
     # battery draining whine (full -> empty in one second)
     d = E['drainEnd'] - E['drainStart']; n = int(d * SR); tt = np.arange(n) / SR
