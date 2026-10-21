@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FONT = ROOT / "fonts" / "FredokaReel-Bold.ttf"
 W, H = 1080, 1920
 CX, CY = 530, int(H * 0.40)       # nudged a little left of centre, away from the IG buttons
-SIZE = 124
+SIZE = 138
 MAX_W = 760                         # keeps words inside x = 150..910
 
 
@@ -36,7 +36,7 @@ def main():
         "ScaledBorderAndShadow: yes", "YCbCr Matrix: TV.709", "",
         "[V4+ Styles]",
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-        f"Style: Word,Fredoka Reel,{SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,1,0,1,10,0,5,0,0,0,1",
+        f"Style: Word,Fredoka Reel,{SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,1,0,1,11,0,5,0,0,0,1",
         f"Style: Shadow,Fredoka Reel,{SIZE},&H50000000,&H50000000,&H50000000,&H00000000,-1,0,0,0,100,100,1,0,1,16,0,5,0,0,0,1",
         "", "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",

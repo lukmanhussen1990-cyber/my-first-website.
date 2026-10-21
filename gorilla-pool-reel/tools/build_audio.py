@@ -64,6 +64,9 @@ class Bus:
         if i >= N: return
         if i < 0: x = x[-i:]; i = 0
         x = x[: N - i] * gain
+        k = min(len(x), int(0.006 * SR))
+        if k > 1:  # never end a sound with a click
+            x = x.copy(); x[-k:] *= np.linspace(1, 0, k)
         l, r = np.cos((pan + 1) * np.pi / 4), np.sin((pan + 1) * np.pi / 4)
         self.L[i:i + len(x)] += x * l * 1.41421
         self.R[i:i + len(x)] += x * r * 1.41421
@@ -441,6 +444,31 @@ def crickets(d):
     return lp(chirp, 6000) * 0.12
 
 
+def bird(seed):
+    g = np.random.default_rng(seed)
+    d = g.uniform(0.08, 0.16); t = T(d)
+    f = g.uniform(3200, 4800) * (1 + g.uniform(-0.25, 0.3) * t / d) * (1 + 0.04 * np.sin(2 * np.pi * g.uniform(25, 45) * t))
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / d) ** 2
+
+
+def ambience(t_end):
+    """quiet sunset bed: soft breeze + occasional birdsong (stops with the music)"""
+    bus = Bus()
+    d = t_end
+    t = T(d)
+    breeze = lp(noise(d, 77), 500) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.07 * t + 1.0))
+    bus.add(breeze * np.minimum(1, t / 1.0), 0.0, 0.05, pan=0.0)
+    g = np.random.default_rng(91)
+    ts = 1.0
+    while ts < t_end - 0.5:
+        n = g.integers(2, 5)
+        pan = g.uniform(-0.8, 0.8)
+        for k in range(n):
+            bus.add(bird(int(ts * 100) + k), ts + k * g.uniform(0.12, 0.2), g.uniform(0.03, 0.06), pan=pan)
+        ts += g.uniform(1.6, 3.5)
+    return bus
+
+
 def build_sfx(c):
     b = c["beats"]; bus = Bus()
     for i, ts in enumerate(b["stomps"]):
@@ -518,7 +546,8 @@ def build_sfx(c):
     while ts < DUR - 0.2:
         bus.add(drip(), ts, g.uniform(0.08, 0.18), pan=-0.4); ts += g.uniform(0.25, 0.6)
     bus.add(crickets(DUR - b["impact"] - 0.5), b["impact"] + 0.5, 0.25)
-    return bus.stereo()
+    amb = ambience(b["impact"])
+    return bus.stereo() + amb.stereo()
 
 
 # ---------------------------------------------------------------- voice placement

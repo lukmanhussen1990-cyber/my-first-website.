@@ -284,6 +284,10 @@ export function direct(t, R) {
       gp = mixP(gp, { lPitch: -0.55, lRoll: 0.0, lElbow: -1.45, lYaw: 0.3, rPitch: -0.1, rRoll: 0.3, rElbow: -0.3 }, 1);
       gp.lElbow -= biteK * 0.6; gp.lPitch -= biteK * 0.45;
       gp.headYaw = -0.25; gp.headPitch = 0.12;
+      // bends down to the banana pile for another one (keeps his face clear of the long first word)
+      const dip = pulse(t, 35.8, 37.3, 0.32);
+      gp = mixP(gp, { lean: 1.0, twist: -0.3, rPitch: -1.05, rRoll: 0.1, rElbow: -0.25, headPitch: -0.3, headYaw: -0.1,
+                      lLHip: -0.55, rLHip: -0.55, lLKnee: 0.6, rLKnee: 0.6, bob: -0.14 }, dip);
       const sly = smooth(seg(t, 40.2, 40.6));
       gface = { ...gface, brow: lerp(0.4, -0.2, sly), mouth: lerp(0.8, 0.6, sly), pout: 0, squint: lerp(0.35, 0.55, sly), open: biteK * 0.5, lookX: lerp(-0.6, -0.9, sly), lookY: 0.15 };
       gp.headRoll = sly * 0.12;
