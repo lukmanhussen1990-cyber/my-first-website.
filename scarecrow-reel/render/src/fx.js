@@ -75,7 +75,7 @@ export class FX {
   }
 
   buildCalendar() {
-    const grp = new THREE.Group(); grp.position.set(-0.37, 0.8, -2.6); grp.rotation.set(0.1, 0.25, -0.05);
+    const grp = new THREE.Group(); grp.position.set(-0.42, 0.88, -2.6); grp.rotation.set(0.1, 0.25, -0.05);
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.66, 0.03), new THREE.MeshStandardMaterial({ color: 0x6b4a2e, roughness: 0.7 })); back.position.set(0, -0.05, -0.02); grp.add(back);
     const header = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.14, 0.04), new THREE.MeshStandardMaterial({ color: 0xd8432b, roughness: 0.5 })); header.position.set(0, 0.25, 0.0); grp.add(header);
     for (const x of [-0.17, 0.17]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.009, 8, 16), M.metal); ring.position.set(x, 0.32, 0.01); grp.add(ring); }
@@ -200,10 +200,10 @@ export class FX {
     let ri = 0;
     for (const e of this.ringEvents) {
       if (t < e.t0 || t > e.t0 + e.dur || ri >= this.rings.length) continue;
-      const u = (t - e.t0) / e.dur; const m = this.rings[ri++]; m.visible = true;
+      const u = clamp((t - e.t0) / e.dur); const m = this.rings[ri++]; m.visible = true;
       m.position.copy(resolve(e.at, t)); m.quaternion.copy(camQ);
       const rad = lerp(e.r0, e.r1, easeOut(u)); m.scale.set(rad, rad, rad * e.width);
-      m.material.color.copy(e.color).multiplyScalar(e.intensity * Math.pow(1 - u, 1.3));
+      m.material.color.copy(e.color).multiplyScalar(e.intensity * Math.pow(Math.max(0, 1 - u), 1.3));
     }
     for (let k = ri; k < this.rings.length; k++) this.rings[k].visible = false;
 
@@ -244,7 +244,7 @@ export class FX {
     if (cal && t > cal.t0 - 0.01 && t < cal.t1 + 0.4) {
       C.grp.visible = true;
       const s = pop(t, cal.t0, 0.35) * (1 - easeOutBack(seg(t, cal.t1, cal.t1 + 0.3)) * 1.0);
-      C.grp.scale.setScalar(Math.max(0.0001, s * 0.8));
+      C.grp.scale.setScalar(Math.max(0.0001, s * 0.64));
       C.pages.forEach((pg, k) => {
         const ft = cal.flips[k]; const fu = ft === undefined ? 0 : smooth(seg(t, ft, ft + 0.28));
         pg.rotation.x = -fu * Math.PI * 0.95; pg.visible = k >= cal.first && k <= cal.first + cal.flips.length;

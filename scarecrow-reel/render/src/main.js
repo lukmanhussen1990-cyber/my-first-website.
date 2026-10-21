@@ -75,6 +75,7 @@ async function init() {
     const t = frame / FPS;
     U.uTime.value = t;
     director.update(t);
+    if (window.__post) window.__post(t, director, scene);
     composer.render();
     const gl = renderer.getContext(); const px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // sync
     return true;

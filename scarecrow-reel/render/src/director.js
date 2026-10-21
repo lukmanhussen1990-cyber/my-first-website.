@@ -198,21 +198,21 @@ export class Director {
     }
     // ---------------- scene 2: watch crows, dig, motor
     if (t < 14.2) {
-      base(FAR, 0.1, lerp(0.5, 1.05, smooth(seg(t, 10.5, 10.75)) - smooth(seg(t, 12.05, 12.4)) * 0.6)); stand();
+      base(FAR, 0.1, lerp(0.45, 1.05, smooth(seg(t, 10.5, 10.75)) - smooth(seg(t, 12.05, 12.4)) * 0.6)); stand(); handsHips();
       p.shovel = this.restShovel(local);
-      lookAt(t < 10.4 ? this.crowHead(0) : V(0, 0, ZC), 0.9);
+      lookAt(t < 8.0 ? V(-1, 2.8, -3) : t < 10.4 ? this.crowHead(0) : V(0, 0, ZC), 0.9);
       if (t > 9.3 && t < 10.45) { p.mouth = 'flat'; p.brow = -0.5; p.squint = 0.3; }
       if (t >= 10.75 && t < 12.05) {
         const sh = t < 11.42 ? this.digShovel(t - 10.8, tip0, pileAt, fF) : this.fillShovel(clamp((t - 11.42) / 0.6) * 0.5, pileAt, tip0, fF);
         p.shovel = sh; K.setPose(p); grip(); digStance(); lookAt(V(0, -0.2, ZC));
       }
-      if (t >= 12.4) { lookAt(scareHead(), 0.8); p.mouth = t > 12.7 ? 'grin' : 'o'; if (t > 12.8) handsHips(); }
+      if (t >= 12.4) { lookAt(scareHead(), 0.8); p.mouth = t > 12.7 ? 'grin' : 'o'; }
       return p;
     }
     // ---------------- scene 3: crows ride the pattern; random chip
-    if (t < 21.2) {
+    if (t < 20.95) {
       const kneel = window01(t, 17.75, 18.85, 0.25);
-      base(lerp(FAR, -0.86, smooth(seg(t, 17.45, 17.75)) - smooth(seg(t, 18.85, 19.15))), 0.1, lerp(0.5, 0.85, kneel)); stand();
+      base(lerp(FAR, -0.86, smooth(seg(t, 17.45, 17.75)) - smooth(seg(t, 18.85, 19.15))), 0.1, lerp(lerp(0.72, 0.5, smooth(seg(t, 14.2, 14.8))), 0.85, kneel)); stand();
       if ((t > 17.45 && t < 17.75) || (t > 18.85 && t < 19.15)) this.walkLegs(p, t);
       p.shovel = this.restShovel(local);
       lookAt(t < 17.6 ? this.crowHead(1) : t < 18.9 ? V(-0.66, -0.4, ZC) : scareHead(), 0.85);
@@ -232,8 +232,11 @@ export class Director {
     }
     // ---------------- scene 4: night, throw eyes + sensor
     if (t < 28.4) {
-      base(1.0, 0.12, -0.5); stand(); handsHips();
-      lookAt(t < 23.9 ? this.crowHead(0) : t < 25.5 ? scareHead() : this.crowHead(0), 0.9);
+      const wk = smooth(seg(t, 20.95, 21.8));
+      base(lerp(FAR, 1.0, wk), lerp(0.1, 0.12, wk), t < 21.8 ? lerp(0.5, Math.PI / 2, smooth(seg(t, 20.95, 21.15))) : lerp(Math.PI / 2, -0.5, smooth(seg(t, 21.8, 22.1)))); stand();
+      if (t > 20.95 && t < 21.8) this.walkLegs(p, t, 1.2);
+      handsHips();
+      lookAt(t < 21.9 ? V(3, 1.2, 0.1) : t < 23.9 ? this.crowHead(0) : t < 25.5 ? scareHead() : this.crowHead(0), 0.9);
       p.mouth = t < 23.6 ? 'flat' : 'smile'; p.squint = t < 23.6 ? 0.3 : 0; p.brow = t < 23.6 ? -0.5 : 0;
       for (const k of ['eyeL', 'sensor']) { const th = this.throws[k]; const w = window01(t, th.t0 - 0.28, th.t0 + 0.15, 0.08); if (w > 0) { p.reachR = local(0.2, lerp(0.7, 1.38, w), lerp(-0.05, 0.25, seg(t, th.t0 - 0.28, th.t0 + 0.05))); p.poleR = dirL(1, -0.5, 0); } }
       if (t > 25.6 && t < 26.6) { p.mouth = 'grin'; p.wide = 0.3; }
@@ -634,8 +637,8 @@ export class Director {
       [29.55, MAIN], [30.35, waveC], [30.95, waveC], [31.9, MAIN],
       [35.4, MAIN], [37.5, C([-0.15, 1.4, 4.8], [-0.12, 0.62, 0])],
       [41.0, wide], [42.4, wide],
-      [44.6, C([0.06, 2.1, 2.85], [0.03, 1.58, 0], 46)], [45.55, C([0.04, 2.1, 2.75], [0.03, 1.58, 0], 46)], [46.4, C([0, 1.62, 3.5], [0, 1.25, 0])], [47.35, C([0, 1.62, 3.4], [0, 1.25, 0])],
-      [48.25, C([-0.38, 1.25, 4.2], [-0.34, 0.51, 0])], [DURATION, C([-0.38, 1.25, 4.05], [-0.34, 0.51, 0])],
+      [44.6, C([0.06, 2.1, 2.85], [0.03, 1.58, 0], 46)], [45.55, C([0.04, 2.1, 2.75], [0.03, 1.58, 0], 46)], [46.4, C([0, 1.62, 3.5], [0, 1.25, 0])], [46.95, C([0, 1.62, 3.42], [0, 1.25, 0])],
+      [48.3, C([-0.38, 1.25, 4.2], [-0.34, 0.51, 0])], [DURATION, C([-0.38, 1.25, 4.05], [-0.34, 0.51, 0])],
     ];
     let a = keys[0], b = keys[keys.length - 1];
     for (let k = 0; k < keys.length - 1; k++) if (t >= keys[k][0] && t <= keys[k + 1][0]) { a = keys[k]; b = keys[k + 1]; break; }
