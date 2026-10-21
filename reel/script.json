@@ -1,0 +1,94 @@
+{
+  "_comment": "Voiceover script. Text here is the exact spelling used for the subtitles. Edit voices below to swap who speaks; run ./rebuild_with_elevenlabs.sh (or ./rebuild_audio.sh) afterwards.",
+  "lines": [
+    {
+      "id": "01_narrator",
+      "speaker": "narrator",
+      "scene": 1,
+      "text": "If you dig a tunnel under the entire Great Wall of China, you have the world's longest subway. Sort of."
+    },
+    {
+      "id": "02_narrator",
+      "speaker": "narrator",
+      "scene": 2,
+      "text": "But the mountains are solid rock. So you bring a giant tunnel-boring machine, and a bulldozer to clear the mess."
+    },
+    {
+      "id": "03_narrator",
+      "speaker": "narrator",
+      "scene": 3,
+      "text": "But the tunnel caves in behind it. So the machine places concrete rings as it goes."
+    },
+    {
+      "id": "04_narrator",
+      "speaker": "narrator",
+      "scene": 4,
+      "text": "But the wall goes up and down steep mountains, and trains can't climb that. So you dig deep under the peaks with gentle slopes."
+    },
+    {
+      "id": "05_narrator",
+      "speaker": "narrator",
+      "scene": 5,
+      "text": "But the Great Wall is over twenty-one thousand kilometers long. So you add a snack car, beds and a tiny cinema."
+    },
+    {
+      "id": "06_narrator",
+      "speaker": "narrator",
+      "scene": 6,
+      "text": "Congratulations, you built the world's longest subway."
+    },
+    {
+      "id": "07_john",
+      "speaker": "john",
+      "scene": 7,
+      "text": "Is this... my stop?"
+    }
+  ],
+  "voices": {
+    "narrator": {
+      "description": "Calm, friendly, a little playful, quick pace, neutral accent.",
+      "elevenlabs": {
+        "voice_id": "N2MNNfQ4izkc8hqG3xMa",
+        "voice_name": "Elena Wren - Friendly, warm and kind, with neutral accent (library voice)",
+        "fallback_voice_id": "JBFqnCBsd6RMkjVDRZzb",
+        "fallback_voice_name": "George - Warm, Captivating Storyteller (premade)",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.45, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": true, "speed": 1.08 }
+      },
+      "local": {
+        "engine": "kokoro",
+        "kokoro_voice": "af_heart",
+        "speed": 1.12,
+        "piper_model": "en_US-lessac-high",
+        "espeak_voice": "en-us+f3"
+      }
+    },
+    "john": {
+      "description": "John, very old: slow, shaky voice.",
+      "elevenlabs": {
+        "voice_id": "RZbjJyfi4xuKalm0NLb5",
+        "voice_name": "The Lesser Poet (library voice, a real 81-year-old)",
+        "fallback_voice_id": "pqHfZKP75CvOlQylNhV4",
+        "fallback_voice_name": "Bill - Wise, Mature, Balanced (premade, old)",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.25, "similarity_boost": 0.75, "style": 0.5, "use_speaker_boost": true, "speed": 0.8 },
+        "old_man_fx": false
+      },
+      "local": {
+        "engine": "kokoro",
+        "kokoro_voice": "am_michael",
+        "speed": 0.85,
+        "piper_model": "en_US-ryan-high",
+        "espeak_voice": "en-us+m7",
+        "old_man_fx": true,
+        "pitch_semitones": -2.0,
+        "tempo": 0.85,
+        "tremolo_hz": 6.0,
+        "tremolo_depth": 0.25,
+        "vibrato_hz": 5.5,
+        "vibrato_depth": 0.18,
+        "pause_after_ellipsis": 0.6
+      }
+    }
+  }
+}

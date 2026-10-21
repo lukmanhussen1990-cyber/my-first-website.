@@ -1,0 +1,14 @@
+{
+  "name": "great-wall-subway-reel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vertical 3D animated reel rendered frame by frame with Three.js in headless Chromium",
+  "scripts": {
+    "render": "node tools/render_frames.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.56.1",
+    "three": "^0.180.0"
+  }
+}
