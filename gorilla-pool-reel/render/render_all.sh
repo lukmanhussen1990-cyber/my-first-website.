@@ -13,6 +13,6 @@ ls "$OUT"/seg_*.mp4 | sort | sed "s/^/file '/; s/\$/'/" > "$OUT/list.txt"
 ffmpeg -y -loglevel error -f concat -safe 0 -i "$OUT/list.txt" -c copy ../output/video_master.mp4
 echo "joined -> output/video_master.mp4"
 # lighter copy used by export (and small enough to keep in git)
-ffmpeg -y -loglevel error -i ../output/video_master.mp4 -c:v libx264 -preset slow -crf 15 -tune animation -pix_fmt yuv420p \
+ffmpeg -y -loglevel error -i ../output/video_master.mp4 -c:v libx264 -preset slow -crf 17 -maxrate 14M -bufsize 28M -tune animation -pix_fmt yuv420p \
   -color_primaries bt709 -color_trc bt709 -colorspace bt709 -movflags +faststart ../output/video_clean.mp4
 echo "wrote output/video_clean.mp4"

@@ -33,7 +33,7 @@ def main():
         "-i", str(src), "-i", str(mix),
         "-map", "0:v:0", "-map", "1:a:0",
         "-vf", vf, "-r", "30",
-        "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-profile:v", "high", "-level", "4.2",
+        "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "12M", "-bufsize", "24M", "-profile:v", "high", "-level", "4.2",
         "-pix_fmt", "yuv420p", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
         "-af", af,
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
