@@ -184,9 +184,8 @@ body {
 .stats dt { color: var(--muted); }
 .stats dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* Overlay buttons share one minimum width; the primary button sits lower. */
+/* Overlay buttons share one minimum width. Their spacing comes from the 12px rule above, so injected buttons match. */
 .overlay-card .btn { min-width: 200px; }
-#overlay-button { margin-top: 18px; }
 
 /* From 720px: one HUD row (title, goal and count, score and buttons), then progress and stages. */
 @media (min-width: 720px) {
