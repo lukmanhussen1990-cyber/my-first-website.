@@ -108,14 +108,16 @@ export function createTimeline(ctx) {
     { t: 25.4, pos: P(64, 3.5, 47), look: P(68, 0.5, -2), fov: 40 },
     { t: 28.0, pos: P(66, 4.0, 48), look: P(70, 0.5, -2), fov: 40 },
     { t: 29.9, pos: P(85, 34, 118), look: P(190, 6, -20), fov: 40 },
-    { t: 31.2, pos: P(-12, 50, 116), look: P(215, 2, -32), fov: 40 },
-    { t: 32.0, pos: P(19, 8.6, 10.5), look: P(-10, 3.2, -2.5), fov: 40 },
+    { t: 31.0, pos: P(-12, 50, 116), look: P(215, 2, -32), fov: 40 },
+    { t: 31.65, pos: P(10, 21, 42), look: P(0, 4, -3), fov: 40 },
+    { t: 32.15, pos: P(19, 8.6, 10.5), look: P(-10, 3.2, -2.5), fov: 40 },
     { t: 33.8, pos: P(19.5, 8.4, 11.0), look: P(-9, 3.0, -2.5), fov: 40 },
     { t: 34.7, pos: P(23, 8.0, 14.0), look: P(3.0, 2.6, -2.4), fov: 40 },
-    { t: 35.5, pos: P(23, 7.8, 14.5), look: P(4.0, 2.5, -2.4), fov: 40 },
-    { t: 36.4, pos: P(-30, 26, 64), look: P(70, 1, -8), fov: 40 },
-    { t: 37.0, pos: P(-31, 25, 62), look: P(68, 1, -8), fov: 40 },
-    { t: 37.4, pos: P(-27, 6.6, 18), look: P(-47, 4.9, -4), fov: 40 },
+    { t: 35.4, pos: P(23, 7.8, 14.5), look: P(4.0, 2.5, -2.4), fov: 40 },
+    { t: 36.3, pos: P(-24, 20, 52), look: P(60, 1, -8), fov: 40 },
+    { t: 36.9, pos: P(-26, 19, 50), look: P(58, 1, -8), fov: 40 },
+    { t: 37.3, pos: P(-31, 11, 31), look: P(-42, 3.8, -4), fov: 40 },
+    { t: 37.7, pos: P(-27, 6.6, 18), look: P(-47, 4.9, -4), fov: 40 },
     { t: 38.5, pos: P(-26, 6.4, 17.5), look: P(-46, 4.8, -4), fov: 40 },
     { t: 39.1, pos: P(-4, 5.0, 18), look: P(14, 2.8, -1), fov: 40, ease: 'inOutCubic' },
     { t: 39.4, pos: P(8, 4.4, 14), look: P(20, 2.4, -1.2), fov: 40, ease: 'inOut' },
@@ -434,7 +436,7 @@ export function createTimeline(ctx) {
 
     // ============================================================ headlights / glow
     {
-      const flash = [37.6, 37.85, 38.1].reduce((a, ft) => Math.max(a, Math.exp(-Math.pow((t - ft) / 0.07, 2))), 0);
+      const flash = [37.8, 38.05, 38.3].reduce((a, ft) => Math.max(a, Math.exp(-Math.pow((t - ft) / 0.07, 2))), 0);
       const base = t < 31 ? 1.3 : 2.0;
       MAT.head.emissiveIntensity = base + flash * 45;
       world.dusk.lanterns.emissiveIntensity = smoothstep(33, 38, t) * 2.2;

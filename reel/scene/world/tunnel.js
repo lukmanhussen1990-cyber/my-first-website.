@@ -344,13 +344,6 @@ function buildStation(concrete, rockMat) {
   bench.position.set(x0 + 4.5, platY, 2.3); bench.traverse((m) => { m.castShadow = true; }); g.add(bench);
   const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.25, 0.6, 16), std({ color: 0xb5643c, roughness: 0.7 }, 'pot')); pot.position.set(x1 - 3.5, platY + 0.3, 2.4); g.add(pot);
   const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 2), std({ color: 0x3f7d36, roughness: 0.8 }, 'bush')); bush.position.set(x1 - 3.5, platY + 0.95, 2.4); g.add(bush);
-  // a couple of lamp posts on the platform
-  const postMat = std({ color: 0x2b2b30, metalness: 0.7, roughness: 0.35 }, 'post');
-  const globeMat = glowMaterial('#ffe6bf', 2.2, 'globe');
-  for (const px of [x0 + 1.4, x1 - 1.4]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.6, 10), postMat); post.position.set(px, platY + 1.3, 2.9); post.castShadow = true; g.add(post);
-    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), globeMat); globe.position.set(px, platY + 2.7, 2.9); g.add(globe);
-  }
   g.traverse((m) => { if (m.isMesh) m.receiveShadow = true; });
   return { group: g, platY, fy, clockHands: [hh, mh] };
 }
