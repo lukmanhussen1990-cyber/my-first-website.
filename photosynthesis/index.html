@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sun to Sugar: a photosynthesis game</title>
+  <meta name="description" content="Sun to Sugar is a short browser game about photosynthesis. Catch sunlight, split water, make energy and fix carbon into sugar.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23ffd166'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <noscript><p class="noscript">This game needs JavaScript. Turn it on and reload the page to play.</p></noscript>
+  <h1 class="sr-only">Sun to Sugar</h1>
+
+  <main class="game">
+    <header class="hud">
+      <div class="hud-title">
+        <p id="hud-level" class="hud-level">Level 1 of 4</p>
+        <p id="hud-name" class="hud-name">Catch the Light</p>
+      </div>
+
+      <div class="hud-mid">
+        <p id="hud-goal">Capture 12 photons</p>
+        <p id="hud-count">0 / 12</p>
+        <p id="hud-stock" hidden>ATP 0 · NADPH 0</p>
+      </div>
+
+      <div class="hud-meta">
+        <p class="hud-score">Score <span id="hud-score">0</span></p>
+        <button id="btn-restart" class="btn btn-ghost" type="button">Restart</button>
+      </div>
+
+      <div id="hud-progress" class="progress" role="progressbar" aria-label="Level progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="hud-progress-fill" class="progress-fill"></div>
+      </div>
+
+      <ol id="hud-stages" class="stages"></ol>
+      <p id="hud-hint" class="hud-hint">Tap the falling photons.</p>
+    </header>
+
+    <div class="scene-wrap">
+      <canvas id="scene" role="img" aria-label="Animated cross-section of a leaf showing photosynthesis"></canvas>
+
+      <section id="overlay" class="overlay" aria-labelledby="overlay-title">
+        <div class="overlay-card">
+          <p id="overlay-eyebrow" class="overlay-eyebrow">A photosynthesis game</p>
+          <h2 id="overlay-title">Sun to Sugar</h2>
+          <p id="overlay-equation" class="overlay-equation" hidden></p>
+          <p id="overlay-text"></p>
+          <p id="overlay-goal" class="overlay-goal" hidden></p>
+          <p id="overlay-fact" class="overlay-fact" hidden></p>
+          <p id="overlay-stars" class="overlay-stars" hidden></p>
+          <dl id="overlay-stats" class="stats" hidden></dl>
+          <button id="overlay-button" class="btn btn-primary" type="button">Play</button>
+        </div>
+      </section>
+    </div>
+
+    <p id="status" class="sr-only" aria-live="polite"></p>
+  </main>
+
+  <script src="content.js"></script>
+  <script src="render.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
