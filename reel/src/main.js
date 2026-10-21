@@ -314,8 +314,9 @@ function makeYardFence(x0, x1, zb, zf) {
 // keys: [t, pos, target, fov, shift]; shift moves the image down so the subject (target) sits below the subtitle band
 const CAM = [
   [0.0, [0.75, 3.1, 13.0], [0.45, 1.15, -2.0], 45, 0.12],
-  [1.6, [0.0, 1.75, 5.8], [-1.75, 0.95, -0.85], 38, 0.2],
-  [3.3, [0.6, 0.62, 2.7], [-1.35, 1.3, -0.9], 36, 0.22],
+  [1.6, [0.0, 1.75, 5.8], [-1.75, 1.22, -0.85], 38, 0.24],
+  [3.3, [0.6, 0.62, 2.7], [-1.35, 1.4, -0.9], 36, 0.23],
+  [4.3, [0.85, 0.9, 3.85], [-1.1, 1.3, -0.95], 37, 0.22],
   [4.9, [1.1, 1.15, 5.0], [-0.7, 0.95, -1.0], 40, 0.2],
   [6.6, [2.8, 1.45, 6.4], [2.55, 0.95, -1.2], 40, 0.2],
   [8.3, [1.5, 1.45, 5.8], [-0.3, 0.85, -1.0], 38, 0.2],
@@ -346,7 +347,8 @@ const CAM = [
   [45.1, [1.5, 3.9, 10.8], [0.9, 0.2, -3.5], 46, 0.04],
   [46.4, [0.6, 2.8, 8.2], [-0.4, 0.8, -2.0], 42, 0.12],
   [48.0, [-3.4, 2.0, 2.8], [-1.4, 1.35, -1.2], 36, 0.2],
-  [49.6, [-3.7, 1.6, 3.0], [-1.95, 0.8, -1.6], 38, 0.2],
+  [48.7, [-3.55, 1.85, 2.9], [-1.55, 1.55, -1.3], 37, 0.22],
+  [49.6, [-3.7, 1.6, 3.0], [-1.95, 1.1, -1.6], 38, 0.22],
   [51.4, [-3.0, 1.9, 3.5], [-1.4, 1.4, -1.1], 38, 0.2],
   [53.0, [0.35, 0.62, 2.0], [-1.25, 1.3, -0.85], 32, 0.2],
   [55.6, [0.42, 0.66, 1.75], [-1.25, 1.33, -0.85], 30, 0.2],
@@ -1026,6 +1028,14 @@ window.APP = {
     let tot = 0, calls = 0; scene.traverse((m) => { if (m.isMesh) { calls++; } });
     rows.sort((a, b) => b[1] - a[1]);
     return { rows: rows.slice(0, 25), meshes: calls };
+  },
+  // screen positions (0..1, y from top) of John's head, band, and the wheel hub at time t (no rendering)
+  probe(t) {
+    update(t); camera.updateMatrixWorld();
+    const pr = (v) => { const q = v.clone().project(camera); return [+(q.x * 0.5 + 0.5).toFixed(3), +(0.5 - q.y * 0.5).toFixed(3)]; };
+    const J = A.john.J;
+    return { head: pr(J.head.getWorldPosition(new THREE.Vector3()).add(v3(0, 0.22, 0))), band: pr(J.band.getWorldPosition(new THREE.Vector3())),
+      hub: pr(v3(WHEEL.pos.x, WHEEL.pos.y, WHEEL.pos.z - 0.4)), face: pr(J.head.getWorldPosition(new THREE.Vector3()).add(v3(0.1, 0.2, 0.05))) };
   },
   async pixels() {
     const gl = renderer.getContext();

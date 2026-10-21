@@ -9,13 +9,14 @@ voice, subtitles, music and sound effects on top.
   python3 tools/export.py --out output/test.mp4
 
 Inputs
-  output/clean_plate_no_subs.mp4   3D render without subtitles/audio
+  output/clean_plate_no_subs.part1.mp4 + part2.mp4   3D render without subtitles/audio
+                                   (split in two so each file stays under GitHub's 100 MB limit)
   audio/stems/music.flac, sfx.flac code-synthesized music + effects
   voice/lines/line_XX.wav          narration, one file per script line
   voice/timings/line_XX.json       word timings for each line (seconds from the start of its wav)
   script/voiceover.json            the script (spelling, scene windows, anchor words)
 """
-import argparse, json, os, shutil, subprocess, sys, tempfile
+import argparse, glob, json, os, shutil, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 W, H = 1080, 1920
@@ -176,18 +177,32 @@ def mix_audio(voice, music, sfx, total, tmp):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--plate', default=os.path.join(ROOT, 'output/clean_plate_no_subs.mp4'))
+    ap.add_argument('--plate', default=None, help='subtitle-free render (default: output/clean_plate_no_subs.part*.mp4 joined)')
     ap.add_argument('--voice-dir', default=os.path.join(ROOT, 'voice'))
     ap.add_argument('--out', default=os.path.join(ROOT, 'output/john_powers_the_city.mp4'))
-    ap.add_argument('--crf', default='17')
+    ap.add_argument('--crf', default='19')
+    ap.add_argument('--maxrate', default='11M', help='bitrate cap so the Reel stays under ~100 MB')
     args = ap.parse_args()
     if shutil.which('ffmpeg') is None:
         raise SystemExit('ffmpeg not found')
     script = json.load(open(os.path.join(ROOT, 'script/voiceover.json')))
     metrics = json.load(open(os.path.join(ROOT, 'assets/fonts/FredokaReel-Bold.metrics.json')))
-    total = duration(args.plate)
-    print(f'plate: {args.plate} ({total:.2f}s)')
     with tempfile.TemporaryDirectory() as tmp:
+        if args.plate is None:
+            single = os.path.join(ROOT, 'output/clean_plate_no_subs.mp4')
+            parts = sorted(glob.glob(os.path.join(ROOT, 'output/clean_plate_no_subs.part*.mp4')))
+            if os.path.exists(single):
+                args.plate = single
+            elif parts:
+                lst = os.path.join(tmp, 'parts.txt')
+                with open(lst, 'w') as f:
+                    f.writelines(f"file '{p}'\n" for p in parts)
+                args.plate = os.path.join(tmp, 'plate.mp4')
+                run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lst, '-c', 'copy', args.plate])
+            else:
+                raise SystemExit('no clean plate found in output/ (render it with tools/render_all.sh + tools/make_plate.sh)')
+        total = duration(args.plate)
+        print(f'plate: {os.path.relpath(args.plate, ROOT) if args.plate.startswith(ROOT) else args.plate} ({total:.2f}s)')
         print('placing narration:')
         placed = place_lines(script, args.voice_dir)
         voice = build_voice_track(placed, total, tmp)
@@ -201,7 +216,8 @@ def main():
         vf = f"ass='{ass}':fontsdir='{fontsdir}'"
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
         run(['ffmpeg', '-y', '-loglevel', 'error', '-i', args.plate, '-i', mix, '-map', '0:v:0', '-map', '1:a:0', '-vf', vf,
-             '-c:v', 'libx264', '-preset', 'slow', '-crf', args.crf, '-profile:v', 'high', '-level', '4.2', '-pix_fmt', 'yuv420p', '-r', '30',
+             '-c:v', 'libx264', '-preset', 'slow', '-crf', args.crf, '-maxrate', args.maxrate, '-bufsize', '22M',
+             '-profile:v', 'high', '-level', '4.2', '-pix_fmt', 'yuv420p', '-r', '30', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
              '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', '-shortest', args.out])
         json.dump([{**{k: v for k, v in p.items() if k not in ('emphasis',)}, 'emphasis': sorted(p['emphasis'])} for p in placed],
                   open(os.path.join(ROOT, 'output/voice_placement.json'), 'w'), indent=1)
