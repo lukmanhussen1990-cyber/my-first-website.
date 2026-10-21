@@ -145,7 +145,7 @@ def main():
     vf = f"ass={BUILD / 'subs.ass'}:fontsdir={fontsdir},format=yuv420p"
     run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", video, "-i", BUILD / "mix.wav",
          "-filter_complex", f"[0:v]{vf}[v]", "-map", "[v]", "-map", "1:a",
-         "-c:v", "libx264", "-profile:v", "high", "-preset", "slow", "-crf", "17", "-r", "30", "-pix_fmt", "yuv420p",
+         "-c:v", "libx264", "-profile:v", "high", "-preset", "slow", "-crf", "21", "-maxrate", "12M", "-bufsize", "24M", "-r", "30", "-pix_fmt", "yuv420p",
          "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2", "-t", f"{dur}", "-movflags", "+faststart", a.out])
     shutil.copy(BUILD / "subs.ass", OUTDIR / "subtitles.ass")
     (OUTDIR / "voice_timings.json").write_text(json.dumps(plan, indent=1))
