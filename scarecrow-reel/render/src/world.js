@@ -48,9 +48,9 @@ export function buildWorld(scene) {
         vec3 d = normalize(vDir); float h = d.y;
         vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.22, h));
         col = mix(col, uZenith, smoothstep(0.18, 0.75, h));
-        col = mix(col, uHorizon * 0.8, smoothstep(0.0, -0.12, h));
+        col = mix(col, uHorizon * 0.32 + uZenith * 0.18, smoothstep(0.0, -0.3, h));
         float sd = max(dot(d, uSunDir), 0.0);
-        col += uGlow * (pow(sd, 6.0) * 0.55 + pow(sd, 40.0) * 0.6) * (1.0 - uNight);
+        col += uGlow * (pow(sd, 6.0) * 0.4 + pow(sd, 40.0) * 0.5) * (1.0 - uNight);
         // clouds: soft painted streaks
         vec2 cp = d.xz / max(h + 0.18, 0.05) * 0.9 + vec2(uTime * 0.006, 0.0);
         float c = fbm(cp * 1.3 + vec2(3.0, 7.0));

@@ -106,7 +106,7 @@ export function holeMaterial(material, mode) {
       float fillMask = 1.0 - smoothstep(-0.008, 0.008, dDist);
       if (fillMask > 0.0) {
         float n = vn(hp * 34.0) * 0.6 + vn(hp * 90.0) * 0.4;
-        vec3 fillCol = mix(vec3(0.11, 0.068, 0.04), vec3(0.2, 0.125, 0.075), n);
+        vec3 fillCol = mix(vec3(0.05, 0.028, 0.016), vec3(0.1, 0.058, 0.032), n);
         diffuseColor.rgb = mix(diffuseColor.rgb, fillCol, fillMask);
       }
       // dark rim around the open cavity

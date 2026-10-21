@@ -1,0 +1,10 @@
+# Python packages for voices, audio and the final export
+numpy
+scipy
+pillow
+# local text-to-speech fallback (only needed when ElevenLabs is not used)
+piper-tts
+onnx
+praat-parselmouth
+# optional: transcript check of the voice files (tools/make_voices.py --verify)
+faster-whisper

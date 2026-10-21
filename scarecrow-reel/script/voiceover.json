@@ -1,7 +1,10 @@
 {
   "_comment": "Voiceover script. 'text' is the exact wording used for the subtitles. 'eleven_prompt' is what is sent to ElevenLabs (audio tags in [brackets] steer delivery and are not spoken). 'start' is when the line begins in the video (seconds) and 'end_by' is the latest it may finish; longer takes are sped up slightly to fit.",
   "elevenlabs": {
-    "models": ["eleven_v3", "eleven_multilingual_v2"],
+    "models": [
+      "eleven_v3",
+      "eleven_multilingual_v2"
+    ],
     "output_format": "mp3_44100_128"
   },
   "voices": {
@@ -9,7 +12,12 @@
       "description": "Calm, friendly, a little playful, quick pace, neutral accent",
       "elevenlabs_voice_id": "N2MNNfQ4izkc8hqG3xMa",
       "elevenlabs_voice_name": "Elena Wren - Friendly, warm and kind, with neutral accent",
-      "elevenlabs_settings": {"stability": 0.5, "similarity_boost": 0.75, "style": 0.35, "speed": 1.08},
+      "elevenlabs_settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0.35,
+        "speed": 1.08
+      },
       "local_piper_model": "en_US-lessac-high",
       "local_length_scale": 0.86,
       "local_sentence_gap": 0.22
@@ -18,7 +26,12 @@
       "description": "About 10 years old, giving up, a little amused",
       "elevenlabs_voice_id": "EeQEodFZVtBkjtgK3HBc",
       "elevenlabs_voice_name": "Piku - Expressive Kid Character",
-      "elevenlabs_settings": {"stability": 0.45, "similarity_boost": 0.75, "style": 0.45, "speed": 1.0},
+      "elevenlabs_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.45,
+        "speed": 1.0
+      },
       "local_piper_model": "en_US-hfc_female-medium",
       "local_length_scale": 1.0,
       "local_sentence_gap": 0.1,
@@ -33,7 +46,7 @@
       "scene": 1,
       "text": "If you put a scarecrow in your garden, the crows stay away. Sort of.",
       "eleven_prompt": "[warmly] If you put a scarecrow in your garden, the crows stay away. [mischievously] Sort of.",
-      "start": 1.6,
+      "start": 2.3,
       "end_by": 7.2
     },
     {
@@ -42,7 +55,7 @@
       "scene": 2,
       "text": "But crows are smart, and they learn it never moves. So you add a motor that makes it spin.",
       "eleven_prompt": "[playfully] But crows are smart, and they learn it never moves. So you add a motor that makes it spin.",
-      "start": 7.9,
+      "start": 8.1,
       "end_by": 14.4
     },
     {
@@ -51,7 +64,7 @@
       "scene": 3,
       "text": "But they figure out the spinning pattern too. So you make it move at random times.",
       "eleven_prompt": "[playfully] But they figure out the spinning pattern too. So you make it move at random times.",
-      "start": 15.0,
+      "start": 15.3,
       "end_by": 21.3
     },
     {
@@ -60,8 +73,8 @@
       "scene": 4,
       "text": "But they start sneaking in at night. So you add glowing eyes and a motion sensor.",
       "eleven_prompt": "[mischievously] But they start sneaking in at night. [playfully] So you add glowing eyes and a motion sensor.",
-      "start": 22.2,
-      "end_by": 28.3
+      "start": 21.9,
+      "end_by": 28.0
     },
     {
       "id": "line05",
@@ -69,8 +82,8 @@
       "scene": 5,
       "text": "But soon they're not scared of anything. So you add a speaker that plays hawk sounds.",
       "eleven_prompt": "[playfully] But soon they're not scared of anything. So you add a speaker that plays hawk sounds.",
-      "start": 29.0,
-      "end_by": 35.3
+      "start": 28.4,
+      "end_by": 32.55
     },
     {
       "id": "line06",
@@ -88,7 +101,7 @@
       "text": "...Okay, you can stay.",
       "eleven_prompt": "[sighs] [amused] ...Okay, you can stay.",
       "start": 48.3,
-      "end_by": 50.6
+      "end_by": 50.4
     }
   ]
 }

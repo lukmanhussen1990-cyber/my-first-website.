@@ -46,7 +46,7 @@ export class FX {
     // --- sound rings (camera facing tori)
     this.rings = []; this.ringEvents = [];
     for (let k = 0; k < 14; k++) {
-      const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.035, 10, 64), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+      const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.022, 10, 64), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
       m.visible = false; m.renderOrder = 8; scene.add(m); this.rings.push(m);
     }
     // --- glyph sprites: ! ? notes
@@ -75,7 +75,7 @@ export class FX {
   }
 
   buildCalendar() {
-    const grp = new THREE.Group(); grp.position.set(-0.3, 0.6, -2.6); grp.rotation.set(0.12, 0.28, -0.06);
+    const grp = new THREE.Group(); grp.position.set(-0.37, 0.8, -2.6); grp.rotation.set(0.1, 0.25, -0.05);
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.66, 0.03), new THREE.MeshStandardMaterial({ color: 0x6b4a2e, roughness: 0.7 })); back.position.set(0, -0.05, -0.02); grp.add(back);
     const header = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.14, 0.04), new THREE.MeshStandardMaterial({ color: 0xd8432b, roughness: 0.5 })); header.position.set(0, 0.25, 0.0); grp.add(header);
     for (const x of [-0.17, 0.17]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.009, 8, 16), M.metal); ring.position.set(x, 0.32, 0.01); grp.add(ring); }
@@ -87,8 +87,9 @@ export class FX {
     const pages = [];
     for (let k = 0; k < 7; k++) {
       const piv = new THREE.Group(); piv.position.set(0, 0.18, 0.025 + 0.002 * (7 - k)); grp.add(piv);
-      const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.5), new THREE.MeshStandardMaterial({ map: pageTex(12 + k), roughness: 0.8, side: THREE.DoubleSide }));
+      const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.5), new THREE.MeshBasicMaterial({ map: pageTex(12 + k), color: 0xe8e2d6 }));
       pg.position.y = -0.25; piv.add(pg); pages.push(piv);
+      const backP = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.5), new THREE.MeshBasicMaterial({ color: 0xd9d1c0 })); backP.rotation.y = Math.PI; backP.position.set(0, -0.25, -0.001); piv.add(backP);
     }
     grp.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; o.renderOrder = 20; } });
     grp.visible = false;

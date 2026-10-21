@@ -89,6 +89,13 @@ async function video(a, b, workers, out) {
   console.log('wrote', out);
 }
 
-if (args.stills) await stills(String(args.stills).split(',').map(Number), path.resolve(args.out || path.join(root, 'build/stills')));
+if (args.cues) {
+  const srv = await serve(); const browser = await chromium.launch({ args: launchArgs });
+  const page = await openPage(browser, srv.address().port);
+  const cues = await page.evaluate(() => window.getCues());
+  fs.mkdirSync(path.dirname(path.resolve(args.cues)), { recursive: true });
+  fs.writeFileSync(path.resolve(args.cues), JSON.stringify(cues, null, 1)); console.log('wrote', args.cues, cues.cues.length, 'cues');
+  await browser.close(); srv.close();
+} else if (args.stills) await stills(String(args.stills).split(',').map(Number), path.resolve(args.out || path.join(root, 'build/stills')));
 else if (args.range) { const [a, b] = [Number(args.range), Number(process.argv[process.argv.indexOf('--range') + 2])]; await video(a, b, Number(args.workers || 3), path.resolve(args.out || path.join(root, 'build/video_clean.mp4'))); }
 else console.log('usage: --stills 0,10,20 | --range 0 1500 [--workers 3]');

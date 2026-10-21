@@ -66,7 +66,7 @@ export function buildScarecrow(scene) {
   // ---- arms (hinged at the shoulders)
   S.arms = [];
   for (const s of [-1, 1]) {
-    const piv = new THREE.Group(); piv.position.set(s * 0.13, ARM_Y, 0); body.add(piv);
+    const piv = new THREE.Group(); piv.position.set(s * 0.13, ARM_Y, 0); piv.scale.set(0.88, 1, 1); body.add(piv);
     const sg = new THREE.CylinderGeometry(0.068, 0.085, 0.6, 18, 10); sg.translate(0, 0.3, 0);
     lumpify(sg, 0.16, 9, 10 + s);
     sg.rotateZ(-s * Math.PI / 2);
@@ -118,7 +118,7 @@ export function buildScarecrow(scene) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.006, 8, 24), M.darkMetal); ring.rotation.x = Math.PI / 2; g.add(ring);
     g.scale.setScalar(0); return g;
   });
-  S.eyeLight = new THREE.PointLight(0xff2a1a, 0, 1.6, 2); S.eyeLight.position.set(0, 0.1, 0.35); head.add(S.eyeLight);
+  S.eyeLight = new THREE.PointLight(0xff2a1a, 0, 0.9, 2); S.eyeLight.position.set(0, 0.1, 0.35); head.add(S.eyeLight);
 
   // ---- hat
   const hat = S.hat = new THREE.Group(); hat.position.set(0, 0.12, -0.005); hat.rotation.set(-0.06, 0, 0.1); head.add(hat);
@@ -135,8 +135,9 @@ export function buildScarecrow(scene) {
 
   // ---- speaker on the hat brim (pops in, scene 5)
   const spk = S.speaker = new THREE.Group(); spk.position.set(0.2, 0.012, 0.11); spk.rotation.set(0.06, -0.35, -0.08); hat.add(spk);
-  const box = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.1, 0.085, 3, 0.015), M.plasticDark); box.position.y = 0.05; spk.add(box);
-  const grill = new THREE.Mesh(new THREE.CircleGeometry(0.034, 24), new THREE.MeshStandardMaterial({ color: 0x0d0d10, roughness: 0.8 })); grill.position.set(0, 0.05, 0.0435); spk.add(grill);
+  const box = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.1, 0.085, 3, 0.015), M.paintYellow); box.position.y = 0.05; spk.add(box);
+  const grillTex = labelTexture(128, 128, (c, w, h) => { c.fillStyle = '#111114'; c.fillRect(0, 0, w, h); c.fillStyle = '#3a3a44'; for (let y = 8; y < h; y += 12) for (let x = 8 + ((y / 12) % 2) * 6; x < w; x += 12) { c.beginPath(); c.arc(x, y, 3.2, 0, 7); c.fill(); } });
+  const grill = new THREE.Mesh(new THREE.CircleGeometry(0.036, 24), new THREE.MeshStandardMaterial({ map: grillTex, roughness: 0.7 })); grill.position.set(0, 0.05, 0.0435); spk.add(grill);
   const cone = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.006, 8, 28), M.metal); cone.position.set(0, 0.05, 0.044); spk.add(cone);
   S.speakerCone = cone;
   const btnM = new THREE.MeshPhysicalMaterial({ color: 0xe02626, roughness: 0.25, clearcoat: 1, emissive: 0xff3030, emissiveIntensity: 0 });
@@ -147,7 +148,7 @@ export function buildScarecrow(scene) {
   spk.scale.setScalar(0);
 
   // ---- nest on top of the hat (scene 7)
-  const nest = S.nest = new THREE.Group(); nest.position.set(0, 0.13, 0); hat.add(nest);
+  const nest = S.nest = new THREE.Group(); nest.position.set(0, 0.13, 0); hat.add(nest); const nestScale = 1.3;
   const nr = rng(77); const twigs = [];
   for (let k = 0; k < 150; k++) {
     const a = nr() * Math.PI * 2; const rad = 0.1 + nr() * 0.05; const h = nr() * 0.07; const L = 0.07 + nr() * 0.08;
@@ -269,7 +270,7 @@ export function buildScarecrow(scene) {
     rb.scale.setScalar(Math.max(0.0001, (p.randomBox ?? 0) * 1.8)); rb.visible = (p.randomBox ?? 0) > 0.001;
     chipMat.emissive.copy(S.chipTint).lerp(new THREE.Color(0xff4fd8), p.chipHue ?? 0); chipMat.emissiveIntensity = (p.chipGlow ?? 0) * 3.2;
     S.leds.forEach((l) => l.scale.setScalar(Math.max(0.0001, p.leds ?? 0)));
-    S.ledMat.emissiveIntensity = (p.eyeGlow ?? 0) * 9; S.eyeLight.intensity = (p.eyeGlow ?? 0) * 1.4;
+    S.ledMat.emissiveIntensity = Math.min(1.4, p.eyeGlow ?? 0) * 6.5; S.eyeLight.intensity = Math.min(1.2, p.eyeGlow ?? 0) * 0.3;
     sen.scale.setScalar(Math.max(0.0001, p.sensor ?? 0)); sen.visible = (p.sensor ?? 0) > 0.001;
     S.sensorLed.material.emissiveIntensity = (p.sensorLed ?? 0) * 6;
     coneMat.uniforms.uInt.value = p.cone ?? 0; coneMat.uniforms.uTime.value = p.time ?? 0; S.cone.visible = (p.cone ?? 0) > 0.002;
@@ -279,7 +280,7 @@ export function buildScarecrow(scene) {
     btnM.emissiveIntensity = (p.speakerBtnGlow ?? 0) * 1.5;
     sbtn.position.y = 0.105 - (p.speakerBtnPress ?? 0) * 0.008;
     cone.scale.setScalar(1 + (p.speakerThump ?? 0) * 0.25);
-    nest.scale.setScalar(Math.max(0.0001, p.nest ?? 0)); nest.visible = (p.nest ?? 0) > 0.001;
+    nest.scale.setScalar(Math.max(0.0001, (p.nest ?? 0) * nestScale)); nest.visible = (p.nest ?? 0) > 0.001;
     // energy sparks along wires
     const on = p.motorOn ?? 0; const t = p.time ?? 0;
     S.sparks.forEach((m, k) => {

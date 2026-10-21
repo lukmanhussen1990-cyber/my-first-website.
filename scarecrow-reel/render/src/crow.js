@@ -11,9 +11,9 @@ function mats() {
   const ft = T.feathers();
   [ft.map, ft.normalMap, ft.roughnessMap].forEach((t) => t.repeat.set(2.5, 2.5));
   MATS = {
-    feather: new THREE.MeshPhysicalMaterial({ color: 0x24252f, map: ft.map, normalMap: ft.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughness: 0.42, roughnessMap: ft.roughnessMap,
-      clearcoat: 0.6, clearcoatRoughness: 0.25, sheen: 1, sheenColor: new THREE.Color(0x5b72d8), sheenRoughness: 0.3 }),
-    wing: new THREE.MeshPhysicalMaterial({ color: 0x1f2029, roughness: 0.38, clearcoat: 0.5, clearcoatRoughness: 0.25, sheen: 1, sheenColor: new THREE.Color(0x3f58c0), sheenRoughness: 0.35, side: THREE.DoubleSide }),
+    feather: new THREE.MeshPhysicalMaterial({ color: 0x24252f, map: ft.map, normalMap: ft.normalMap, normalScale: new THREE.Vector2(1.0, 1.0), roughness: 0.5, roughnessMap: ft.roughnessMap,
+      clearcoat: 0.3, clearcoatRoughness: 0.35, sheen: 1, sheenColor: new THREE.Color(0x5b72d8), sheenRoughness: 0.35 }),
+    wing: new THREE.MeshPhysicalMaterial({ color: 0x23242e, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.25, sheen: 1, sheenColor: new THREE.Color(0x3f58c0), sheenRoughness: 0.35, side: THREE.DoubleSide }),
     eye: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.1, clearcoat: 1 }),
     iris: new THREE.MeshPhysicalMaterial({ color: 0x8a5a1a, roughness: 0.15, clearcoat: 1 }),
     pupil: new THREE.MeshPhysicalMaterial({ color: 0x050507, roughness: 0.08, clearcoat: 1 }),
@@ -53,7 +53,7 @@ export function buildCrow(scene, variant = 0) {
       p.setXYZ(i, x, y, z);
     } bodyG.computeVertexNormals(); }
   const body = new THREE.Mesh(bodyG, m.feather); body.position.set(0, 0.11, -0.02); body.rotation.x = -0.55; bodyP.add(body);
-  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.078, 24, 16), m.feather); chest.position.set(0, 0.18, 0.06); chest.scale.set(1.05, 1.1, 1); bodyP.add(chest);
+  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.078, 24, 16), m.feather); chest.position.set(0, 0.2, 0.07); chest.scale.set(1.0, 1.3, 1.0); chest.rotation.x = -0.5; bodyP.add(chest);
   // head
   const neck = C.neck = new THREE.Group(); neck.position.set(0, 0.235, 0.085); bodyP.add(neck);
   const head = C.head = new THREE.Group(); head.position.set(0, 0.055, 0.0); neck.add(head);

@@ -1,0 +1,1043 @@
+{
+ "duration": 50.5,
+ "fps": 30,
+ "scenes": [
+  {
+   "id": 1,
+   "t0": 0,
+   "t1": 7,
+   "name": "plant the scarecrow"
+  },
+  {
+   "id": 2,
+   "t0": 7,
+   "t1": 14.2,
+   "name": "motor"
+  },
+  {
+   "id": 3,
+   "t0": 14.2,
+   "t1": 21.2,
+   "name": "random chip"
+  },
+  {
+   "id": 4,
+   "t0": 21.2,
+   "t1": 28.4,
+   "name": "night: eyes + sensor"
+  },
+  {
+   "id": 5,
+   "t0": 28.4,
+   "t1": 35.4,
+   "name": "day: hawk speaker"
+  },
+  {
+   "id": 6,
+   "t0": 35.4,
+   "t1": 41.2,
+   "name": "admire + pull back"
+  },
+  {
+   "id": 7,
+   "t0": 41.2,
+   "t1": 50.5,
+   "name": "nest twist"
+  }
+ ],
+ "danceStart": 45.62,
+ "bpm": 124,
+ "musicStop": 45.35,
+ "cues": [
+  {
+   "t": 0.47,
+   "name": "dig",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 0.74,
+   "name": "dirt_toss",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 1.02,
+   "name": "dirt_land",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 1.09,
+   "name": "dig",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 1.36,
+   "name": "dirt_toss",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 1.64,
+   "name": "dirt_land",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 1.71,
+   "name": "dig",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 1.98,
+   "name": "dirt_toss",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 2.25,
+   "name": "pop",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 2.26,
+   "name": "dirt_land",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 2.78,
+   "name": "thud",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 3.25,
+   "name": "dirt_pour",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 3.72,
+   "name": "dirt_pour",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 3.75,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": -0.6
+  },
+  {
+   "t": 3.82,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": -0.6
+  },
+  {
+   "t": 3.89,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": 0.6
+  },
+  {
+   "t": 3.96,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": 0.6
+  },
+  {
+   "t": 4.03,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": 0.6
+  },
+  {
+   "t": 4.05,
+   "name": "pat",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 4.22,
+   "name": "land",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 4.29,
+   "name": "land",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 4.31,
+   "name": "pat",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 4.36,
+   "name": "land",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 4.43,
+   "name": "land",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 4.45,
+   "name": "caw",
+   "gain": 0.7,
+   "pan": -0.3
+  },
+  {
+   "t": 4.5,
+   "name": "land",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 4.62,
+   "name": "sting",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 4.68,
+   "name": "caw_panic",
+   "gain": 1,
+   "pan": -0.2
+  },
+  {
+   "t": 4.75,
+   "name": "caw_panic",
+   "gain": 0.9,
+   "pan": 0.3
+  },
+  {
+   "t": 5,
+   "name": "flap_big",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 5.1,
+   "name": "caw_panic",
+   "gain": 0.8,
+   "pan": 0.5
+  },
+  {
+   "t": 7.05,
+   "name": "pop_soft",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 7.45,
+   "name": "page_flip",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 7.75,
+   "name": "page_flip",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 8,
+   "name": "flap",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 8.05,
+   "name": "page_flip",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 8.55,
+   "name": "land",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 8.75,
+   "name": "caw",
+   "gain": 0.6,
+   "pan": 0.3
+  },
+  {
+   "t": 9.35,
+   "name": "peck",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 9.6,
+   "name": "peck",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 9.8,
+   "name": "caw_smug",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 10,
+   "name": "flap",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 10.3,
+   "name": "land",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 10.6,
+   "name": "munch",
+   "gain": 0.55,
+   "pan": -0.4
+  },
+  {
+   "t": 10.9,
+   "name": "munch",
+   "gain": 0.55,
+   "pan": 0.4
+  },
+  {
+   "t": 10.97,
+   "name": "dig",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 11,
+   "name": "dirt_toss",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 11.2,
+   "name": "munch",
+   "gain": 0.55,
+   "pan": -0.4
+  },
+  {
+   "t": 11.28,
+   "name": "clank",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 11.48,
+   "name": "clank_small",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 11.5,
+   "name": "munch",
+   "gain": 0.55,
+   "pan": 0.4
+  },
+  {
+   "t": 11.6,
+   "name": "zip",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 11.78,
+   "name": "dirt_pour",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 11.8,
+   "name": "munch",
+   "gain": 0.55,
+   "pan": -0.4
+  },
+  {
+   "t": 12.03,
+   "name": "pat",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 12.1,
+   "name": "munch",
+   "gain": 0.55,
+   "pan": 0.4
+  },
+  {
+   "t": 12.42,
+   "name": "motor_start",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 12.62,
+   "name": "caw_panic",
+   "gain": 1,
+   "pan": -0.4
+  },
+  {
+   "t": 12.68,
+   "name": "flap_big",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 12.7,
+   "name": "caw_panic",
+   "gain": 0.9,
+   "pan": 0.4
+  },
+  {
+   "t": 12.8,
+   "name": "whoosh",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 13.75,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 13.8,
+   "name": "motor_burst",
+   "gain": 0.75,
+   "pan": 0
+  },
+  {
+   "t": 13.85,
+   "name": "whoosh",
+   "gain": 0.45,
+   "pan": 0
+  },
+  {
+   "t": 15.2,
+   "name": "motor_burst",
+   "gain": 0.75,
+   "pan": 0
+  },
+  {
+   "t": 15.25,
+   "name": "whoosh",
+   "gain": 0.45,
+   "pan": 0
+  },
+  {
+   "t": 15.5,
+   "name": "caw_smug",
+   "gain": 0.5,
+   "pan": -0.4
+  },
+  {
+   "t": 16.6,
+   "name": "motor_burst",
+   "gain": 0.75,
+   "pan": 0
+  },
+  {
+   "t": 16.62,
+   "name": "flap",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 16.65,
+   "name": "whoosh",
+   "gain": 0.45,
+   "pan": 0
+  },
+  {
+   "t": 17,
+   "name": "facepalm",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 17.42,
+   "name": "land",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 17.94,
+   "name": "flap",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 17.95,
+   "name": "dig_small",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 18,
+   "name": "motor_burst",
+   "gain": 0.75,
+   "pan": 0
+  },
+  {
+   "t": 18.05,
+   "name": "whoosh",
+   "gain": 0.45,
+   "pan": 0
+  },
+  {
+   "t": 18.15,
+   "name": "pop",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 18.27,
+   "name": "zip",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 18.55,
+   "name": "beep",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 18.7,
+   "name": "beep",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 18.82,
+   "name": "land",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 18.85,
+   "name": "beep_hi",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 19.02,
+   "name": "boing",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 19.02,
+   "name": "beep",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 19.1,
+   "name": "bonk",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 19.22,
+   "name": "motor_burst",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 19.25,
+   "name": "caw_confused",
+   "gain": 0.8,
+   "pan": -0.3
+  },
+  {
+   "t": 19.4,
+   "name": "boing",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 19.4,
+   "name": "beep",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 19.45,
+   "name": "caw_confused",
+   "gain": 0.7,
+   "pan": 0.3
+  },
+  {
+   "t": 19.62,
+   "name": "boing",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 19.62,
+   "name": "beep",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 19.88,
+   "name": "motor_burst",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 20,
+   "name": "caw_confused",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 20.12,
+   "name": "boing",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 20.12,
+   "name": "beep",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 20.32,
+   "name": "boing",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 20.32,
+   "name": "beep",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 20.5,
+   "name": "motor_burst",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 20.6,
+   "name": "flap_big",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 20.72,
+   "name": "boing",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 20.72,
+   "name": "beep",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 21,
+   "name": "night_whoosh",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 22.3,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.5
+  },
+  {
+   "t": 22.66,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.45
+  },
+  {
+   "t": 23.02,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.4
+  },
+  {
+   "t": 23.38,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.35
+  },
+  {
+   "t": 23.74,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.3
+  },
+  {
+   "t": 23.95,
+   "name": "whoosh_small",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 24.1,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.25
+  },
+  {
+   "t": 24.38,
+   "name": "snap",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 24.4,
+   "name": "snap",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 24.45,
+   "name": "glow_on",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 24.46,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.19999999999999996
+  },
+  {
+   "t": 24.5,
+   "name": "whoosh_small",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 24.82,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.14999999999999997
+  },
+  {
+   "t": 24.82,
+   "name": "snap",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 25,
+   "name": "scan_hum",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 25.18,
+   "name": "tiptoe",
+   "gain": 0.5,
+   "pan": -0.09999999999999998
+  },
+  {
+   "t": 25.6,
+   "name": "sensor_click",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 25.62,
+   "name": "alarm_buzz",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 25.7,
+   "name": "boing",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 25.72,
+   "name": "caw_panic",
+   "gain": 1,
+   "pan": -0.4
+  },
+  {
+   "t": 25.82,
+   "name": "caw_panic",
+   "gain": 0.9,
+   "pan": -0.2
+  },
+  {
+   "t": 25.9,
+   "name": "flap_big",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 26.1,
+   "name": "caw_panic",
+   "gain": 0.8,
+   "pan": -0.5
+  },
+  {
+   "t": 28.75,
+   "name": "flap",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 29.35,
+   "name": "sensor_click",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 29.37,
+   "name": "alarm_buzz",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 29.4,
+   "name": "land",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 29.9,
+   "name": "flap",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 30.15,
+   "name": "sensor_click",
+   "gain": 0.8,
+   "pan": 0
+  },
+  {
+   "t": 30.17,
+   "name": "alarm_buzz",
+   "gain": 0.5,
+   "pan": 0
+  },
+  {
+   "t": 30.5,
+   "name": "caw_smug",
+   "gain": 0.7,
+   "pan": -0.3
+  },
+  {
+   "t": 30.6,
+   "name": "facepalm",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 30.9,
+   "name": "yawn_caw",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 31.6,
+   "name": "whoosh_small",
+   "gain": 0.7,
+   "pan": 0
+  },
+  {
+   "t": 31.95,
+   "name": "snap",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 32.2,
+   "name": "speaker_on",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 32.6,
+   "name": "hawk",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 32.68,
+   "name": "caw_panic",
+   "gain": 0.9,
+   "pan": -0.3
+  },
+  {
+   "t": 32.72,
+   "name": "flap_big",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 33,
+   "name": "bush",
+   "gain": 1,
+   "pan": -0.5
+  },
+  {
+   "t": 33.08,
+   "name": "bush",
+   "gain": 1,
+   "pan": 0.5
+  },
+  {
+   "t": 34.2,
+   "name": "bush_small",
+   "gain": 0.6,
+   "pan": 0.4
+  },
+  {
+   "t": 36,
+   "name": "motor_burst",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 37.45,
+   "name": "boing",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 37.95,
+   "name": "boing",
+   "gain": 0.4,
+   "pan": 0
+  },
+  {
+   "t": 41.3,
+   "name": "pop_soft",
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "t": 41.55,
+   "name": "page_flip",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 41.85,
+   "name": "page_flip",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 42.15,
+   "name": "page_flip",
+   "gain": 0.9,
+   "pan": 0
+  },
+  {
+   "t": 43.5,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 43.72,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": 0.2
+  },
+  {
+   "t": 43.94,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 44.01,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": 0.2
+  },
+  {
+   "t": 44.23,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 44.45,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": 0.2
+  },
+  {
+   "t": 44.52,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 44.74,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": 0.2
+  },
+  {
+   "t": 44.96,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 45.03,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": 0.2
+  },
+  {
+   "t": 45.25,
+   "name": "chirp",
+   "gain": 0.6,
+   "pan": -0.2
+  },
+  {
+   "t": 45.47,
+   "name": "peck",
+   "gain": 1,
+   "pan": 0
+  },
+  {
+   "t": 45.5,
+   "name": "button_click",
+   "gain": 0.9,
+   "pan": 0
+  }
+ ]
+}
