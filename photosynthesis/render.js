@@ -53,12 +53,19 @@
   var dpr = 1;
   var u = 1;
 
-  // Caches keyed on canvas size; rebuilt in resize().
+  // Offscreen caches. They depend only on the canvas size and dpr, so resize()
+  // drops them all and they are rebuilt on next use.
   var cache = {
-    width: 0,
-    height: 0,
-    staticLayer: null
+    staticLayer: null,
+    sunRays: null,
+    focus: {}
   };
+
+  function resetCache() {
+    cache.staticLayer = null;
+    cache.sunRays = null;
+    cache.focus = {};
+  }
 
   function num(v, fallback) {
     return typeof v === 'number' && isFinite(v) ? v : fallback;
@@ -106,6 +113,9 @@
     return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
   }
 
+  // Glow sprites are cached per colour, so only six-digit hex colours get one.
+  var HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
   // Small deterministic random generator, so the stroma texture never shifts.
   function seeded(seed) {
     var s = seed >>> 0;
@@ -115,15 +125,20 @@
     };
   }
 
-  function rrPath(g, x, y, w, h, r) {
+  // Rounded-rectangle subpath with no beginPath, so several shapes can share one path.
+  function rrSub(g, x, y, w, h, r) {
     r = Math.max(0, Math.min(r, w / 2, h / 2));
-    g.beginPath();
     g.moveTo(x + r, y);
     g.arcTo(x + w, y, x + w, y + h, r);
     g.arcTo(x + w, y + h, x, y + h, r);
     g.arcTo(x, y + h, x, y, r);
     g.arcTo(x, y, x + w, y, r);
     g.closePath();
+  }
+
+  function rrPath(g, x, y, w, h, r) {
+    g.beginPath();
+    rrSub(g, x, y, w, h, r);
   }
 
   function hexPath(g, cx, cy, r) {
@@ -230,15 +245,13 @@
     canvas.height = Math.round(cssH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     u = Math.min(cssW, cssH);
-    cache.width = cssW;
-    cache.height = cssH;
-    cache.staticLayer = null; // rebuilt lazily on next draw
+    resetCache();
   }
 
   // ---- Static layer: built once per canvas size and cached offscreen ----
 
   function ensureStaticLayer() {
-    if (cache.staticLayer && cache.width === cssW && cache.height === cssH && cache.dpr === dpr) return;
+    if (cache.staticLayer) return;
     var layer = document.createElement('canvas');
     layer.width = canvas.width;
     layer.height = canvas.height;
@@ -252,9 +265,6 @@
     drawPhotosystems(g);
     drawCalvinTrack(g);
     cache.staticLayer = layer;
-    cache.width = cssW;
-    cache.height = cssH;
-    cache.dpr = dpr;
   }
 
   function drawSkyAndLeaf(g) {
@@ -323,6 +333,8 @@
     g.fillRect(0, py(0.31), cssW, py(0.30));
     g.restore();
 
+    drawMembraneShade(g);
+
     // Double membrane: an outer outline and an inner outline.
     g.save();
     g.strokeStyle = P.leafLight;
@@ -333,6 +345,46 @@
     g.globalAlpha = 0.4;
     g.lineWidth = Math.max(1, 0.0035 * u);
     bodyPath(g, 0.016 * u);
+    g.stroke();
+    g.restore();
+
+    drawTopHighlight(g);
+  }
+
+  // Soft inner shadow: a blurred dark shape outside the body, clipped to the body,
+  // so only a soft dark rim shows inside the membrane.
+  function drawMembraneShade(g) {
+    g.save();
+    bodyPath(g, 0);
+    g.clip();
+    g.beginPath();
+    g.rect(-cssW, -cssH, cssW * 3, cssH * 3);
+    rrSub(g, px(0.05), py(0.30), px(0.90), py(0.67), 0.07 * u);
+    g.shadowColor = rgba(P.ink, 0.7);
+    g.shadowBlur = 0.03 * u * dpr;   // shadow blur is in device pixels
+    g.fillStyle = P.ink;
+    g.fill('evenodd');
+    g.restore();
+  }
+
+  // Thin light line just inside the upper membrane, fading toward the corners.
+  function drawTopHighlight(g) {
+    var x0 = px(0.05);
+    var x1 = px(0.95);
+    var y = py(0.30) + Math.max(3, 0.0075 * u);
+    var grad = g.createLinearGradient(x0, 0, x1, 0);
+    grad.addColorStop(0, rgba(P.text, 0));
+    grad.addColorStop(0.25, rgba(P.text, 0.3));
+    grad.addColorStop(0.75, rgba(P.text, 0.3));
+    grad.addColorStop(1, rgba(P.text, 0));
+    g.save();
+    bodyPath(g, 0);
+    g.clip();
+    g.strokeStyle = grad;
+    g.lineWidth = Math.max(1, 0.0025 * u);
+    g.beginPath();
+    g.moveTo(x0, y);
+    g.lineTo(x1, y);
     g.stroke();
     g.restore();
   }
@@ -495,28 +547,63 @@
     spinPhase = (spinPhase + dt * (0.5 + 6.5 * glowTurbine)) % (Math.PI * 2);
   }
 
+  // Sun rays: tapered, soft-edged wedges. Drawn once per canvas size into a sprite,
+  // which is then turned as a whole each frame.
+  function sunRaySprite() {
+    if (cache.sunRays) return cache.sunRays;
+    var r = 0.045 * u;
+    var reach = r * 2.4;
+    var side = Math.max(2, Math.ceil(2 * reach * dpr));
+    var k = side / (2 * reach);   // CSS px to sprite px
+    var c = document.createElement('canvas');
+    c.width = side;
+    c.height = side;
+    var g = c.getContext('2d');
+    g.setTransform(k, 0, 0, k, side / 2, side / 2);
+    for (var i = 0; i < 12; i++) {
+      var a = i * Math.PI / 6;
+      var ca = Math.cos(a);
+      var sa = Math.sin(a);
+      var r0 = r * 1.3;
+      var r1 = r * (i % 2 ? 1.8 : 2.2);   // alternating lengths
+      var w = r * 0.12;                    // half-width at the base
+      var x0 = ca * r0;
+      var y0 = sa * r0;
+      var x1 = ca * r1;
+      var y1 = sa * r1;
+      var fade = g.createLinearGradient(x0, y0, x1, y1);
+      fade.addColorStop(0, rgba(P.sun, 0.9));
+      fade.addColorStop(0.5, rgba(P.sun, 0.35));
+      fade.addColorStop(1, rgba(P.sun, 0));
+      g.beginPath();
+      g.moveTo(x0 - sa * w, y0 + ca * w);
+      g.lineTo(x1, y1);
+      g.lineTo(x0 + sa * w, y0 - ca * w);
+      g.closePath();
+      g.fillStyle = fade;
+      g.fill();
+    }
+    cache.sunRays = { canvas: c, reach: reach };
+    return cache.sunRays;
+  }
+
   function drawSun(glow, t, still) {
     var cx = px(0.12);
     var cy = py(0.10);
     var r = 0.045 * u;
-    softGlow(P.sun, cx, cy, (0.2 + 0.05 * glow.light) * u, 0.4 + 0.5 * glow.light);
+    var light = glow.light;
 
-    // Rays, slowly turning. Alternating lengths.
-    var rot = still ? 0 : t * 0.08;
-    var r0 = r * 1.35;
+    // Wide haze, and a corona that brightens with light.
+    softGlow(P.sun, cx, cy, (0.2 + 0.05 * light) * u, 0.4 + 0.4 * light);
+    softGlow(P.sun, cx, cy, r * 2.6, 0.12 + 0.5 * light);
+
+    // Soft rays, turning slowly (not under reduced motion).
+    var rays = sunRaySprite();
     ctx.save();
-    ctx.strokeStyle = P.sun;
-    ctx.lineCap = 'round';
-    ctx.lineWidth = Math.max(2, 0.008 * u);
-    ctx.globalAlpha = 0.8;
-    for (var i = 0; i < 12; i++) {
-      var a = rot + i * Math.PI / 6;
-      var r1 = r * (i % 2 ? 1.8 : 2.2);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
-      ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
-      ctx.stroke();
-    }
+    ctx.translate(cx, cy);
+    ctx.rotate(still ? 0 : t * 0.08);
+    ctx.globalAlpha *= 0.6 + 0.4 * light;
+    ctx.drawImage(rays.canvas, -rays.reach, -rays.reach, 2 * rays.reach, 2 * rays.reach);
     ctx.restore();
 
     ctx.save();
@@ -525,7 +612,7 @@
     ctx.fillStyle = P.sun;
     ctx.fill();
     ctx.restore();
-    softGlow(P.sun, cx, cy, r * 1.5, 0.15 + 0.5 * glow.light);
+    softGlow(P.sun, cx, cy, r * 1.5, 0.15 + 0.5 * light);
   }
 
   function drawPsiiHalo(glow) {
@@ -533,11 +620,12 @@
   }
 
   // ATP synthase: a knob with three blades that spin, faster when glowing.
-  function drawTurbine(glow) {
+  function drawTurbine(glow, still) {
     var cx = px(0.60);
     var cy = py(0.58);
     var r = 0.028 * u;
     softGlow(P.atp, cx, cy, r * 3, 0.1 + 0.9 * glow.turbine);
+    if (glow.turbine > 0.2) drawTurbineRing(cx, cy, r, glow.turbine, still);
 
     ctx.save();
     ctx.beginPath();
@@ -564,6 +652,22 @@
     ctx.arc(cx, cy, r * 0.22, 0, Math.PI * 2);
     ctx.fillStyle = P.atp;
     ctx.fill();
+    ctx.restore();
+  }
+
+  // Bright ring around ATP synthase while it glows. In motion it pulses: tight and bright
+  // at the peak of the glow, wider and fading as the glow falls. Reduced motion keeps it fixed.
+  function drawTurbineRing(cx, cy, r, glowValue, still) {
+    var k = clamp01((glowValue - 0.2) / 0.8);   // 0 at the threshold, 1 at the peak
+    var rad = still ? r * 1.6 : r * (1.6 + 0.9 * (1 - k));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha *= 0.9 * k;
+    ctx.strokeStyle = P.atp;
+    ctx.lineWidth = Math.max(2, 0.007 * u);
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -611,6 +715,27 @@
       ctx.fill();
     }
     ctx.restore();
+
+    if (glow.calvin > 0) drawCalvinArc(cx, cy, R, glow.calvin, t, still);
+  }
+
+  // A faint bright arc that orbits the Calvin ring while it glows. Under reduced motion it stays at the bottom.
+  function drawCalvinArc(cx, cy, R, glowValue, t, still) {
+    var a = still ? Math.PI / 2 : t * 2.6;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.35 * glowValue;
+    ctx.strokeStyle = P.sugar;
+    ctx.lineWidth = Math.max(3, 0.012 * u);
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, a - 0.45, a + 0.45);
+    ctx.stroke();
+    ctx.globalAlpha = 0.5 * glowValue;
+    ctx.strokeStyle = P.text;
+    ctx.lineWidth = Math.max(1.2, 0.0045 * u);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // Zone and landmark labels, all read from content.ui.scene.
@@ -637,10 +762,11 @@
     thylakoid: [0.31, 0.61],
     stroma: [0.61, 1]
   };
-  // Dim the bands that are not focused (soft edges), then lightly highlight
-  // the focused band. One full-canvas gradient does both.
-  function drawFocus(focus) {
-    if (!focus || !Object.prototype.hasOwnProperty.call(BANDS, focus)) return;
+
+  // Gradients for one focus band. They depend only on the canvas size, so they are built once.
+  function focusParts(focus) {
+    var parts = cache.focus[focus];
+    if (parts) return parts;
     var f = BANDS[focus];
     var top = f[0];
     var bot = f[1];
@@ -649,7 +775,6 @@
     var aTop = top > 0 ? dim : 0;
     var aBot = bot < 1 ? dim : 0;
 
-    ctx.save();
     var shade = ctx.createLinearGradient(0, 0, 0, cssH);
     shade.addColorStop(0, rgba(P.ink, aTop));
     shade.addColorStop(Math.max(0, top - soft), rgba(P.ink, aTop));
@@ -657,17 +782,38 @@
     shade.addColorStop(bot, rgba(P.ink, 0));
     shade.addColorStop(Math.min(1, bot + soft), rgba(P.ink, aBot));
     shade.addColorStop(1, rgba(P.ink, aBot));
-    ctx.fillStyle = shade;
-    ctx.fillRect(0, 0, cssW, cssH);
 
-    var y0 = py(top);
-    var y1 = py(bot);
-    var lift = ctx.createLinearGradient(0, y0, 0, y1);
+    // The lift is built at full strength; the frame sets its alpha (breathing).
+    var lift = ctx.createLinearGradient(0, py(top), 0, py(bot));
     lift.addColorStop(0, rgba(P.sun, 0));
-    lift.addColorStop(0.5, rgba(P.sun, 0.1));
+    lift.addColorStop(0.5, rgba(P.sun, 1));
     lift.addColorStop(1, rgba(P.sun, 0));
-    ctx.fillStyle = lift;
-    ctx.fillRect(0, y0, cssW, y1 - y0);
+
+    parts = {
+      shade: shade,
+      lift: lift,
+      topPx: py(top),
+      botPx: py(bot)
+    };
+    cache.focus[focus] = parts;
+    return parts;
+  }
+
+  // Dim the bands that are not focused (soft edges), then lightly highlight the
+  // focused band. The highlight breathes gently; reduced motion keeps it steady.
+  function drawFocus(focus, t, still) {
+    if (!focus || !Object.prototype.hasOwnProperty.call(BANDS, focus)) return;
+    var parts = focusParts(focus);
+
+    ctx.save();
+    // The shade is only non-zero outside the band, so fill just those two strips.
+    ctx.fillStyle = parts.shade;
+    if (parts.topPx > 0) ctx.fillRect(0, 0, cssW, parts.topPx);
+    if (parts.botPx < cssH) ctx.fillRect(0, parts.botPx, cssW, cssH - parts.botPx);
+
+    ctx.globalAlpha = still ? 0.1 : 0.1 + 0.04 * Math.sin(t * 1.85);   // about a 3.4 s breath
+    ctx.fillStyle = parts.lift;
+    ctx.fillRect(0, parts.topPx, cssW, parts.botPx - parts.topPx);
     ctx.restore();
   }
 
@@ -687,14 +833,62 @@
     return typeof e.color === 'string' && e.color ? e.color : fallback;
   }
 
-  // Yellow spark with glow and a short squiggly tail that trails upward.
-  function drawPhoton(e, s, env) {
-    var x = entX(e);
-    var y = entY(e);
-    softGlow(P.sun, x, y, s * 4, 0.9);
+  // Photon trails. The game reuses each entity object and moves it in place, so a WeakMap
+  // keyed on the object can hold its recent positions. Samples are normalized, like entities.
+  var TRAIL_SECONDS = 0.42;
+  var TRAIL_STEP = 0.03;
+  var TRAIL_MAX = 16;
+  var trails = new WeakMap();
 
+  // The entity's recent samples, oldest first. Drops samples older than TRAIL_SECONDS.
+  function trailSamples(e, t) {
+    var rec = trails.get(e);
+    if (!rec || t < rec.seen) {   // new entity, or the clock went back
+      rec = { pts: [], seen: t };
+      trails.set(e, rec);
+    }
+    rec.seen = t;
+    var pts = rec.pts;
+    var x = num(e.x, 0);
+    var y = num(e.y, 0);
+    var last = pts[pts.length - 1];
+    if (!last || (t - last.t >= TRAIL_STEP && (last.x !== x || last.y !== y))) {
+      pts.push({ x: x, y: y, t: t });
+      if (pts.length > TRAIL_MAX) pts.shift();
+    }
+    while (pts.length && t - pts[0].t > TRAIL_SECONDS) pts.shift();
+    return pts;
+  }
+
+  // Fading trail behind the photon: butt-capped segments from the oldest sample to the head.
+  // Each segment is fainter and thinner than the one in front of it.
+  function drawPhotonTrail(e, s, t) {
+    var pts = trailSamples(e, t);
+    if (!pts.length) return;
+    var base = ctx.globalAlpha;
+    ctx.save();
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = P.sun;
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < pts.length; i++) {
+      var p = pts[i];
+      var next = i + 1 < pts.length ? pts[i + 1] : null;
+      var x1 = next ? px(next.x) : entX(e);
+      var y1 = next ? py(next.y) : entY(e);
+      var k = clamp01((t - (next ? next.t : t)) / TRAIL_SECONDS);   // 0 at the head, 1 at the tail
+      ctx.globalAlpha = base * 0.6 * Math.pow(1 - k, 1.2);
+      ctx.lineWidth = Math.max(0.8, s * (0.9 - 0.6 * k));
+      ctx.beginPath();
+      ctx.moveTo(px(p.x), py(p.y));
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Short squiggly tail, drawn still. Used under reduced motion, where there is no trail.
+  function drawPhotonTail(x, y, s) {
     var len = s * 4.5;
-    var phase = env.still ? 0 : env.t * 9 + num(e.x, 0) * 17;
     ctx.save();
     ctx.strokeStyle = P.sun;
     ctx.lineCap = 'round';
@@ -703,12 +897,22 @@
     ctx.beginPath();
     for (var i = 0; i <= 14; i++) {
       var k = i / 14;
-      var tx = x + Math.sin(phase + k * 8) * s * 0.9 * k;
+      var tx = x + Math.sin(k * 8) * s * 0.9 * k;
       var ty = y - len * k;
       if (i === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
     }
     ctx.stroke();
     ctx.restore();
+  }
+
+  // Yellow spark with glow. In motion it leaves a fading trail. Under reduced motion it
+  // keeps the still squiggly tail and no trail.
+  function drawPhoton(e, s, env) {
+    var x = entX(e);
+    var y = entY(e);
+    if (env.still) drawPhotonTail(x, y, s);
+    else drawPhotonTrail(e, s, env.t);
+    softGlow(P.sun, x, y, s * 4, 0.9);
 
     ctx.beginPath();
     ctx.arc(x, y, s, 0, Math.PI * 2);
@@ -903,11 +1107,12 @@
     ctx.restore();
   }
 
-  // Glucose: a large amber hexagon ring with its formula. Finale adds sparkles.
+  // Glucose: a large amber hexagon ring with its formula. The finale adds a warm haze and sparkles.
   function drawGlucose(e, s, env) {
     var x = entX(e);
     var y = entY(e);
-    softGlow(P.glucose, x, y, s * 2.4, 0.45);
+    softGlow(P.glucose, x, y, s * 2.4, 0.4);
+    if (env.finale) softGlow(P.atp, x, y, s * 3.2, 0.12);
     hexPath(ctx, x, y, s);
     ctx.fillStyle = rgba(P.glucose, 0.18);
     ctx.fill();
@@ -937,18 +1142,21 @@
     }
   }
 
-  // Burst: an expanding ring and sparkles over 0.6 s. Size is the final radius.
-  // Under reduced motion the ring stays at a fixed radius and only fades.
+  // Burst: an expanding ring with a soft flash and eight sparkles, over 0.6 s. Size is the final
+  // radius. The sparkles leave one after another and ease outward. Under reduced motion only the
+  // ring remains, at a fixed radius, and fades.
   function drawBurst(e, s, env) {
     var x = entX(e);
     var y = entY(e);
-    var k = clamp01(num(e.age, 0) / 0.6);
+    var age = num(e.age, 0);
+    var k = clamp01(age / 0.6);
     var color = colorOf(e, '#ffffff');
     var ease = 1 - Math.pow(1 - k, 3);
     var rad = env.still ? s * 0.8 : s * (0.2 + 0.8 * ease);
 
     ctx.save();
     ctx.globalAlpha *= (1 - k);
+    if (HEX_COLOR.test(color)) softGlow(color, x, y, rad * 1.4, 0.35);
     ctx.beginPath();
     ctx.arc(x, y, Math.max(0.5, rad), 0, Math.PI * 2);
     ctx.strokeStyle = color;
@@ -956,15 +1164,20 @@
     ctx.stroke();
     if (!env.still) {
       for (var i = 0; i < 8; i++) {
+        // Each sparkle starts a little after the one before it, then eases outward and shrinks away.
+        var q = clamp01((age - i * 0.02) / 0.5);
+        if (q <= 0 || q >= 1) continue;
         var a = i * Math.PI / 4 + 0.2;
-        var d = rad * 1.05;
-        sparkle(x + Math.cos(a) * d, y + Math.sin(a) * d, Math.max(1.5, s * 0.16) * (1 - k), color);
+        var d = s * (0.1 + 0.95 * (1 - Math.pow(1 - q, 3)));
+        var size = Math.max(1.5, s * 0.18) * Math.sin(Math.PI * q);
+        sparkle(x + Math.cos(a) * d, y + Math.sin(a) * d, size, color);
       }
     }
     ctx.restore();
   }
 
-  // Popup: text rising about 0.06 u and fading over 0.9 s. Size is the font size.
+  // Popup: text rising about 0.06 u with ease-out and fading over 0.9 s. Size is the font size.
+  // A dark halo (outline plus soft shadow) keeps it readable on any band.
   function drawPopup(e) {
     var text = typeof e.text === 'string' ? e.text : '';
     if (!text) return;
@@ -974,6 +1187,8 @@
     var y = entY(e) - 0.06 * u * (1 - Math.pow(1 - k, 2));
     ctx.save();
     ctx.globalAlpha *= (1 - k);
+    ctx.shadowColor = rgba(P.ink, 0.85);
+    ctx.shadowBlur = fp * 0.5 * dpr;   // shadow blur is in device pixels
     haloText(text, x, y, colorOf(e, '#ffffff'), fp);
     ctx.restore();
   }
@@ -1052,10 +1267,10 @@
 
     drawSun(glow, t, still);
     drawPsiiHalo(glow);
-    drawTurbine(glow);
+    drawTurbine(glow, still);
     drawCalvin(glow, t, still);
     drawLabels(ui);
-    drawFocus(scene.focus);
+    drawFocus(scene.focus, t, still);
     drawEntities(scene.entities, frame);
   }
 
