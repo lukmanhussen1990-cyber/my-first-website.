@@ -1,0 +1,167 @@
+{
+ "title": "John's Shopping Cart Race Car",
+ "fps": 30,
+ "duration": 56.0,
+ "voice": {
+  "elevenlabs_voice_id": "oXpouBLuKFVTJwcJO3YL",
+  "elevenlabs_voice_name": "Holden - Warm Midwest Narrator",
+  "elevenlabs_model_id": "eleven_multilingual_v2",
+  "local_voice": "af_heart",
+  "local_speed": 1.12,
+  "style": "calm, friendly, a little playful, quick pace, neutral accent"
+ },
+ "scenes": [
+  {
+   "id": 1,
+   "start": 0.0,
+   "end": 7.0,
+   "name": "Parking lot at sunset, John climbs in and pushes off"
+  },
+  {
+   "id": 2,
+   "start": 7.0,
+   "end": 14.0,
+   "name": "Wobbly wheel, bonk, wrench fix"
+  },
+  {
+   "id": 3,
+   "start": 14.0,
+   "end": 21.0,
+   "name": "Foot too slow, leaf blower"
+  },
+  {
+   "id": 4,
+   "start": 21.0,
+   "end": 28.0,
+   "name": "Front wheels spin, steering rope"
+  },
+  {
+   "id": 5,
+   "start": 28.0,
+   "end": 35.0,
+   "name": "Too fast downhill, broom friction brake"
+  },
+  {
+   "id": 6,
+   "start": 35.0,
+   "end": 42.0,
+   "name": "Tips in a corner, potatoes lower the center of mass"
+  },
+  {
+   "id": 7,
+   "start": 42.0,
+   "end": 49.0,
+   "name": "The race"
+  },
+  {
+   "id": 8,
+   "start": 49.0,
+   "end": 56.0,
+   "name": "Twist: nests into the cart row and gets pushed inside"
+  }
+ ],
+ "lines": [
+  {
+   "id": 1,
+   "scene": 1,
+   "text": "If you put John in a shopping cart, he has a race car. Sort of.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 0.45
+    },
+    {
+     "from_word": 13,
+     "at": 3.5
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "scene": 2,
+   "text": "But one wheel always wobbles. So you tighten the loose wheel.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 7.35
+    },
+    {
+     "from_word": 5,
+     "at": 10.25
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "scene": 3,
+   "text": "But pushing with your foot is way too slow. So you strap a leaf blower to the back.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 14.2
+    },
+    {
+     "from_word": 9,
+     "at": 16.35
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "scene": 4,
+   "text": "But the front wheels just spin around, so it can't turn. So you add a steering rope.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 21.2
+    },
+    {
+     "from_word": 11,
+     "at": 24.35
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "scene": 5,
+   "text": "But now it's too fast to stop. So you drag a broom behind it, and friction slows it down.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 28.2
+    },
+    {
+     "from_word": 7,
+     "at": 30.75
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "scene": 6,
+   "text": "But it tips over in tight corners. So you put heavy potatoes low in the basket to keep it steady.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 35.2
+    },
+    {
+     "from_word": 7,
+     "at": 37.85
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "scene": 7,
+   "text": "Congratulations, John has the fastest shopping cart in town.",
+   "parts": [
+    {
+     "from_word": 0,
+     "at": 45.3
+    }
+   ]
+  }
+ ],
+ "placement_note": "Each line can be split at a sentence break. Part N starts at its 'at' time (seconds), or right after the previous part if the voice runs long."
+}
