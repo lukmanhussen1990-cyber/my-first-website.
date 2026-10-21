@@ -289,8 +289,8 @@ for k in range(1, 8):
     add(c + 0.025 * k, clk * (0.3 * 0.82 ** k), 1.0, -0.1 - 0.06 * k); add(c + 0.025 * k, click(0.003, 2000) * 0.4 * 0.8 ** k, 1.0, -0.1 - 0.06 * k)
 for k in range(12): add(c + rng.uniform(0.02, 0.35), metal_tick(dec=0.02) * rng.uniform(0.05, 0.2), 1.0, rng.uniform(-0.6, 0.2))
 # worker footsteps
-w = t1("worker_walk") - 0.35
-for k in range(5): add(w + k * 0.29, lp(noise(0.06), 1500) * np.exp(-tt(0.06) / 0.015) * 0.25, 1.0, 0.3 - 0.08 * k)
+w = clack_t + 0.3   # keep the comedy silence before the clack clean
+for k in range(4): add(w + k * 0.29, lp(noise(0.06), 1500) * np.exp(-tt(0.06) / 0.015) * 0.25, 1.0, 0.3 - 0.08 * k)
 # thumbs up: tiny sparkle
 t = tt(0.4); add(t1("thumbs"), (np.sin(2 * np.pi * 2093 * t) + np.sin(2 * np.pi * 3136 * t)) * np.exp(-t / 0.1) * 0.05, 1.0, 0.2)
 # automatic doors sliding open: motor whine + slide + soft stop

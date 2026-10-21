@@ -90,10 +90,10 @@ mix = sfx * 1.25 * gain[:, None] + voice[:, None] * 1.0
 pre = AUD / "mix_pre.wav"
 sf.write(str(pre), mix.astype(np.float32), SR, subtype="FLOAT")
 # two-pass loudnorm (Instagram-friendly ~ -14 LUFS, -1 dBTP)
-r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(pre), "-af", "alimiter=limit=0.89:attack=2:release=60,loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
+r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(pre), "-af", "alimiter=limit=0.89:attack=2:release=60,loudnorm=I=-14:TP=-2:LRA=11:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
 js = r.stderr[r.stderr.rfind("{"):r.stderr.rfind("}") + 1]
 m = json.loads(js)
-af = (f"alimiter=limit=0.89:attack=2:release=60,loudnorm=I=-14:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
+af = (f"alimiter=limit=0.89:attack=2:release=60,loudnorm=I=-14:TP=-2:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
       f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample=48000")
 run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", pre, "-af", af, "-ar", "48000", "-c:a", "pcm_s16le", AUD / "mix.wav"])
 pre.unlink()
