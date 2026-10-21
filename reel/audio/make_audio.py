@@ -574,7 +574,7 @@ def sfx():
     tone = lp(tone, 1800) * env_adsr(n, 0.02, 0.2, 0.9, 0.35) * np.clip((1.45 - tt) / 0.3, 0, 1)
     m_ = int(0.04 * SR); tone[n - m_ - int(0.08 * SR): n - int(0.08 * SR)] += hp(noise(m_), 1500) * exp_decay(m_, 0.006) * 0.4
     ip = int(E['powerDown'] * SR)
-    out[ip:ip + n, 0] += tone * 0.32; out[ip:ip + n, 1] += tone * 0.32
+    out[ip:ip + n, 0] += tone * 0.16; out[ip:ip + n, 1] += tone * 0.16
     out = np.tanh(out * 1.0)
     return out
 

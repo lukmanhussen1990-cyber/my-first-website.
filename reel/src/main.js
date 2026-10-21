@@ -149,8 +149,8 @@ async function init() {
   NB.forEach((o, i) => {
     const house = A.nh[o.h].g; const win = house.userData.windows[Math.min(o.w, house.userData.windows.length - 1)];
     const n = makeNeighbor(o);
-    const holder = new THREE.Group(); holder.position.copy(win.local).add(v3(0, -0.28, 0.07)); house.add(holder);
-    n.root.scale.setScalar(0.5); holder.add(n.root);
+    const holder = new THREE.Group(); holder.position.copy(win.local).add(v3(0, -0.36, 0.07)); house.add(holder);
+    n.root.scale.setScalar(0.6); holder.add(n.root);
     // dark interior backdrop + glass in front
     const back = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshStandardMaterial({ color: '#2a1a10', roughness: 1, emissive: new THREE.Color('#ff9a40'), emissiveIntensity: 0 }));
     back.position.copy(win.local).add(v3(0, 0, 0.04)); house.add(back);
@@ -338,7 +338,8 @@ const CAM = [
   [33.4, [0.7, 1.5, 3.8], [-0.9, 1.25, -0.9], 34, 0.18],
   [35.4, [1.2, 3.0, 12.5], [0.3, 2.1, -6.0], 46, 0.06],
   [36.8, [1.25, 3.05, 12.2], [0.3, 2.15, -6.0], 46, 0.06],
-  [38.6, [1.3, 2.3, 9.0], [0.9, 1.35, -4.0], 42, 0.1],
+  [38.5, [0.75, 2.15, 6.2], [-0.3, 1.25, -11.2], 32, 0.12],
+  [39.75, [0.6, 1.95, 4.9], [-0.4, 1.2, -11.2], 27, 0.12],
   [40.4, [0.45, 1.4, 3.7], [-1.1, 1.35, -0.85], 34, 0.18],
   [42.9, [0.3, 1.25, 1.05], [-1.2, 1.36, -0.85], 30, 0.24],
   [43.5, [0.32, 1.25, 1.1], [-1.18, 1.35, -0.85], 30.5, 0.24],
