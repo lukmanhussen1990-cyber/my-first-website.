@@ -85,7 +85,7 @@ pip install numpy scipy soundfile pillow kokoro-onnx faster-whisper
 python3 tools/make_textures.py                # procedural textures -> scene/tex/
 python3 tools/make_voices.py                  # voices (auto: ElevenLabs if a key works, else local)
 xvfb-run -a -s "-screen 0 1280x2000x24" node tools/render_frames.mjs --out frames --workers 2   # 1590 frames, ~1-2 h on 4 CPU cores
-ffmpeg -framerate 30 -i frames/f%05d.png -c:v libx264 -preset slow -crf 14 -pix_fmt yuv420p out/plate.mp4
+ffmpeg -framerate 30 -i frames/f%05d.png -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p out/plate.mp4
 ./rebuild_audio.sh                            # placement, subtitles, mix, final export
 ```
 
