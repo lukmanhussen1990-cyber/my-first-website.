@@ -10,7 +10,7 @@ then a single sad power-down sound plays.
 
 | File | What it is |
 |---|---|
-| `output/john_powers_the_city.mp4` | **The final Reel** (subtitles burned in, full mix) |
+| `output/john_powers_the_city.mp4` | **The final Reel** — H.264 High + AAC 256 kbps, 1080×1920, 30 fps, 66.0 s, −14 LUFS, ~93 MB |
 | `output/clean_plate_no_subs.part1.mp4`, `part2.mp4` | The 3D render only (no subtitles, no audio), split at 33.4 s to stay under GitHub's 100 MB file limit — used for re-exports |
 | `voice/lines/line_01.wav … line_10.wav` | One narration file per script line |
 | `voice/timings/line_XX.json` | Word-level timings for each line (drive the subtitles) |
@@ -45,7 +45,7 @@ What it does:
 2. `tools/export.py` re-places each line in its scene (each line's "anchor" word lands on its
    visual event, e.g. "So" on the moment the generator snaps in; lines that would overflow their
    scene are gently time-compressed), rebuilds the subtitles from the new timings, re-mixes
-   (sound effects duck slightly under the voice, loudness normalised to −14 LUFS), and encodes
+   (sound effects duck slightly under the voice, loudness normalised to −14 LUFS / −3 dBTP), and encodes
    `output/john_powers_the_city.mp4` over the subtitle-free render
    (`output/clean_plate_no_subs.part1.mp4` + `part2.mp4`, joined automatically).
 

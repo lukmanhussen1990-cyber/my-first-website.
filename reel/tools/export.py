@@ -161,7 +161,7 @@ def mix_audio(voice, music, sfx, total, tmp):
             '[0:a]aformat=channel_layouts=stereo,volume=1.0,asplit=2[v][vk];'
             '[1:a]aformat=channel_layouts=stereo,volume=0.72[s];'
             '[s][vk]sidechaincompress=threshold=0.03:ratio=2.2:attack=15:release=300:makeup=1[sd];'
-            f'[v][sd]amix=inputs=2:normalize=0:dropout_transition=0,atrim=0:{total:.3f}[mix]'
+            f'[v][sd]amix=inputs=2:normalize=0:dropout_transition=0,atrim=0:{total:.3f},lowpass=f=16000:p=2[mix]'
         )
     else:
         inputs = ['-i', voice, '-i', music, '-i', sfx]
@@ -171,16 +171,16 @@ def mix_audio(voice, music, sfx, total, tmp):
             '[2:a]aformat=channel_layouts=stereo,volume=0.72[s];'
             '[m][vk1]sidechaincompress=threshold=0.02:ratio=3.5:attack=20:release=420:makeup=1[md];'
             '[s][vk2]sidechaincompress=threshold=0.03:ratio=2.2:attack=15:release=300:makeup=1[sd];'
-            f'[v][md][sd]amix=inputs=3:normalize=0:dropout_transition=0,atrim=0:{total:.3f}[mix]'
+            f'[v][md][sd]amix=inputs=3:normalize=0:dropout_transition=0,atrim=0:{total:.3f},lowpass=f=16000:p=2[mix]'
         )
     pre = os.path.join(tmp, 'premix.wav')
     run(['ffmpeg', '-y', '-loglevel', 'error', *inputs, '-filter_complex', graph, '-map', '[mix]', '-ar', '48000', '-c:a', 'pcm_s24le', pre])
-    # two-pass loudness normalisation to -14 LUFS (social video), true peak -1 dBTP
-    r = subprocess.run(['ffmpeg', '-hide_banner', '-i', pre, '-af', 'loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json', '-f', 'null', '-'], capture_output=True, text=True)
+    # two-pass loudness normalisation to -14 LUFS (social video); -3 dBTP leaves headroom for AAC overshoot
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-i', pre, '-af', 'loudnorm=I=-14:TP=-3.0:LRA=11:print_format=json', '-f', 'null', '-'], capture_output=True, text=True)
     js = r.stderr[r.stderr.rfind('{'):r.stderr.rfind('}') + 1]
     m = json.loads(js)
     out = os.path.join(tmp, 'mix.wav')
-    af = (f'loudnorm=I=-14:TP=-1.0:LRA=11:measured_I={m["input_i"]}:measured_TP={m["input_tp"]}:measured_LRA={m["input_lra"]}:'
+    af = (f'loudnorm=I=-14:TP=-3.0:LRA=11:measured_I={m["input_i"]}:measured_TP={m["input_tp"]}:measured_LRA={m["input_lra"]}:'
           f'measured_thresh={m["input_thresh"]}:offset={m["target_offset"]}:linear=true,aresample=48000')
     run(['ffmpeg', '-y', '-loglevel', 'error', '-i', pre, '-af', af, '-ar', '48000', '-c:a', 'pcm_s24le', out])
     return out
@@ -232,7 +232,7 @@ def main():
         run(['ffmpeg', '-y', '-loglevel', 'error', '-i', args.plate, '-i', mix, '-map', '0:v:0', '-map', '1:a:0', '-vf', vf,
              '-c:v', 'libx264', '-preset', 'slow', '-crf', args.crf, '-maxrate', args.maxrate, '-bufsize', '22M',
              '-profile:v', 'high', '-level', '4.2', '-pix_fmt', 'yuv420p', '-r', '30', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
-             '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', '-shortest', args.out])
+             '-c:a', 'aac', '-b:a', '256k', '-ar', '48000', '-movflags', '+faststart', '-shortest', args.out])
         json.dump([{**{k: v for k, v in p.items() if k not in ('emphasis',)}, 'emphasis': sorted(p['emphasis'])} for p in placed],
                   open(os.path.join(ROOT, 'output/voice_placement.json'), 'w'), indent=1)
     print('wrote', args.out)

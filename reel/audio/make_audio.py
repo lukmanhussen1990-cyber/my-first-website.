@@ -468,6 +468,7 @@ def sfx():
                 j = int(rng.uniform(0, 0.4) * SR); m = int(0.01 * SR)
                 if j + m < n_:
                     cr[j:j + m] += hp(noise(m), 2000) * 3 * np.exp(-j / SR * 6)
+            cr = lp(cr, 9000, 4) * np.minimum(1, tt / 0.004)  # band-limited, 4 ms attack: avoids codec overshoot
             x = x + cr + sine(45 * np.exp(-tt * 0.6) + 20, n_) * np.exp(-tt * 1.8) * 2.0
         x = np.tanh(x * 0.6)
         S.add(t, x, g, pan); Wt.add(t, x, g * 0.5)
@@ -572,6 +573,8 @@ def sfx():
     i0 = int(CRASH * SR)
     S.buf[i0:] = 0; Wt.buf[i0:] = 0
     out = S.buf + convolve_stereo(Wt.buf, reverb_ir(1.8, 0.02, 11, 6000))
+    fade = int(0.015 * SR)  # 15 ms: still an instant cut to the ear, but click-free
+    out[i0 - fade:i0] *= np.linspace(1, 0, fade)[:, None]
     out[i0:] = 0
     # the single sad power-down: a descending, wobbly electric 'wah-wahhh' ending in a soft click
     n = int(1.5 * SR); tt = np.arange(n) / SR
