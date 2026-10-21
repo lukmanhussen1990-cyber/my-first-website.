@@ -1,0 +1,66 @@
+{
+  "_comment": "Exact voiceover script. Subtitles are generated word-for-word from 'text' (split on whitespace, punctuation kept). Do not edit text without regenerating voices + subs.",
+  "lines": [
+    { "id": "n1", "speaker": "narrator", "text": "If you're digging in your yard and find a treasure chest, you're rich. Sort of." },
+    { "id": "n2", "speaker": "narrator", "text": "But the gold shines so bright, the whole street can see it. So you dig a deeper hole to hide it." },
+    { "id": "n3", "speaker": "narrator", "text": "But the chest is way too heavy to lift. So you build a pulley that lowers it for you." },
+    { "id": "n4", "speaker": "narrator", "text": "But the neighbor has a metal detector. So you bury it deeper than the detector can reach." },
+    { "id": "n5", "speaker": "narrator", "text": "But the dog keeps sniffing the spot. So you throw a bone to the other side of the yard." },
+    { "id": "n6", "speaker": "narrator", "text": "Congratulations, your treasure is perfectly hidden." },
+    { "id": "g1", "speaker": "grandpa", "direction": "warm and amused", "text": "Thanks for finding my savings, kiddo." }
+  ],
+  "speakers": {
+    "narrator": {
+      "description": "Calm, friendly, a little playful, quick pace, neutral accent.",
+      "elevenlabs": {
+        "voice_id": "N2MNNfQ4izkc8hqG3xMa",
+        "voice_name": "Elena Wren - friendly, warm, neutral accent",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": {
+          "stability": 0.45,
+          "similarity_boost": 0.8,
+          "style": 0.35,
+          "use_speaker_boost": true,
+          "speed": 1.08
+        }
+      },
+      "local": {
+        "engine": "piper",
+        "model": "en_US-lessac-high",
+        "hf_path": "en/en_US/lessac/high/en_US-lessac-high",
+        "length_scale": 0.9,
+        "noise_scale": 0.6,
+        "noise_w_scale": 0.75,
+        "sentence_silence": 0.18,
+        "pitch_semitones": 0.0,
+        "old_man_fx": false
+      }
+    },
+    "grandpa": {
+      "description": "Warm, amused old man.",
+      "elevenlabs": {
+        "voice_id": "pqHfZKP75CvOlQylNhV4",
+        "voice_name": "Bill - wise, mature, old American male",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": {
+          "stability": 0.4,
+          "similarity_boost": 0.8,
+          "style": 0.5,
+          "use_speaker_boost": true,
+          "speed": 0.95
+        }
+      },
+      "local": {
+        "engine": "piper",
+        "model": "en_US-ryan-high",
+        "hf_path": "en/en_US/ryan/high/en_US-ryan-high",
+        "length_scale": 1.12,
+        "noise_scale": 0.667,
+        "noise_w_scale": 0.9,
+        "sentence_silence": 0.2,
+        "pitch_semitones": -2.5,
+        "old_man_fx": true
+      }
+    }
+  }
+}

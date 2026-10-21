@@ -1,0 +1,418 @@
+{
+ "fps": 30,
+ "duration": 50.5,
+ "width": 1080,
+ "height": 1920,
+ "scenes": [
+  {
+   "id": 1,
+   "start": 0.0,
+   "end": 7.5,
+   "name": "dig_find_open"
+  },
+  {
+   "id": 2,
+   "start": 7.5,
+   "end": 14.5,
+   "name": "beams_slam_dig_deep"
+  },
+  {
+   "id": 3,
+   "start": 14.5,
+   "end": 21.5,
+   "name": "strain_pulley_lower_fill"
+  },
+  {
+   "id": 4,
+   "start": 21.5,
+   "end": 29.0,
+   "name": "neighbor_detector_deeper"
+  },
+  {
+   "id": 5,
+   "start": 29.0,
+   "end": 36.0,
+   "name": "dog_sniff_bone"
+  },
+  {
+   "id": 6,
+   "start": 36.0,
+   "end": 41.5,
+   "name": "proud_pullback"
+  },
+  {
+   "id": 7,
+   "start": 41.5,
+   "end": 50.5,
+   "name": "grandpa_twist"
+  }
+ ],
+ "voice_anchors": {
+  "_comment": "Each line starts at its anchor time (seconds). If a line would overlap the next anchor it is pushed later / sped up slightly by the mixer.",
+  "n1": 0.35,
+  "n2": 7.75,
+  "n3": 14.7,
+  "n4": 21.75,
+  "n5": 29.25,
+  "n6": 36.7,
+  "g1": 47.25
+ },
+ "music": {
+  "start": 0.0,
+  "stop": 46.95,
+  "_comment": "Music cuts dead (no fade) at 'stop', right before Grandpa's line."
+ },
+ "sfx": [
+  {
+   "t": 0.45,
+   "type": "dig",
+   "note": "shovel into soil + small dirt toss"
+  },
+  {
+   "t": 1.25,
+   "type": "dig"
+  },
+  {
+   "t": 2.05,
+   "type": "dig"
+  },
+  {
+   "t": 2.62,
+   "type": "clunk",
+   "note": "shovel hits wooden chest lid: hollow wooden knock"
+  },
+  {
+   "t": 3.1,
+   "type": "brush",
+   "note": "hand brushing dirt"
+  },
+  {
+   "t": 3.5,
+   "type": "brush"
+  },
+  {
+   "t": 3.9,
+   "type": "brush"
+  },
+  {
+   "t": 4.25,
+   "type": "lift_whoosh",
+   "dur": 0.9,
+   "note": "kid hauls chest up out of hole"
+  },
+  {
+   "t": 5.05,
+   "type": "dirt_fall",
+   "dur": 0.6,
+   "note": "dirt crumbles off chest"
+  },
+  {
+   "t": 5.2,
+   "type": "thud_soft",
+   "note": "chest set down on lawn"
+  },
+  {
+   "t": 5.45,
+   "type": "creak",
+   "dur": 1.0,
+   "note": "old chest lid creaks open"
+  },
+  {
+   "t": 6.0,
+   "type": "shimmer",
+   "dur": 2.0,
+   "note": "magical gold shimmer/twinkle"
+  },
+  {
+   "t": 7.6,
+   "type": "shimmer_rise",
+   "dur": 1.8,
+   "note": "light beams shoot up into the sky (bright rising magical swell)"
+  },
+  {
+   "t": 9.0,
+   "type": "panic_boing",
+   "note": "small cartoon panic accent (optional, quiet)"
+  },
+  {
+   "t": 9.05,
+   "type": "hop",
+   "gain": 0.5,
+   "note": "kid jumps"
+  },
+  {
+   "t": 9.6,
+   "type": "slam",
+   "note": "heavy wooden lid slam"
+  },
+  {
+   "t": 9.75,
+   "type": "hop",
+   "gain": 0.5,
+   "note": "kid jumps"
+  },
+  {
+   "t": 10.15,
+   "type": "brush",
+   "gain": 0.6,
+   "note": "grab shovel"
+  },
+  {
+   "t": 10.35,
+   "type": "hop",
+   "gain": 0.5,
+   "note": "kid jumps"
+  },
+  {
+   "t": 10.85,
+   "type": "dig_fast"
+  },
+  {
+   "t": 11.27,
+   "type": "dig_fast"
+  },
+  {
+   "t": 11.69,
+   "type": "dig_fast"
+  },
+  {
+   "t": 12.11,
+   "type": "dig_fast"
+  },
+  {
+   "t": 12.53,
+   "type": "dig_fast"
+  },
+  {
+   "t": 12.95,
+   "type": "dig_fast"
+  },
+  {
+   "t": 13.37,
+   "type": "dig_fast"
+  },
+  {
+   "t": 13.79,
+   "type": "dig_fast"
+  },
+  {
+   "t": 13.95,
+   "type": "hop",
+   "gain": 0.6,
+   "note": "kid jumps"
+  },
+  {
+   "t": 14.85,
+   "type": "grunt",
+   "dur": 0.7,
+   "note": "kid strains to lift (cute strained grunt)"
+  },
+  {
+   "t": 15.75,
+   "type": "grunt",
+   "dur": 0.6
+  },
+  {
+   "t": 16.25,
+   "type": "hop",
+   "gain": 0.45,
+   "note": "kid jumps"
+  },
+  {
+   "t": 16.5,
+   "type": "pop_snap",
+   "note": "pulley leg pops in and snaps"
+  },
+  {
+   "t": 16.75,
+   "type": "pop_snap"
+  },
+  {
+   "t": 17.0,
+   "type": "pop_snap"
+  },
+  {
+   "t": 17.25,
+   "type": "pop_snap",
+   "note": "pulley wheel"
+  },
+  {
+   "t": 17.5,
+   "type": "pop_snap",
+   "note": "rope"
+  },
+  {
+   "t": 17.9,
+   "type": "drag",
+   "dur": 0.7,
+   "note": "chest dragged over the grass"
+  },
+  {
+   "t": 18.0,
+   "type": "pulley_squeak",
+   "dur": 2.0,
+   "note": "squeaky pulley as chest lowers"
+  },
+  {
+   "t": 20.0,
+   "type": "thud_soft",
+   "note": "chest reaches the bottom"
+  },
+  {
+   "t": 20.2,
+   "type": "pop_out",
+   "note": "pulley pops away"
+  },
+  {
+   "t": 20.45,
+   "type": "dig_fast",
+   "gain": 0.7
+  },
+  {
+   "t": 20.65,
+   "type": "dirt_fall",
+   "dur": 0.45
+  },
+  {
+   "t": 20.8,
+   "type": "dig_fast",
+   "gain": 0.7
+  },
+  {
+   "t": 21.0,
+   "type": "dirt_fall",
+   "dur": 0.45
+  },
+  {
+   "t": 21.15,
+   "type": "dig_fast",
+   "gain": 0.7
+  },
+  {
+   "t": 21.349999999999998,
+   "type": "dirt_fall",
+   "dur": 0.45
+  },
+  {
+   "t": 22.9,
+   "type": "detector_beeps",
+   "dur": 4.1,
+   "note": "metal detector beeps, faster at first, then fading out and stopping around 27.0"
+  },
+  {
+   "t": 24.8,
+   "type": "dig_fast"
+  },
+  {
+   "t": 25.0,
+   "type": "dirt_fall",
+   "dur": 1.8,
+   "note": "chest sinks deeper"
+  },
+  {
+   "t": 25.3,
+   "type": "dig_fast"
+  },
+  {
+   "t": 25.8,
+   "type": "dig_fast"
+  },
+  {
+   "t": 26.3,
+   "type": "dig_fast"
+  },
+  {
+   "t": 27.4,
+   "type": "shrug",
+   "note": "tiny comedic 'hm' accent (optional, quiet)"
+  },
+  {
+   "t": 29.1,
+   "type": "paws_trot",
+   "dur": 0.9
+  },
+  {
+   "t": 30.1,
+   "type": "sniff",
+   "dur": 1.2,
+   "note": "dog sniffs rapidly"
+  },
+  {
+   "t": 31.35,
+   "type": "paw_dig",
+   "dur": 1.2,
+   "note": "dog scratches dirt with paws"
+  },
+  {
+   "t": 32.8,
+   "type": "whoosh",
+   "dur": 1.0,
+   "note": "bone thrown through the air"
+  },
+  {
+   "t": 33.4,
+   "type": "bark_happy",
+   "note": "happy bark"
+  },
+  {
+   "t": 33.9,
+   "type": "bone_land"
+  },
+  {
+   "t": 34.7,
+   "type": "bark_happy",
+   "gain": 0.5,
+   "note": "distant second bark"
+  },
+  {
+   "t": 35.7,
+   "type": "sparkle_pop",
+   "note": "grass regrows with a little sparkle"
+  },
+  {
+   "t": 36.45,
+   "type": "hand_clap",
+   "note": "dusting off hands"
+  },
+  {
+   "t": 36.8,
+   "type": "hand_clap"
+  },
+  {
+   "t": 41.55,
+   "type": "door",
+   "note": "house door opens"
+  },
+  {
+   "t": 41.9,
+   "type": "humming",
+   "dur": 3.3,
+   "note": "grandpa hums a cheerful little tune"
+  },
+  {
+   "t": 45.25,
+   "type": "dig",
+   "note": "one easy scoop"
+  },
+  {
+   "t": 45.35,
+   "type": "whoosh_up",
+   "dur": 0.6,
+   "note": "chest flies up out of the ground"
+  },
+  {
+   "t": 45.95,
+   "type": "thud_soft"
+  },
+  {
+   "t": 46.35,
+   "type": "creak",
+   "dur": 0.55
+  },
+  {
+   "t": 46.55,
+   "type": "shimmer",
+   "dur": 1.5
+  }
+ ]
+}
