@@ -566,14 +566,14 @@
       var sa = Math.sin(a);
       var r0 = r * 1.3;
       var r1 = r * (i % 2 ? 1.8 : 2.2);   // alternating lengths
-      var w = r * 0.12;                    // half-width at the base
+      var w = r * 0.09;                    // half-width at the base
       var x0 = ca * r0;
       var y0 = sa * r0;
       var x1 = ca * r1;
       var y1 = sa * r1;
       var fade = g.createLinearGradient(x0, y0, x1, y1);
-      fade.addColorStop(0, rgba(P.sun, 0.9));
-      fade.addColorStop(0.5, rgba(P.sun, 0.35));
+      fade.addColorStop(0, rgba(P.sun, 0.75));
+      fade.addColorStop(0.45, rgba(P.sun, 0.28));
       fade.addColorStop(1, rgba(P.sun, 0));
       g.beginPath();
       g.moveTo(x0 - sa * w, y0 + ca * w);
