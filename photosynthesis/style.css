@@ -6,13 +6,20 @@
   --text: #eaf5ee;
   --muted: #9fbfb0;
   --accent: #ffd166;
+  --amber: #ffb703;
   --leaf: #2d6a4f;
   --stroma: #1b4332;
   --success: #6bcb77;
-  /* translucent ink for the scrim, muted for hairlines, black for shadows */
+  --success-soft: rgba(107, 203, 119, 0.12);
+  /* translucent ink for the scrim and HUD, muted for hairlines, black for shadows */
   --scrim: rgba(12, 26, 22, 0.82);
+  --glass: rgba(19, 38, 31, 0.86);
   --line: rgba(159, 191, 176, 0.24);
   --shadow: rgba(0, 0, 0, 0.45);
+  --glow: rgba(255, 209, 102, 0.55);
+  /* faint leaf tints for the page background */
+  --leaf-glow: rgba(64, 145, 108, 0.2);
+  --leaf-deep: rgba(45, 106, 79, 0.3);
   --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -21,7 +28,10 @@
 
 body {
   margin: 0;
-  background: var(--ink);
+  background:
+    radial-gradient(60% 45% at 10% 0%, var(--leaf-glow), transparent 70%),
+    radial-gradient(55% 45% at 95% 100%, var(--leaf-deep), transparent 70%),
+    var(--ink);
   color: var(--text);
   font-family: var(--font);
   line-height: 1.45;
@@ -40,80 +50,93 @@ body {
 /* Full-height column; the scene takes the space the HUD leaves. */
 .game { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
 
-/* HUD: a compact grid on phones, one wide row from 720px. */
+/* HUD: a translucent panel. Phones stack it: title, goal, a toolbar, progress, stages. */
 .hud {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    "title score"
-    "mid restart"
-    "bar bar"
-    "stages stages"
-    "hint hint";
-  gap: 8px 14px;
+    "title"
+    "mid"
+    "meta"
+    "bar"
+    "stages"
+    "hint";
+  gap: 8px;
   align-items: center;
-  padding: 10px 16px 12px;
-  background: var(--panel);
+  padding: 12px 16px 14px;
+  background: var(--glass);
   border-bottom: 1px solid var(--line);
 }
 
-.hud-title {
-  grid-area: title; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px;
-}
-
+/* Level label small and muted; level name larger. */
+.hud-title { grid-area: title; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .hud-level {
-  margin: 0; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  margin: 0; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
 }
+.hud-name { margin: 0; font-size: 1.1rem; font-weight: 700; line-height: 1.25; }
 
-.hud-name { margin: 0; font-weight: 700; }
+/* Goal readable; count bold. */
+.hud-mid { grid-area: mid; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.hud-mid p { margin: 0; font-size: 0.92rem; }
+#hud-count, #hud-stock { font-weight: 800; }
+#hud-count { color: var(--accent); font-variant-numeric: tabular-nums; }
 
-.hud-mid {
-  grid-area: mid; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px;
-}
-
-.hud-mid p { margin: 0; font-size: 0.9rem; }
-#hud-count, #hud-stock { font-weight: 700; }
-#hud-count { color: var(--accent); }
-
-/* On phones the score and restart button sit directly in the grid. */
-.hud-meta { display: contents; }
-
+/* Score first, then buttons. Feature buttons added before Restart share this row. */
+.hud-meta { grid-area: meta; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .hud-score {
-  grid-area: score; justify-self: end; margin: 0; font-size: 0.8rem; letter-spacing: 0.06em;
+  margin: 0; margin-right: auto; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--muted); white-space: nowrap;
 }
-
 #hud-score {
-  font-size: 1.35rem; font-weight: 800; letter-spacing: 0; color: var(--accent);
+  font-size: 1.3rem; font-weight: 800; letter-spacing: 0; color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
-#btn-restart { grid-area: restart; justify-self: end; }
-
-.progress { grid-area: bar; height: 8px; overflow: hidden; border-radius: 999px; background: var(--leaf); }
-.progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
-
-.stages {
-  grid-area: stages; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none;
+/* Progress: an amber gradient with a soft glow. The glow is a filter, so an empty fill casts none. */
+.progress {
+  grid-area: bar; height: 10px; border-radius: 999px; background: var(--leaf);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.progress-fill {
+  height: 100%; width: 0; border-radius: inherit;
+  background: linear-gradient(90deg, var(--amber), var(--accent));
+  filter: drop-shadow(0 0 6px var(--glow));
+  transition: width 0.4s ease;
 }
 
-/* Chip states: todo (the default) is muted. */
-.stage { padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.78rem; color: var(--muted); }
-.stage[data-state="active"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
-.stage[data-state="done"] { border-color: var(--success); color: var(--success); }
+.stages { grid-area: stages; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+/* Chip states: todo (the default) is muted. Active pulses gently; done shows a check mark. */
+.stage {
+  padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.78rem; line-height: 1.5; color: var(--muted);
+}
+.stage[data-state="active"] {
+  border-color: var(--accent); color: var(--accent); font-weight: 700;
+  animation: chipPulse 2.4s ease-in-out infinite;
+}
+.stage[data-state="done"] { border-color: var(--success); color: var(--success); background: var(--success-soft); }
 .stage[data-state="done"]::before { content: "\2713"; margin-right: 0.35em; }
 
 .hud-hint { grid-area: hint; margin: 0; font-size: 0.85rem; color: var(--muted); }
 
-/* Buttons are at least 44px tall for touch. */
+/* Buttons share one height, radius and type, so feature buttons line up with Restart. */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
-  padding: 0 18px; border: 1px solid; border-radius: 12px;
-  font: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 0 18px; border: 1px solid; border-radius: 12px;
+  font: inherit; font-size: 0.95rem; font-weight: 700; line-height: 1.2; white-space: nowrap;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease,
+    color 160ms ease, box-shadow 160ms ease;
 }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px var(--shadow); }
+.btn:active { transform: translateY(0) scale(0.97); box-shadow: none; }
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .btn-primary { border-color: var(--accent); background: var(--accent); color: var(--ink); }
+.btn-primary:hover { box-shadow: 0 6px 18px var(--glow); }
 .btn-ghost { border-color: var(--muted); background: none; color: var(--text); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost:hover { border-color: var(--accent); background: var(--line); color: var(--accent); }
 
 /* Scene: the canvas fills the wrap and the overlay covers it. */
 .scene-wrap { position: relative; flex: 1; min-height: 340px; overflow: hidden; background: var(--ink); }
@@ -126,15 +149,16 @@ body {
 
 /* The card centres with auto margins, so a tall card starts at the top and scrolls. */
 .overlay {
-  position: absolute; inset: 0; z-index: 1; display: flex; overflow-y: auto; padding: 12px;
+  position: absolute; inset: 0; z-index: 1; display: flex; overflow-y: auto; padding: 16px;
   background: var(--scrim);
 }
 
 .overlay-card {
-  width: 100%; max-width: min(92vw, 460px); margin: auto; padding: 20px 18px;
+  width: 100%; max-width: 460px; margin: auto; padding: 22px 20px;
   border: 1px solid var(--line); border-radius: 18px; background: var(--panel);
   box-shadow: 0 18px 48px var(--shadow); text-align: center;
 }
+#overlay:not([hidden]) .overlay-card { animation: cardRise 240ms ease-out both; }
 
 .overlay-card > * { margin: 0; }
 .overlay-card > * + * { margin-top: 12px; }
@@ -148,7 +172,11 @@ body {
   background: var(--stroma); text-align: left; font-size: 0.95rem;
 }
 
-.overlay-stars { font-size: 2rem; line-height: 1; letter-spacing: 0.2em; color: var(--accent); }
+.overlay-stars {
+  font-size: 2rem; line-height: 1; letter-spacing: 0.2em; color: var(--accent);
+  text-shadow: 0 0 14px var(--glow);
+}
+#overlay-stars:not([hidden]) { animation: starPulse 600ms ease-in-out 240ms both; }
 
 .stats { text-align: left; }
 .stats div { display: flex; justify-content: space-between; gap: 16px; padding: 6px 2px; border-bottom: 1px solid var(--line); }
@@ -156,9 +184,11 @@ body {
 .stats dt { color: var(--muted); }
 .stats dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-#overlay-button { min-width: 200px; margin-top: 18px; }
+/* Overlay buttons share one minimum width; the primary button sits lower. */
+.overlay-card .btn { min-width: 200px; }
+#overlay-button { margin-top: 18px; }
 
-/* From 720px: one HUD row (title, goal and count, score and restart), then progress and stages. */
+/* From 720px: one HUD row (title, goal and count, score and buttons), then progress and stages. */
 @media (min-width: 720px) {
   .hud {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -168,11 +198,32 @@ body {
       "stages hint hint";
     padding: 12px 24px 14px;
   }
-
-  .hud-title { flex-direction: column; align-items: flex-start; gap: 2px; }
   .hud-mid { justify-content: center; }
-  .hud-meta { display: flex; grid-area: meta; justify-self: end; align-items: center; gap: 14px; }
+  .hud-meta { justify-self: end; flex-wrap: nowrap; gap: 12px; }
+  .hud-score { margin-right: 0; }
   .hud-hint { justify-self: end; text-align: right; }
+}
+
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes chipPulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 10px 0 var(--glow); }
+}
+
+/* Each new animation has its own rule here. The global rule after it stops everything else. */
+@media (prefers-reduced-motion: reduce) {
+  #overlay:not([hidden]) .overlay-card,
+  #overlay-stars:not([hidden]),
+  .stage[data-state="active"] { animation: none; }
+  .btn:hover, .btn:active { transform: none; }
+  .progress-fill { transition: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
