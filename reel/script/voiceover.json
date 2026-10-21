@@ -1,0 +1,67 @@
+{
+  "title": "John Powers the City",
+  "narrator": "Deep, dramatic movie-trailer narrator, friendly, neutral accent. Playful in scenes 1-5, real drama in the storm scenes 6-9.",
+  "notes": "Each line is placed in its scene so that its 'anchor' word lands on the matching visual event ('anchor_time', seconds from video start). Lines are never moved outside their scene window; if a new voice is too long it is gently time-compressed.",
+  "lines": [
+    {
+      "id": 1, "scene": 1, "window": [0.25, 6.45],
+      "text": "If you put John in a giant wheel, he can power the whole house. Sort of.",
+      "anchor_word": 14, "anchor_time": 5.05,
+      "style": "playful", "emphasis": []
+    },
+    {
+      "id": 2, "scene": 2, "window": [6.75, 13.25],
+      "text": "But spinning alone makes nothing. So you connect it to a generator, with a magnet and copper wire.",
+      "anchor_word": 5, "anchor_time": 9.0,
+      "style": "playful", "emphasis": []
+    },
+    {
+      "id": 3, "scene": 3, "window": [13.55, 20.05],
+      "text": "But John is too slow to make enough power. So you add gears that make the generator spin much faster.",
+      "anchor_word": 9, "anchor_time": 16.0,
+      "style": "playful", "emphasis": []
+    },
+    {
+      "id": 4, "scene": 4, "window": [20.35, 26.65],
+      "text": "But the power comes in bumps, and the lights flicker. So you add a battery to store it.",
+      "anchor_word": 10, "anchor_time": 23.05,
+      "style": "playful", "emphasis": []
+    },
+    {
+      "id": 5, "scene": 5, "window": [26.95, 33.25],
+      "text": "But John gets tired after five minutes. So you dangle a snack in front of him, just out of reach.",
+      "anchor_word": 7, "anchor_time": 29.4,
+      "style": "playful", "emphasis": []
+    },
+    {
+      "id": 6, "scene": 6, "window": [33.55, 40.25],
+      "text": "Then, the storm hits. Lightning takes out the power station, and the whole city goes dark.",
+      "anchor_word": 4, "anchor_time": 36.0,
+      "style": "dramatic", "emphasis": ["storm", "Lightning", "dark"]
+    },
+    {
+      "id": 7, "scene": 7, "window": [40.55, 46.25],
+      "text": "Every house is waiting. And there's only one wheel left spinning.",
+      "anchor_word": 4, "anchor_time": 43.1,
+      "style": "dramatic", "emphasis": ["waiting", "one", "wheel"]
+    },
+    {
+      "id": 8, "scene": 8, "window": [46.55, 52.85],
+      "text": "But at this speed, the wheel starts to burn. So you add water cooling, just like a race car engine.",
+      "anchor_word": 9, "anchor_time": 49.2,
+      "style": "dramatic", "emphasis": ["burn", "water", "cooling"]
+    },
+    {
+      "id": 9, "scene": 9, "window": [53.15, 59.45],
+      "text": "John runs faster than he has ever run before. And one by one, the lights come back.",
+      "anchor_word": 9, "anchor_time": 56.2,
+      "style": "dramatic", "emphasis": ["faster", "lights", "back"]
+    },
+    {
+      "id": 10, "scene": 10, "window": [59.75, 62.9],
+      "text": "Congratulations. John powers the whole city.",
+      "anchor_word": 0, "anchor_time": 59.95,
+      "style": "triumphant", "emphasis": []
+    }
+  ]
+}

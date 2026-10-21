@@ -1,0 +1,10 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Hamster Wheel Reel</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import './main.js';
+window.APP.init().then(()=>{ window.__inited = true; }).catch(e=>{ window.__error = String(e && e.stack || e); console.error(e); });
+</script>
+</body></html>
