@@ -46,7 +46,7 @@ for ((f = 0; f < FRAMES; f += CHUNK)); do
 done
 if [ "$SCALE" = 1 ]; then
   ffmpeg -v error -y "${inputs[@]}" -filter_complex "${filter}concat=n=$n:v=1:a=0,format=yuv420p[v]" -map "[v]" \
-    -c:v libx264 -preset slow -crf 17 -profile:v high -pix_fmt yuv420p -r 30 -movflags +faststart render/clean.mp4
+    -c:v libx264 -preset slow -crf 19 -profile:v high -pix_fmt yuv420p -r 30 -movflags +faststart render/clean.mp4
   tools/export.sh
 else
   # preview: scaled up to 1080x1920 so the subtitles burn in at their real size

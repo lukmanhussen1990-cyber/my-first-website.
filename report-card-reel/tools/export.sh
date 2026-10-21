@@ -14,6 +14,6 @@ for f in "$IN" "$MIX" "$ASS"; do
 done
 ffmpeg -v error -y -i "$IN" -i "$MIX" \
   -vf "ass=$ASS:fontsdir=assets,format=yuv420p" \
-  -map 0:v:0 -map 1:a:0 -c:v libx264 -preset slow -crf 17 -profile:v high -level 4.2 -pix_fmt yuv420p \
+  -map 0:v:0 -map 1:a:0 -c:v libx264 -preset slow -crf 19 -profile:v high -level 4.2 -pix_fmt yuv420p \
   -r 30 -g 60 -c:a aac -b:a 192k -ar 48000 -ac 2 -movflags +faststart -shortest "$OUT"
 echo "done -> $OUT"
