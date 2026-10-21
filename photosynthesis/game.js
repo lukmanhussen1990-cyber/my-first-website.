@@ -107,6 +107,10 @@
   let statusEl = null;
   let stageEls = [];
   let last = 0;
+  let paused = false;
+  let pausedByTab = false;
+  let levelMs = 0;         // time on the current level since play started
+  let emitted = { screen: '', level: -1 };
 
   function resetRun() {
     score = 0;
@@ -127,6 +131,7 @@
     timers = { spawn: 0, finish: 0, turbine: 0 };
     entities = [];
     calvin = 0;
+    levelMs = 0;
   }
 
   resetRun();
@@ -170,11 +175,18 @@
     if (statusEl && statusEl.textContent !== text) statusEl.textContent = text;
   }
 
+  // Event bus: each notable change is dispatched on the document as 'photo:event'.
+  function emit(type, data) {
+    const detail = Object.assign({ type: type }, data || {});
+    document.dispatchEvent(new CustomEvent('photo:event', { detail: detail }));
+  }
+
   function registerMiss(x, y, text) {
     misses += 1;
     streak = 0;
     popup(text, x, y, CFG.colors.miss);
     say(text);
+    emit('miss', { level: level });
   }
 
   // Spawning and the per-level clock.
@@ -319,18 +331,29 @@
     finishing = true;
     timers.finish = level === LAST ? CFG.glucoseDelay : CFG.finishDelay;
     stars.push(starsFor(misses));
+    emit('level-complete', {
+      level: level,
+      stars: stars[stars.length - 1],
+      misses: misses,
+      score: score,
+      elapsedMs: Math.round(levelMs)
+    });
     retireField();
     if (level === LAST) addGlucose();
   }
 
   function update(dt) {
-    elapsed += dt;
-    calvin = Math.max(0, calvin - dt / CFG.carbon.calvinDecay);
-    const playing = screen === 'playing';
-    if (playing && !finishing) runLevel(dt);
-    updateEntities(dt, playing && !finishing);
-    if (playing && finishing) {
-      timers.finish -= dt;
+    elapsed += dt;                 // ambient clock for the renderer keeps running
+    const step = paused ? 0 : dt;  // game time stops while paused
+    calvin = Math.max(0, calvin - step / CFG.carbon.calvinDecay);
+    const live = screen === 'playing' && !paused && !finishing;
+    if (live) {
+      levelMs += step * 1000;
+      runLevel(step);
+    }
+    updateEntities(step, live);
+    if (screen === 'playing' && !paused && finishing) {
+      timers.finish -= step;
       if (timers.finish <= 0) showComplete();
     }
     renderHud();
@@ -370,14 +393,32 @@
     return best;
   }
 
+  // Taps count only on an unpaused level with no overlay and no level-end wait.
+  function canTap() {
+    return ready && ov.overlay.hidden && screen === 'playing' && !finishing && !paused;
+  }
+
+  function tapPx(px, py, rect) {
+    const hit = hitTest(px, py, rect);
+    if (!hit) return false;
+    if (hit === 'turbine') tapTurbine();
+    else tapEntity(hit);
+    return true;
+  }
+
   function onPointerDown(ev) {
-    if (!ov.overlay.hidden) return;
-    if (screen !== 'playing' || finishing) return;
+    if (!canTap()) return;
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const hit = hitTest(ev.clientX - rect.left, ev.clientY - rect.top, rect);
-    if (hit === 'turbine') tapTurbine();
-    else if (hit) tapEntity(hit);
+    tapPx(ev.clientX - rect.left, ev.clientY - rect.top, rect);
+  }
+
+  // Same as a pointer tap at normalized (x, y) of the canvas. Returns true on a hit.
+  function tapAt(x, y) {
+    if (!canTap()) return false;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return false;
+    return tapPx(x * rect.width, y * rect.height, rect);
   }
 
   function tapEntity(e) {
@@ -393,6 +434,7 @@
     scorePoints(e.x, e.y);
     counts[0] += 1;
     say(msg.photon);
+    emit('capture', { level: 0, count: counts[0] });
     if (counts[0] >= targets[0]) completeLevel();
   }
 
@@ -404,11 +446,13 @@
     addEntity(entity('proton', p.x, p.y, CFG.size.proton, { vx: 0.18, vy: -0.2, fadeRate: 1 / CFG.fx.decorLife }));
     addEntity(entity('electron', p.x, p.y, CFG.size.electron, { vx: 0.2, vy: 0.1, fadeRate: 1 / CFG.fx.decorLife }));
     splits += 1;
+    emit('split', { level: 1, count: splits });
     if (splits % CFG.split.splitsPerO2 === 0) {
       counts[0] += 1;
       totals.o2 += 1;
       addEntity(entity('o2', p.x, p.y, CFG.size.o2, { vy: -CFG.fx.o2Rise, fadeRate: 1 / CFG.fx.o2Life }));
       say(fill(msg.o2, { n: counts[0], total: targets[0] }));
+      emit('o2', { level: 1, count: counts[0] });
     } else {
       say(msg.split);
     }
@@ -424,6 +468,7 @@
     burst(s.x, s.y, CFG.colors.nadph);
     addEntity(entity('nadph', s.x, s.y, CFG.size.nadph, { vy: CFG.fx.dropSpeed, fadeRate: 1 / CFG.fx.dropLife }));
     say(msg.nadph);
+    emit('nadph', { level: 2, count: counts[1] });
     if (counts[0] >= targets[0] && counts[1] >= targets[1]) completeLevel();
   }
 
@@ -443,6 +488,7 @@
     burst(t.x, t.y, CFG.colors.atp);
     addEntity(entity('atp', t.x, t.y, CFG.size.atp, { vy: CFG.fx.dropSpeed, fadeRate: 1 / CFG.fx.dropLife }));
     say(msg.atp);
+    emit('atp', { level: 2, count: counts[0] });
     if (counts[0] >= targets[0] && counts[1] >= targets[1]) completeLevel();
   }
 
@@ -470,6 +516,7 @@
     addSugar(counts[0] - 1);
     calvin = 1;
     say(fill(msg.co2, { n: counts[0], total: targets[0] }));
+    emit('fix', { level: 3, count: counts[0] });
     if (counts[0] >= targets[0]) completeLevel();
   }
 
@@ -553,7 +600,7 @@
     const info = content.levels[level];
     const n = stars[stars.length - 1];
     finishing = false;
-    screen = 'complete';
+    setScreen('complete');
     fillOverlay({
       eyebrow: ui.levelComplete,
       title: info.name,
@@ -648,26 +695,39 @@
   }
 
   // Screen flow. Only the overlay button moves the game between screens.
+  // Every screen change goes through setScreen, so the event bus sees each one once.
+  function setScreen(name) {
+    screen = name;
+    if (emitted.screen === name && emitted.level === level) return;
+    emitted = { screen: name, level: level };
+    emit('screen', { screen: name, level: level });
+  }
+
   function enterTitle() {
     resetRun();
     resetLevel(0);
-    screen = 'title';
+    setScreen('title');
     showTitle();
   }
 
   function enterIntro(index) {
     resetLevel(index);
-    screen = 'intro';
+    setScreen('intro');
     showIntro();
   }
 
   function beginPlaying() {
-    screen = 'playing';
+    setScreen('playing');
     setHidden(ov.overlay, true);
   }
 
   function enterFinale() {
-    screen = 'finale';
+    setScreen('finale');
+    emit('finale', {
+      score: score,
+      stars: stars.reduce(function (sum, n) { return sum + n; }, 0),
+      stats: { o2: totals.o2, atp: totals.atp, nadph: totals.nadph, co2: totals.co2 }
+    });
     showFinale();
   }
 
@@ -689,13 +749,37 @@
   }
 
   function onRestart() {
+    emit('restart', {});
     enterTitle();
+  }
+
+  // Pause freezes game time (movement, spawns, timers); rendering continues. Both are idempotent.
+  function pause() {
+    paused = true;
+  }
+
+  function resume() {
+    paused = false;
+    pausedByTab = false;
+  }
+
+  // Pause when the tab is hidden. Resume on return only if this handler did the pausing.
+  function onVisibility() {
+    if (document.hidden) {
+      if (!paused) {
+        pause();
+        pausedByTab = true;
+      }
+    } else if (pausedByTab) {
+      resume();
+    }
   }
 
   function state() {
     return {
       screen: screen,
       level: level,
+      paused: paused,
       score: score,
       stars: stars.slice(),
       counts: counts.slice(),
@@ -789,13 +873,14 @@
     hud.restart.addEventListener('click', onRestart);
     window.addEventListener('resize', onResize);
     window.addEventListener('load', onResize);
+    document.addEventListener('visibilitychange', onVisibility);
     ready = true;
     enterTitle();
     last = now();
     requestAnimationFrame(frame);
   }
 
-  P.game = { state: state, goToLevel: goToLevel };
+  P.game = { state: state, goToLevel: goToLevel, tapAt: tapAt, pause: pause, resume: resume };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
