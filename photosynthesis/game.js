@@ -34,7 +34,9 @@
     fx: {
       burstLife: 0.5, popupLife: 0.9, popupRise: 0.12, tapFade: 0.15, missFade: 0.35,
       retireFade: 0.3, decorLife: 0.6, o2Life: 2.0, o2Rise: 0.22, dropSpeed: 0.12,
-      dropLife: 1.6, flyLife: 0.35
+      dropLife: 1.6, flyLife: 0.35,
+      protonVx: 0.18, protonVy: -0.2, electronVx: 0.2, electronVy: 0.1,
+      glucoseBursts: [0.09, 0.13, 0.17]
     },
     colors: {
       miss: '#9fbfb0', photon: '#ffd166', split: '#8ecae6', nadph: '#b388eb',
@@ -322,9 +324,9 @@
   function addGlucose() {
     const r = CFG.ring;
     addEntity(entity('glucose', r.x, r.y, CFG.size.glucose));
-    burst(r.x, r.y, CFG.colors.glucose, 0.09);
-    burst(r.x, r.y, CFG.colors.glucose, 0.13);
-    burst(r.x, r.y, CFG.colors.glucose, 0.17);
+    CFG.fx.glucoseBursts.forEach(function (size) {
+      burst(r.x, r.y, CFG.colors.glucose, size);
+    });
   }
 
   function completeLevel() {
@@ -443,8 +445,12 @@
     burst(e.x, e.y, CFG.colors.split);
     scorePoints(e.x, e.y);
     const p = CFG.psII;
-    addEntity(entity('proton', p.x, p.y, CFG.size.proton, { vx: 0.18, vy: -0.2, fadeRate: 1 / CFG.fx.decorLife }));
-    addEntity(entity('electron', p.x, p.y, CFG.size.electron, { vx: 0.2, vy: 0.1, fadeRate: 1 / CFG.fx.decorLife }));
+    addEntity(entity('proton', p.x, p.y, CFG.size.proton, {
+      vx: CFG.fx.protonVx, vy: CFG.fx.protonVy, fadeRate: 1 / CFG.fx.decorLife
+    }));
+    addEntity(entity('electron', p.x, p.y, CFG.size.electron, {
+      vx: CFG.fx.electronVx, vy: CFG.fx.electronVy, fadeRate: 1 / CFG.fx.decorLife
+    }));
     splits += 1;
     emit('split', { level: 1, count: splits });
     if (splits % CFG.split.splitsPerO2 === 0) {
