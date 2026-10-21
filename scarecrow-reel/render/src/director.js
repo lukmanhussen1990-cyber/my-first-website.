@@ -361,10 +361,10 @@ export class Director {
       add(i, { type: 'fly', t0: 20.6 + st, t1: 21.4 + st, from: (tt) => { const q = this.crowPose(i, tt - 0.001); return { p: V(q.x, q.y, q.z), yaw: q.yaw }; }, to: off(i % 2 ? 4.2 : -4.2, 3.6, -4), h: 0.4, panic: true });
       add(i, { type: 'hide', t0: 21.4 + st, t1: 22.05 + i * 0.25 });
       // ---- scene 4: sneak in on tiptoe from the left, step into the cone, flee
-      const sneakEnd = [-0.68, -0.98, -1.26, -1.52, -1.78][i];
-      add(i, { type: 'walk', t0: 22.05 + i * 0.25, t1: 25.55, from: V(-2.6 - i * 0.28, 0.0, -0.72), to: V(sneakEnd, 0.0, -0.5 + i * 0.03), tiptoe: true });
-      add(i, { type: 'perch', t0: 25.55, t1: 25.86 + st * 0.5, at: ground(sneakEnd, -0.5 + i * 0.03, 1.4), look: SCF, mood: (t) => ({ lid: t > 25.64 ? -0.3 : 0.2, wide: t > 25.64 ? 1 : 0, beakOpen: t > 25.68 ? 0.8 : 0, squash: -pulse(t, 25.64, 0.03, 0.2) * 0.15 }) });
-      add(i, { type: 'fly', t0: 25.86 + st * 0.5, t1: 27.1 + st, from: ground(sneakEnd, -0.5 + i * 0.03, 1.4), to: off(-4.4, 3.8, -3.5), h: 0.7, panic: true });
+      const sneakEnd = [-0.5, -0.74, -0.96, -1.16, -1.34][i], sneakZ = [-0.52, -0.66, -0.48, -0.64, -0.5][i];
+      add(i, { type: 'walk', t0: 22.0 + i * 0.22, t1: 25.55, from: V(-1.75 - i * 0.2, 0.0, sneakZ - 0.12), to: V(sneakEnd, 0.0, sneakZ), tiptoe: true });
+      add(i, { type: 'perch', t0: 25.55, t1: 25.86 + st * 0.5, at: ground(sneakEnd, sneakZ, 1.4), look: SCF, mood: (t) => ({ lid: t > 25.64 ? -0.3 : 0.2, wide: t > 25.64 ? 1 : 0, beakOpen: t > 25.68 ? 0.8 : 0, squash: -pulse(t, 25.64, 0.03, 0.2) * 0.15 }) });
+      add(i, { type: 'fly', t0: 25.86 + st * 0.5, t1: 27.1 + st, from: ground(sneakEnd, sneakZ, 1.4), to: off(-4.4, 3.8, -3.5), h: 0.7, panic: true });
       add(i, { type: 'hide', t0: 27.1 + st, t1: 28.75 + st });
       // ---- scene 5: back and bored; one waves at the eyes; screech; dive into the bushes
       const bx = [-0.62, -0.95, -1.28, -1.6, -0.3][i], bz = [-0.42, -0.2, -0.46, -0.24, -0.6][i];
@@ -381,7 +381,7 @@ export class Director {
       }
       if (i === 3) {
         add(i, { type: 'hide', t0: 33.1 + st * 0.3, t1: 34.15 });
-        add(i, { type: 'peek', t0: 34.15, t1: 35.3, at: () => ({ p: V(BUSHES[1].x + 0.1, BUSHES[1].r * 1.45, BUSHES[1].z + 0.18), yaw: -0.3 }) });
+        add(i, { type: 'peek', t0: 34.15, t1: 35.3, at: () => ({ p: V(BUSHES[0].x + 0.18, BUSHES[0].r * 1.45, BUSHES[0].z + 0.22), yaw: 0.3 }) });
         add(i, { type: 'hide', t0: 35.3, t1: 41.6 });
       } else add(i, { type: 'hide', t0: 33.1 + st * 0.3, t1: 41.6 });
       // ---- scene 7: the family on the hat, peck the speaker button, dance
@@ -542,7 +542,7 @@ export class Director {
     s(29.35, 'sensor_click', 0.8); s(29.37, 'alarm_buzz', 0.5); s(30.15, 'sensor_click', 0.8); s(30.17, 'alarm_buzz', 0.5);
     s(29.9, 'flap', 0.5); s(30.5, 'caw_smug', 0.7, -0.3); s(30.9, 'yawn_caw', 0.6, -0.2); s(30.6, 'facepalm', 0.6);
     s(31.6, 'whoosh_small', 0.7); s(31.95, 'snap', 0.9); s(32.2, 'speaker_on', 0.6);
-    s(32.6, 'hawk', 1.0); s(32.68, 'caw_panic', 0.9, -0.3); s(32.72, 'flap_big', 1.0); s(33.0, 'bush', 1.0, -0.5); s(33.08, 'bush', 1.0, 0.5); s(34.2, 'bush_small', 0.6, 0.4);
+    s(32.6, 'hawk', 1.0); s(32.68, 'caw_panic', 0.9, -0.3); s(32.72, 'flap_big', 1.0); s(33.0, 'bush', 1.0, -0.5); s(33.08, 'bush', 1.0, 0.5); s(34.2, 'bush_small', 0.6, -0.4);
     s(36.0, 'motor_burst', 0.6); s(37.45, 'boing', 0.4); s(37.95, 'boing', 0.4);
     s(41.3, 'pop_soft', 0.6); s(41.55, 'page_flip', 0.9); s(41.85, 'page_flip', 0.9); s(42.15, 'page_flip', 0.9);
     for (let k = 0; k < 11; k++) s(43.5 + k * 0.17 + (k % 3) * 0.05, 'chirp', 0.6, k % 2 ? 0.2 : -0.2);
@@ -612,7 +612,7 @@ export class Director {
 
     this.cut.update(t, 1.35, -0.26);
     this.world.bushes.forEach((B, k) => {
-      const v = [33.0, 33.08].reduce((a, s, j) => a + (j === k ? pulse(t, s, 0.02, 0.5) : 0), 0) + (k === 1 ? pulse(t, 34.2, 0.05, 0.3) * 0.4 : 0);
+      const v = [33.0, 33.08].reduce((a, s, j) => a + (j === k ? pulse(t, s, 0.02, 0.5) : 0), 0) + (k === 0 ? pulse(t, 34.2, 0.05, 0.3) * 0.4 : 0);
       B.grp.rotation.z = Math.sin(t * 40) * 0.06 * v; B.grp.scale.set(1 + v * 0.05, 1 - v * 0.04, 1 + v * 0.05);
     });
     const cal = t < 25 ? { t0: 7.05, t1: 8.35, flips: [7.45, 7.75, 8.05], first: 0 } : { t0: 41.3, t1: 42.5, flips: [41.55, 41.85, 42.15], first: 3 };
