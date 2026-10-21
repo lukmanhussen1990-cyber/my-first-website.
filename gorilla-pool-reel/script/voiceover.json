@@ -1,0 +1,25 @@
+{
+  "_comment": "Narration script + beat placement. 'at' = seconds into the video where that part of the line starts. Lines with 'split_word' are cut just before that word so the second half lands on its own story beat (the 3D animation is fixed, the voice adapts to it).",
+  "fps": 30,
+  "duration": 50.0,
+  "elevenlabs": {
+    "voice_id": "oXpouBLuKFVTJwcJO3YL",
+    "voice_name": "Holden - Warm Midwest Narrator",
+    "model_id": "eleven_multilingual_v2",
+    "voice_settings": {"stability": 0.45, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": true, "speed": 1.08}
+  },
+  "lines": [
+    {"id": "line01", "scene": 1, "text": "If you hire an angry gorilla to dig your pool, it'll be done in seconds. Sort of.",
+     "at": 0.35, "split_word": "Sort", "split_at": 5.15, "latest_end": 6.95},
+    {"id": "line02", "scene": 2, "text": "But he digs so fast, the dirt lands on your neighbor. So you give him a wheelbarrow.",
+     "at": 7.15, "split_word": "So", "split_at": 10.25, "latest_end": 13.9},
+    {"id": "line03", "scene": 3, "text": "But the hole goes way too deep. So you show him a map with the perfect depth.",
+     "at": 14.2, "split_word": "So", "split_at": 16.7, "latest_end": 20.9},
+    {"id": "line04", "scene": 4, "text": "But the dirt walls cave in. So he pounds them flat, and you add concrete and tiles.",
+     "at": 21.2, "split_word": "So", "split_at": 23.1, "latest_end": 27.9},
+    {"id": "line05", "scene": 5, "text": "But now he's angry again. So you pay him in bananas, and he fills it with water.",
+     "at": 28.2, "split_word": "So", "split_at": 29.9, "latest_end": 34.9},
+    {"id": "line06", "scene": 6, "text": "Congratulations, you built a pool in record time.",
+     "at": 36.2, "latest_end": 41.2}
+  ]
+}
