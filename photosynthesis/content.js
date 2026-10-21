@@ -84,7 +84,8 @@
         o2: 'Oxygen released: {n} of {total}',
         co2: 'CO₂ fixed: {n} of {total}',
         atp: 'ATP made',
-        nadph: 'NADPH made'
+        nadph: 'NADPH made',
+        progress: 'Progress: {n} of {total}'
       }
     }
   };

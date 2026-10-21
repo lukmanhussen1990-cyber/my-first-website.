@@ -21,6 +21,9 @@
     points: 10,
     streakMin: 3,
     streakBonus: 5,
+    streakMilestones: [3, 6, 10],   // streak counts that pop the bonus popup
+    progressSteps: 4,               // #status announces each quarter of a level's target
+    hint: { idleSec: 8, refreshSec: 1.4 },   // idle hint: first after idleSec, then every refreshSec
     hitMinPx: 24,
     hitScale: 1.6,
     psII: { x: 0.28, y: 0.42 },
@@ -29,18 +32,20 @@
     ring: { x: 0.50, y: 0.80, r: 0.16 },
     size: {
       photon: 0.014, electron: 0.012, proton: 0.012, water: 0.035, o2: 0.03, co2: 0.04,
-      atp: 0.035, nadph: 0.035, sugar: 0.022, glucose: 0.10, burst: 0.08, popup: 0.03
+      atp: 0.035, nadph: 0.035, sugar: 0.022, glucose: 0.10, burst: 0.08, popup: 0.03,
+      hint: 0.04, bonus: 0.04
     },
     fx: {
       burstLife: 0.5, popupLife: 0.9, popupRise: 0.12, tapFade: 0.15, missFade: 0.35,
       retireFade: 0.3, decorLife: 0.6, o2Life: 2.0, o2Rise: 0.22, dropSpeed: 0.12,
       dropLife: 1.6, flyLife: 0.35,
       protonVx: 0.18, protonVy: -0.2, electronVx: 0.2, electronVy: 0.1,
-      glucoseBursts: [0.09, 0.13, 0.17]
+      glucoseBursts: [0.09, 0.13, 0.17],
+      shakePx: 6, shakeLife: 0.2, bonusLift: 0.05, bonusTopY: 0.15
     },
     colors: {
       miss: '#9fbfb0', photon: '#ffd166', split: '#8ecae6', nadph: '#b388eb',
-      atp: '#f4a261', co2: '#a7e8a0', glucose: '#ffb703'
+      atp: '#f4a261', co2: '#a7e8a0', glucose: '#ffb703', hint: '#eaf5ee', bonus: '#ffd166'
     },
     light: {
       focus: 'light', targets: [12], every: 0.7, x0: 0.10, x1: 0.90,
@@ -50,8 +55,9 @@
       focus: 'thylakoid', targets: [6], every: 1.2, x0: -0.04, y0: 0.36, y1: 0.56,
       speed: 0.10, missX: 1.04, splitsPerO2: 2
     },
+    // Electron speed 0.08 per second: the catch window is about 1.3 s on a desktop canvas, 2.5 s in portrait.
     energy: {
-      focus: 'thylakoid', targets: [18, 12], every: 0.9, speed: 0.12, missX: 0.96,
+      focus: 'thylakoid', targets: [18, 12], every: 1.0, speed: 0.08, missX: 0.96,
       catchRadius: 0.10, turbinePeriod: 2.2, turbineGlowTime: 1.0, turbineMinGlow: 0.2,
       turbineRadius: 0.06
     },
@@ -113,6 +119,12 @@
   let pausedByTab = false;
   let levelMs = 0;         // time on the current level since play started
   let emitted = { screen: '', level: -1 };
+  let idle = 0;                 // game seconds since the last success on this level
+  let hint = null;              // the one idle-hint ring (a burst entity), or null
+  let hintFollow = null;        // the target the ring follows between refreshes
+  let hintTimer = 0;            // seconds until the ring is re-aimed
+  let announced = { first: false, quarter: 0 };   // #status milestones reached on this level
+  let shakeLeft = 0;            // seconds left in the miss shake
 
   function resetRun() {
     score = 0;
@@ -134,6 +146,12 @@
     entities = [];
     calvin = 0;
     levelMs = 0;
+    idle = 0;
+    hint = null;
+    hintFollow = null;
+    hintTimer = 0;
+    announced = { first: false, quarter: 0 };
+    stopShake();
   }
 
   resetRun();
@@ -156,38 +174,159 @@
     e.fadeRate = 1 / life;
   }
 
-  function popup(text, x, y, color) {
-    addEntity(entity('popup', clamp(x, 0.04, 0.96), clamp(y, 0.04, 0.96), CFG.size.popup, {
+  function popup(text, x, y, color, size) {
+    addEntity(entity('popup', clamp(x, 0.04, 0.96), clamp(y, 0.04, 0.96), size || CFG.size.popup, {
       text: text, color: color, vy: -CFG.fx.popupRise, fadeRate: 1 / CFG.fx.popupLife
     }));
+  }
+
+  // Miss shake: the canvas wobbles sideways, about shakePx at first, and settles over shakeLife.
+  // Skipped under reduced motion.
+  function startShake() {
+    if (reducedMotion || !canvas) return;
+    shakeLeft = CFG.fx.shakeLife;
+    canvas.style.transform = 'translate(' + CFG.fx.shakePx + 'px, 0)';
+  }
+
+  function stopShake() {
+    shakeLeft = 0;
+    if (canvas && canvas.style.transform) canvas.style.transform = '';
+  }
+
+  function updateShake(dt) {
+    if (shakeLeft <= 0) return;
+    shakeLeft = Math.max(0, shakeLeft - dt);
+    if (shakeLeft <= 0) {
+      stopShake();
+      return;
+    }
+    const p = 1 - shakeLeft / CFG.fx.shakeLife;   // 0 at the miss, 1 when it settles
+    const x = CFG.fx.shakePx * (1 - p) * Math.cos(p * 4 * Math.PI);
+    canvas.style.transform = 'translate(' + x.toFixed(2) + 'px, 0)';
   }
 
   function burst(x, y, color, size) {
     addEntity(entity('burst', x, y, size || CFG.size.burst, { color: color, fadeRate: 1 / CFG.fx.burstLife }));
   }
 
+  // Any success: the idle clock restarts and the idle hint is cleared.
+  function noteSuccess() {
+    idle = 0;
+    hintTimer = 0;
+    dropHint(true);
+  }
+
+  // Every success scores. At a streak milestone the base points and the bonus pop as two popups,
+  // so together they show the points awarded.
   function scorePoints(x, y) {
+    noteSuccess();
     streak += 1;
-    const pts = CFG.points + (streak >= CFG.streakMin ? CFG.streakBonus : 0);
-    score += pts;
-    popup('+' + pts, x, y);
+    const bonus = streak >= CFG.streakMin ? CFG.streakBonus : 0;
+    score += CFG.points + bonus;
+    if (CFG.streakMilestones.indexOf(streak) >= 0) {
+      // The bonus sits just above the base popup. Near the top edge it sits just below instead.
+      const lift = y < CFG.fx.bonusTopY ? CFG.fx.bonusLift : -CFG.fx.bonusLift;
+      popup('+' + CFG.points, x, y);
+      popup('+' + CFG.streakBonus, x, y + lift, CFG.colors.bonus, CFG.size.bonus);
+    } else {
+      popup('+' + (CFG.points + bonus), x, y);
+    }
+  }
+
+  // Idle hint: after hint.idleSec with no success, one burst ring pings on a live target and is
+  // re-aimed every hint.refreshSec. Under reduced motion a single static ring is placed once and is
+  // never refreshed. Any success clears it.
+  function hintSpot() {
+    const kind = TARGET_KIND[level];
+    let best = null;
+    let bestUrgency = -Infinity;
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      if (e.resolved || e.kind !== kind) continue;
+      if (e.x < 0 || e.x > 1 || e.y < 0 || e.y > 1) continue;   // not on the canvas yet
+      if (kind === 'electron' && !canCatch(e, view.w, view.h)) continue;
+      const urgency = level === 0 ? e.y : e.x;   // the target nearest its miss line
+      if (urgency > bestUrgency) {
+        best = e;
+        bestUrgency = urgency;
+      }
+    }
+    if (best) return { x: best.x, y: best.y, follow: best };
+    // ATP synthase is the live target while ATP is still needed. It is tapped while it glows.
+    if (level === 2 && counts[0] < targets[0]) return { x: CFG.turbine.x, y: CFG.turbine.y, follow: null };
+    return null;
+  }
+
+  function dropHint(fade) {
+    if (!hint) return;
+    if (fade) {
+      retire(hint, CFG.fx.retireFade);
+    } else {
+      const i = entities.indexOf(hint);
+      if (i >= 0) entities.splice(i, 1);
+    }
+    hint = null;
+    hintFollow = null;
+  }
+
+  function placeHint() {
+    const spot = hintSpot();
+    if (!spot) return false;
+    const ring = addEntity(entity('burst', spot.x, spot.y, CFG.size.hint, {
+      color: CFG.colors.hint, frozen: reducedMotion
+    }));
+    if (!ring) return false;
+    hint = ring;
+    hintFollow = reducedMotion ? null : spot.follow;
+    return true;
+  }
+
+  function updateHint(dt) {
+    if (idle < CFG.hint.idleSec) return;
+    if (reducedMotion) {
+      if (!hint) placeHint();   // one static ring, never refreshed
+      return;
+    }
+    if (hintFollow) {
+      if (hintFollow.resolved || entities.indexOf(hintFollow) < 0) {
+        hintFollow = null;
+      } else {
+        hint.x = hintFollow.x;
+        hint.y = hintFollow.y;
+      }
+    }
+    hintTimer -= dt;
+    if (hintTimer > 0) return;
+    dropHint(false);
+    hintTimer = placeHint() ? CFG.hint.refreshSec : 0;
   }
 
   function say(text) {
     if (statusEl && statusEl.textContent !== text) statusEl.textContent = text;
   }
 
-  // Event bus: each notable change is dispatched on the document as 'photo:event'.
+  // Event bus: each change is queued with its payload taken now. Every queued event has its own
+  // setTimeout(0), and each timer dispatches the head of the queue. So events arrive in order, and a
+  // listener never runs in the middle of an update, even if it calls back into the game.
+  const outbox = [];
+
   function emit(type, data) {
-    const detail = Object.assign({ type: type }, data || {});
-    document.dispatchEvent(new CustomEvent('photo:event', { detail: detail }));
+    outbox.push(Object.assign({ type: type }, data || {}));
+    setTimeout(dispatchNext, 0);
   }
 
+  function dispatchNext() {
+    const detail = outbox.shift();
+    if (detail) document.dispatchEvent(new CustomEvent('photo:event', { detail: detail }));
+  }
+
+  // A miss counts once, for the entity that caused it (callers retire it first). It shows a popup
+  // and a shake, and it is not announced in #status.
   function registerMiss(x, y, text) {
     misses += 1;
     streak = 0;
     popup(text, x, y, CFG.colors.miss);
-    say(text);
+    startShake();
     emit('miss', { level: level });
   }
 
@@ -294,7 +433,7 @@
   function updateEntities(dt, live) {
     for (let i = entities.length - 1; i >= 0; i--) {
       const e = entities[i];
-      e.age += dt;
+      if (!e.frozen) e.age += dt;   // a frozen ring keeps age 0, so it stays static under reduced motion
       if (e.orbit) {
         e.angle += e.omega * dt;
         const p = ringPoint(e.angle);
@@ -330,6 +469,7 @@
   }
 
   function completeLevel() {
+    if (finishing || screen !== 'playing') return;   // one level-complete per level
     finishing = true;
     timers.finish = level === LAST ? CFG.glucoseDelay : CFG.finishDelay;
     stars.push(starsFor(misses));
@@ -346,14 +486,17 @@
 
   function update(dt) {
     elapsed += dt;                 // ambient clock for the renderer keeps running
+    updateShake(dt);
     const step = paused ? 0 : dt;  // game time stops while paused
     calvin = Math.max(0, calvin - step / CFG.carbon.calvinDecay);
     const live = screen === 'playing' && !paused && !finishing;
     if (live) {
       levelMs += step * 1000;
+      idle += step;
       runLevel(step);
     }
     updateEntities(step, live);
+    if (live) updateHint(step);
     if (screen === 'playing' && !paused && finishing) {
       timers.finish -= step;
       if (timers.finish <= 0) showComplete();
@@ -363,11 +506,11 @@
   }
 
   // Input. Taps are in CSS pixels relative to the canvas.
-  function canCatch(e, rect) {
+  function canCatch(e, w, h) {
     if (counts[1] >= targets[1]) return false;
-    const u = Math.min(rect.width, rect.height);
-    const dx = (e.x - CFG.station.x) * rect.width;
-    const dy = (e.y - CFG.station.y) * rect.height;
+    const u = Math.min(w, h);
+    const dx = (e.x - CFG.station.x) * w;
+    const dy = (e.y - CFG.station.y) * h;
     return Math.hypot(dx, dy) <= CFG.energy.catchRadius * u;
   }
 
@@ -380,7 +523,7 @@
     for (let i = 0; i < entities.length; i++) {
       const e = entities[i];
       if (e.resolved || e.kind !== kind) continue;
-      if (kind === 'electron' && !canCatch(e, rect)) continue;
+      if (kind === 'electron' && !canCatch(e, rect.width, rect.height)) continue;
       const d = Math.hypot(e.x * rect.width - px, e.y * rect.height - py);
       if (d <= Math.max(CFG.hitMinPx, CFG.hitScale * e.size * u) && d < bestD) {
         best = e;
@@ -435,7 +578,7 @@
     burst(e.x, e.y, CFG.colors.photon);
     scorePoints(e.x, e.y);
     counts[0] += 1;
-    say(msg.photon);
+    announceSuccess(msg.photon);
     emit('capture', { level: 0, count: counts[0] });
     if (counts[0] >= targets[0]) completeLevel();
   }
@@ -457,11 +600,9 @@
       counts[0] += 1;
       totals.o2 += 1;
       addEntity(entity('o2', p.x, p.y, CFG.size.o2, { vy: -CFG.fx.o2Rise, fadeRate: 1 / CFG.fx.o2Life }));
-      say(fill(msg.o2, { n: counts[0], total: targets[0] }));
       emit('o2', { level: 1, count: counts[0] });
-    } else {
-      say(msg.split);
     }
+    announceSuccess(msg.split);
     if (counts[0] >= targets[0]) completeLevel();
   }
 
@@ -473,7 +614,7 @@
     const s = CFG.station;
     burst(s.x, s.y, CFG.colors.nadph);
     addEntity(entity('nadph', s.x, s.y, CFG.size.nadph, { vy: CFG.fx.dropSpeed, fadeRate: 1 / CFG.fx.dropLife }));
-    say(msg.nadph);
+    announceSuccess(msg.nadph);
     emit('nadph', { level: 2, count: counts[1] });
     if (counts[0] >= targets[0] && counts[1] >= targets[1]) completeLevel();
   }
@@ -493,7 +634,7 @@
     scorePoints(t.x, t.y);
     burst(t.x, t.y, CFG.colors.atp);
     addEntity(entity('atp', t.x, t.y, CFG.size.atp, { vy: CFG.fx.dropSpeed, fadeRate: 1 / CFG.fx.dropLife }));
-    say(msg.atp);
+    announceSuccess(msg.atp);
     emit('atp', { level: 2, count: counts[0] });
     if (counts[0] >= targets[0] && counts[1] >= targets[1]) completeLevel();
   }
@@ -521,9 +662,36 @@
     scorePoints(e.x, e.y);
     addSugar(counts[0] - 1);
     calvin = 1;
-    say(fill(msg.co2, { n: counts[0], total: targets[0] }));
+    announceSuccess(fill(msg.co2, { n: counts[0], total: targets[0] }));
     emit('fix', { level: 3, count: counts[0] });
     if (counts[0] >= targets[0]) completeLevel();
+  }
+
+  // #status gets three kinds of message per level: the first success, each quarter of the target,
+  // and the level's completion (showComplete). Misses and other successes stay on the canvas.
+  function progressDone() {
+    let n = 0;
+    for (let i = 0; i < counts.length; i++) n += counts[i];
+    return n;
+  }
+
+  function progressTotal() {
+    let n = 0;
+    for (let i = 0; i < targets.length; i++) n += targets[i];
+    return n;
+  }
+
+  function announceSuccess(firstText) {
+    const done = progressDone();
+    const total = progressTotal();
+    const quarter = total ? Math.min(CFG.progressSteps - 1, Math.floor(CFG.progressSteps * done / total)) : 0;
+    if (!announced.first) {
+      announced.first = true;
+      say(firstText);
+    } else if (quarter > announced.quarter && msg.progress) {
+      say(fill(msg.progress, { n: done, total: total }));
+    }
+    if (quarter > announced.quarter) announced.quarter = quarter;
   }
 
   // Overlay content. Written only when the screen changes.
@@ -653,13 +821,8 @@
   function progressPct() {
     if (screen === 'title') return 0;
     if (screen === 'finale') return 100;
-    let done = 0;
-    let total = 0;
-    for (let i = 0; i < targets.length; i++) {
-      done += counts[i];
-      total += targets[i];
-    }
-    return total ? Math.min(100, Math.round(100 * done / total)) : 0;
+    const total = progressTotal();
+    return total ? Math.min(100, Math.round(100 * progressDone() / total)) : 0;
   }
 
   function stockVisible() {
@@ -725,9 +888,16 @@
   function beginPlaying() {
     setScreen('playing');
     setHidden(ov.overlay, true);
+    focusScene();
+  }
+
+  // Level start only. The overlay button that had focus is hidden now, so focus moves to the scene.
+  function focusScene() {
+    if (canvas && typeof canvas.focus === 'function') canvas.focus({ preventScroll: true });
   }
 
   function enterFinale() {
+    if (screen !== 'complete' || level !== LAST) return;   // the finale fires once
     setScreen('finale');
     emit('finale', {
       score: score,
@@ -737,11 +907,15 @@
     showFinale();
   }
 
-  // QA entry point: jumps to a level's intro with a fresh score, stock and stars.
+  // QA entry point: jumps to a level's intro with a fresh score and stars. Stock is what the player
+  // would have by then: level 4 starts with the ATP and NADPH that level 3 makes.
   function goToLevel(index) {
     if (!ready) return;
     resetRun();
-    enterIntro(clampIndex(index));
+    const i = clampIndex(index);
+    const made = LEVELS[LAST - 1].targets;
+    stock = i === LAST ? { atp: made[0], nadph: made[1] } : { atp: 0, nadph: 0 };
+    enterIntro(i);
   }
 
   function onOverlayButton() {
@@ -831,13 +1005,13 @@
   }
 
   function frame(ts) {
+    requestAnimationFrame(frame);   // scheduled first, so one bad frame cannot stop the loop
     let dt = (ts - last) / 1000;
     last = ts;
     if (!(dt > 0)) dt = 0;
     if (dt > CFG.maxDt) dt = CFG.maxDt;
     update(dt);
     render.draw(buildScene());
-    requestAnimationFrame(frame);
   }
 
   function init() {
@@ -869,6 +1043,8 @@
       button: byId('overlay-button')
     };
     buildStages();
+    // Focusable from script only (not in the tab order), so focusScene can move focus to it.
+    if (canvas && canvas.getAttribute('tabindex') === null) canvas.setAttribute('tabindex', '-1');
     hud.progress.setAttribute('aria-valuemin', '0');
     hud.progress.setAttribute('aria-valuemax', '100');
     render.init(canvas);
