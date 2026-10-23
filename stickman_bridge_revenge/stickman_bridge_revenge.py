@@ -9,13 +9,17 @@ and piped straight into ffmpeg (H.264 MP4, no audio).
     python3 stickman_bridge_revenge.py --frame 7.5  one PNG still at t = 7.5 s
 
 Everything you would normally change for a new version (labels, header, colours,
-timings, resolution) lives in CONFIG.  All drawing happens in a 1080x1920 design
+timings, audio, shake, resolution) lives in CONFIG.  All drawing happens in a 1080x1920 design
 space that is scaled to the output resolution.
+
+The screen shake comes from shake_track.json (per-frame offsets measured from a
+reference edit) and the soundtrack from CONFIG["audio"]; set either to None to drop it.
 
 Requires: pycairo (pip install pycairo) and ffmpeg on PATH.
 """
 
 import argparse
+import json
 import math
 import os
 import random
@@ -38,14 +42,20 @@ CONFIG = {
     "width": 1080,
     "height": 1920,
     "fps": 30,
-    "duration": 12.0,            # story length (s)
+    "duration": 10.77,           # story length (s); + hold_end = audio length
     "hold_end": 0.5,             # freeze the final frame this long (s)
     "crf": 18,
-    "output_video": "stickman_bridge_revenge.mp4",
-    "output_sheet": "stickman_bridge_revenge_contact_sheet.png",
+    "output_video": "stickman_bridge_revenge_shake_audio.mp4",
+    "output_sheet": "stickman_bridge_revenge_shake_audio_contact_sheet.png",
     "sheet_step": 0.5,           # one contact-sheet frame every N seconds
     "sheet_columns": 5,
     "seed": 7,
+
+    # ---- audio & screen shake -----------------------------------------------
+    "audio": "reel_audio.mp3",           # muxed under the video (None = silent)
+    "shake_file": "shake_track.json",    # per-frame world shake offsets (None = no shake)
+    "shake_offset": 0.025,               # delay the shake track (s) so its hits land on the audio
+    "shake_strength": 1.0,
 
     # ---- Instagram safe zone (design px) ----------------------------------
     "safe_top": 200,
@@ -70,9 +80,9 @@ CONFIG = {
     "watermark_alpha": 0.30,
 
     # timer: (video time, displayed seconds) pairs, linearly interpolated
-    "timer_keys": [(0.0, 0), (1.8, 0), (2.0, 10), (4.0, 45), (4.3, 90),
-                   (6.0, 90), (6.3, 180), (9.0, 180), (9.4, 300)],
-    "timer_plus_from": 9.4,      # append "+" from this video time on
+    "timer_keys": [(0.0, 0), (1.0, 0), (1.2, 10), (3.1, 45), (3.4, 90),
+                   (5.55, 90), (5.85, 180), (8.0, 180), (8.3, 300)],
+    "timer_plus_from": 8.3,      # append "+" from this video time on
 
     # ---- scene layout (design px) ------------------------------------------
     "bridge_y": 770,             # top edge of the deck (~40 % of the height)
@@ -90,25 +100,25 @@ CONFIG = {
         {"label": "Revenge", "role": "crack_recover"},
     ],
 
-    # ---- story beats (s) ----------------------------------------------------
+    # ---- story beats (s), placed on the soundtrack's hits ---------------------
     "beats": {
-        "bored": 2.0,            # Talent gets bored, kicks its legs
-        "bored_hand": 3.05,      # ...lets go with one hand
-        "bored_drop": 3.35,      # ...and drops
-        "strain": 4.0,           # Motivation shakes and sweats
-        "slip": 4.7,             # one hand slips
-        "regrab": 5.0,           # grabs again
-        "fall": 5.4,             # falls flailing
-        "crack": 6.15,           # Revenge's plank cracks
-        "break": 6.45,           # plank breaks, Revenge hangs by one hand
-        "angry": 9.0,            # eyes snap into anger
-        "pull": 9.25,            # starts pulling itself up
-        "recover": 10.6,         # re-grabs with the injured hand
-        "tight": 11.2,           # hangs tighter than before
+        "bored": 1.2,            # Talent gets bored, kicks its legs
+        "bored_hand": 1.95,      # ...lets go with one hand
+        "bored_drop": 2.2,       # ...and drops (splash on the 2.7 s hit)
+        "strain": 3.1,           # Motivation shakes and sweats
+        "slip": 3.7,             # one hand slips
+        "regrab": 4.0,           # grabs again
+        "fall": 4.7,             # falls flailing (splash on the 5.2 s hit)
+        "crack": 5.55,           # Revenge's plank cracks as the music drops out
+        "break": 5.85,           # plank breaks, Revenge hangs by one hand
+        "angry": 8.0,            # eyes snap into anger on the impact shake
+        "pull": 8.2,             # starts pulling itself up through the drop
+        "recover": 9.85,         # re-grabs with the injured hand
+        "tight": 10.35,          # hangs tighter than before
     },
 
     # ---- camera ---------------------------------------------------------------
-    "zoom": {"start": 9.0, "end": 12.0, "scale": 1.2,
+    "zoom": {"start": 8.0, "end": 10.77, "scale": 1.2,
              "target": "crack_recover",          # role to zoom toward
              "screen": (770, 945)},              # where the target ends up
 
@@ -1049,11 +1059,12 @@ class Stickman:
 def role_bored_drop(c, scene):
     b, tr = scene.beats, c.track
     t0, t1, t2 = b["bored"], b["bored_hand"], b["bored_drop"]
-    c.blinks += [0.85, t0 + 1.0]
-    tr.ramp(t0, t0 + 0.45, "inout", head_tilt=0.1, look_x=0.4, look_y=0.35, **EXPR["bored"])
+    d = t1 - t0
+    c.blinks += [0.85, t0 + 0.55 * d]
+    tr.ramp(t0, t0 + 0.4 * d, "inout", head_tilt=0.1, look_x=0.4, look_y=0.35, **EXPR["bored"])
     tr.ramp(t0, t0 + 0.6, "inout", kick=1.0, sway_amp=0.065)
-    tr.ramp(t0 + 0.55, t0 + 0.85, "inout", look_x=-0.35, look_y=-0.15)
-    tr.ramp(t1 - 0.3, t1 - 0.05, "inout", look_x=0.15, look_y=0.4)
+    tr.ramp(t0 + 0.45 * d, t0 + 0.7 * d, "inout", look_x=-0.35, look_y=-0.15)
+    tr.ramp(t0 + 0.75 * d, t1 - 0.03, "inout", look_x=0.15, look_y=0.4)
     # first one hand, casually...
     tr.ramp(t1, t1 + 0.32, "inout", pivot=-1, hang=114, kick=0.35)
     c.release(t1, +1, to=dict(ua_r=1.75, fa_r=1.1), dur=0.4, ease="inout")
@@ -1150,7 +1161,8 @@ ROLES = {
 # =============================================================================
 class Scene:
     W, H = 1080, 1920      # design space
-    MARGIN = 280           # world drawn beyond the frame edges (for the zoom)
+    MARGIN = 280           # world drawn beyond the left/right frame edges (zoom, shake)
+    VMARGIN = 160          # world drawn beyond the top/bottom frame edges (shake)
     PAD = 40               # extra width of the reflection for ripple offsets
 
     def __init__(self, cfg):
@@ -1224,15 +1236,17 @@ class Scene:
         W, M, Hz = self.W, self.MARGIN, cfg["horizon_y"]
         sx, sy, sr = cfg["sun"]
 
+        V = self.VMARGIN
+
         def paint_sky(with_sun):
-            surf = cairo.ImageSurface(cairo.FORMAT_RGB24, W + 2 * M, Hz + 4)
+            surf = cairo.ImageSurface(cairo.FORMAT_RGB24, W + 2 * M, Hz + V + 4)
             c = cairo.Context(surf)
-            c.translate(M, 0)
+            c.translate(M, V)
             grad = cairo.LinearGradient(0, 0, 0, Hz)
             for y, col in cfg["sky"]:
                 grad.add_color_stop_rgb(clamp(y / Hz, 0, 1), *rgb(col))
             c.set_source(grad)
-            c.rectangle(-M, 0, W + 2 * M, Hz + 4)
+            c.rectangle(-M, -V, W + 2 * M, Hz + V + 4)
             c.fill()
             glow = cairo.RadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 4.4)
             glow.add_color_stop_rgba(0.0, *C["sun_glow"], 0.6 if with_sun else 0.4)
@@ -1274,12 +1288,12 @@ class Scene:
         # mirrored, darkened copy for the river (ripples are applied per frame);
         # the sun itself shows up as a glitter column instead of a mirrored disc
         wh = self.H - Hz
-        refl = cairo.ImageSurface(cairo.FORMAT_RGB24, W + 2 * M + 2 * self.PAD, wh)
+        refl = cairo.ImageSurface(cairo.FORMAT_RGB24, W + 2 * M + 2 * self.PAD, wh + V)
         r = cairo.Context(refl)
         r.translate(self.PAD, 0)
         r.scale(1, -1 / 1.25)
         r.translate(0, -Hz)
-        r.set_source_surface(paint_sky(False), 0, 0)
+        r.set_source_surface(paint_sky(False), 0, -V)
         r.get_source().set_extend(cairo.EXTEND_PAD)
         r.paint()
         r.identity_matrix()
@@ -1353,13 +1367,14 @@ class Scene:
         scr = (lerp(focus[0], z["screen"][0], u), lerp(focus[1], z["screen"][1], u))
         return lerp(1.0, z["scale"], u), focus, scr
 
-    def render(self, ctx, t):
+    def render(self, ctx, t, shake=(0.0, 0.0)):
         zoom, focus, scr = self.camera(t)
         ctx.save()
+        ctx.translate(*shake)            # screen shake moves the world, not the text overlay
         ctx.translate(*scr)
         ctx.scale(zoom, zoom)
         ctx.translate(-focus[0], -focus[1])
-        ctx.set_source_surface(self.sky, -self.MARGIN, 0)
+        ctx.set_source_surface(self.sky, -self.MARGIN, -self.VMARGIN)
         ctx.paint()
         self._draw_birds(ctx, t)
         self._draw_water(ctx, t)
@@ -1379,10 +1394,10 @@ class Scene:
         Hz, W, M, C = self.cfg["horizon_y"], self.W, self.MARGIN, self.colors
         wh = self.H - Hz
         ctx.save()
-        ctx.rectangle(-M, Hz, W + 2 * M, wh)
+        ctx.rectangle(-M, Hz, W + 2 * M, wh + self.VMARGIN)
         ctx.clip()
         strip = 3
-        for v in range(0, wh, strip):
+        for v in range(0, wh + self.VMARGIN, strip):
             d = v / wh
             amp = 1.0 + 11.0 * d ** 1.5
             dx = amp * (0.65 * math.sin(0.05 * v - 1.6 * t) + 0.35 * math.sin(0.017 * v + 1.1 * t + 0.8))
@@ -1553,6 +1568,33 @@ class Scene:
 # =============================================================================
 # Rendering: frames -> ffmpeg, contact sheet, stills
 # =============================================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def asset_path(name):
+    return name if os.path.isabs(name) else os.path.join(BASE_DIR, name)
+
+
+class ShakeTrack:
+    """Per-frame screen offsets (design px), e.g. measured from a reference edit."""
+
+    def __init__(self, cfg):
+        self.frames, self.fps = [], 30
+        if cfg.get("shake_file"):
+            with open(asset_path(cfg["shake_file"])) as f:
+                data = json.load(f)
+            self.frames, self.fps = data["frames"], data["fps"]
+        self.offset = cfg.get("shake_offset", 0.0)
+        self.strength = cfg.get("shake_strength", 1.0)
+
+    def at(self, t):
+        i = int(round((t - self.offset) * self.fps))
+        if 0 <= i < len(self.frames):
+            dx, dy = self.frames[i]
+            return dx * self.strength, dy * self.strength
+        return 0.0, 0.0
+
+
 class Renderer:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -1560,28 +1602,32 @@ class Renderer:
         self.surface = cairo.ImageSurface(cairo.FORMAT_RGB24, self.W, self.H)
         self.ctx = cairo.Context(self.surface)
         self.scene = Scene(cfg)
+        self.shake = ShakeTrack(cfg)
         self.n_story = int(round(cfg["duration"] * self.fps))   # frame n_story is t = duration
+        self.n_total = self.n_story + max(1, int(round(cfg["hold_end"] * self.fps)))
 
     def frame_time(self, i):
         return min(i / self.fps, self.cfg["duration"])
 
-    def draw(self, t):
+    def draw(self, t, t_video):
         ctx = self.ctx
         ctx.save()
         ctx.scale(self.W / Scene.W, self.H / Scene.H)
-        self.scene.render(ctx, t)
+        self.scene.render(ctx, t, self.shake.at(t_video))
         ctx.restore()
         self.surface.flush()
 
     def run(self, want=None):
-        """Step the simulation through every frame; draw the ones in `want` (None = all)."""
+        """Step the simulation through every frame; draw the ones in `want` (None = all).
+        Frames after the story are the frozen final frame (the shake keeps running)."""
         dt = 1.0 / self.fps
-        for i in range(self.n_story + 1):
+        for i in range(self.n_total):
             t = self.frame_time(i)
-            self.scene.step(t, dt)
+            if i <= self.n_story:
+                self.scene.step(t, dt)
             if want is None or i in want:
-                self.draw(t)
-                yield i, t
+                self.draw(t, i / self.fps)
+                yield i, i / self.fps
 
 
 def safe_zone_overlay(ctx, cfg):
@@ -1599,7 +1645,7 @@ def safe_zone_overlay(ctx, cfg):
 def render_contact_sheet(cfg, out_path):
     r = Renderer(cfg)
     step, cols = cfg["sheet_step"], cfg["sheet_columns"]
-    times = [k * step for k in range(int(cfg["duration"] / step + 1e-6) + 1)]
+    times = [k * step for k in range((r.n_total - 1) // int(round(step * r.fps)) + 1)]
     want = {int(round(t * r.fps)): t for t in times}
     tw = 270
     th = int(round(tw * r.H / r.W))
@@ -1649,26 +1695,26 @@ def render_video(cfg, out_path):
     r = Renderer(cfg)
     pix = "bgr0" if sys.byteorder == "little" else "0rgb"   # cairo RGB24 memory layout
     cmd = ["ffmpeg", "-y", "-loglevel", "error",
-           "-f", "rawvideo", "-pix_fmt", pix, "-s", f"{r.W}x{r.H}", "-r", str(r.fps), "-i", "-",
-           "-an", "-vf", "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p",
-           "-c:v", "libx264", "-preset", "slow", "-crf", str(cfg["crf"]), "-pix_fmt", "yuv420p",
-           "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
-           "-movflags", "+faststart", out_path]
+           "-f", "rawvideo", "-pix_fmt", pix, "-s", f"{r.W}x{r.H}", "-r", str(r.fps), "-i", "-"]
+    audio = cfg.get("audio")
+    if audio:
+        cmd += ["-i", asset_path(audio)]
+    cmd += ["-vf", "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p",
+            "-c:v", "libx264", "-preset", "slow", "-crf", str(cfg["crf"]), "-pix_fmt", "yuv420p",
+            "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709"]
+    if audio:   # pad the audio with silence if it is shorter, end with the video
+        cmd += ["-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "192k", "-af", "apad", "-shortest"]
+    else:
+        cmd += ["-an"]
+    cmd += ["-movflags", "+faststart", out_path]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    hold = int(round(cfg["hold_end"] * r.fps))
-    total = r.n_story + 1 + max(0, hold - 1)
     t_start = time.time()
-    frame = None
     written = 0
     for i, t in r.run():
-        frame = bytes(r.surface.get_data())
-        proc.stdin.write(frame)
+        proc.stdin.write(bytes(r.surface.get_data()))
         written += 1
         if i % 30 == 0:
-            print(f"  frame {written}/{total}  t={t:5.2f}s  ({time.time() - t_start:5.1f}s)", flush=True)
-    for _ in range(max(0, hold - 1)):          # freeze the final frame
-        proc.stdin.write(frame)
-        written += 1
+            print(f"  frame {written}/{r.n_total}  t={t:5.2f}s  ({time.time() - t_start:5.1f}s)", flush=True)
     proc.stdin.close()
     if proc.wait() != 0:
         sys.exit("ffmpeg failed")
@@ -1678,7 +1724,7 @@ def render_video(cfg, out_path):
 
 def render_still(cfg, t_still, out_path):
     r = Renderer(cfg)
-    target = int(round(clamp(t_still, 0, cfg["duration"]) * r.fps))
+    target = int(clamp(round(t_still * r.fps), 0, r.n_total - 1))
     for _ in r.run({target}):
         pass
     r.surface.write_to_png(out_path)
@@ -1690,7 +1736,7 @@ def main():
     ap.add_argument("--sheet", action="store_true", help="render the contact sheet only")
     ap.add_argument("--video", action="store_true", help="render the MP4 only")
     ap.add_argument("--frame", type=float, help="render one PNG still at this time (s)")
-    ap.add_argument("--out-dir", default=os.path.dirname(os.path.abspath(__file__)))
+    ap.add_argument("--out-dir", default=BASE_DIR)
     args = ap.parse_args()
     cfg = CONFIG
     os.makedirs(args.out_dir, exist_ok=True)
