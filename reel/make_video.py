@@ -32,6 +32,9 @@ CAP_Y = 1031
 CAP_MAX_W = 660
 CAP_GAP = 6            # extra pixels between words so the popped word stays clear
 POP_SCALE, POP_TIME = 0.25, 0.20
+WATERMARK = "@deepsochotv"
+WM_SIZE = 24
+WM_Y = 961             # centre line of the watermark, near the picture's bottom edge
 
 FADE_IN = 0.65        # picture fades in from black, as in the reference
 END_HOLD = 1.5        # hold the last picture after the voice ends
@@ -75,6 +78,17 @@ def render_title(canvas):
         x += f.getlength(text)
     # The reference's skull sits low on the line: bottom ~17px under the baseline.
     canvas.paste(skull, (round(x + gap), round(y - TITLE_SIZE * 0.13 - skull.height / 2)), skull)
+
+
+def render_watermark():
+    """Semi-transparent dark text with a thin light outline, as in the reference."""
+    s = 2  # draw at 2x and scale down for a 1.5 px outline
+    f = font(TITLE_FONT, WM_SIZE * s)
+    x0, y0, x1, y1 = f.getbbox(WATERMARK, stroke_width=3 * s // 2)
+    im = Image.new("RGBA", (x1 - x0 + 4, y1 - y0 + 4), (0, 0, 0, 0))
+    ImageDraw.Draw(im).text((2 - x0, 2 - y0), WATERMARK, font=f, fill=(0, 0, 0, 95),
+                            stroke_width=3 * s // 2, stroke_fill=(255, 255, 255, 120))
+    return im.resize((im.width // s, im.height // s), Image.LANCZOS)
 
 
 def ends_phrase(word):
@@ -247,7 +261,7 @@ def crop_box(iw, ih, cx, cy, z):
     return (x, y, x + side, y + side)
 
 
-def render_picture(src, shot, t, impact_t):
+def render_picture(src, shot, t, impact_t, watermark):
     u = (t - shot["t0"]) / (shot["t1"] - shot["t0"])
     z = shot["z"][0] + (shot["z"][1] - shot["z"][0]) * u
     (cx0, cy0), (cx1, cy1) = shot["c"]
@@ -265,6 +279,8 @@ def render_picture(src, shot, t, impact_t):
     x0 = min(max(x0 + dx, 0), iw - side)
     y0 = min(max(y0 + dy, 0), ih - side)
     tile = src.resize((IMG_S, IMG_S), Image.BICUBIC, box=(x0, y0, x0 + side, y0 + side))
+    # Part of the picture (fades and flashes with it) but fixed in place while it zooms.
+    tile.paste(watermark, ((IMG_S - watermark.width) // 2, WM_Y - IMG_Y - watermark.height // 2), watermark)
     if t < FADE_IN:
         tile = Image.blend(Image.new("RGB", tile.size), tile, t / FADE_IN)
     if 0 <= t - impact_t < 0.3:
@@ -333,6 +349,7 @@ def main():
             sources[s["img"]] = Image.open(f"images/{s['img']:02d}.png").convert("RGB")
     base = Image.new("RGB", (W, H), BLACK)
     render_title(base)
+    watermark = render_watermark()
 
     enc = subprocess.Popen([
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
@@ -350,7 +367,7 @@ def main():
         t = fi / FPS
         shot = shots[max(0, bisect.bisect_right(starts, t) - 1)]
         frame = base.copy()
-        frame.paste(render_picture(sources[shot["img"]], shot, t, impact_t), (0, IMG_Y))
+        frame.paste(render_picture(sources[shot["img"]], shot, t, impact_t, watermark), (0, IMG_Y))
         ci = bisect.bisect_right(cap_starts, t) - 1
         if ci >= 0 and t < captions[ci]["end"]:
             draw_caption(ImageDraw.Draw(frame), captions[ci], t)
