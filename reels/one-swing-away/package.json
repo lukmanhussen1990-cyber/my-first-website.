@@ -1,0 +1,13 @@
+{
+  "name": "one-swing-away-reel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sheet": "node render.mjs --sheet",
+    "render": "node render.mjs",
+    "audio": "node render.mjs --audio-only"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
