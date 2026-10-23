@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Society vs You — a 13-second 2D stickman reel (1080x1920, 30 fps, no audio).
+Society vs You — a 13-second 2D stickman reel (1080x1920, 30 fps, soundtrack cut to the story beats).
 
 Every frame is drawn with pycairo and piped straight into ffmpeg.
 
@@ -9,7 +9,7 @@ Every frame is drawn with pycairo and piped straight into ffmpeg.
     python3 stickman_society_vs_you.py --frame 9.5   one frame as PNG (debugging)
     python3 stickman_society_vs_you.py               sheet, then video
 
-To make a new version, change CONFIG only: labels, header, colors, layout, beats, resolution.
+To make a new version, change CONFIG only: labels, header, colors, layout, beats, resolution, audio.
 """
 import argparse
 import math
@@ -32,6 +32,11 @@ CONFIG = {
     "output": "stickman_society_vs_you.mp4",
     "contact_sheet": "stickman_society_vs_you_contact_sheet.png",
     "sheet": {"step": 0.5, "cols": 6, "thumb_w": 270},
+    # soundtrack (times are seconds in the track): play from `start`, and once the clip runs out repeat the drop
+    # phrase `loop`, so the music's hits sit on the story beats: drop = eyes snap, 808s = rise, lift, shock, press,
+    # re-drop = hero steps forward, then crowd steps back, trip and slam. Set "file" to None for a silent video.
+    "audio": {"file": "reel_audio.mp3", "start": 0.458, "loop": [8.195, 11.052], "crossfade": 0.012,
+              "fade_in": 0.2, "fade_out": 0.55, "bitrate": "192k"},
 
     "fonts": {"header": "Inter Display Black", "label": "Inter ExtraBold",
               "bubble": "Inter Black", "watermark": "Inter SemiBold"},
@@ -40,7 +45,7 @@ CONFIG = {
         "crowd": ["Family", "Friends", "Society", "Relatives"],   # left to right
         "hero": "You",
         "laugh": "HA HA",
-        "watermark": "@YOURHANDLE",
+        "watermark": "@DarkNinja",
         "header_size": 118, "label_size": 30, "bubble_size": 25, "watermark_size": 25,
         "label_rows": [0, 38, 0, 38],             # extra lift per crowd label so neighbours never collide
     },
@@ -80,10 +85,10 @@ CONFIG = {
         "fail": 4.5, "rock_thud": 4.65, "knee_down": 4.78,
         "friend_turn": 4.9, "friend_walk": [5.0, 5.8],
         "laugh_slow": [6.0, 7.3], "gust": [6.95, 7.75], "eyes_snap": 7.75,
-        "stand": 8.0, "regrip": 8.4, "lift": [8.6, 9.0, 9.6, 10.3],
+        "stand": 7.82, "regrip": 8.22, "lift": [8.6, 9.0, 9.6, 10.02],
         "shock": [9.55, 9.3, 9.25, 9.0],          # per crowd member (Family, Friends, Society, Relatives)
         "friend_turn_back": 9.3,
-        "hero_step": [10.6, 11.2], "crowd_steps": [10.75, 11.12, 11.2, 11.58], "trip": 11.42,
+        "hero_step": [10.6, 11.2], "crowd_steps": [10.75, 11.12, 11.2, 11.58], "trip": 11.45,
         "slam": [12.0, 12.15], "stand_tall": 12.22,
     },
 }
@@ -1402,11 +1407,39 @@ def export_sheet(path, times=None):
     print("contact sheet ->", path)
 
 
+def audio_args():
+    """ffmpeg args that lay the soundtrack under the piped video: skip to `start`, repeat the `loop` phrase until the
+    video is covered (short crossfade at each splice), fade in/out, cut to the exact duration. Each piece reads the
+    file as its own input (asplit into acrossfade drops the second branch in ffmpeg 6)."""
+    A, dur = CONFIG["audio"], CONFIG["video"]["duration"]
+    path = A["file"] and os.path.join(HERE, A["file"])
+    if not path or not os.path.exists(path):
+        if path:
+            print("audio file not found, rendering a silent video:", path)
+        return [], ["-an"]
+    (l0, l1), xf = A["loop"], A["crossfade"]
+    pieces, covered = [(A["start"], l1)], l1 - A["start"]
+    while covered < dur:
+        pieces.append((l0, l1))
+        covered += l1 - l0
+    g = [f"[{i + 1}:a]asetpts=PTS-STARTPTS,atrim={a - (xf / 2 if i else 0):.4f}:{b + xf / 2:.4f},asetpts=PTS-STARTPTS[p{i}]"
+         for i, (a, b) in enumerate(pieces)]
+    last = "p0"
+    for i in range(1, len(pieces)):
+        g.append(f"[{last}][p{i}]acrossfade=d={xf}:c1=tri:c2=tri[x{i}]")
+        last = f"x{i}"
+    g.append(f"[{last}]afade=t=in:d={A['fade_in']},afade=t=out:st={dur - A['fade_out']:.3f}:d={A['fade_out']}:curve=cub,"
+             f"apad,atrim=0:{dur}[aud]")
+    return ["-i", path] * len(pieces), ["-filter_complex", ";".join(g), "-map", "0:v", "-map", "[aud]",
+                          "-c:a", "aac", "-b:a", A["bitrate"], "-ar", "44100"]
+
+
 def export_video(path):
     n = int(round(CONFIG["video"]["duration"] * FPS))
+    a_in, a_out = audio_args()
     cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "bgra",
-           "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
-           "-preset", "slow", "-movflags", "+faststart", "-an", path]
+           "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", *a_in, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
+           "-preset", "slow", *a_out, "-movflags", "+faststart", path]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     s, ctx = new_surface()
     for i in range(n):
