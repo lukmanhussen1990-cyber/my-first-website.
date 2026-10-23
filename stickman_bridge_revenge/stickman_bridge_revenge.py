@@ -64,7 +64,7 @@ CONFIG = {
 
     # ---- text --------------------------------------------------------------
     "header_text": "REVENGE",
-    "watermark": "@YOURHANDLE",
+    "watermark": "@DarkNinja",
     # fontconfig family names, first installed one wins (":bold" = bold weight)
     "font_header": ["Inter Black", "Montserrat Black", "Arial Black", "DejaVu Sans:bold"],
     "font_label": ["Inter ExtraBold", "Montserrat ExtraBold", "Arial:bold", "DejaVu Sans:bold"],
