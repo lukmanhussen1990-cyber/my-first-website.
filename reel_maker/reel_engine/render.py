@@ -26,7 +26,7 @@ def render_previews(cfg, plan, outdir: Path, times=None, scenes=None):
     jobs = []
     for t in times or []:
         jobs.append((f"t{t:06.2f}", t))
-    for n in scenes or ([] if times else [1, 5, 10, 14]):
+    for n in scenes or ([] if times else getattr(cfg, "PREVIEW_SCENES", [1])):
         sc = plan.scenes[n - 1]
         t = preview_time(sc)
         if plan.finale and n == len(plan.scenes):
@@ -39,9 +39,11 @@ def render_previews(cfg, plan, outdir: Path, times=None, scenes=None):
         paths.append(p)
         print(f"preview {name} @ {t:.2f}s -> {p}")
     # side-by-side sheet with reference frames (if the study frames exist)
-    ref = sorted((outdir.parent.parent / "ref_frames").glob("frame_*.jpg"))
-    if ref and paths:
-        picks = [ref[i] for i in (12, 30, 37, 20)][:len(paths)]
+    ref_dir = Path(__file__).resolve().parent.parent / "ref_frames"
+    if ref_dir.exists() and paths:
+        nums = getattr(cfg, "PREVIEW_REFERENCE_FRAMES", [13, 31, 38, 21])
+        picks = [ref_dir / f"frame_{n:03d}.jpg" for n in nums][:len(paths)]
+        picks = [p for p in picks if p.exists()]
         tw, th = 405, 720
         sheet = Image.new("RGB", (len(paths) * (tw + 12) + 12, 2 * th + 36), (40, 40, 40))
         for i, p in enumerate(paths):

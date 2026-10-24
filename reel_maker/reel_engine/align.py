@@ -41,6 +41,13 @@ def align(script_words: list[dict], heard: list[dict], sentence_spans: list[tupl
           timing: str = "model", max_drift: float = 0.12):
     """script_words: [{text, sentence, start, end}] with raw model timings.
     Returns (words with final start/end, report)."""
+    merged = []
+    for h in heard:  # whisper splits hyphenated words: "t" + "-shirt"
+        if merged and h["word"].startswith("-"):
+            merged[-1] = dict(merged[-1], word=merged[-1]["word"] + h["word"], end=h["end"])
+        else:
+            merged.append(h)
+    heard = merged
     a = [norm(w["text"]) for w in script_words]
     b = [norm(w["word"]) for w in heard]
     match = {}

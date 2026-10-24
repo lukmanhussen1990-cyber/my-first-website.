@@ -19,6 +19,7 @@ MAX_W = 940
 SPOKEN = "#f3ecdd"
 UPCOMING = "#4b4b4a"
 KEY = "yellow"
+FADE_OUT = 0.06
 WEAK_END = {"a", "an", "the", "to", "and", "of", "your", "its", "my", "for", "is"}
 GOOD_START = {"if", "for", "and", "but", "so", "when", "because", "with", "without", "on", "in", "at", "by", "of"}
 
@@ -63,7 +64,8 @@ class Captions:
         self.chunks = []
         for i, ch in enumerate(chunks):
             t0 = ch[0]["start"] - 0.10 if i > 0 or ch[0]["start"] > 0.6 else -1.0  # first chunk: on screen at frame 0
-            t1 = chunks[i + 1][0]["start"] - 0.12 if i + 1 < len(chunks) else math.inf
+            # the old chunk has fully faded (FADE_OUT) the moment the next one starts fading in
+            t1 = chunks[i + 1][0]["start"] - 0.10 - FADE_OUT if i + 1 < len(chunks) else math.inf
             size = SIZE
             texts = [w["text"] for w in ch]
             space = text_width(" ", size)
@@ -84,11 +86,11 @@ class Captions:
 
     def draw(self, cv: Canvas, t: float, finale=None):
         for c in self.chunks:
-            if not (c["t0"] <= t <= c["t1"] + 0.1):
+            if not (c["t0"] <= t <= c["t1"] + FADE_OUT):
                 continue
             a = min(1.0, (t - c["t0"]) / 0.10)
             if t > c["t1"]:
-                a *= max(0.0, 1 - (t - c["t1"]) / 0.08)
+                a *= max(0.0, 1 - (t - c["t1"]) / FADE_OUT)
             self._draw_chunk(cv, c, t, a, finale)
 
     def _word_state(self, c, i, t):

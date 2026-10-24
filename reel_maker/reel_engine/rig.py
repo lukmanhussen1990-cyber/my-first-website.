@@ -39,6 +39,18 @@ POSES = {
     "stand_cheer":  dict(hip=(0, -166), spine=-0.06, bend=0.0, head=-0.12,
                          hand_a=(62, -128), hand_b=(-58, -120), elbow_a=1, elbow_b=-1,
                          foot_a=(26, 0), foot_b=(-24, 0), knee_a=-0.6, knee_b=0.6),
+    "hand_on_head": dict(hip=(0, -172), spine=0.0, bend=0.0, head=0.05,
+                         hand_a=(16, -244), hand_b=(-40, -22), elbow_a=1, elbow_b=1,
+                         foot_a=(24, 0), foot_b=(-24, 0), knee_a=-0.6, knee_b=0.6),
+    "facepalm":     dict(hip=(0, -172), spine=0.06, bend=0.08, head=0.22,
+                         hand_a=(18, -196), hand_b=(-40, -24), elbow_a=1, elbow_b=1,
+                         foot_a=(24, 0), foot_b=(-24, 0), knee_a=-0.6, knee_b=0.6),
+    "stand_worried": dict(hip=(0, -172), spine=0.0, bend=0.04, head=0.04,
+                         hand_a=(14, -64), hand_b=(-14, -64), elbow_a=-1, elbow_b=1,
+                         foot_a=(20, 0), foot_b=(-20, 0), knee_a=-0.6, knee_b=0.6),
+    "stand_think":  dict(hip=(0, -172), spine=0.0, bend=0.0, head=-0.06,
+                         hand_a=(10, -186), hand_b=(-38, -22), elbow_a=1, elbow_b=1,
+                         foot_a=(22, 0), foot_b=(-22, 0), knee_a=-0.6, knee_b=0.6),
     "sit":          dict(hip=(0, -94), spine=0.14, bend=0.0, head=0.08,
                          hand_a=(56, -22), hand_b=(46, -26), elbow_a=1, elbow_b=1,
                          foot_a=(94, 0), foot_b=(80, 0), knee_a=-1, knee_b=-1),
@@ -86,6 +98,8 @@ FACES = {
     "happy":     (1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.9, 0.35, 0.0, 1.1, 0.0),
     "laugh":     (1.0, 1.0, 1.0, 0.0, 0.0, 0.2, 1.0, 1.0, 0.0, 1.2, 0.0),
     "surprised": (1.0, 0.0, 1.4, 1.0, 0.0, 1.0, 0.0, 0.55, 0.0, 0.5, 0.0),
+    "worried":   (1.0, 0.0, 1.12, 1.0, 0.85, 0.2, -0.3, 0.0, 0.0, 0.6, 0.0),
+    "nervous":   (1.0, 0.0, 1.12, 1.0, 0.95, 0.2, -0.15, 0.0, 1.0, 0.8, 1.0),
 }
 FACE_KEYS = ("eye_open", "eye_happy", "eye_size", "brow", "tilt", "raise", "curve", "open", "wavy", "width", "sweat")
 
@@ -171,6 +185,29 @@ def apply_motions(p: dict, f: dict, motions, t: float, seed):
             hx, hy = p["hand_a"]
             p["hand_a"] = (hx + 2 * k, hy - 7 * k)
             p["head"] += env * 0.015 * k
+        elif name == "dance":  # arms waving overhead, hip sway, little knee bounces
+            w = 2 * math.pi * prm.get("hz", 1.9) * (t - t0)
+            sw = math.sin(w)
+            p["hip"] = (p["hip"][0] + env * 13 * sw, p["hip"][1] + env * (5 * abs(math.sin(w)) - 2))
+            p["spine"] += env * 0.13 * sw
+            p["head"] += env * 0.12 * math.sin(w + 0.6)
+            ka, kb = 0.5 + 0.5 * math.sin(w), 0.5 - 0.5 * math.sin(w)
+            for h, k, sgn in (("hand_a", ka, 1), ("hand_b", kb, -1)):
+                up = (sgn * 66, -246)
+                mid = (sgn * 100, -150)
+                tx = up[0] + (mid[0] - up[0]) * k
+                ty = up[1] + (mid[1] - up[1]) * k
+                p[h] = (p[h][0] * (1 - env) + tx * env, p[h][1] * (1 - env) + ty * env)
+            p["elbow_a"] = p["elbow_a"] * (1 - env) + env * 1
+            p["elbow_b"] = p["elbow_b"] * (1 - env) + env * -1
+            fx_, fy_ = p["foot_a"]
+            p["foot_a"] = (fx_, fy_ - env * 10 * max(0, math.sin(w)))
+            fx_, fy_ = p["foot_b"]
+            p["foot_b"] = (fx_, fy_ - env * 10 * max(0, -math.sin(w)))
+        elif name == "pat_head":  # flattening hair: quick pats on top of the head
+            k = env * (0.5 + 0.5 * math.sin(2 * math.pi * 6.5 * (t - t0)))
+            hx, hy = p["hand_a"]
+            p["hand_a"] = (hx + 4 * k, hy + 10 * k)
         elif name == "nod":
             p["head"] += env * 0.10 * math.sin(2 * math.pi * 2.2 * (t - t0))
         elif name == "bounce_leg":  # nervous knee bounce
@@ -234,7 +271,7 @@ def solve(p: dict, x: float, ground: float, facing: int, scale: float):
 
 # ----------------------------------------------------------------- draw
 def draw_person(cv: Canvas, j: dict, fc: dict, seed, *, scale=1.0, turn=0.0, col="ink", alpha=1.0,
-                dashed=False, hair=False, look=(0.0, 0.0), blink=True):
+                dashed=False, hair=False, look=(0.0, 0.0), blink=True, show_face=True):
     if alpha <= 0.003:
         return
     s = scale
@@ -255,7 +292,8 @@ def draw_person(cv: Canvas, j: dict, fc: dict, seed, *, scale=1.0, turn=0.0, col
     if hair:
         _hair(cv, hx, hy, r, j["head_angle"], seed, col, lw, dash)
     st(circle, "head")
-    _face(cv, hx, hy, r, j["head_angle"], turn, fc, seed, col, look, blink)
+    if show_face:
+        _face(cv, hx, hy, r, j["head_angle"], turn, fc, seed, col, look, blink)
     cv.end(a)
 
 
@@ -326,10 +364,11 @@ def _face(cv, hx, hy, r, ang, turn, f, seed, col, look, blink):
         pts = np.array([T(-w, my - 0.02 * r * f["curve"]), T(0, my + bow), T(w, my - 0.02 * r * f["curve"])])
         cv.stroke(through(*pts, n=12), (seed, "mouth"), fw, col, wobble=0.25, boil=0.25)
     if f["sweat"] > 0.05:
-        k = (cv.t * 0.8 + (stable_seed(seed) % 100) / 100) % 1.0
-        side = -1 if turn > 0.2 else 1
-        dx, dy = T(side * 1.25 * r, -0.30 * r + 0.45 * r * k)
-        a = f["sweat"] * min(1, 4 * (1 - k)) * min(1, 6 * k)
-        drop = [(dx + 8.5 * r / R * math.cos(t), dy + 8.5 * r / R * math.sin(t)) for t in np.linspace(0, math.pi, 9)]
-        drop += [(dx, dy - 19 * r / R)]
-        cv.fill(np.array(drop) + 0, (seed, "sweat"), "#8ec0f2", alpha=a)
+        sides = [-1 if turn > 0.2 else 1] + ([1 if turn > 0.2 else -1] if f["sweat"] > 0.5 else [])
+        for i, side in enumerate(sides):
+            k = (cv.t * 0.8 + (stable_seed(seed) % 100) / 100 + 0.45 * i) % 1.0
+            dx, dy = T(side * 1.25 * r, -0.30 * r + 0.45 * r * k)
+            a = f["sweat"] * min(1, 4 * (1 - k)) * min(1, 6 * k)
+            drop = [(dx + 8.5 * r / R * math.cos(t), dy + 8.5 * r / R * math.sin(t)) for t in np.linspace(0, math.pi, 9)]
+            drop += [(dx, dy - 19 * r / R)]
+            cv.fill(np.array(drop), (seed, "sweat", i), "#8ec0f2", alpha=a)

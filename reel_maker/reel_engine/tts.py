@@ -71,7 +71,7 @@ class G2P:
             def sub(m):
                 ps = self.overrides.get(m.group(0).lower())
                 return f"[{m.group(0)}](/{ps}/)" if ps else m.group(0)
-            text = re.sub(r"[A-Za-z']+", sub, text)
+            text = re.sub(r"[A-Za-z']+(?:-[A-Za-z']+)*", sub, text)
         phonemes, tokens = self.g2p(text)
         return phonemes, tokens
 

@@ -104,3 +104,22 @@ the two so they read on a phone but don't look neon.
 - Soft tonal pad/piano under the voice (energy peaks at ~196 Hz and 261 Hz,
   G3/C4), ~19 dB below speech RMS. This build follows your spec (−24 dB under
   the voice), with very quiet pops/whooshes on prop appearances.
+
+## Addendum — "The Spotlight Effect" (re-study, same reference)
+Re-extracted `ref_frames/` (1 frame / 1.5 s, 3 contact sheets) and re-checked
+the transcript; pacing numbers above still apply (2.56 words/s, 0.3–0.5 s
+sentence pauses, one new picture per sentence). Crops in
+`ref_analysis/spotlight_study.png`. Details that matter for this video:
+- **Crowds**: same-size figures spaced evenly along the ground (≈18% / 50% /
+  82% of the width for three), all on one ground line — no perspective. Each
+  can carry its own text box above the head: dark fill, thin light-grey
+  outline (~3 px), small white Kalam text (~36 px).
+- **Eye-lines**: thin dashed pale-yellow lines (~3 px, dash ≈ gap ≈ 9 px)
+  from the eyes to the target; several lines converging read as "everyone is
+  looking". The looked-at person gets a soft yellow glow — the reference's own
+  version of a spotlight.
+- **Thoughts / questions**: dark boxes with a thin coloured outline (yellow or
+  pink) and white text; grey "?" marks of mixed sizes around a head.
+- Spotlight beams, speech/thought bubbles, shirt and doorway are not in the
+  reference, so they are drawn in the same rules: thin warm-white line work,
+  dark fills, one accent colour each (yellow = attention/light).

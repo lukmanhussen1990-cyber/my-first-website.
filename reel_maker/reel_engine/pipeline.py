@@ -1,7 +1,8 @@
 """Build stages: voice -> align -> audio -> preview/render.
 
-Every stage reads the config module (make_reel.py) and writes into build/.
-Stages are cached on a hash of the config values they depend on.
+Every stage reads a video's config module (e.g. spotlight_effect.py) and
+writes into build/<video name>/. Stages are cached on a hash of the config
+values they depend on.
 """
 from __future__ import annotations
 
@@ -16,7 +17,6 @@ import numpy as np
 import soundfile as sf
 
 ROOT = Path(__file__).resolve().parent.parent
-BUILD = ROOT / "build"
 MODELS = ROOT / "models"
 MIX_SR = 48000
 
@@ -30,7 +30,13 @@ def _log(msg):
 
 
 # ------------------------------------------------------------------ 1. voice
-def stage_voice(cfg, force=False):
+def build_dir(cfg) -> Path:
+    d = ROOT / "build" / Path(cfg.OUTPUT).stem
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def stage_voice(cfg, BUILD, force=False):
     from scipy.signal import resample_poly
     from .tts import G2P, Kokoro, SAMPLE_RATE, build_voiceover, loudness_normalize
 
@@ -49,11 +55,10 @@ def stage_voice(cfg, force=False):
                                   lead_in=v.get("lead_in", 0.3), tail=v.get("tail", 1.6))
     audio = resample_poly(audio, 2, 1).astype(np.float32)  # 24 kHz -> 48 kHz
     audio = loudness_normalize(audio, MIX_SR, v.get("lufs", -16.0))
-    BUILD.mkdir(exist_ok=True)
     sf.write(BUILD / "voice.wav", audio, MIX_SR, subtype="PCM_16")
     meta = {"key": key, "duration": len(audio) / MIX_SR, "g2p_tagger": g2p.tagger, "sentences": info}
     meta_path.write_text(json.dumps(meta, indent=1, ensure_ascii=False))
-    _log(f"voice: {meta['duration']:.2f}s -> build/voice.wav")
+    _log(f"voice: {meta['duration']:.2f}s -> {BUILD / 'voice.wav'}")
     return meta
 
 
@@ -73,7 +78,7 @@ def script_words(voice_meta):
     return words
 
 
-def stage_align(cfg, voice_meta, force=False):
+def stage_align(cfg, BUILD, voice_meta, force=False):
     from scipy.signal import resample_poly
     from .align import align, whisper_words
 
@@ -100,21 +105,79 @@ def stage_align(cfg, voice_meta, force=False):
     return data
 
 
+# ------------------------------------------------------------------ 0. voice test
+def stage_voicetest(cfg, BUILD, voices=("am_michael", "am_adam", "am_fenrir", "bm_george")):
+    """Two script lines in each candidate voice, compared with the reference narrator."""
+    from scipy.signal import resample_poly
+    from .tts import G2P, Kokoro, SAMPLE_RATE, build_voiceover, loudness_normalize
+    out = BUILD / "voice_tests"
+    out.mkdir(exist_ok=True)
+    g2p = G2P(overrides=cfg.PRONUNCIATIONS)
+    kokoro = Kokoro(MODELS / "kokoro" / "model.onnx", MODELS / "kokoro" / "voices")
+    lines = [s for s, _ in cfg.SCRIPT[:2]]
+    files = {}
+    for v in voices:
+        audio, _ = build_voiceover(lines, v, cfg.VOICE["speed"], [0.35], g2p, kokoro, lead_in=0.2, tail=0.3)
+        files[v] = out / f"test_{v}.wav"
+        sf.write(files[v], loudness_normalize(audio, SAMPLE_RATE, -16), SAMPLE_RATE)
+    try:
+        import librosa
+    except ImportError:
+        _log(f"voicetest: wrote {out} (install librosa to also get the pitch/timbre comparison)")
+        return
+    from faster_whisper import WhisperModel
+
+    def feats(y, sr):
+        y16 = librosa.resample(y.astype(np.float32), orig_sr=sr, target_sr=16000)
+        f0, vf, _ = librosa.pyin(y16, fmin=60, fmax=300, sr=16000, frame_length=1024)
+        f0 = f0[vf & ~np.isnan(f0)]
+        cen = librosa.feature.spectral_centroid(y=y16, sr=16000)[0]
+        rms = librosa.feature.rms(y=y16)[0]
+        return float(np.median(f0)), float(np.std(12 * np.log2(f0 / np.median(f0)))), \
+            float(np.median(cen[rms > 0.02 * rms.max()])), y16
+
+    ref_path = ROOT / "reference.mp4"
+    ref = None
+    if ref_path.exists():
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(ref_path), "-t", "20", "-ac", "1", "-ar", "16000",
+                              "-f", "f32le", "-"], capture_output=True).stdout
+        ref = feats(np.frombuffer(raw, np.float32), 16000)
+        print(f"{'reference':12s} F0 {ref[0]:5.1f} Hz | pitch variability {ref[1]:.2f} st | brightness {ref[2]:4.0f} Hz")
+    local = MODELS / f"whisper-{cfg.WHISPER.get('model', 'base')}-ct2"
+    wm = WhisperModel(str(local) if local.exists() else cfg.WHISPER.get("model", "base"), device="cpu",
+                      compute_type="int8")
+    best = None
+    for v, f in files.items():
+        y, sr = sf.read(f)
+        f0, var, cen, y16 = feats(y, sr)
+        segs, _ = wm.transcribe(y16, language="en", word_timestamps=True)
+        conf = float(np.mean([w.probability for s_ in segs for w in s_.words]))
+        dist = (abs(12 * np.log2(f0 / ref[0])) / 3 + abs(var - ref[1]) + abs(np.log2(cen / ref[2])) * 4) if ref else 0
+        print(f"{v:12s} F0 {f0:5.1f} Hz | pitch variability {var:.2f} st | brightness {cen:4.0f} Hz | "
+              f"whisper confidence {conf:.3f} | distance to reference {dist:.2f}")
+        if best is None or dist - conf < best[0]:
+            best = (dist - conf, v)
+    _log(f"voicetest: closest to the reference narrator: {best[1]}  (files in {out})")
+
+
 # ------------------------------------------------------------------ main
 def main(cfg):
     ap = argparse.ArgumentParser(description="Build the reel")
     ap.add_argument("stage", nargs="?", default="all",
-                    choices=["voice", "align", "audio", "preview", "render", "all"])
+                    choices=["voicetest", "voice", "align", "audio", "preview", "render", "all"])
     ap.add_argument("--force", action="store_true", help="ignore caches")
     ap.add_argument("--at", type=float, nargs="*", help="preview: times in seconds")
     ap.add_argument("--scenes", type=int, nargs="*", help="preview: scene numbers (1-based)")
     ap.add_argument("--workers", type=int, default=4)
     args = ap.parse_args()
 
-    voice = stage_voice(cfg, args.force)
+    BUILD = build_dir(cfg)
+    if args.stage == "voicetest":
+        return stage_voicetest(cfg, BUILD)
+    voice = stage_voice(cfg, BUILD, args.force)
     if args.stage == "voice":
         return
-    words = stage_align(cfg, voice, args.force)
+    words = stage_align(cfg, BUILD, voice, args.force)
     if args.stage == "align":
         return
     from .render import render_all, render_previews

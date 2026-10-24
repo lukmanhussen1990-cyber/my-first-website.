@@ -50,7 +50,8 @@ EASE = {
 }
 ENTER_DUR = {"pop": 0.30, "fade": 0.30, "rise": 0.40, "draw": 0.60, "drop": 0.55, "none": 0.0}
 EXIT_DUR = {"fade": 0.25, "pop": 0.22, "sink": 0.30, "none": 0.0}
-DEFAULT_Z = {"arrow": 9, "buzz": -2, "glow": 7, "ground": -10, "grass": -9, "sun": -8, "tree": -7, "chair": -5, "table": -5, "box": -3, "clock": -3,
+DEFAULT_Z = {"spotlight": -6, "doorway": -6, "shirt": 1.5, "hair": 1.6, "palm": 1.7, "bubble": 9, "thought": 8,
+             "notebook": 10, "arrow": 9, "buzz": -2, "glow": 7, "ground": -10, "grass": -9, "sun": -8, "tree": -7, "chair": -5, "table": -5, "box": -3, "clock": -3,
              "meter": -3, "calendar": 3, "eyeline": 1, "battery": 2, "brain": 2, "cloud": 2, "bulb": 3,
              "floaters": 4, "sketch": 4, "paper": 4, "phone": 5, "book": 5, "pencil": 6, "heart": 6, "orb": 8,
              "qmark": 9, "tick": 9, "label": 10, "bookmark": 12}
@@ -173,6 +174,7 @@ class ActorInst:
     motions: list = field(default_factory=list)
     hair: bool = False
     dashed: bool = False
+    z: float = 0.0
 
     def state(self, t):
         return {k: tr.at(t, _mix) for k, tr in self.tracks.items()}
@@ -193,6 +195,7 @@ class PropInst:
     params: dict
     tracks: dict = field(default_factory=dict)
     until_explicit: bool = False
+    target: tuple | None = None
 
 
 @dataclass
@@ -205,6 +208,7 @@ class Plan:
     captions: Captions
     finale: dict | None = None
     watermark: str | None = None
+    camera: dict | None = None
 
 
 def _actor_state(state):
@@ -234,6 +238,7 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
     actors: dict[str, list[ActorInst]] = {}
     props: list[PropInst] = []
     sfx: list[dict] = []
+    camera = {"zoom": Track(1.0), "cx": Track(540.0), "cy": Track(960.0)}
     uid = 0
 
     def live_actor(aid, t):
@@ -268,7 +273,7 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
                     uid += 1
                     fade = 0.0 if t <= 0 else (CUT if sc.transition == "cut" else 0.3)
                     inst = ActorInst(it["id"], f"{it['id']}#{uid}", t_in=t, fade_in=fade,
-                                     hair=st.pop("hair", False), dashed=st.pop("dashed", False))
+                                     hair=st.pop("hair", False), dashed=st.pop("dashed", False), z=st.pop("z", 0.0))
                     base = _actor_state(ACTOR_DEFAULTS)
                     base.update(st)
                     inst.tracks = {k: Track(v) for k, v in base.items()}
@@ -276,6 +281,7 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
                 else:
                     st.pop("hair", None)
                     st.pop("dashed", None)
+                    st.pop("z", None)
                     for k, v in st.items():
                         inst.tracks[k].keys.append((t, 0.45, v, "inout"))
             elif op in ("act", "walk"):
@@ -302,16 +308,21 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
                 keep = it["keep"]
                 t_out = resolve(until, sc) if until is not None else (math.inf if keep else sc.end)
                 uid += 1
-                hold = None
-                if it["hold"]:
-                    aid, where, off = (list(it["hold"]) + [(0, 0)])[:3]
+                params = dict(it["params"])
+
+                def bind(spec, what):
+                    if not spec:
+                        return None
+                    aid, where, off = (list(spec) + [(0, 0)])[:3]
                     inst = live_actor(aid, t)
                     if inst is None:
-                        raise ValueError(f"add {it['id']!r}: holder {aid!r} does not exist at {t:.2f}s")
-                    hold = (inst.uid, where, off)
+                        raise ValueError(f"add {it['id']!r}: {what} {aid!r} does not exist at {t:.2f}s")
+                    return (inst.uid, where, off)
+
                 p = PropInst(it["id"], f"{it['id']}#{uid}", kind, t, t_out, it["enter"], it["exit"], keep,
-                             it["z"] if it["z"] is not None else DEFAULT_Z.get(kind, 0), hold,
-                             dict(it["params"]), until_explicit=until is not None)
+                             it["z"] if it["z"] is not None else DEFAULT_Z.get(kind, 0), bind(it["hold"], "holder"),
+                             params, until_explicit=until is not None,
+                             target=bind(params.pop("target", None), "target"))
                 props.append(p)
                 snd = SFX_FOR_ENTER.get(it["enter"]) if it["sfx"] == "auto" else it["sfx"]
                 if snd:
@@ -334,6 +345,9 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
                     p.exit = it["exit"]
             elif op == "sfx":
                 sfx.append({"t": t, "name": it["name"], "gain_db": it["gain_db"]})
+            elif op == "camera":
+                for k, v in it["params"].items():
+                    camera[k].keys.append((t, it["dur"], float(v), it["ease"]))
 
     for lst in actors.values():
         for inst in lst:
@@ -342,6 +356,8 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
     for p in props:
         for tr in p.tracks.values():
             tr.finalize(_mix)
+    for tr in camera.values():
+        tr.finalize(_mix)
     # props that start where an actor's hand/head is at that moment (e.g. a dropped phone)
     for p in props:
         ah = p.params.pop("at_hold", None)
@@ -364,7 +380,7 @@ def compile_plan(cfg, voice_meta, words_data) -> Plan:
         finale = dict(finale, t=resolve(finale.get("at", "end-1.2"), last))
     all_actors = [inst for lst in actors.values() for inst in lst]
     return Plan(scenes, all_actors, props, sorted(sfx, key=lambda e: e["t"]), duration, caps, finale,
-                getattr(cfg, "WATERMARK", None))
+                getattr(cfg, "WATERMARK", None), camera)
 
 
 def actor_joints(inst: ActorInst, t: float):
@@ -373,7 +389,27 @@ def actor_joints(inst: ActorInst, t: float):
     facing = 1 if st["facing"] >= 0 else -1
     j = rig.solve(p, st["x"], st["y"], facing, st["scale"])
     j["facing"] = facing
+    j["scale"] = st["scale"]
     return j
+
+
+def _anchor_point(j, where):
+    if where == "hands":
+        return (j["hand_a"] + j["hand_b"]) / 2
+    if where == "body":
+        return j["neck"]
+    if where == "head_top":
+        return j["head"] - np.array([0, rig.R * j["scale"]])
+    return j[where]
+
+
+def _spin(inst, t):
+    """Horizontal squash for a 'spin' motion: 1 -> -1 -> 1 over its duration."""
+    for name, t0, t1, prm in inst.motions:
+        if name == "spin" and t0 <= t <= t1:
+            u = (t - t0) / max(t1 - t0, 1e-3)
+            return math.cos(2 * math.pi * u), math.sin(2 * math.pi * u)
+    return 1.0, 0.0
 
 
 # ------------------------------------------------------------------ drawing
@@ -428,9 +464,21 @@ def prop_state(p: PropInst, t, joints):
         huid, where, off = p.hold
         if huid in joints:
             j = joints[huid]
-            ax, ay = (j["hand_a"] + j["hand_b"]) / 2 if where == "hands" else j[where]
+            ax, ay = _anchor_point(j, where)
             P["x"], P["y"] = ax + j["facing"] * off[0], ay + off[1]
+            P["ax"], P["ay"] = float(ax), float(ay)
             P["facing"] = j["facing"]
+            if where == "body":
+                P["joints"] = j
+            P.setdefault("scale", j["scale"]) if where in ("head", "head_top") else None
+        else:
+            fx["alpha"] = 0.0
+    if p.target:
+        tuid, where, off = p.target
+        if tuid in joints:
+            j = joints[tuid]
+            ax, ay = _anchor_point(j, where)
+            P["x1"], P["y1"] = ax + off[0], ay + off[1]
         else:
             fx["alpha"] = 0.0
     if p.kind == "orb":  # comet trail: where the orb was a moment ago
@@ -464,13 +512,14 @@ class Stage:
             facing = 1 if st["facing"] >= 0 else -1
             j = rig.solve(p, st["x"], st["y"], facing, st["scale"])
             j["facing"] = facing
+            j["scale"] = st["scale"]
             joints[inst.uid] = j
             a = st["alpha"]
             if inst.fade_in > 0:
                 a *= min(1.0, (t - inst.t_in) / inst.fade_in)
             if t > inst.t_out:
                 a *= max(0.0, 1 - (t - inst.t_out) / max(inst.fade_out, 1e-3))
-            items.append((0.0, "actor", inst, (st, f, j, a)))
+            items.append((inst.z, "actor", inst, (st, f, j, a)))
         for p in self.plan.props:
             if not (p.t_in <= t <= p.t_out + EXIT_DUR.get(p.exit, 0.25) + 1e-6):
                 continue
@@ -479,24 +528,55 @@ class Stage:
                 continue
             items.append((p.z, "prop", p, (P, fx)))
         items.sort(key=lambda it: it[0])
+        keep = set(fin.get("keep_actors", [])) | set(fin.get("keep_props", [])) if fin else set()
+        cr = cv.cr
+        cr.save()
+        cam = self.plan.camera
+        if cam:
+            zoom, cx, cy = (cam[k].at(t, _mix) for k in ("zoom", "cx", "cy"))
+            if abs(zoom - 1) > 1e-4 or abs(cx - 540) > 0.01 or abs(cy - 960) > 0.01:
+                cr.translate(540, 960)
+                cr.scale(zoom, zoom)
+                cr.translate(-cx, -cy)
         if world_alpha < 0.999:
-            cv.cr.push_group()
-        for z, kind, obj, data in items:
-            if kind == "actor":
-                st, f, j, a = data
-                rig.draw_person(cv, j, f, obj.uid, scale=st["scale"], turn=st["turn"] * j["facing"],
-                                alpha=a, dashed=obj.dashed, hair=obj.hair, look=(st["look"][0] * j["facing"],
-                                                                                 st["look"][1]))
-            else:
-                P, fx = data
-                self._draw_prop(cv, obj, P, fx)
+            cr.push_group()
+        kept = []
+        for it in items:
+            if it[2].id in keep and world_alpha < 0.999:
+                kept.append(it)
+                continue
+            self._draw_item(cv, *it)
         if world_alpha < 0.999:
-            cv.cr.pop_group_to_source()
-            cv.cr.paint_with_alpha(world_alpha)
+            cr.pop_group_to_source()
+            cr.paint_with_alpha(world_alpha)
+        for it in kept:  # the finale keeps these actors at full strength
+            self._draw_item(cv, *it)
+        cr.restore()
         self.plan.captions.draw(cv, t, fin)
         if self.plan.watermark:
             cv.text(self.plan.watermark, 540, 1560, 46, "#e6e1da", 0.9, jitter=False)
         return cv
+
+    def _draw_item(self, cv, z, kind, obj, data):
+        if kind == "actor":
+            st, f, j, a = data
+            sx, sturn = _spin(obj, cv.t)
+            turn = st["turn"] * j["facing"]
+            cr = cv.cr
+            if sx != 1.0:
+                cr.save()
+                ax = st["x"]
+                cr.translate(ax, 0)
+                cr.scale(math.copysign(max(abs(sx), 0.05), sx), 1)
+                cr.translate(-ax, 0)
+                turn = 0.9 * sturn
+            rig.draw_person(cv, j, f, obj.uid, scale=st["scale"], turn=turn, alpha=a, dashed=obj.dashed,
+                            hair=obj.hair, look=(st["look"][0] * j["facing"], st["look"][1]), show_face=sx > -0.15)
+            if sx != 1.0:
+                cr.restore()
+        else:
+            P, fx = data
+            self._draw_prop(cv, obj, P, fx)
 
     def _draw_prop(self, cv, p, P, fx):
         cr = cv.cr

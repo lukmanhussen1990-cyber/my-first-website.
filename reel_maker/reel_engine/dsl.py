@@ -65,3 +65,8 @@ def label(text, at=0, y=330, x=540, col="yellow", size=66, box=False, enter="ris
 
 def sfx(name, at=0, gain_db=0.0):
     return {"op": "sfx", "name": name, "at": at, "gain_db": gain_db}
+
+
+def camera(at=0, dur=1.0, ease="inout", **params):
+    """Move the virtual camera: zoom (1 = normal, <1 pulls back), cx/cy = world point kept at screen centre."""
+    return {"op": "camera", "at": at, "dur": dur, "ease": ease, "params": params}

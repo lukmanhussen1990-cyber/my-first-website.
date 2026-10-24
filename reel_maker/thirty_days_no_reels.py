@@ -3,8 +3,8 @@
 
 Edit the three config blocks below (SCRIPT, VOICE, SCENES) and run:
 
-    python make_reel.py            # voice -> timestamps -> audio -> render
-    python make_reel.py preview --scenes 1 5 10 14   # stills into build/previews/
+    python thirty_days_no_reels.py                      # voice -> timestamps -> audio -> render
+    python thirty_days_no_reels.py preview --scenes 1 5 10 14   # stills into build/30_days_no_reels/previews/
 """
 
 # ════════════════════════════════════════════════════════════════════ 1. SCRIPT
@@ -33,6 +33,8 @@ CAPTION_KEYWORDS = ["Reels", "thirty", "terrible", "phone", "dopamine", "boredom
                     "focus", "book", "enjoyable", "lose", "attention", "save", "close"]
 CAPTION_HIGHLIGHT = "keyword"  # "keyword" = one key word per chunk; "active" = yellow follows the spoken word (reference behaviour)
 CAPTION_MAX_WORDS = 4          # 2–4 words on screen at a time
+PREVIEW_SCENES = [1, 5, 10, 14]                 # `preview` stage default
+PREVIEW_REFERENCE_FRAMES = [13, 31, 38, 21]     # ref_frames/frame_XXX.jpg shown under the previews
 WATERMARK = "@psych.sketches"  # drawn on every frame, below the captions and above Instagram's bottom UI
 
 # ═════════════════════════════════════════════════════════════════════ 2. VOICE
