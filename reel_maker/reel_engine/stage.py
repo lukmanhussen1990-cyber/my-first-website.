@@ -495,7 +495,7 @@ class Stage:
             cv.cr.paint_with_alpha(world_alpha)
         self.plan.captions.draw(cv, t, fin)
         if self.plan.watermark:
-            cv.text(self.plan.watermark, 540, 1572, 36, "#8d8a86", 0.55, jitter=False)
+            cv.text(self.plan.watermark, 540, 1560, 46, "#e6e1da", 0.9, jitter=False)
         return cv
 
     def _draw_prop(self, cv, p, P, fx):
