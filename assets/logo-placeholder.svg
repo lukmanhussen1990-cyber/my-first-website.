@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Placeholder mark for GRACE IN MOTION. Replace by dropping assets/grace-in-motion-pfp.png -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="62%"><stop offset="0" stop-color="#4a3020"/><stop offset="0.7" stop-color="#25170e"/><stop offset="1" stop-color="#160d08"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e2a8"/><stop offset="0.5" stop-color="#d9b062"/><stop offset="1" stop-color="#a87a34"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffd98a" stop-opacity="0.55"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="232" fill="none" stroke="url(#gold)" stroke-width="9"/>
+  <circle cx="256" cy="256" r="214" fill="none" stroke="#d9b062" stroke-opacity="0.35" stroke-width="2"/>
+  <circle cx="278" cy="236" r="150" fill="url(#glow)"/>
+  <!-- motion streaks -->
+  <g stroke="url(#gold)" stroke-linecap="round" fill="none">
+    <path d="M96 210 H196" stroke-width="12" stroke-opacity="0.95"/>
+    <path d="M120 248 H200" stroke-width="9" stroke-opacity="0.7"/>
+    <path d="M146 284 H204" stroke-width="7" stroke-opacity="0.45"/>
+  </g>
+  <!-- cross -->
+  <rect x="263" y="104" width="34" height="304" rx="10" fill="url(#gold)"/>
+  <rect x="204" y="190" width="152" height="34" rx="10" fill="url(#gold)"/>
+</svg>

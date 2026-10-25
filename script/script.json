@@ -1,0 +1,27 @@
+{
+  "_doc": "Single source of truth for narration + captions. *WORD* = red highlight word. Each seg is synthesized separately; 'after' is the silence (s) after it. 'gap' is silence after the line. 'card' lines render as a Scripture card instead of a caption page.",
+  "voice": { "engine": "kokoro", "voice": "am_michael", "speed": 0.92, "lead_in": 0.22 },
+  "lines": [
+    { "id": "S1",  "segs": [{ "t": "Why doesn't God just appear in the *SKY* so everyone believes?" }], "gap": 0.42 },
+    { "id": "S2",  "segs": [{ "t": "One sign, and every *DOUBT* would be gone…", "after": 0.28 }, { "t": "right?" }], "gap": 0.55 },
+    { "id": "S3",  "segs": [{ "t": "But He already did that once." }], "gap": 0.45 },
+    { "id": "S4",  "segs": [{ "t": "A whole nation saw *FIRE* on the mountain and heard His voice." }], "gap": 0.4 },
+    { "id": "S5",  "segs": [{ "t": "They didn't run to Him.", "after": 0.22 }, { "t": "They ran *AWAY.*" }], "gap": 0.45 },
+    { "id": "S6",  "segs": [{ "t": "Forty days later, they were dancing around a golden *CALF.*" }], "gap": 0.42 },
+    { "id": "S7",  "segs": [{ "t": "Seeing God didn't change their *HEARTS.*" }], "gap": 0.6 },
+    { "id": "S8",  "segs": [{ "t": "Now imagine He filled the sky tonight." }], "gap": 0.4 },
+    { "id": "S9",  "segs": [{ "t": "Everyone would *OBEY…*" }], "gap": 0.3 },
+    { "id": "S10", "segs": [{ "t": "…not out of love, but out of *FEAR.*" }], "gap": 0.45 },
+    { "id": "S11", "segs": [{ "t": "That isn't a family.", "after": 0.22 }, { "t": "That's a *PRISON.*" }], "gap": 0.7 },
+    { "id": "S12", "segs": [{ "t": "God doesn't want to *OVERWHELM* you.", "after": 0.3 }, { "t": "He wants to be *FOUND* by you." }], "gap": 0.55 },
+    { "id": "S13", "card": { "ref": "JEREMIAH 29:13 · KJV", "keys": ["seek", "find", "all", "your", "heart."] },
+      "segs": [{ "t": "And ye shall seek me, and find me, when ye shall search for me with all your heart." }], "gap": 0.7 },
+    { "id": "S14", "segs": [{ "t": "Even Thomas needed to see the scars.", "after": 0.28 }, { "t": "Jesus showed him…", "after": 0.3 }, { "t": "then said this:" }], "gap": 0.5 },
+    { "id": "S15", "card": { "ref": "JOHN 20:29 · KJV", "keys": ["not", "seen,", "believed."] },
+      "segs": [{ "t": "Blessed are they that have not seen, and yet have believed." }], "gap": 0.7 },
+    { "id": "S16", "segs": [{ "t": "He gives just enough *LIGHT* to follow…", "after": 0.3 }, { "t": "and enough room to *CHOOSE.*" }], "gap": 0.6 },
+    { "id": "S17", "segs": [{ "t": "Would you rather have *PROOF…*", "after": 0.3 }, { "t": "or *FAITH?*" }], "gap": 0.45 },
+    { "id": "S18", "segs": [{ "t": "Tell us why in the comments." }], "gap": 1.0 }
+  ],
+  "outro": { "id": "S19", "dur": 2.4 }
+}
