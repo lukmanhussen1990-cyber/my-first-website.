@@ -16,6 +16,8 @@ Every prompt starts with the same style line, so you can paste each prompt exact
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1536x1024, LANDSCAPE (wide).
+
 Subject: one adult amber snail (Succinea putris), crawling, shown in exact side view (profile) facing RIGHT. Glossy, thin, slightly translucent amber-yellow shell with a large rounded last whorl and a short pointed spire, sitting on the snail's back toward the left. Long, soft, slightly see-through pale yellowish body with a moist sheen and fine skin texture; the foot is stretched out flat along the bottom, the tail tapering to the left. On the head at the right: two long, thin upper tentacles (eye stalks) angled up and forward, each with a small dark eye at the very tip, and two short lower tentacles pointing forward and down. Anatomically accurate. The whole snail is fully visible and centered, filling about 80% of the image width, with clear empty margins all around.
 ```
 
@@ -25,6 +27,8 @@ Subject: one adult amber snail (Succinea putris), crawling, shown in exact side 
 
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
+
+Image size: 1536x1024, LANDSCAPE (wide).
 
 EDIT the uploaded snail image. Keep the snail, shell, body, pose, colors, lighting, size and framing EXACTLY the same. Change ONLY the two long upper eye stalks: they are now infected by the parasite Leucochloridium paradoxum, swollen into thick, plump, sausage-shaped tubes (about 3 to 4 times thicker than before and a little longer), with bold alternating rings of bright green and yellow-white, scattered black and dark-brown spots on the green rings, and a rounded reddish-brown tip on each tube. The swollen tubes look soft, wet and slightly translucent. The two short lower tentacles stay normal.
 ```
@@ -36,6 +40,8 @@ EDIT the uploaded snail image. Keep the snail, shell, body, pose, colors, lighti
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1536x1024, LANDSCAPE (wide).
+
 EDIT the uploaded snail image. Keep everything EXACTLY the same (snail, shell, body, pose, colors, lighting, size, framing, and the second swollen banded eye stalk), with ONE change: the swollen eye stalk nearest to the viewer has been torn off by a bird. Only a short, ragged stump remains at its base, with a little moist, pinkish torn tissue at the end. The other swollen green-and-white banded eye stalk is still there, unchanged.
 ```
 
@@ -45,6 +51,8 @@ EDIT the uploaded snail image. Keep everything EXACTLY the same (snail, shell, b
 
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
+
+Image size: 1024x1536, PORTRAIT (tall).
 
 Using the uploaded snail only as the reference for colors and style, create a NEW image: an extreme macro close-up of ONE of its swollen, parasite-filled eye stalks (a Leucochloridium broodsac), standing straight and upright (vertical), centered, filling about 85% of the image height. A thick, plump, sausage-shaped tube with crisp alternating rings: bright green rings and yellow-white rings, scattered black and dark-brown spots on the green rings, a rounded reddish-brown tip at the top with a few dark speckles, and a short narrow base at the bottom attached to a small piece of pale, translucent snail skin. Wet, glossy surface with soft highlights and fine skin texture. Nothing else in the image.
 ```
@@ -56,6 +64,8 @@ Using the uploaded snail only as the reference for colors and style, create a NE
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1024x1536, PORTRAIT (tall).
+
 EDIT the uploaded image. Keep the framing, size, height, base position, lighting and style EXACTLY the same, but make the eye stalk healthy and normal: a thin, slender, smooth, slightly translucent pale yellow-grey snail tentacle (about one quarter of the current thickness), the same height, with fine skin texture and a small round black eye at the very tip. No rings, no green, no spots.
 ```
 
@@ -65,6 +75,8 @@ EDIT the uploaded image. Keep the framing, size, height, base position, lighting
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1536x1024, LANDSCAPE (wide).
+
 Subject: one plump, juicy green caterpillar, exact side view facing RIGHT, body horizontal and gently arched. Fat, soft, rounded segments with fine creases, pale yellow-green stripes along the side, small dark breathing-hole dots along each segment, short stubby legs underneath, and a small rounded head. Natural, slightly muted greens. Fully visible and centered, filling about 75% of the image width.
 ```
 
@@ -73,6 +85,8 @@ Subject: one plump, juicy green caterpillar, exact side view facing RIGHT, body 
 
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
+
+Image size: 1536x1024, LANDSCAPE (wide).
 
 Subject: one adult great tit (Parus major) perched on a thin, bare, slightly crooked twig that runs horizontally across the FULL width of the image. Side view, body facing RIGHT, head tilted to look down toward the lower right. Accurate plumage: glossy black head and throat, bright white cheek patch, olive-green back, yellow breast with a black stripe down the middle, blue-grey wings with a white wing bar, blue-grey tail, dark legs gripping the twig. The bird sits left of center and takes up about 40% of the image width.
 ```
@@ -84,6 +98,8 @@ Subject: one adult great tit (Parus major) perched on a thin, bare, slightly cro
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1536x1024, LANDSCAPE (wide).
+
 EDIT the uploaded image. Keep the same bird, plumage, colors, lighting, size, twig and framing. Change ONLY the pose: the great tit leans far forward and down to the lower right in the middle of a peck, neck stretched out, beak wide open, wings slightly lifted for balance, feet still gripping the twig.
 ```
 
@@ -93,6 +109,8 @@ EDIT the uploaded image. Keep the same bird, plumage, colors, lighting, size, tw
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1024x1536, PORTRAIT (tall).
+
 Subject: one adult parasitic fluke (Leucochloridium paradoxum) as drawn from a microscope, top (dorsal) view, oriented vertically: a small, flat, oval, leaf-shaped worm with a slightly translucent pale cream-to-light-brown body, a round sucker at the top end and a second round sucker near the middle, a faint branching gut and internal organs visible through the body, and a dense patch of tiny brownish eggs filling much of the rear half. Centered, filling about 80% of the image height.
 ```
 
@@ -101,6 +119,8 @@ Subject: one adult parasitic fluke (Leucochloridium paradoxum) as drawn from a m
 
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
+
+Image size: 1536x1024, LANDSCAPE (wide).
 
 Subject: one broad, fresh green leaf (like a dock leaf) lying almost flat, seen from a low side angle so its upper surface forms a gentle, slightly curved horizontal platform. Glossy, wet surface with scattered clear water droplets, a visible midrib and veins, natural muted green with slight yellowing at the edges, and a short stalk at the left end. The leaf spans about 90% of the image width and sits in the lower half of the image.
 ```
@@ -112,6 +132,8 @@ Subject: one broad, fresh green leaf (like a dock leaf) lying almost flat, seen 
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
 
+Image size: 1536x1024, LANDSCAPE (wide).
+
 EDIT the uploaded image. Keep the leaf, the water droplets, the lighting and the framing EXACTLY the same. Add ONLY a small, realistic bird dropping on the upper surface of the leaf, a little right of center: a chalky white splat with a darker grey-brown center, wet and glossy. It is small: about one twelfth of the leaf's length.
 ```
 
@@ -120,6 +142,8 @@ EDIT the uploaded image. Keep the leaf, the water droplets, the lighting and the
 
 ```
 Vintage natural-history scientific illustration, like a 19th-century museum plate: realistic, finely detailed, soft painted shading with a light engraving texture, muted natural colors, isolated subject, transparent background PNG. If transparency is not possible, use a plain pure-white background. No shadow, no ground, no text, no border.
+
+Image size: 1024x1536, PORTRAIT (tall).
 
 Subject: one tall, wet reed stem (like a common reed) standing perfectly vertical through the FULL height of the image, bending slightly only at the very top, with three or four long, narrow leaves branching off at different heights, and small water droplets on the stem and leaves. Muted natural greens with straw-colored tones. Thin and centered, running from the bottom edge to the top edge.
 ```
