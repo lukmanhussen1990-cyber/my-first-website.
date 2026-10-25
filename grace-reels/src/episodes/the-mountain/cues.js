@@ -48,26 +48,28 @@ export function buildCues(tl) {
 
   const labels = [
     { text: "ABRAHAM", anchor: "abraham.head", scene: "S1", start: at("b02", "father") },
-    { text: "ISAAC", anchor: "isaac.head", scene: "S1", start: at("b02", "son") },
+    { text: "ISAAC", anchor: "isaac.head", scene: "S1", start: at("b02", "told") },
     { text: "LAND OF MORIAH · GENESIS 22:2", anchor: "moriah.peak", scene: "S4", start: at("b05", "mountain") - 0.1 },
     { text: "I", anchor: "abraham.head", scene: "S5", start: at("b06", "i") },
     { text: "THE LAD", anchor: "isaac.head", scene: "S5", start: at("b06", "lad") },
-    { text: "HEBREWS 11:19", anchor: "abraham.head", scene: "S5", start: at("b07", "dead") },
+    { text: "HEBREWS 11:19", anchor: "abraham.head", scene: "S5", start: at("b07", "believed") },
     { text: "THE WOOD · GENESIS 22:6", anchor: "isaac.wood", scene: "S6", start: at("b08", "wood") },
-    { text: "LAY NOT THINE HAND UPON THE LAD · GENESIS 22:12", anchor: "abraham.hand", scene: "S7", start: at("b10", "hand") - 0.15 },
+    { text: "LAY NOT THINE HAND UPON THE LAD · GENESIS 22:12", anchor: "abraham.hand", scene: "S7", start: at("b10", "stopped"), until: beat("b11").start + 1.0 },
     { text: "IN HIS PLACE · GENESIS 22:13", anchor: "ram.head", scene: "S8", start: at("b11", "place") - 0.25 },
-    { text: "GOLGOTHA · JOHN 19:17", anchor: "jesus.head", scene: "S9", start: at("b12", "golgotha") },
-    { text: "BEHOLD THE LAMB OF GOD · JOHN 1:29", anchor: "cross.top", scene: "S11", start: at("b16", "jesus") },
+    { text: "GOLGOTHA · JOHN 19:17", anchor: "jesus.head", scene: "S9", start: at("b12", "wood") },
+    { text: "BEHOLD THE LAMB OF GOD · JOHN 1:29", anchor: "cross.top", scene: "S11", start: at("b16", "lamb") },
   ].map((l) => {
     const s = scene(l.scene);
     // the "I" / "THE LAD" pair gives way to the Hebrews label; others live until their scene ends
+    // the "I" / "THE LAD" pair gives way to the Hebrews label; `until` lets a label ride into the next scene
+    if (l.until) return { ...l, end: l.until };
     const until = l.text === "I" || l.text === "THE LAD" ? beat("b07").start + 1.6 : s.end - 0.12;
     return { ...l, end: Math.min(until, s.end - 0.12) };
   });
 
   const cards = [
     { beat: "b03", style: "full", quote: "Take now thy son, thine only son Isaac, whom thou LOVEST…", ref: "GENESIS 22:2 · KJV", start: scene("S2").start, end: scene("S2").end },
-    { beat: "b06", style: "floating", quote: "…I and the lad will go yonder and worship, and COME AGAIN to you.", ref: "GENESIS 22:5 · KJV", start: at("b06", "i") - 0.35, end: beat("b07").start + 0.55 },
+    { beat: "b06", style: "floating", quote: "…I and the lad will go yonder and worship, and COME AGAIN to you.", ref: "GENESIS 22:5 · KJV", start: at("b06", "i") - 0.35, end: beat("b07").start - 0.12 },
     { beat: "b09", style: "floating", quote: "…My son, God will provide himself a LAMB…", ref: "GENESIS 22:8 · KJV", start: beat("b09").start - 0.3, end: scene("S6").end - 0.05 },
     { beat: "b14", style: "full", quote: "He that SPARED NOT his own Son, but delivered him up for us all…", ref: "ROMANS 8:32 · KJV", start: beat("b14").start - 0.3, end: scene("S10").end + 0.1 },
   ];

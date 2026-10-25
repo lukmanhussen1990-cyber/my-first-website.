@@ -77,7 +77,7 @@ function camera(t: number): CamPose {
   const aim: Vec3 = [lerp(target[0], mid[0], turn), lerp(target[1], mid[1], turn), lerp(target[2], mid[2], turn)];
   const az = lerp(20, 176, turn);
   const r = lerp(14.6, 19, turn) + lift * 8;
-  const el = lerp(40, 40, turn) + lift * 10;
+  const el = lerp(40, 40, turn) + Math.sin(Math.PI * turn) * 14 + lift * 10; // rise over Abraham mid-turn
   return withDrift({ pos: orbit(aim, r, az, el), target: [aim[0], aim[1] + lift * 2, aim[2]], fov: 25 }, t, 808, 0.03);
 }
 

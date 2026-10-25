@@ -27,8 +27,8 @@ const LoveIcon: React.FC<{ size: number }> = ({ size }) => (
 );
 
 export const ChoiceScreen: React.FC<{ c: { faithAt: number; loveAt: number; boxAt: number; text: string; typeStart: number; typeEnd: number; heartsStart: number }; t: number; start: number; end: number }> = ({ c, t, start, end }) => {
-  if (t < start - 0.4 || t > end + 0.2) return null;
-  const bg = clamp((t - (start - 0.35)) / 0.5) * clamp((end + 0.2 - t) / 0.4);
+  if (t < start - 0.15 || t > end + 0.2) return null;
+  const bg = clamp((t - (start - 0.12)) / 0.45) * clamp((end + 0.2 - t) / 0.4);
   const fk = ease.outBack(clamp((t - c.faithAt) / 0.4));
   const lk = ease.outBack(clamp((t - c.loveAt) / 0.4));
   const glow = clamp((t - c.loveAt - 0.2) / 0.6) * (0.75 + 0.25 * Math.sin(t * 3.2));

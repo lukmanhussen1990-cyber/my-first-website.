@@ -12,7 +12,16 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition id="TheMountain" component={TheMountain} durationInFrames={TIMELINE.durationInFrames} fps={30} width={1080} height={1920} />
       <Still id="CoverTheMountain" component={Cover} width={1080} height={1920} />
-      <Composition id="KeyFrames" component={KeyFrames} durationInFrames={KEY_TIMES.length} fps={30} width={1080} height={1920} />
+      <Composition
+        id="KeyFrames"
+        component={KeyFrames}
+        durationInFrames={KEY_TIMES.length}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{ times: KEY_TIMES }}
+        calculateMetadata={({ props }) => ({ durationInFrames: ((props.times as number[] | undefined) ?? KEY_TIMES).length })}
+      />
       <Composition id="SceneTest" component={SceneTest} durationInFrames={900} fps={30} width={1080} height={1920} defaultProps={{ scene: "S1", offset: 0 }} />
       <Composition id="LookDev" component={LookDev} durationInFrames={LOOKS.length} fps={30} width={1080} height={1920} />
       <Composition id="Bench" component={Bench} durationInFrames={60} fps={30} width={1080} height={1920} />

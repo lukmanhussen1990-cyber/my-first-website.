@@ -15,7 +15,7 @@
       "input_lra": "2.90",
       "input_thresh": "-24.32",
       "output_i": "-13.89",
-      "output_tp": "-1.30",
+      "output_tp": "-1.29",
       "output_lra": "2.70",
       "output_thresh": "-24.11",
       "normalization_type": "dynamic",
@@ -35,12 +35,12 @@
     }
   },
   "samplePeak": 0.8413952589035034,
-  "dcOffset": -1.9984730468021604e-06,
+  "dcOffset": -2.192999136537735e-06,
   "finite": true,
   "limiter": {
-    "over1dB": 0.0017,
+    "over1dB": 0.002,
     "over3dB": 0,
-    "maxReductionDb": 2.83
+    "maxReductionDb": 2.46
   },
   "nearSilence": {
     "start": 41.728,
@@ -75,7 +75,7 @@
     "ambience": 11,
     "musicSections": 11
   },
-  "renderSeconds": 36.935,
+  "renderSeconds": 31.922,
   "verify": {
     "asr": {
       "voice.wav": {
@@ -89,10 +89,10 @@
     },
     "intelligibilityDrop": 0.0,
     "spectrum": {
-      "below20HzShareDb": -43.709094575881366,
-      "20to60HzShareDb": -15.884607024595912,
-      "2to6kHzShareDb": -10.128471486603834,
-      "above12kHzShareDb": -40.084082594912786,
+      "below20HzShareDb": -43.99107597801438,
+      "20to60HzShareDb": -15.169077702914011,
+      "2to6kHzShareDb": -10.150350844122585,
+      "above12kHzShareDb": -40.106578696778364,
       "narrowPeaks1to16kHz": [
         [
           1172,
@@ -108,7 +108,7 @@
       "lastHalfSecondDbfs": -21.6,
       "firstHalfSecondDbfs": -16.9,
       "jumpAtWrap": 0.0485,
-      "typicalStep": 0.1546
+      "typicalStep": 0.1545
     }
   }
 }
