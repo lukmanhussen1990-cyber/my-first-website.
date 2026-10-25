@@ -1,0 +1,454 @@
+{
+  "episode": "Q.01",
+  "slug": "the-mountain",
+  "title": "THE MOUNTAIN",
+  "topic": "The Mountain: Why did God ask Abraham to sacrifice his son? (Genesis 22)",
+  "hookTitle": "WHY WOULD GOD ASK THIS?",
+  "voice": "calm, warm male storyteller",
+  "pauses": {
+    "default": 0.3,
+    "beforeTwist": 0.7,
+    "beforeAnswer": 0.7
+  },
+  "beats": [
+    {
+      "id": "b01",
+      "text": "Why would God ask *this*?",
+      "keywords": [
+        "this"
+      ],
+      "scene": "S1",
+      "camera": "Low dolly up the dawn mountain path behind Abraham and Isaac; rocks pass close to the lens.",
+      "labels": [],
+      "card": null,
+      "sfx": [
+        "dawn birds",
+        "soft wind",
+        "soft whoosh as hook title flies to caption"
+      ],
+      "mood": "dawn",
+      "beat": "HOOK",
+      "notes": "Huge hook title WHY WOULD GOD ASK THIS? fills the centre 0-1.8 s, then shrinks and flies into the caption spot."
+    },
+    {
+      "id": "b02",
+      "text": "The first time the Bible says *love*… a father is told to give up his *son*.",
+      "keywords": [
+        "love",
+        "son"
+      ],
+      "scene": "S1",
+      "camera": "Slow push-in and gentle orbit as the sky warms from cool blue to gold.",
+      "labels": [
+        {
+          "text": "ABRAHAM",
+          "at": "father",
+          "anchor": "abraham.head"
+        },
+        {
+          "text": "ISAAC",
+          "at": "son",
+          "anchor": "isaac.head"
+        }
+      ],
+      "card": null,
+      "sfx": [
+        "pop on labels"
+      ],
+      "mood": "dawn",
+      "beat": "STAKES"
+    },
+    {
+      "id": "b03",
+      "text": "\"Take now thy son, thine only son Isaac, whom thou *lovest*…\"",
+      "keywords": [
+        "lovest"
+      ],
+      "scene": "S2",
+      "camera": "Ghosted night shot of Abraham's tent under a soft beam of light, very slow zoom.",
+      "labels": [],
+      "card": {
+        "style": "full",
+        "quote": "Take now thy son, thine only son Isaac, whom thou LOVEST…",
+        "ref": "GENESIS 22:2 · KJV"
+      },
+      "sfx": [
+        "paper sound as card lands",
+        "gentle chime on LOVEST"
+      ],
+      "mood": "night",
+      "beat": "STAKES"
+    },
+    {
+      "id": "b04",
+      "text": "It sounds nothing like *love*. But most people miss *three* details.",
+      "keywords": [
+        "love",
+        "three"
+      ],
+      "scene": "S3",
+      "camera": "Dim, blurred mountain far away behind a plain search bar.",
+      "labels": [],
+      "card": null,
+      "diagram": {
+        "searchBar": "why did god ask abraham to sacrifice isaac",
+        "suggestions": [
+          "why did god ask abraham to sacrifice isaac",
+          "why did god test abraham",
+          "did abraham know god would provide"
+        ],
+        "detailCounter": "appears on 'three': three empty gold dots, 3 DETAILS"
+      },
+      "sfx": [
+        "quiet key clicks",
+        "small pop for each dot"
+      ],
+      "mood": "dawn",
+      "beat": "STAKES / OPEN LOOP"
+    },
+    {
+      "id": "b05",
+      "text": "On the *third day*, Abraham saw the mountain, far off.",
+      "keywords": [
+        "third day"
+      ],
+      "scene": "S4",
+      "camera": "Wide high-angle desert pan with a fast sun-and-moon time-lapse.",
+      "labels": [
+        {
+          "text": "LAND OF MORIAH · GENESIS 22:2",
+          "at": "mountain",
+          "anchor": "moriah.peak"
+        }
+      ],
+      "card": null,
+      "diagram": {
+        "dayTag": "DAY 1 → DAY 2 → DAY 3"
+      },
+      "sfx": [
+        "donkey footsteps",
+        "tiny bell",
+        "warm wind",
+        "whoosh on each day change"
+      ],
+      "mood": "journey",
+      "beat": "STORY"
+    },
+    {
+      "id": "b06",
+      "text": "But notice what he told his servants: \"I and the lad will go yonder and worship, and *come again* to you.\"",
+      "keywords": [
+        "come again"
+      ],
+      "scene": "S5",
+      "camera": "Foot of the mountain: servants and donkey stay, Abraham and Isaac walk on; slow crane up.",
+      "labels": [
+        {
+          "text": "I",
+          "at": "I",
+          "anchor": "abraham.head"
+        },
+        {
+          "text": "THE LAD",
+          "at": "lad",
+          "anchor": "isaac.head"
+        }
+      ],
+      "card": {
+        "style": "floating",
+        "quote": "…I and the lad will go yonder and worship, and COME AGAIN to you.",
+        "ref": "GENESIS 22:5 · KJV"
+      },
+      "diagram": {
+        "detailCounter": "DETAIL 1/3 fills"
+      },
+      "sfx": [
+        "slow riser into 'But notice'",
+        "paper sound",
+        "gentle chime on COME AGAIN"
+      ],
+      "mood": "climb",
+      "beat": "KEY VERSE / BUT NOTICE (twist)"
+    },
+    {
+      "id": "b07",
+      "text": "*We* will come back. Abraham believed God could raise Isaac… even from the *dead*.",
+      "keywords": [
+        "We",
+        "dead"
+      ],
+      "scene": "S5",
+      "camera": "Push-in on the two figures walking away together.",
+      "labels": [
+        {
+          "text": "HEBREWS 11:19",
+          "at": "dead",
+          "anchor": "abraham.head"
+        }
+      ],
+      "card": null,
+      "sfx": [
+        "pop on label"
+      ],
+      "mood": "climb",
+      "beat": "BUT NOTICE (twist)"
+    },
+    {
+      "id": "b08",
+      "text": "Detail two: Isaac carried the *wood* up the hill, and asked, \"Where is the *lamb* for a burnt offering?\"",
+      "keywords": [
+        "wood",
+        "lamb"
+      ],
+      "scene": "S6",
+      "camera": "Climbing shot, side-on and high; Isaac stops and turns his head up to his father.",
+      "labels": [
+        {
+          "text": "THE WOOD · GENESIS 22:6",
+          "at": "wood",
+          "anchor": "isaac.wood"
+        }
+      ],
+      "card": null,
+      "diagram": {
+        "detailCounter": "DETAIL 2/3 fills"
+      },
+      "sfx": [
+        "fire crackle from the fire pot",
+        "mountain wind rising",
+        "slow soft low pulse"
+      ],
+      "mood": "climb",
+      "beat": "ANSWER",
+      "notes": "Frame this shot carefully: S9 match-cuts to the exact same camera."
+    },
+    {
+      "id": "b09",
+      "text": "\"My son, God will *provide* himself a *lamb*…\"",
+      "keywords": [
+        "provide",
+        "lamb"
+      ],
+      "scene": "S6",
+      "camera": "Same climb, camera holds as they walk on together.",
+      "labels": [],
+      "card": {
+        "style": "floating",
+        "quote": "…My son, God will provide himself a LAMB…",
+        "ref": "GENESIS 22:8 · KJV"
+      },
+      "sfx": [
+        "paper sound"
+      ],
+      "mood": "climb",
+      "beat": "ANSWER"
+    },
+    {
+      "id": "b10",
+      "text": "At the top, God *stopped* Abraham's hand.",
+      "keywords": [
+        "stopped"
+      ],
+      "scene": "S7",
+      "camera": "Mountain top, stone altar with wood; Isaac sits calm; Abraham lifts an empty hand; beam of light bursts down; everything slows.",
+      "labels": [
+        {
+          "text": "LAY NOT THINE HAND UPON THE LAD · GENESIS 22:12",
+          "at": "hand",
+          "anchor": "abraham.hand"
+        }
+      ],
+      "card": null,
+      "sfx": [
+        "0.5 s near silence before 'God'",
+        "warm choir-like pad",
+        "soft deep boom on 'stopped'"
+      ],
+      "mood": "glory",
+      "beat": "ANSWER",
+      "holdBefore": {
+        "word": "God",
+        "seconds": 0.4
+      }
+    },
+    {
+      "id": "b11",
+      "text": "Detail three: a ram, caught in a thicket… died *in his place*.",
+      "keywords": [
+        "in his place"
+      ],
+      "scene": "S8",
+      "camera": "Camera turns behind them to reveal a ram in a thorny thicket with a glowing gold ring.",
+      "labels": [
+        {
+          "text": "IN HIS PLACE · GENESIS 22:13",
+          "at": "place",
+          "anchor": "ram.head"
+        }
+      ],
+      "card": null,
+      "diagram": {
+        "detailCounter": "DETAIL 3/3 fills",
+        "goldRing": "under the ram",
+        "title": {
+          "main": "JEHOVAH-JIREH",
+          "sub": "THE LORD WILL PROVIDE · GENESIS 22:14",
+          "at": "after the sentence, held through the pause"
+        }
+      },
+      "sfx": [
+        "whoosh on camera turn",
+        "gentle chime on IN HIS PLACE",
+        "shimmer on title"
+      ],
+      "mood": "glory",
+      "beat": "ANSWER"
+    },
+    {
+      "id": "b12",
+      "text": "About two thousand years later, another *Son* carried *wood* on His back… to Golgotha.",
+      "keywords": [
+        "Son",
+        "wood"
+      ],
+      "scene": "S9",
+      "camera": "MATCH CUT: identical camera and framing to S6; Jesus walks with the wooden cross beam on His back, seen from a distance.",
+      "labels": [
+        {
+          "text": "GOLGOTHA · JOHN 19:17",
+          "at": "Golgotha",
+          "anchor": "jesus.head"
+        }
+      ],
+      "card": null,
+      "sfx": [
+        "low thunder rumble"
+      ],
+      "mood": "golgotha",
+      "beat": "JESUS"
+    },
+    {
+      "id": "b13",
+      "text": "This time, there was no ram. And God did *not* stop it.",
+      "keywords": [
+        "not"
+      ],
+      "scene": "S10",
+      "camera": "Slow pull-back to a cross on a hill under a dark sky. No ram, no light.",
+      "labels": [],
+      "card": null,
+      "sfx": [
+        "thunder",
+        "music thins out"
+      ],
+      "mood": "golgotha",
+      "beat": "JESUS"
+    },
+    {
+      "id": "b14",
+      "text": "\"He that *spared not* his own Son, but delivered him up for us all…\"",
+      "keywords": [
+        "spared not"
+      ],
+      "scene": "S10",
+      "camera": "Full-screen verse card over the ghosted dark hill.",
+      "labels": [],
+      "card": {
+        "style": "full",
+        "quote": "He that SPARED NOT his own Son, but delivered him up for us all…",
+        "ref": "ROMANS 8:32 · KJV"
+      },
+      "sfx": [
+        "paper sound",
+        "gentle chime on SPARED NOT"
+      ],
+      "mood": "golgotha",
+      "beat": "JESUS"
+    },
+    {
+      "id": "b15",
+      "text": "That mountain was a *picture* of what God would do… for *you*.",
+      "keywords": [
+        "picture",
+        "you"
+      ],
+      "scene": "S11",
+      "camera": "Light breaks through the clouds onto the cross; warm glory gold; people walk in and gather in the light; slow crane up.",
+      "labels": [],
+      "card": null,
+      "sfx": [
+        "warm shimmer as light breaks",
+        "warm major chord"
+      ],
+      "mood": "lamb",
+      "beat": "JESUS (peak)"
+    },
+    {
+      "id": "b16",
+      "text": "The lamb Abraham promised… was *Jesus*.",
+      "keywords": [
+        "Jesus"
+      ],
+      "scene": "S11",
+      "camera": "Hold on the crowd in the light around the cross.",
+      "labels": [
+        {
+          "text": "BEHOLD THE LAMB OF GOD · JOHN 1:29",
+          "at": "Jesus",
+          "anchor": "cross.top"
+        }
+      ],
+      "card": null,
+      "sfx": [
+        "gentle chime on JESUS",
+        "music swell"
+      ],
+      "mood": "lamb",
+      "beat": "JESUS (peak)"
+    },
+    {
+      "id": "b17",
+      "text": "Abraham's *faith*, or God's *love*: which one hits you harder? Tell us in the comments.",
+      "keywords": [
+        "faith",
+        "love"
+      ],
+      "scene": "S12",
+      "camera": "Dark warm background; two big icons.",
+      "labels": [],
+      "card": null,
+      "diagram": {
+        "choices": [
+          {
+            "label": "FAITH",
+            "icon": "small mountain with a tiny flame on top"
+          },
+          {
+            "label": "LOVE",
+            "icon": "heart with a small cross inside",
+            "glow": true
+          }
+        ],
+        "commentBox": "God's love, because…",
+        "hearts": true
+      },
+      "sfx": [
+        "soft pop per icon",
+        "key clicks",
+        "tiny heart pops"
+      ],
+      "mood": "cta",
+      "beat": "CALL TO ACTION"
+    }
+  ],
+  "endCard": {
+    "scene": "S13",
+    "seconds": 3,
+    "lines": [
+      "GRACE IN MOTION",
+      "@GraceINMotion616",
+      "Hard questions. Bible answers."
+    ],
+    "loop": "last frame flows back into the S1 dawn path"
+  }
+}
