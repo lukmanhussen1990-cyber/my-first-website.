@@ -121,7 +121,8 @@ def main():
     warm_id = (cfg.get("music") or {}).get("warmFrom")
     warm_at = next((s["start"] for s in tl["scenes"] if s["id"] == warm_id), None)
     last = tl["scenes"][-2]["start"] if len(tl["scenes"]) > 2 else tl["duration"] - 15
-    music = SFX.drone(N / SR, swell_at=last, swell_len=N / SR - last, warm_at=warm_at)
+    warm_fade = float((cfg.get("music") or {}).get("warmFade", 3.0))
+    music = SFX.drone(N / SR, swell_at=last, swell_len=N / SR - last, warm_at=warm_at, warm_fade=warm_fade)
     music = np.pad(music, ((0, max(0, N - len(music))), (0, 0)))[:N]
     music *= db(a.music_db) * 1.6
     mduck = 1 - 0.45 * np.clip(venv / (venv.max() * 0.25 + 1e-9), 0, 1)

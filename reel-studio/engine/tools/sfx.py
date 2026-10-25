@@ -413,6 +413,28 @@ def s_flat(v):
     return stereo(norm(lp(y, 2500), 0.35))
 
 
+def s_drawer(v):
+    """A small wooden drawer sliding open, ending in a soft knock."""
+    r = _rng(2800 + v); d = 0.5; n = int(d * SR); t = _t(d)
+    x = bp(r.standard_normal(n), 300, 2600)
+    rough = np.abs(lp(r.standard_normal(n), 40)) * 4 + 0.4
+    e = np.minimum(1, t / 0.04) * np.exp(-np.maximum(0, t - 0.25) / 0.05) * (t < 0.33)
+    y = x * rough * e * 0.6
+    i = int(0.32 * SR); m = n - i
+    f = 140 * np.exp(-np.arange(m) / SR / 0.03) + 90
+    y[i:] += np.sin(2 * np.pi * np.cumsum(f) / SR) * env_exp(m, 0.05, 0.001) * 0.9
+    return stereo(norm(y, 0.75), pan=(r.random() - 0.5) * 0.4)
+
+
+def s_scanner(v):
+    """Electronic scanner: a soft rising sweep with a pulse."""
+    d = 1.2; t = _t(d); n = len(t)
+    f = 600 + 900 * t / d
+    y = np.sin(2 * np.pi * np.cumsum(f) / SR) * (0.5 + 0.5 * (np.sin(2 * np.pi * 9 * t) > 0))
+    y = lp(y, 3500) * np.minimum(1, t / 0.05) * np.minimum(1, (d - t) / 0.2)
+    return stereo(norm(y, 0.35), width=1)
+
+
 SOUNDS = {
     "type": s_type, "pop": s_pop, "slide": s_slide, "whoosh": s_whoosh, "stamp": s_stamp, "rip": s_rip,
     "pen": s_pen, "tick": s_tick, "flip": s_flip, "heartbeat": s_heartbeat, "wings": s_wings, "peck": s_peck,
@@ -420,6 +442,7 @@ SOUNDS = {
     "beep": s_beep, "switch": s_switch, "thud": s_thud,
     "drip": s_drip, "splash": s_splash, "bubbles": s_bubbles, "click": s_click, "scribble": s_scribble,
     "steam": s_steam, "pageturn": s_pageturn, "clock": s_clock, "flat": s_flat,
+    "drawer": s_drawer, "scanner": s_scanner,
 }
 # loudness of each sound relative to the others (applied on top of the cue gain)
 LEVEL = {
@@ -427,7 +450,7 @@ LEVEL = {
     "flip": 0.42, "heartbeat": 0.85, "wings": 0.6, "peck": 0.8, "crack": 0.55, "squish": 0.5, "splat": 0.55,
     "inflate": 0.45, "scan": 0.45, "hum": 0.35, "beep": 0.25, "switch": 0.5, "thud": 0.55,
     "drip": 0.42, "splash": 0.85, "bubbles": 0.38, "click": 0.4, "scribble": 0.26, "steam": 0.22,
-    "pageturn": 0.5, "clock": 0.3, "flat": 0.28,
+    "pageturn": 0.5, "clock": 0.3, "flat": 0.28, "drawer": 0.5, "scanner": 0.3,
 }
 
 _cache = {}
@@ -441,7 +464,7 @@ def sound(name, variant=0):
 
 
 # ------------------------------------------------------------------ music bed
-def drone(duration, seed=3, swell_at=None, swell_len=None, warm_at=None):
+def drone(duration, seed=3, swell_at=None, swell_len=None, warm_at=None, warm_fade=3.0):
     """Dark, low ambient drone in A with slow movement; optional warm swell at the end.
     warm_at: from this time the dark bed sinks and a soft, warm major pad takes over."""
     n = int(duration * SR)
@@ -471,9 +494,9 @@ def drone(duration, seed=3, swell_at=None, swell_len=None, warm_at=None):
         sub[i:i + len(hb)] += hb
     out += sub[:, None]
     if warm_at is not None:
-        k = np.clip((t - warm_at) / 3.0, 0, 1)
+        k = np.clip((t - warm_at) / warm_fade, 0, 1)
         out *= (1 - 0.65 * k * k * (3 - 2 * k))[:, None]
-        out += warm_pad(duration, warm_at)
+        out += warm_pad(duration, warm_at, ramp=max(2.5, warm_fade))
     elif swell_at is not None:
         L = swell_len or (duration - swell_at)
         out += warm_swell(duration, swell_at, L)
@@ -520,7 +543,7 @@ def warm_swell(duration, start, length):
     return out * ramp[:, None]
 
 
-def warm_pad(duration, start):
+def warm_pad(duration, start, ramp=2.5):
     """Soft, warm I-V-vi-IV pad (C G Am F) with slow, gentle plucks: the caring safety part."""
     n = int(duration * SR)
     out = np.zeros((n, 2))
@@ -554,7 +577,7 @@ def warm_pad(duration, start):
             pan = 0.25 * (1 if k % 2 else -1)
             out[j:j + m2, 0] += pl * np.sqrt(0.5 * (1 - pan)); out[j:j + m2, 1] += pl * np.sqrt(0.5 * (1 + pan))
         ci += 1
-    ramp = np.zeros(n)
-    ramp[i0:] = np.minimum(1, np.arange(n - i0) / SR / 2.5)
-    return out * ramp[:, None]
+    rr = np.zeros(n)
+    rr[i0:] = np.minimum(1, np.arange(n - i0) / SR / ramp)
+    return out * rr[:, None]
 

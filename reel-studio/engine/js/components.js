@@ -535,11 +535,14 @@ export class Terminal extends Actor {
     this.text = text; this.cps = o.cps ?? 16;
     this.barAt = o.barAt ?? this.at + text.length / this.cps + 0.15;
     this.barDur = o.barDur ?? 1.0;
-    this.bw = o.w ?? 600; this.bh = o.h ?? 168;
+    this.bw = o.w ?? 600; this.bh = o.h ?? (o.result ? 236 : 168);
     scene.sfx(this.at - 0.02, 'slide', 0.45);
     for (let i = 0; i < text.length; i++) if (text[i] !== ' ') scene.sfx(this.at + i / this.cps, 'type', 0.42, { v: i % 6 });
     for (let k = 1; k <= 8; k++) scene.sfx(this.barAt + (k / 8) * this.barDur * 0.98, 'tick', 0.25);
     scene.sfx(this.barAt + this.barDur, 'beep', 0.55);
+    // optional result line typed in red once the bar is full
+    this.resultAt = o.resultAt ?? this.barAt + this.barDur + 0.2;
+    if (o.result) for (let i = 0; i < o.result.length; i++) if (o.result[i] !== ' ') scene.sfx(this.resultAt + i / (this.cps * 1.2), 'type', 0.5, { v: i % 6 });
   }
   done(t) { return t >= this.barAt + this.barDur; }
   draw(ctx, t, s) {
@@ -566,6 +569,11 @@ export class Terminal extends Actor {
     for (let i = 0; i < filled; i++) ctx.fillRect(bx + 4 + i * segW + 1.5, by + 5, segW - 3, bh - 10);
     setFont(ctx, FONTS.monoBold, 32); ctx.fillStyle = full ? COLORS.red : '#21170c';
     ctx.fillText(`${Math.round(bp * 100)}%`, bx + bw + 16, by + 28);
+    if (o.result && t >= this.resultAt) {
+      const nr = Math.min(o.result.length, Math.floor((t - this.resultAt) * this.cps * 1.2 + 1));
+      setFont(ctx, FONTS.monoBold, o.resultSize ?? 44); ctx.fillStyle = COLORS.red;
+      ctx.fillText('> ' + o.result.slice(0, nr), 34, 196);
+    }
     ctx.restore();
     // wires to targets
     if (o.wires && t >= this.at + 0.2) {
