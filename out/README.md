@@ -9,7 +9,7 @@ the first so the reel loops.
 ## Deliverables (this folder)
 | file | what |
 |---|---|
-| `final_reel.mp4` | the reel — H.264 CRF 18 yuv420p, AAC 192 kHz, `+faststart`, −14 LUFS / ≤ −1 dBTP |
+| `final_reel.mp4` | the reel — 76.4 s, 1080×1920, 30 fps, H.264 CRF 18 yuv420p, AAC 192 kbps 48 kHz, `+faststart`; −14.0 LUFS, −1.1 dBTP |
 | `cover.jpg` | 1080×1920 cover: the hook question over the ark on dry land |
 | `caption.txt` | Instagram caption + 15 hashtags |
 | `ref_style_notes.md` | what was measured from the reference reels (pacing, palette, overlays…) |
@@ -24,7 +24,7 @@ bash scripts/build.sh
 ```
 That runs: voice (edge-tts) → SFX cue export → music/SFX/mix → frame render (Playwright Chromium,
 `window.renderAt(t)`, 3 workers) → ffmpeg → storyboard / character sheet / QC.
-On this 4-core cloud box the frame render takes roughly an hour (software WebGL).
+On this 4-core cloud box the 2,293-frame render takes ~25 min (software WebGL, ~1.45 fps).
 
 Handy partial runs:
 ```bash
@@ -53,3 +53,9 @@ python3 scripts/qc.py && node scripts/qc_overlay.cjs
 * Verses are KJV word-for-word (checked by `scripts/qc.py`): 1 Peter 3:20, John 10:9; pills cite
   2 Peter 2:5, Genesis 6:16, Genesis 7:16.
 * Music and every sound effect are synthesized procedurally in `scripts/audio.py` (no samples).
+
+## QC results (final render)
+* Loudness −14.0 LUFS integrated, true peak −1.1 dBTP (ffmpeg ebur128); voice ducks the music by 8 dB.
+* All 178 narrated words recognised by Whisper in the final mix; captions appear 38–80 ms before each word.
+* 0 overlay elements outside the safe zone (x 60–960, y 220–1500) across 1,693 checks; 0 blank frames.
+* The near-white thumbnail at 52 s in `qc_contact.jpg` is the intentional lightning-flash cut into the flood.
