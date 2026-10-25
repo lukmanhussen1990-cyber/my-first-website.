@@ -181,6 +181,53 @@ export function buildArk(opts = {}) {
   // world-space rung position helper (k-th rung)
   A.rung = (k) => { const v = new THREE.Vector3(0, 0.35 + k * 0.48, 0.04); ladder.updateMatrixWorld(true); return v.applyMatrix4(ladder.matrixWorld); };
 
+  // ---- hook-shot detail (S1 only; hidden by default, independent of set()) ----
+  // trenails where each plank row crosses a rib, two freshly fitted planks by the ladder, a ribband
+  // guiding the next row, and a davit hoisting the next plank on a rope sling.
+  const hook = new THREE.Group(); hook.visible = false; root.add(hook); A.hook = hook;
+  {
+    const ribZ = (x, y) => (ARK.bw + (ARK.tw - ARK.bw) * clamp((y - base) / (H + 0.35))) * taper(x) * 0.98;
+    const pegs = [];
+    for (let r = 0; r < 9; r++) {
+      const y = base + rowH * (r + 0.5);
+      for (let i = 0; i < 15; i++) {
+        const x = -16.8 + i * 2.4;
+        if (r === 7 && x > 9) continue;                     // row 7 is still open there at progress 0.56
+        if (r === 8 && (x < -10.5 || x > -3.5)) continue;   // row 8: only the fresh planks below
+        if (x > D.x0 - 0.3 && x < D.x1 + 0.3 && y > D.y0 && y < D.y1) continue;
+        const z = hullHalfWidth(x, y) + 0.082;
+        for (const dy of [-0.1, 0.1]) { const g = new THREE.BoxGeometry(0.075, 0.075, 0.03); g.translate(x, y + dy, z); pegs.push(g); }
+      }
+    }
+    const pegMesh = new THREE.Mesh(mergeGeometries(pegs), matte('#3e2a19')); pegMesh.receiveShadow = true; hook.add(pegMesh);
+    // fresh (unweathered) planks on row 8, right where Noah is nailing
+    const y8 = base + rowH * 8.5; const fresh = [];
+    for (const [x0, x1, c] of [[-10.5, -7, '#c79862'], [-7, -3.5, '#d5aa70']]) fresh.push(plank([x0, hullHalfWidth(x0, y8)], [x1, hullHalfWidth(x1, y8)], y8, rowH * 0.93, 0.16, c));
+    const freshMesh = new THREE.Mesh(mergeGeometries(fresh), hullMat); freshMesh.castShadow = freshMesh.receiveShadow = true; hook.add(freshMesh);
+    // ribband: a light batten pinned across the ribs where the next rows will go
+    const rbY = base + rowH * 10.2, rb = [];
+    for (let i = 0; i < 14; i++) {
+      const xa = -16.8 + i * 2.4, xb = xa + 2.4;
+      const za = ribZ(xa, rbY) + 0.17, zb = ribZ(xb, rbY) + 0.17;
+      const g = new THREE.BoxGeometry(Math.hypot(xb - xa, zb - za) + 0.04, 0.13, 0.1);
+      g.rotateY(-Math.atan2(zb - za, xb - xa)); g.translate((xa + xb) / 2, rbY, (za + zb) / 2); rb.push(g);
+    }
+    const rbMesh = new THREE.Mesh(mergeGeometries(rb), matte('#b78a52')); rbMesh.castShadow = true; hook.add(rbMesh);
+    // davit across two rib heads + pulley, rope and sling with the next plank (sways via A.hookHoist)
+    const top = base + H + 0.35, hx = -1.2;
+    const davit = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 5.6), matte('#7a5232')); davit.position.set(hx, top + 0.12, 2.6); davit.castShadow = true; hook.add(davit);
+    const block = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.26, 0.2), matte('#4a2e1a')); block.position.set(hx, top - 0.06, 5.2); hook.add(block);
+    const hoist = new THREE.Group(); hoist.position.set(hx, top - 0.18, 5.2); hook.add(hoist); A.hookHoist = hoist;
+    const ropeMat = matte('#cdb98e'); const drop = 1.45, hang = 0.95;
+    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, drop, 5), ropeMat); rope.position.y = -drop / 2; hoist.add(rope);
+    const pl = new THREE.Mesh(new THREE.BoxGeometry(3.4, rowH * 0.93, 0.15), matte('#d9ae74')); pl.position.set(0, -drop - hang, 0); pl.rotation.set(0, 0.04, 0.07); pl.castShadow = true; hoist.add(pl);
+    for (const s of [-1, 1]) { // sling legs from the rope end to the plank ends
+      const a = new THREE.Vector3(0, -drop, 0), b = new THREE.Vector3(s * 1.25, -drop - hang + s * 0.087 + 0.2, 0);
+      const len = a.distanceTo(b); const sl = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, len, 4), ropeMat);
+      sl.position.copy(a).add(b).multiplyScalar(0.5); sl.rotation.z = Math.atan2(-(b.x - a.x), b.y - a.y); hoist.add(sl);
+    }
+  }
+
   // ---- state ----
   A.set = ({ progress = 1, pitch = 0, door = 1, glow = 0, ramp = 1, scaffold = null, ladderOn = null } = {}) => {
     const p = progress; A.windowGlow(0);
