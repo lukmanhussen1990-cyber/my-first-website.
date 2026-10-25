@@ -556,7 +556,7 @@ export function buildTimeline(ctx) {
       return setMood('storm', { focus: 45, dof: 0.2, tilt: 0.45, rain: 1, flash: fl * 0.5, exposure: 1.35, haze: 0.2, lift: new THREE.Color(0.02, 0.03, 0.05) });
     },
   });
-  cue(S14a.t0 + 0.12, 'thunder', 1); cue(S13.t0 + 1.4, 'thunder', 0.35);
+  cue(S14a.t0 + 0.12, 'thunder', 1); cue(S13.t0 + 0.05, 'thunder', 0.3);
   shot({
     id: 'S14b', t0: s14b, t1: cut('S15') + 0.15, trans: { type: 'fade', dur: 0.4 },
     apply(lt, dur, t) {
@@ -698,7 +698,7 @@ export function buildTimeline(ctx) {
     { type: 'laugh', t0: cut('S3'), t1: cut('S4'), gain: 0.55 }, { type: 'laugh', t0: cut('S10'), t1: cut('S11') + 0.2, gain: 0.7 },
     { type: 'laugh', t0: cut('S6') + 1.6, t1: s6c, gain: 0.3 }, { type: 'murmur', t0: cut('S9'), t1: cut('S10'), gain: 0.4 },
     { type: 'footsteps', t0: cut('S10'), t1: cut('S12'), gain: 0.6 }, { type: 'wind', t0: cut('S4'), t1: cut('S7'), gain: 0.45 },
-    { type: 'wind', t0: cut('S13'), t1: S14a.t1, gain: 0.8 }, { type: 'rain', t0: cut('S13') + 1.5, t1: cut('S15') + 0.4, gain: 1 },
+    { type: 'wind', t0: cut('S13'), t1: S14a.t1, gain: 0.8 }, { type: 'rain', t0: L.S13.end - 0.6, t1: cut('S15') + 0.4, gain: 1 },
     { type: 'sea', t0: S14a.t0, t1: s14b + 0.2, gain: 0.8 }, { type: 'city', t0: cut('S17'), t1: cut('S18') + 0.3, gain: 0.55 },
     { type: 'lamp', t0: s14b, t1: cut('S15') + 0.3, gain: 0.4 },
   ];

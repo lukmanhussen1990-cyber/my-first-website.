@@ -38,7 +38,7 @@ export class Overlay {
         tk.reveal = Math.max(0, tk.start - 0.07);
         return s;
       });
-      if (b.line.id === 'S1') b.toks[0].reveal = 0;
+      if (b.line.id === 'S1' && b === this.blocks[0]) { b.toks[0].reveal = -0.1; b.start = Math.min(b.start, 0.1); } // hook on screen from frame 1
     });
     this.capTop = 330;
     // ---- pills + leader lines ----
