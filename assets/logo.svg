@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- PLACEHOLDER logo mark for GRACE IN MOTION. Drop your real logo at assets/grace-in-motion-pfp.png to replace it. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#4a2e1c"/><stop offset="0.65" stop-color="#2a1a10"/><stop offset="1" stop-color="#160e09"/>
+    </radialGradient>
+    <radialGradient id="light" cx="50%" cy="60%" r="65%">
+      <stop offset="0" stop-color="#fff6dc"/><stop offset="0.55" stop-color="#ffd27a"/><stop offset="1" stop-color="#e09a3e"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="56%" r="50%">
+      <stop offset="0" stop-color="#ffcf7a" stop-opacity="0.55"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <circle cx="256" cy="290" r="210" fill="url(#halo)"/>
+  <path d="M176 410 L176 238 C176 186 212 152 256 152 C300 152 336 186 336 238 L336 410 Z" fill="url(#light)"/>
+  <path d="M176 410 L176 238 C176 186 212 152 256 152 C300 152 336 186 336 238 L336 410" fill="none" stroke="#c9963e" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M150 410 L362 410" stroke="#c9963e" stroke-width="14" stroke-linecap="round"/>
+  <path d="M206 410 L120 470 L392 470 L306 410 Z" fill="#ffd27a" opacity="0.35"/>
+  <!-- dove -->
+  <path d="M256 250 C238 236 214 236 196 246 C214 248 228 256 236 268 C226 272 214 282 210 296 C226 286 244 282 258 284 C272 286 286 280 296 268 C306 270 316 266 320 258 C310 258 304 252 300 246 C292 236 276 232 266 240 C262 230 252 222 240 220 C248 230 254 240 256 250 Z" fill="#3a2416"/>
+</svg>
