@@ -70,7 +70,7 @@ void main(){
   c = mix(c, fadeColor, fade);
   // film grain
   float n = hash(vUv * vec2(1080.0, 1920.0) + seed * 17.13) - 0.5;
-  c += n * grain * (0.6 + 0.4 * (1.0 - l));
+  c += n * grain * 0.55 * (0.6 + 0.4 * (1.0 - l));
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
 
