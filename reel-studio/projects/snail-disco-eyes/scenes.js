@@ -578,7 +578,7 @@ export default function build(R, { U, W, H }) {
     s.target({ at: tBig, pos: cl, r: 70 });
     s.dayCounter({ at: s.w('एक्सपेरिमेंट') - 0.2, x: 790, y: 470, from: 1, to: 13, countAt: s.w('एक्सपेरिमेंट') + 0.1, countDur: Math.max(0.9, t13 - s.w('एक्सपेरिमेंट') - 0.1) });
     eggsActor(s, { point: () => cl }, { at: tEgg, n: 7, seed: 8 });
-    s.title([{ text: '13', red: true, role: 'a', size: 200 }, { text: 'DAYS', color: COLORS.cream, size: 130 }], { at: [t13, s.w('दिन')], y: 280 });
+    s.title([{ text: '13', red: true, role: 'a', size: 200 }, { text: 'DAYS', color: COLORS.cream, size: 130 }], { at: [t13, s.w('दिन')] });
     s.camera([[0, 1.0, 540, 1000], [tBig, 1.08, cl[0], cl[1]], [s.dur, 1.12, cl[0], cl[1]]]);
   });
 
