@@ -200,3 +200,123 @@ export function makeGlint() {
     m.position.copy(pos); m.scale.setScalar(size * (0.3 + 0.9 * k)); m.material.rotation = u * 0.8; m.material.opacity = k;
   } };
 }
+
+// ======== hook-shot (S1) extras — new objects only, hidden unless a shot calls set() ========
+
+// ---------- wood chips + a sawdust puff for hammer strikes ----------
+// Chips are split into 3 generations so a strike's chips keep flying while the next strike lands.
+export function makeChips(N = 42) {
+  const g = new THREE.Group();
+  const geo = new THREE.TetrahedronGeometry(0.06, 0); geo.scale(1.7, 0.45, 1.0);
+  const im = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), N);
+  im.frustumCulled = false; g.add(im);
+  const cols = ['#ecd39e', '#d9b47a', '#f3e0b4', '#c99a62', '#e2c48c'];
+  for (let i = 0; i < N; i++) im.setColorAt(i, new THREE.Color(cols[i % cols.length]));
+  const puff = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex(), color: new THREE.Color(1.05, 0.95, 0.78), transparent: true, depthWrite: false, opacity: 0 }));
+  g.add(puff);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3();
+  const LIFE = 1.5;
+  return {
+    group: g,
+    // origin: impact point; out: unit vector away from the hull; side: along the hull; ground: floor height
+    set(t, origin, strikes, out, side, ground = 0) {
+      g.visible = true;
+      let last = null;
+      for (let i = 0; i < N; i++) {
+        const gen = i % 3; let s = null, n = -1;
+        strikes.forEach((st, k) => { if (k % 3 === gen && t >= st) { s = st; n = k; } });
+        const age = s === null ? 99 : t - s;
+        if (age > LIFE) { sc.set(0, 0, 0); m4.compose(p.set(0, -999, 0), q.identity(), sc); im.setMatrixAt(i, m4); continue; }
+        const h1 = hash01(i * 7 + n, 31), h2 = hash01(i * 7 + n, 32), h3 = hash01(i * 7 + n, 33);
+        const vo = 0.7 + 1.9 * h1, vs = (h2 - 0.5) * 2.8, vu = 1.1 + 2.2 * h3;
+        p.copy(origin).addScaledVector(out, vo * age).addScaledVector(side, vs * age);
+        p.y += vu * age - 4.4 * age * age;
+        const landed = p.y < ground + 0.03; if (landed) p.y = ground + 0.03;
+        const spin = landed ? 0 : age;
+        e.set(spin * (6 + 9 * h1), spin * (4 + 8 * h2), spin * (5 + 7 * h3) + i);
+        q.setFromEuler(e);
+        const k = (0.75 + 0.7 * hash01(i, 34)) * (1 - smooth(invLerp(LIFE - 0.4, LIFE, age))) * smooth(invLerp(0, 0.04, age));
+        sc.set(k, k, k); m4.compose(p, q, sc); im.setMatrixAt(i, m4);
+      }
+      im.instanceMatrix.needsUpdate = true;
+      for (const st of strikes) if (t >= st) last = st;
+      const pa = last === null ? 99 : t - last;
+      puff.visible = pa < 0.55;
+      if (puff.visible) {
+        const u = pa / 0.55;
+        puff.position.copy(origin).addScaledVector(out, 0.15 + 0.35 * u); puff.position.y += 0.25 * u;
+        puff.scale.setScalar(0.25 + 1.0 * Math.sqrt(u));
+        puff.material.opacity = 0.7 * (1 - u) * smooth(invLerp(0, 0.05, pa));
+      }
+    },
+  };
+}
+
+// ---------- floating dust motes lit by the sun (additive, twinkling) ----------
+export function makeMotes(N = 200, seed = 9) {
+  const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({ size: 0.1, map: radialTex(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+  const pts = new THREE.Points(geo, mat); pts.frustumCulled = false;
+  return {
+    group: pts,
+    // center: bottom-centre of the volume; size: [x, y, z] extent; k: brightness
+    set(t, center, size = [14, 7, 10], k = 1, tint = [1.0, 0.82, 0.55], pointSize = 0.1) {
+      pts.visible = true; mat.size = pointSize;
+      for (let i = 0; i < N; i++) {
+        const h1 = hash01(i, seed), h2 = hash01(i, seed + 1), h3 = hash01(i, seed + 2), h4 = hash01(i, seed + 3);
+        const y = (h2 * size[1] + t * (0.05 + 0.12 * h3)) % size[1];
+        pos[i * 3] = center.x + (h1 - 0.5) * size[0] + 0.4 * Math.sin(t * (0.2 + 0.25 * h2) + i);
+        pos[i * 3 + 1] = center.y + y + 0.08 * Math.sin(t * (0.9 + h4) + i * 0.7);
+        pos[i * 3 + 2] = center.z + (h3 - 0.5) * size[2] + 0.35 * Math.cos(t * (0.15 + 0.2 * h1) + i * 1.7);
+        const tw = 0.5 + 0.5 * Math.sin(t * (1.2 + 2.0 * h1) + i * 2.3);
+        const b = k * (0.25 + 0.75 * tw) * Math.sin(Math.PI * y / size[1]) * (0.4 + 0.9 * h4);
+        col[i * 3] = tint[0] * b; col[i * 3 + 1] = tint[1] * b; col[i * 3 + 2] = tint[2] * b;
+      }
+      geo.attributes.position.needsUpdate = true; geo.attributes.color.needsUpdate = true;
+    },
+  };
+}
+
+// ---------- god rays: soft additive shafts laid along the sun direction, turned to face the camera ----------
+let _ray = null;
+function rayTex() {
+  if (_ray) return _ray;
+  const W = 64, H = 256; const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const img = g.createImageData(W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const u = x / (W - 1), v = 1 - y / (H - 1); // v = 0 at the far (lit) end, 1 toward the sun
+    const across = Math.pow(Math.sin(Math.PI * u), 2.2);
+    const along = smooth(invLerp(0.0, 0.45, v)) * (1 - smooth(invLerp(0.8, 1.0, v)));
+    const a = across * along;
+    const i = (y * W + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = 255; img.data[i + 3] = Math.round(255 * a);
+  }
+  g.putImageData(img, 0, 0);
+  _ray = new THREE.CanvasTexture(c); return _ray;
+}
+export function makeRays(n = 5, seed = 4) {
+  const g = new THREE.Group(); const list = [];
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: rayTex(), color: new THREE.Color(1.0, 0.86, 0.62), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide }));
+    m.renderOrder = 5; g.add(m); list.push(m);
+  }
+  const yA = new THREE.Vector3(), xA = new THREE.Vector3(), zA = new THREE.Vector3(), toCam = new THREE.Vector3(), M = new THREE.Matrix4();
+  return {
+    group: g,
+    // dir: direction the light travels; shafts: [{ p: Vector3 lit end, w, len, a }]
+    set(t, camera, dir, shafts, k = 1) {
+      g.visible = true;
+      list.forEach((m, i) => {
+        const S = shafts[i]; m.visible = !!S; if (!S) return;
+        yA.copy(dir).normalize().negate();
+        m.position.copy(S.p).addScaledVector(yA, S.len / 2);
+        toCam.copy(camera.position).sub(m.position).normalize();
+        xA.crossVectors(yA, toCam).normalize(); zA.crossVectors(xA, yA);
+        M.makeBasis(xA, yA, zA); m.quaternion.setFromRotationMatrix(M);
+        m.scale.set(S.w, S.len, 1);
+        m.material.opacity = k * S.a * (0.7 + 0.3 * Math.sin(t * (0.35 + 0.3 * hash01(i, seed)) + i * 1.9));
+      });
+    },
+  };
+}

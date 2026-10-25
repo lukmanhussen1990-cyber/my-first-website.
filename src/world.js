@@ -386,3 +386,92 @@ export function buildWorld(scene) {
   const cdoor = makeDoorway(); cdoor.group.position.set(0, 0.18, -5.6); city.add(cdoor.group); W.cityDoor = cdoor;
   return W;
 }
+
+// ======== hook-shot (S1) set dressing — a new group, hidden unless a shot shows it ========
+// Worn dirt around the ladder foot, shavings & offcuts, a lumber stack (foreground left), a sawhorse
+// with a saw, basket / pitch bucket / rope coil / mallet (foreground right), rocks and swaying grass.
+export function makeHookSet() {
+  const g = new THREE.Group(); g.visible = false;
+  const r = mulberry32(4242);
+  const onGround = (m, x, z, y = 0) => { m.position.set(x, groundHeight(x, z) + y, z); return m; };
+  // worn dirt: irregular low-poly patch (replaces the big site ellipse while this set is shown)
+  {
+    const pts = []; const n = 22;
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; const k = 0.78 + 0.3 * r(); pts.push(new THREE.Vector2(Math.cos(a) * k, Math.sin(a) * k)); }
+    const sg = new THREE.ShapeGeometry(new THREE.Shape(pts)); sg.rotateX(-Math.PI / 2);
+    const mk = (col, sx, sz, x, z, rot, off) => { const m = new THREE.Mesh(sg, matte(col, { unique: true, params: { polygonOffset: true, polygonOffsetFactor: off, polygonOffsetUnits: off } }));
+      m.scale.set(sx, 1, sz); m.rotation.y = rot; m.receiveShadow = true; g.add(onGround(m, x, z, 0.03)); return m; };
+    mk('#a78d5b', 13, 4.6, -2.5, 6.6, -0.12, -2);   // worn strip along the hull
+    mk('#b39a66', 3.4, 2.2, -4.6, 6.6, 0.3, -3);    // trampled ground at the ladder foot
+    mk('#d6bd86', 1.5, 0.9, -5.1, 6.1, 0.8, -4);    // sawdust drift under the ladder
+  }
+  // shavings (little low-poly curls) + offcuts
+  {
+    const parts = []; const cols = ['#e8cf98', '#dcb97f', '#f0dcb0', '#cfa66c'];
+    const curl = (x, z, s, rot, col) => {
+      const t = new THREE.TorusGeometry(0.07 * s, 0.022 * s, 3, 6, Math.PI * 1.4); t.rotateX(Math.PI / 2 + (r() - 0.5) * 0.6); t.rotateY(rot);
+      t.translate(x, groundHeight(x, z) + 0.03 * s, z);
+      const c = new THREE.Color(col); const n = t.attributes.position.count; const ca = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { ca[i * 3] = c.r; ca[i * 3 + 1] = c.g; ca[i * 3 + 2] = c.b; }
+      t.setAttribute('color', new THREE.BufferAttribute(ca, 3)); t.deleteAttribute('uv'); parts.push(t);
+    };
+    for (let i = 0; i < 90; i++) { const a = r() * 6.28, d = Math.pow(r(), 0.7) * 2.2; curl(-5.0 + Math.cos(a) * d * 1.3, 6.3 + Math.sin(a) * d * 0.8, 0.8 + r() * 0.7, r() * 6.28, cols[i % 4]); }
+    for (let i = 0; i < 40; i++) { const a = r() * 6.28, d = Math.pow(r(), 0.7) * 1.1; curl(-0.9 + Math.cos(a) * d * 1.4, 6.4 + Math.sin(a) * d, 0.8 + r() * 0.6, r() * 6.28, cols[i % 4]); }
+    const off = (x, z, l, rot, col) => { const b = new THREE.BoxGeometry(l, 0.07, 0.24); b.rotateY(rot); b.translate(x, groundHeight(x, z) + 0.035, z);
+      const c = new THREE.Color(col); const n = b.attributes.position.count; const ca = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { ca[i * 3] = c.r; ca[i * 3 + 1] = c.g; ca[i * 3 + 2] = c.b; }
+      b.setAttribute('color', new THREE.BufferAttribute(ca, 3)); b.deleteAttribute('uv'); parts.push(b); };
+    off(-4.1, 6.1, 0.7, 0.4, '#c99a62'); off(-6.1, 7.0, 0.5, -0.7, '#b8884f'); off(-3.3, 7.5, 0.45, 1.2, '#d5aa70'); off(-1.6, 6.0, 0.6, 2.1, '#c99a62');
+    const m = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+    m.castShadow = true; m.receiveShadow = true; g.add(m);
+  }
+  // lumber stack (foreground left): two bearer logs + three layers of planks
+  {
+    const s = new THREE.Group(); s.rotation.y = 0.62; g.add(onGround(s, -3.35, 12.7));
+    for (const x of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.5, 7), matte('#6e4a2b')); l.rotation.x = Math.PI / 2; l.position.set(x, 0.11, 0); l.castShadow = true; s.add(l); }
+    const wc = ['#c79862', '#b8884f', '#d5aa70', '#a97a45', '#c99a62'];
+    for (let k = 0; k < 3; k++) for (let j = 0; j < 4 - k; j++) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(2.3 - k * 0.1, 0.08, 0.3), matte(wc[(k * 4 + j) % wc.length]));
+      b.position.set((r() - 0.5) * 0.12, 0.26 + k * 0.085, (j - (3 - k) / 2) * 0.32); b.rotation.y = (r() - 0.5) * 0.06; b.castShadow = b.receiveShadow = true; s.add(b);
+    }
+  }
+  // sawhorse with a plank and a saw (right, by the hull)
+  {
+    const s = new THREE.Group(); s.rotation.y = -0.35; g.add(onGround(s, -0.9, 6.2));
+    const legM = matte('#7a5232');
+    for (const x of [-0.55, 0.55]) for (const zz of [-1, 1]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.78, 0.07), legM); l.position.set(x, 0.36, zz * 0.17); l.rotation.x = zz * 0.28; l.castShadow = true; s.add(l); }
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.1, 0.12), legM); beam.position.y = 0.74; beam.castShadow = true; s.add(beam);
+    const pl = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.07, 0.3), matte('#d5aa70')); pl.position.set(0.25, 0.83, 0); pl.rotation.y = 0.12; pl.castShadow = pl.receiveShadow = true; s.add(pl);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.14, 0.012), matte('#a8a59c')); blade.position.set(-0.05, 0.9, 0.05); blade.rotation.set(0.0, 0.2, -0.5); s.add(blade);
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.04), matte('#6e4a2b')); grip.position.set(0.24, 1.03, 0.1); grip.rotation.set(0.0, 0.2, -0.5); s.add(grip);
+  }
+  // foreground right: basket of trenails, pitch bucket with a stick, coiled rope, mallet
+  {
+    const basket = new THREE.Group(); g.add(onGround(basket, 0.75, 10.05));
+    const bk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.32, 9, 1, true), matte('#b08a4e', { params: { side: THREE.DoubleSide } })); bk.position.y = 0.16; bk.castShadow = true; basket.add(bk);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 4, 9), matte('#8f6a38')); rim.rotation.x = Math.PI / 2; rim.position.y = 0.32; basket.add(rim);
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(0.28, 9), matte('#c79862')); fill.rotation.x = -Math.PI / 2; fill.position.y = 0.27; basket.add(fill);
+    for (let i = 0; i < 7; i++) { const peg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.22, 5), matte('#d9b47a')); const a = i * 0.9; peg.position.set(Math.cos(a) * 0.13, 0.33, Math.sin(a) * 0.13); peg.rotation.set(0.5 * Math.sin(a * 3), 0, 0.5 * Math.cos(a * 2)); basket.add(peg); }
+    const bucket = new THREE.Group(); g.add(onGround(bucket, 0.05, 10.95));
+    const bu = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.34, 9), matte('#6e4a2b')); bu.position.y = 0.17; bu.castShadow = true; bucket.add(bu);
+    const pitch = new THREE.Mesh(new THREE.CircleGeometry(0.2, 9), matte('#1d140e')); pitch.rotation.x = -Math.PI / 2; pitch.position.y = 0.345; bucket.add(pitch);
+    for (const y of [0.07, 0.28]) { const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.215 - (y > 0.2 ? 0 : 0.02), 0.014, 3, 9), matte('#3a2a1e')); hoop.rotation.x = Math.PI / 2; hoop.position.y = y; bucket.add(hoop); }
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.62, 5), matte('#8a6038')); stick.position.set(0.06, 0.5, 0); stick.rotation.z = -0.45; bucket.add(stick);
+    const coil = new THREE.Group(); g.add(onGround(coil, 1.35, 9.25));
+    for (let k = 0; k < 3; k++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.26 - k * 0.025, 0.035, 4, 12), matte('#cdb98e')); t.rotation.x = Math.PI / 2; t.position.y = 0.04 + k * 0.06; t.castShadow = true; coil.add(t); }
+    const mallet = new THREE.Group(); mallet.rotation.y = 0.9; g.add(onGround(mallet, -0.35, 10.0));
+    const mh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 8), matte('#8a6038')); mh.rotation.x = Math.PI / 2; mh.position.y = 0.1; mh.castShadow = true; mallet.add(mh);
+    const ms = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 5), matte('#a07848')); ms.rotation.z = Math.PI / 2; ms.position.set(0.28, 0.05, 0); mallet.add(ms);
+  }
+  // rocks
+  for (const [x, z, s] of [[-7.6, 9.6, 0.32], [-6.9, 11.2, 0.22], [1.6, 7.6, 0.26], [-1.4, 12.3, 0.18], [-8.4, 8.0, 0.4]]) {
+    const rk = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), matte(r() < 0.5 ? '#9a8c74' : '#8a8070')); rk.scale.y = 0.6; rk.rotation.set(r(), r(), r());
+    rk.castShadow = true; rk.receiveShadow = true; g.add(onGround(rk, x, z, s * 0.25));
+  }
+  // dry grass: a sparse field around the work area + bigger tufts in the foreground
+  const worn = (x, z) => Math.hypot((x + 2.8) / 6.6, (z - 6.6) / 2.6) < 1 || Math.hypot((x + 4.6) / 2.8, (z - 7.4) / 2.2) < 1;
+  g.add(grassField(700, [-14, 3.5, 6, 16, worn], 77, '#a3a24e'));
+  const fg = grassField(70, [-4.6, 10.6, 2.4, 14.5, (x, z) => worn(x, z) || Math.hypot((x + 3.35) / 1.5, (z - 12.7) / 1.2) < 1], 78, '#8f9a44');
+  fg.scale.set(1, 1.6, 1); g.add(fg);
+  return g;
+}
