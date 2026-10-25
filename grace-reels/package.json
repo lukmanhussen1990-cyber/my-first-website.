@@ -8,7 +8,8 @@
     "studio": "remotion studio src/index.ts",
     "still": "remotion still src/index.ts",
     "render": "remotion render src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "audio": "node tools/audio/mix.mjs --episode the-mountain && python3 tools/audio/verify_mix.py --episode the-mountain"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "5.3.0",
