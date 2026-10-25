@@ -14,7 +14,7 @@ narration, music and sound effects, all made in code. No stock footage, images o
 | 3. Cues | `src/episodes/<slug>/cues.js` derives scenes, labels, cards and every sound cue from the words | one timing source for picture and sound |
 | 4. Audio | `npm run audio` | `audio/final_mix.wav` (-14 LUFS, -1 dBTP), speech-to-text check |
 | 5. Check quotes | `python3 tools/check_kjv.py episodes/<slug>` | every quote checked word for word |
-| 6. Review | `npx remotion render src/index.ts KeyFrames out/stills/keys --sequence --gl=swangle` | review stills |
+| 6. Review | `npx remotion render src/index.ts KeyFrames out/stills/keys --sequence --gl=swangle` (other moments: `--props='{"times":[25.9,43.2]}'`) | review stills |
 | 7. Render | `cp episodes/<slug>/audio/final_mix.wav public/audio/<slug>/` then `tools/render_parallel.sh TheMountain out/reel_<slug>.mp4 episodes/<slug>/audio/final_mix.wav 2` | the MP4 |
 | 8. Cover | `npx remotion still src/index.ts CoverTheMountain out/cover_<slug>.png --gl=swangle` | grid cover |
 
