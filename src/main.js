@@ -1,12 +1,12 @@
 // Reel entry: builds everything once, then exposes window.renderAt(t) (deterministic, no RAF).
 import * as THREE from 'three';
 import { U, matte, flat } from './materials.js';
-import { buildWorld, groundHeight } from './world.js';
+import { buildWorld, groundHeight, makeHookSet } from './world.js';
 import { buildArk, ARK } from './ark.js';
 import { make, crowdPerson, commuter, CAST, FAMILY, BEARD_GREY, BEARD_WHITE } from './cast.js';
 import { Person, CLOTH, HAIR } from './characters.js';
 import { makeAnimal } from './animals.js';
-import { makeSky, makePillar, makeSmoke, makeBirds, makeRain, makeBolt, makeCloud, makeDust, makeGlint } from './fx.js';
+import { makeSky, makePillar, makeSmoke, makeBirds, makeRain, makeBolt, makeCloud, makeDust, makeGlint, makeChips, makeMotes, makeRays } from './fx.js';
 import { Post } from './post.js';
 import { Overlay } from './overlay.js';
 import { buildTimeline } from './timeline.js';
@@ -122,6 +122,9 @@ const fx = {
   dust: makeDust(), glints: Array.from({ length: 5 }, () => makeGlint()),
 };
 scene.add(fx.pillar.group, fx.smoke.group, fx.birds.group, fx.rain.group, fx.bolt, fx.dust.group, ...fx.clouds, ...fx.glints.map((g) => g.group));
+// S1 hook extras (hidden by default; reset() hides every fx group each frame)
+fx.chips = makeChips(); fx.motes = makeMotes(); fx.rays = makeRays();
+for (const k of ['chips', 'motes', 'rays']) { fx[k].group.visible = false; scene.add(fx[k].group); }
 
 // ---------- close-up props ----------
 const props = {};
@@ -158,6 +161,7 @@ const props = {};
 { // S1 hook: warm front fill light (no shadows); hidden (so not even counted) unless S1 shows it
   const fill = new THREE.DirectionalLight('#ffe2b6', 1.0); scene.add(fill, fill.target); props.hookFill = fill;
 }
+{ const hs = makeHookSet(); scene.add(hs); props.hookSet = hs; } // S1 set dressing (ground props, grass)
 Object.values(props).forEach((p) => { p.visible = false; });
 
 const crownPalette = ['#5d6e2c', '#67772f', '#55652a', '#718034'];

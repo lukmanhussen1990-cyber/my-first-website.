@@ -25,6 +25,7 @@ export function buildTimeline(ctx) {
   function reset() {
     for (const s of Object.values(W.sets)) s.visible = false;
     A.root.visible = false; A.root.position.set(0, 0, 0); A.root.rotation.set(0, 0, 0);
+    A.hook.visible = false;
     for (const p of allPeople) p.root.visible = false;
     for (const a of allAnimals) a.group.visible = false;
     for (const k of Object.keys(fx)) { const f = fx[k]; if (Array.isArray(f)) f.forEach((x) => { (x.group || x).visible = false; }); else if (f && (f.group || f.isObject3D)) (f.group || f).visible = false; }
@@ -133,11 +134,15 @@ export function buildTimeline(ctx) {
     bend: (t, s) => Poses.laughBend(t, s),
     smirk(t, s) { const P = Poses.smirk(t, s); P.headTilt = 0.22; P.lookY = 0.7; return P; },
   };
-  const S1C0 = [[7.0, 6.4, 22.4], [-4.6, 2.6, 5.2], 32], S1C1 = [[5.8, 5.95, 20.7], [-4.7, 2.75, 5.2], 30.2];
+  const S1C0 = [[7.4, 6.5, 22.2], [-4.6, 2.6, 5.2], 32], S1C1 = [[5.4, 6.0, 21.6], [-4.75, 2.8, 5.2], 30.5]; // slow orbit-left + push
   const S1crowd = [ // [crowd idx, pose, x, z, (copy seed, lag)] — world space, three staggered rows in front of the hull
-    [0, 'pointUp', -5.64, 6.72], [1, 'belly', -3.69, 4.95], [19, 'shout', -2.46, 5.01],
-    [9, 'bend', -4.34, 9.28], [13, 'pointUp', -3.23, 8.36], [11, 'pointUp', -2.36, 8.42, 213, 0.14], [2, 'pointUp', -1.74, 7.19],
-    [6, 'belly', -2.38, 10.42], [8, 'pointUp', -0.32, 8.76],
+    [0, 'pointUp', -5.80, 6.69], [1, 'belly', -3.64, 5.03], [19, 'shout', -2.44, 5.02],
+    [9, 'bend', -4.66, 9.12], [13, 'pointUp', -3.42, 8.21], [11, 'pointUp', -2.57, 8.32, 213, 0.14], [2, 'pointUp', -1.87, 7.09],
+    [6, 'belly', -2.72, 10.22], [8, 'pointUp', -0.70, 8.60],
+  ];
+  const S1rays = [ // lit end on the ground/air, width, length, strength
+    { p: V(-5.6, 0.0, 9.2), w: 1.7, len: 17, a: 0.11 }, { p: V(-3.0, 0.4, 8.0), w: 1.0, len: 15, a: 0.09 },
+    { p: V(-0.9, 0.0, 9.8), w: 2.4, len: 19, a: 0.07 }, { p: V(-7.8, 0.0, 10.8), w: 1.3, len: 16, a: 0.09 }, { p: V(0.6, 0.6, 7.0), w: 0.9, len: 14, a: 0.08 },
   ];
   const S1 = shot({
     id: 'S1', t0: 0, t1: cut('S2'), trans: { type: 'cut' },
@@ -156,7 +161,17 @@ export function buildTimeline(ctx) {
         const p = P.crowd[ci];
         put(p, x, z, S1pose[pose](t - lag, cs ?? p.seed), 1); faceTo(p, P.noah.root.position); p.billboard(camera);
       });
-      fx.dust.group.visible = true; fx.dust.set(t, V(nf.x, nf.y + 1.5, nf.z - 0.6), S1.strikes);
+      // the ark under construction: trenails, fresh planks, ribband, the next plank swaying on the hoist
+      A.hook.visible = true; A.hookHoist.rotation.set(0.035 * Math.sin(t * 1.05 + 0.4), 0, 0.05 * Math.sin(t * 0.8 + 0.6));
+      W.site.visible = false; props.hookSet.visible = true;
+      // hammer strikes: sawdust specks + wood chips + a puff off the plank (a strike just before t=0 so frame 0 is alive)
+      const hitY = nf.y + 1.5, hit = V(nf.x + (DB.hitDx ?? 0.1), hitY, hullHalfWidth(nf.x, hitY) + 0.12);
+      fx.dust.group.visible = true; fx.dust.set(t, V(nf.x, nf.y + 1.5, nf.z - 0.6), S1.vstrikes);
+      fx.chips.set(t, hit, S1.vstrikes, V(0.15, 0, 1).normalize(), V(1, 0, 0), 0);
+      // sunlit air: dust motes + soft god-rays slanting in from behind-left through the frames
+      const sd = V(...S1M.sunDir).normalize();
+      fx.motes.set(t, V(-3.4, 0.2, 7.6), [11, 7.5, 9], DB.motes ?? 1.0);
+      fx.rays.set(t, camera, sd.clone().negate(), S1rays, DB.rays ?? 1);
       // warm front fill (sun-side key stays behind-left for the long shadows)
       const fill = props.hookFill; fill.visible = true; fill.intensity = DB.fill ?? 1.15;
       fill.target.position.set(-3, 0, 6); fill.position.set(-3, 0, 6).add(V(...(DB.fillDir || [-0.55, 0.5, 0.75])).normalize().multiplyScalar(60));
@@ -167,6 +182,7 @@ export function buildTimeline(ctx) {
     },
   });
   S1.strikes = []; for (let n = 0; n < 12; n++) { const s = (n + 0.8) * 0.62; if (s < S1.t1) S1.strikes.push(s); }
+  S1.vstrikes = [-0.124, ...S1.strikes]; // visuals only (no SFX cue before t=0)
 
   // ---- S2: close on Noah, wiping sweat, looking up at a clear sky ----
   const S2 = shot({
