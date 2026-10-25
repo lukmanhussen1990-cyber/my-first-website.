@@ -165,6 +165,7 @@ export class Sprite extends Actor {
       ctx.restore();
     }
     if (o.filter) ctx.filter = typeof o.filter === 'function' ? o.filter(t) : o.filter;
+    if (o.blend) ctx.globalCompositeOperation = o.blend;
     if (o.glow) { ctx.shadowColor = o.glow; ctx.shadowBlur = o.glowBlur || 30; }
     const fd = this.faded(img);
     if (fd) ctx.drawImage(fd, 0, 0, fd.width, fd.height, ox, oy, dw, dh);
@@ -587,7 +588,7 @@ export class Terminal extends Actor {
 export class Stamp extends Actor {
   constructor(scene, text, o) {
     super({ layer: 'ui', z: 70, ...o });
-    this.st = stamp(text, { size: o.size ?? 110, color: o.color });
+    this.st = stamp(text, { size: o.size ?? 110, color: o.color, scales: o.scales });
     scene.sfx(this.at + 0.1, 'stamp', o.gain ?? 1);
     scene.shake(this.at + 0.1, 0.2, o.shake ?? 10);
   }
@@ -619,25 +620,46 @@ export class Magnifier extends Actor {
     const [x0, y0] = o.from || [W + 260, o.to[1] + 260];
     return [lerp(x0, o.to[0], p), lerp(y0, o.to[1], p)];
   }
+  // painted magnifier (an image with its lens cut out), if the project has one
+  artFor(s) {
+    const o = this.o, name = o.art ?? 'magnifier';
+    if (o.art === false || !s.reel.assets.has(name)) return null;
+    const g = (s.reel.geometry || {})[name];
+    if (!g || !g.lens) return null;
+    const a = s.reel.assets.get(name);
+    const key = `magart:${name}`;
+    if (!this.constructor._cut) this.constructor._cut = new Map();
+    if (!this.constructor._cut.has(key)) {
+      const c = makeCanvas(a.w, a.h), x = c.getContext('2d');
+      x.drawImage(a.img, 0, 0);
+      x.globalCompositeOperation = 'destination-out';
+      x.beginPath(); x.arc(g.lens[0] * a.w, g.lens[1] * a.h, g.lens[2] * a.w, 0, Math.PI * 2); x.fill();
+      this.constructor._cut.set(key, c);
+    }
+    return { a, g, canvas: this.constructor._cut.get(key), shadow: s.reel.assets.shadow(name, 16) };
+  }
   draw(ctx, t, s) {
     const o = this.o, R = this.r;
     const [cx, cy] = this.center(t);
-    const ang = (o.handleAngle ?? 45) * DEG;
+    const art = this.artFor(s);
     ctx.save();
-    // shadow
-    ctx.save(); ctx.filter = 'blur(14px)'; ctx.fillStyle = 'rgba(30,18,6,0.35)';
-    ctx.beginPath(); ctx.arc(cx + 18, cy + 26, R + 16, 0, Math.PI * 2); ctx.fill();
-    ctx.translate(cx + 18, cy + 26); ctx.rotate(ang); ctx.fillRect(R + 6, -20, 250, 40); ctx.restore();
-    // handle
-    ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
-    const hg = ctx.createLinearGradient(0, -19, 0, 19);
-    hg.addColorStop(0, '#6b4024'); hg.addColorStop(0.45, '#4a2814'); hg.addColorStop(1, '#2a160a');
-    ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect(R + 40, -19, 230, 38, 16); ctx.fill();
-    const fg = ctx.createLinearGradient(0, -16, 0, 16);
-    fg.addColorStop(0, '#d8b46a'); fg.addColorStop(0.5, '#8c6a2e'); fg.addColorStop(1, '#5a4218');
-    ctx.fillStyle = fg; ctx.fillRect(R + 6, -15, 40, 30);
+    if (art) {
+      const { a, g } = art, k = R / (g.lens[2] * a.w);
+      const ax = cx - g.lens[0] * a.w * k, ay = cy - g.lens[1] * a.h * k;
+      ctx.save(); ctx.globalAlpha *= 0.42;
+      const S = art.shadow;
+      ctx.drawImage(S.canvas, ax - S.pad * k + 20, ay - S.pad * k + 30, (a.w + S.pad * 2) * k, (a.h + S.pad * 2) * k);
+      ctx.restore();
+      this.lens(ctx, t, s, cx, cy, R);
+      ctx.drawImage(art.canvas, ax, ay, a.w * k, a.h * k);
+    } else {
+      this.drawnFrame(ctx, t, s, cx, cy, R);
+    }
     ctx.restore();
-    // lens content
+    this.labelDraw(ctx, t, s, cx, cy, R);
+  }
+  lens(ctx, t, s, cx, cy, R) {
+    const o = this.o;
     ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
     if (o.image) {
       const a = s.reel.assets.get(o.image);
@@ -646,6 +668,8 @@ export class Magnifier extends Actor {
       const sw = (reg[2] - reg[0]) * a.w, sh = (reg[3] - reg[1]) * a.h;
       const k = Math.max((R * 2) / sw, (R * 2) / sh);
       ctx.drawImage(a.img, reg[0] * a.w, reg[1] * a.h, sw, sh, cx - (sw * k) / 2, cy - (sh * k) / 2, sw * k, sh * k);
+    } else if (o.drawLens) {
+      o.drawLens(ctx, t, s, cx, cy, R);
     } else {
       // magnify the already-rendered world layer around a focus point
       const [fx, fy] = o.focus ? s.toScreen(typeof o.focus === 'function' ? o.focus(t, s) : o.focus) : [cx, cy];
@@ -660,12 +684,32 @@ export class Magnifier extends Actor {
     ctx.restore();
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.arc(cx, cy, R * 0.82, -2.6, -1.9); ctx.stroke();
+  }
+  drawnFrame(ctx, t, s, cx, cy, R) {
+    const o = this.o;
+    const ang = (o.handleAngle ?? 45) * DEG;
+    // shadow
+    ctx.save(); ctx.filter = 'blur(14px)'; ctx.fillStyle = 'rgba(30,18,6,0.35)';
+    ctx.beginPath(); ctx.arc(cx + 18, cy + 26, R + 16, 0, Math.PI * 2); ctx.fill();
+    ctx.translate(cx + 18, cy + 26); ctx.rotate(ang); ctx.fillRect(R + 6, -20, 250, 40); ctx.restore();
+    // handle
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+    const hg = ctx.createLinearGradient(0, -19, 0, 19);
+    hg.addColorStop(0, '#6b4024'); hg.addColorStop(0.45, '#4a2814'); hg.addColorStop(1, '#2a160a');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect(R + 40, -19, 230, 38, 16); ctx.fill();
+    const fg = ctx.createLinearGradient(0, -16, 0, 16);
+    fg.addColorStop(0, '#d8b46a'); fg.addColorStop(0.5, '#8c6a2e'); fg.addColorStop(1, '#5a4218');
+    ctx.fillStyle = fg; ctx.fillRect(R + 6, -15, 40, 30);
+    ctx.restore();
+    this.lens(ctx, t, s, cx, cy, R);
     // brass rim
     const rg = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
     rg.addColorStop(0, '#f0d38c'); rg.addColorStop(0.35, '#b28a3e'); rg.addColorStop(0.7, '#7a5a22'); rg.addColorStop(1, '#4e3812');
     ctx.strokeStyle = rg; ctx.lineWidth = 20; ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, Math.PI * 2); ctx.stroke();
     ctx.strokeStyle = 'rgba(40,25,8,0.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
+  }
+  labelDraw(ctx, t, s, cx, cy, R) {
+    const o = this.o;
     if (o.label && t >= this.labelAt) {
       const lp = prog(t, this.labelAt, 0.2);
       ctx.save(); ctx.globalAlpha *= lp;

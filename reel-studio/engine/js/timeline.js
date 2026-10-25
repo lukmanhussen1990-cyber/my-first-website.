@@ -51,12 +51,16 @@ export class Scene {
   w(word, n = 0, edge = 's') {
     const words = this.vo ? this.vo.words : [];
     const target = normWord(word);
-    let seen = 0;
-    for (const wd of words) {
-      const k = normWord(wd.w);
-      if (k === target || (target.length > 2 && (k.startsWith(target) || target.startsWith(k) && k.length > 2))) {
-        if (seen === n) return this.voLead + wd[edge];
-        seen++;
+    // exact matches first; a prefix match ("गर्म" ~ "गर्मियों") only when no exact one exists
+    for (const exact of [true, false]) {
+      let seen = 0;
+      for (const wd of words) {
+        const k = normWord(wd.w);
+        const hit = exact ? k === target : (target.length > 2 && (k.startsWith(target) || (target.startsWith(k) && k.length > 2)));
+        if (hit) {
+          if (seen === n) return this.voLead + wd[edge];
+          seen++;
+        }
       }
     }
     this.warnings.push(`${this.id}: word not found "${word}" (#${n})`);

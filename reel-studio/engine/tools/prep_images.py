@@ -8,6 +8,9 @@ For every image listed in project.json that exists in images/:
 Outputs build/assets/<name>.png, xray_<name>.png and manifest.json.
 Pulse frames (eye-stalk swelling loop) are made by pulse_frames.py.
 
+Per image in project.json: "mode": "plate" for vignette illustrations that fade
+to white (white is keyed out, nothing is cut), "xray": false to skip the X-ray copy.
+
 Usage: python3 prep_images.py PROJECT_DIR [--only name1,name2]
 """
 import argparse, json, os
@@ -90,6 +93,39 @@ def defringe(rgba, band=3):
     return out
 
 
+def plate_alpha(rgba, edge_mask=True, feather_below=None):
+    """Illustration on white: only white connected to the image border is keyed
+    out (a white sun or flowers inside stay). In a fringe next to that background
+    whitish pixels are un-blended from white, and the boundary is feathered, so a
+    vignette melts into the paper (edge_mask) while a figure keeps a crisp edge.
+    feather_below=[y_frac, px] softens only the part below y_frac (fading water)."""
+    rgb = rgba[..., :3]
+    mn, mx = rgb.min(-1), rgb.max(-1)
+    whiteish = (mn > 0.86) & (mx - mn < 0.09)
+    lab, n = ndi.label(whiteish)
+    border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    bg = np.isin(lab, list(border))
+    hh = rgb.shape[0]
+    F = np.full(rgb.shape[:2], 30.0 if edge_mask else 2.0)
+    if feather_below:
+        y0, fb = feather_below
+        ramp = np.clip((np.arange(hh) / hh - y0) / 0.05, 0, 1)[:, None]
+        F = F + (fb - F) * ramp
+    dist = ndi.distance_transform_edt(~bg)
+    z = 1 - np.clip(dist / F, 0, 1)
+    z = z * z * (3 - 2 * z)                       # 1 at the background, 0 inside
+    lo = 0.58
+    w = np.clip((mn - lo) / (0.975 - lo), 0, 1)
+    w = w * w * (3 - 2 * w)
+    neutral = 1 - np.clip((mx - mn - 0.06) / 0.14, 0, 1)
+    ca = 1 - w * neutral * z                       # whitish fringe -> transparent
+    a3 = np.clip(ca, 1e-3, 1)[..., None]
+    rgb = np.where(ca[..., None] < 0.999, np.clip((rgb - (1 - a3)) / a3, 0, 1), rgb)
+    f = np.clip(dist / np.maximum(1.0, F * 0.45), 0, 1)
+    a = ca * (f * f * (3 - 2 * f))
+    return np.dstack([rgb, a])
+
+
 def trim(rgba, pad=10, thr=0.03):
     a = rgba[..., 3]
     ys, xs = np.nonzero(a > thr)
@@ -158,6 +194,16 @@ def main():
         H0, W0 = rgba.shape[:2]
         alpha = rgba[..., 3]
         had_alpha = (alpha < 0.5).mean() > 0.02
+        mode = im.get("mode", "cutout")
+        if mode == "plate":
+            rgba = plate_alpha(rgba, im.get("edgeMask", True), im.get("featherBelow"))
+            _, box = trim(rgba, pad=4, thr=0.02)
+            cut[name] = (rgba, box, "vignette plate (white keyed)", (W0, H0), im.get("group"), False)
+            continue
+        if had_alpha:
+            # transparent PNGs from GPT Image often carry a faint coloured glow: drop it
+            a0 = rgba[..., 3]
+            rgba = rgba.copy(); rgba[..., 3] = np.clip((a0 - 0.12) / 0.88, 0, 1)
         if not had_alpha:
             c2 = ai_cutout(rgba)
             if c2 is not None:
@@ -171,22 +217,23 @@ def main():
         if not had_alpha:
             rgba = defringe(rgba)
         _, box = trim(rgba)
-        cut[name] = (rgba, box, note, (W0, H0), im.get("group"))
+        cut[name] = (rgba, box, note, (W0, H0), im.get("group"), im.get("xray", True))
     # union boxes per group
     gbox = {}
-    for name, (_, box, _, _, g) in cut.items():
+    for name, (_, box, _, _, g, _) in cut.items():
         if g:
             b = gbox.get(g, box)
             gbox[g] = [min(b[0], box[0]), min(b[1], box[1]), max(b[2], box[2]), max(b[3], box[3])]
-    for name, (rgba, box, note, (W0, H0), g) in cut.items():
+    for name, (rgba, box, note, (W0, H0), g, want_xray) in cut.items():
         if g:
             box = gbox[g]
         x0, y0, x1, y1 = box
         out = rgba[y0:y1, x0:x1]
         save(out, os.path.join(outdir, name + ".png"))
-        save(xray(out), os.path.join(outdir, "xray_" + name + ".png"))
+        if want_xray:
+            save(xray(out), os.path.join(outdir, "xray_" + name + ".png"))
         entry = manifest["images"].get(name, {})
-        entry.update({"w": out.shape[1], "h": out.shape[0], "orig": [W0, H0], "trim": box, "xray": True})
+        entry.update({"w": out.shape[1], "h": out.shape[0], "orig": [W0, H0], "trim": box, "xray": bool(want_xray)})
         manifest["images"][name] = entry
         print(f"ok {name}: {note}, crop {out.shape[1]}x{out.shape[0]} box {box}{' (group ' + g + ')' if g else ''}")
     json.dump(manifest, open(mpath, "w"), indent=1)

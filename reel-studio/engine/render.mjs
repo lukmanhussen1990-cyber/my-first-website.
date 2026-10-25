@@ -117,7 +117,8 @@ async function main() {
       const from = Number(args.from || 0), to = Math.min(Number(args.to || tl.frames), tl.frames);
       const workers = Math.max(1, Number(args.workers || 3));
       const out = path.resolve(PDIR, args.video);
-      const tmp = path.join(PDIR, 'build', 'chunks'); fs.mkdirSync(tmp, { recursive: true });
+      // one chunk folder per output file, so two renders never write the same chunk
+      const tmp = path.join(PDIR, 'build', 'chunks_' + path.basename(out, path.extname(out))); fs.mkdirSync(tmp, { recursive: true });
       const per = Math.ceil((to - from) / workers);
       const t0 = Date.now();
       let done = 0;

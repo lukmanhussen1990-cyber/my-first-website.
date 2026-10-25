@@ -244,22 +244,34 @@ export function tornStrip(w, h, seed = 7, color = '#e7dabd') {
 }
 
 // Red rubber stamp: double border + letter-spaced text + worn ink.
+// Multi-line with "\n"; opts.scales sets a size factor per line.
 export function stamp(text, opts = {}) {
   const size = opts.size || 110;
   const color = opts.color || '#b8322a';
-  return cached(`stamp:${text}:${size}:${color}`, () => {
+  const scales = opts.scales || null;
+  return cached(`stamp:${text}:${size}:${color}:${scales}`, () => {
     const probe = makeCanvas(10, 10).getContext('2d');
+    const lines = String(text).split('\n');
+    const sc = lines.map((_, i) => (scales ? scales[i] ?? 1 : 1));
     const sp = size * 0.06;
-    const tw = measure(probe, text, FONTS.title, size, sp);
-    const bw = tw + size * 0.75, bh = size * 1.42;
+    const widths = lines.map((l, i) => measure(probe, l, FONTS.title, size * sc[i], sp * sc[i]));
+    const tw = Math.max(...widths);
+    const gap = size * 0.1;
+    const textH = sc.reduce((a, k) => a + size * k, 0) + gap * (lines.length - 1);
+    const bw = tw + size * 0.75, bh = textH + size * 0.42;
     const pad = 20;
     const c = makeCanvas(bw + pad * 2, bh + pad * 2), x = c.getContext('2d');
     x.strokeStyle = color; x.fillStyle = color;
     x.lineWidth = size * 0.07; x.strokeRect(pad + size * 0.06, pad + size * 0.06, bw - size * 0.12, bh - size * 0.12);
     x.lineWidth = size * 0.025; x.strokeRect(pad + size * 0.17, pad + size * 0.17, bw - size * 0.34, bh - size * 0.34);
-    setFont(x, FONTS.title, size); x.letterSpacing = `${sp}px`;
     x.textBaseline = 'middle'; x.textAlign = 'center';
-    x.fillText(text, pad + bw / 2 + sp / 2, pad + bh / 2 + size * 0.04);
+    let y = pad + (bh - textH) / 2;
+    lines.forEach((l, i) => {
+      const fs = size * sc[i];
+      setFont(x, FONTS.title, fs); x.letterSpacing = `${sp * sc[i]}px`;
+      x.fillText(l, pad + bw / 2 + (sp * sc[i]) / 2, y + fs / 2 + fs * 0.04);
+      y += fs + gap;
+    });
     // worn ink: knock-outs + streaks
     const r = rng(strSeed(text));
     x.globalCompositeOperation = 'destination-out';
