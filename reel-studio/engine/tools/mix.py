@@ -138,6 +138,8 @@ def main():
     sf.write(os.path.join(out_dir, "mix_full.wav"), full, SR, subtype="PCM_24")
     sf.write(os.path.join(out_dir, "mix_nomusic.wav"), nomusic, SR, subtype="PCM_24")
     sf.write(os.path.join(out_dir, "stem_voice.wav"), vst * 0.5, SR, subtype="PCM_24")
+    sf.write(os.path.join(out_dir, "stem_fx.wav"), fx * 0.5, SR, subtype="PCM_24")
+    sf.write(os.path.join(out_dir, "stem_music.wav"), music * 0.5, SR, subtype="PCM_24")
     print(f"mix_full {Lf:.2f} LUFS, mix_nomusic {Ln:.2f} LUFS, {N / SR:.2f}s, {len(tl['sounds'])} sound cues")
 
 

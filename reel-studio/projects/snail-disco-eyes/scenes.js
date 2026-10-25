@@ -94,7 +94,7 @@ export default function build(R, { U, W, H }) {
     s.target({ at: s.w('धड़क'), pos: (t) => P(snail, t, GEO('snail_infected').stalkTips[0]), r: 54 });
     s.target({ at: s.w('धड़क') + 0.12, pos: (t) => P(snail, t, GEO('snail_infected').stalkTips[1]), r: 54, sfx: false });
     labelCard(s, 'SPECIMEN No. 01', { at: 0.35, x: 120, y: 1345 });
-    heartbeats(s, 0.0, s.dur, 1.0, 0.45);
+    heartbeats(s, 0.0, s.dur, 1.0, 0.38);
   });
 
   S('S02', { look: 'xray', transition: { type: 'scan', dur: 0.4 } }, (s) => {
@@ -481,7 +481,7 @@ export default function build(R, { U, W, H }) {
       ctx.save(); ctx.translate(150, 820); ctx.rotate(-1.2 * Math.PI / 180); ctx.translate(-150, -820);
       strokePartial(ctx, pts, p, 4, COLORS.red); ctx.restore();
     });
-    s.stamp('ZOMBIE', { at: s.voEnd - 0.05, x: 690, y: 1240, rot: -10, size: 120 });
+    s.stamp('ZOMBIE', { at: s.voEnd + 0.02, x: 690, y: 1240, rot: -10, size: 120 });
     s.camera([[0, 1.0, 540, 1000], [s.dur, 1.04, 540, 1000]]);
   });
 

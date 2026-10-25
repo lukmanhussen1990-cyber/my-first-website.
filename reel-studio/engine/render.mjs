@@ -58,20 +58,32 @@ async function grab(page, frame) {
 }
 
 // Raw RGBA straight from the canvas (no PNG encode): ~8x faster than a screenshot.
+const OUT_W = Math.round(1080 * Number(args.scale || 1) / 2) * 2;
+const OUT_H = Math.round(1920 * Number(args.scale || 1) / 2) * 2;
+
 async function grabRaw(page, frame) {
-  const b64 = await page.evaluate((f) => {
+  const b64 = await page.evaluate(([f, w, h]) => {
     window.renderFrame(f);
-    const d = document.getElementById('c').getContext('2d').getImageData(0, 0, 1080, 1920).data;
+    let src = document.getElementById('c');
+    if (w !== 1080) {
+      // downscaled preview: resample in the page so far less data crosses over
+      if (!window.__small) { window.__small = document.createElement('canvas'); window.__small.width = w; window.__small.height = h; }
+      const sc = window.__small.getContext('2d', { willReadFrequently: true });
+      sc.imageSmoothingQuality = 'high';
+      sc.drawImage(src, 0, 0, w, h);
+      src = window.__small;
+    }
+    const d = src.getContext('2d').getImageData(0, 0, w, h).data;
     let s = '';
     const CH = 0x8000;
     for (let i = 0; i < d.length; i += CH) s += String.fromCharCode.apply(null, d.subarray(i, i + CH));
     return btoa(s);
-  }, frame);
+  }, [frame, OUT_W, OUT_H]);
   return Buffer.from(b64, 'base64');
 }
 
 function ffmpegChunk(out) {
-  const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', '1080x1920', '-framerate', '30', '-i', '-',
+  const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${OUT_W}x${OUT_H}`, '-framerate', '30', '-i', '-',
     '-c:v', 'libx264', '-preset', args.preset || 'medium', '-crf', String(args.crf || 16), '-pix_fmt', 'yuv420p',
     '-profile:v', 'high', '-g', '60', '-r', '30', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-vf', 'scale=out_color_matrix=bt709', out], { stdio: ['pipe', 'inherit', 'inherit'] });
   return ff;
