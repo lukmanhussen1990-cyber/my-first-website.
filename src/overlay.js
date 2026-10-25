@@ -122,7 +122,6 @@ export class Overlays {
       const out = smooth(ramp(t, C.end - 0.35, C.end));
       C.card.style.top = `${CAP_TOP - 4 + (1 - inn) * 46 - out * 18}px`;
       C.card.style.opacity = (Math.min(inn, 1 - out)).toFixed(3);
-      C.card.style.transform = `rotate(${((1 - inn) * -1.2).toFixed(3)}deg)`;
       C.L.words.forEach((w, k) => {
         const u = smooth(ramp(t, w.s - 0.06, w.s + 0.12));
         C.spans[k].style.opacity = (0.34 + 0.66 * u).toFixed(3);
@@ -181,7 +180,7 @@ export class Overlays {
   buildEnd() {
     const e = $('end');
     e.innerHTML = `
-      <div class="icon" id="iProof" style="left:110px; top:640px">
+      <div class="icon" id="iProof" style="left:122px; top:640px">
         <svg width="320" height="320" viewBox="0 0 250 250">
           <defs><radialGradient id="gp" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#cfe0f0" stop-opacity="0.38"/><stop offset="1" stop-color="#cfe0f0" stop-opacity="0"/></radialGradient></defs>
           <circle cx="125" cy="125" r="122" fill="url(#gp)"/>
@@ -196,7 +195,7 @@ export class Overlays {
         </svg>
         <div class="lbl">PROOF</div>
       </div>
-      <div class="icon" id="iFaith" style="left:630px; top:640px">
+      <div class="icon" id="iFaith" style="left:618px; top:640px">
         <svg width="320" height="320" viewBox="0 0 250 250">
           <defs><radialGradient id="gf" cx="50%" cy="55%" r="50%"><stop offset="0" stop-color="#ffcf7a" stop-opacity="0.55"/><stop offset="1" stop-color="#ffb04a" stop-opacity="0"/></radialGradient>
           <linearGradient id="fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e5534b"/><stop offset="0.55" stop-color="#f5a03a"/><stop offset="1" stop-color="#ffe7a0"/></linearGradient></defs>

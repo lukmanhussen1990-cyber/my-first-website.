@@ -363,7 +363,7 @@ def main():
     for it in range(3):
         L = meter.integrated_loudness(mix)
         mix *= db(-14.0 - L)
-        mix = true_peak_limit(mix, -1.3)
+        mix = true_peak_limit(mix, -3.0)  # AAC encoding adds up to ~2 dB of overshoot
     L = meter.integrated_loudness(mix)
     tp = 20 * np.log10(np.abs(resample_poly(mix, 4, 1, axis=0)).max())
     print(f"integrated {L:.2f} LUFS, true peak {tp:.2f} dBTP")

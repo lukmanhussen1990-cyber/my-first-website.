@@ -155,14 +155,44 @@ def estimate(override):
     return a, lines, len(a) / SR
 
 
+def refine_onsets(audio, lines):
+    """Kokoro's duration model places the first word after a pause 40-140 ms later
+    than its acoustic onset; snap those starts to the measured onset."""
+    hop = SR // 200
+    e = np.array([np.sqrt(np.mean(audio[i * hop:(i + 1) * hop] ** 2)) for i in range(len(audio) // hop)])
+    edb = 20 * np.log10(e + 1e-6)
+    ref = np.percentile(edb[edb > -60], 95)
+    prev_end = 0.0
+    for L in lines:
+        for w in L["words"]:
+            if w["s"] - prev_end > 0.12:
+                k0, k1 = int((prev_end + 0.03) * 200), int(w["s"] * 200) + 1
+                hot = np.nonzero(edb[k0:k1] > ref - 34)[0]
+                if len(hot):
+                    on = (k0 + hot[0]) / 200
+                    if w["s"] - on > 0.02:
+                        w["s"] = round(on - 0.01, 3)
+            prev_end = w["e"]
+        L["start"] = min(L["start"], L["words"][0]["s"])
+    return lines
+
+
 def main():
     os.makedirs(BUILD, exist_ok=True)
+    if "--refine-only" in sys.argv:  # re-time an existing voice.wav without re-synthesizing
+        T = json.load(open(os.path.join(BUILD, "timings.json")))
+        a, _ = sf.read(os.path.join(BUILD, "voice.wav"), dtype="float32")
+        T["lines"] = refine_onsets(a, T["lines"])
+        json.dump(T, open(os.path.join(BUILD, "timings.json"), "w"), indent=1)
+        print("refined word onsets in build/timings.json")
+        return
     override = os.path.join(BUILD, "voice_override.wav")
     if os.path.exists(override):
         audio, lines, end = estimate(override)
         engine = "override (estimated timings)"
     else:
         audio, lines, end = synth()
+        lines = refine_onsets(audio, lines)
         engine = "kokoro:" + SCRIPT["voice"]["voice"]
     sf.write(os.path.join(BUILD, "voice.wav"), audio, SR, subtype="PCM_16")
     out = {"engine": engine, "voice_end": round(end, 3),

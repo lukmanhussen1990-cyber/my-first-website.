@@ -78,13 +78,15 @@ def main():
         prev_end = None
         for w in L["words"]:
             # only words that start after a pause have a measurable onset
-            if prev_end is None or w["s"] - prev_end > 0.06:
-                k0, k1 = int((w["s"] - 0.25) * 200), int((w["s"] + 0.25) * 200)
-                seg = edb[max(0, k0):k1]
-                if len(seg):
-                    floor = np.percentile(seg, 10)
-                    idx = np.argmax(seg > floor + 12)
-                    deltas.append((L["id"], w["text"], (max(0, k0) + idx) / 200 - w["s"]))
+            if prev_end is not None and w["s"] - prev_end > 0.12:
+                # quietest point in the pause, then the first frame 15 dB above it
+                k0, k1 = int((prev_end + 0.02) * 200), int((w["s"] + 0.12) * 200)
+                seg = edb[k0:k1]
+                if len(seg) > 4:
+                    m = int(np.argmin(seg[: max(1, int((w["s"] - prev_end) * 200))]))
+                    rise = np.nonzero(seg[m:] > seg[m] + 15)[0]
+                    if len(rise):
+                        deltas.append((L["id"], w["text"], (k0 + m + rise[0]) / 200 - w["s"]))
             prev_end = w["e"]
     dd = np.array([x[2] for x in deltas])
     s_ok = np.percentile(np.abs(dd), 90) <= 0.08

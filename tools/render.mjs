@@ -75,7 +75,9 @@ async function main() {
         const out = [];
         for (const q of sel) for (const el of document.querySelectorAll(q)) {
           if (eff(el) < 0.05) continue;
-          const r = el.getBoundingClientRect();
+          // text elements: measure the glyphs, not the (wider) block box
+          let r = el.getBoundingClientRect();
+          if (['#end .lbl', '#outro .name', '#outro .sub', '#topbar .l', '#topbar .r', '#watermark', '#qmark'].includes(q)) { const rg = document.createRange(); rg.selectNodeContents(el); r = rg.getBoundingClientRect(); }
           if (r.width < 1) continue;
           if (r.left < 59 || r.right > 961 || r.top < 219 || r.bottom > 1501) out.push(`${q} "${(el.textContent || '').trim().slice(0, 24)}" [${r.left.toFixed(0)},${r.top.toFixed(0)},${r.right.toFixed(0)},${r.bottom.toFixed(0)}]`);
         }
@@ -110,7 +112,7 @@ async function main() {
   } else {
     let t0 = 0, t1 = info.total, out = path.join(ROOT, 'build/video.mp4');
     if (flag('--preview')) { t0 = 0; t1 = 6; out = path.join(ROOT, 'build/preview_silent.mp4'); }
-    if (opt('--range')) { [t0, t1] = opt('--range').split(',').map(Number); out = path.join(ROOT, 'build/range.mp4'); }
+    if (opt('--range')) { [t0, t1] = opt('--range').split(',').map(Number); out = path.join(ROOT, opt('--out') || 'build/range.mp4'); }
     const n0 = Math.round(t0 * FPS), n1 = Math.round(t1 * FPS);
     const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS), out], { stdio: ['pipe', 'inherit', 'inherit'] });
     const started = Date.now();
