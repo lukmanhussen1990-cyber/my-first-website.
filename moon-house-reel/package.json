@@ -1,0 +1,13 @@
+{
+  "name": "moon-house-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "John digs a house into the Moon: a code-rendered 3D vertical reel (three.js, rendered frame by frame).",
+  "scripts": {
+    "render": "node render/render.js --out build/frames --frames 0:1650 --workers 2 --resume",
+    "stills": "node render/render.js --scale 0.5 --out build/qa --stills 3,9,17,25,34,42,52"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  }
+}

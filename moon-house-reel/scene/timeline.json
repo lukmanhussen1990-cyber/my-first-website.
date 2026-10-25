@@ -1,0 +1,21 @@
+{
+  "fps": 30,
+  "duration": 55.0,
+  "width": 1080,
+  "height": 1920,
+  "scenes": [
+    {"id": 1, "start": 0.0,  "end": 7.2,  "vo": 0.35,  "cue": 4.1,  "note": "John lands, plants the flag, digs a tiny hole. 'Sort of.' = cue"},
+    {"id": 2, "start": 7.2,  "end": 15.0, "vo": 7.45,  "cue": 11.3, "note": "dust flies too far; cue = digging machine snaps together"},
+    {"id": 3, "start": 15.0, "end": 22.8, "vo": 15.25, "cue": 19.1, "note": "sticky sharp dust; cue = seals + door with dust brush"},
+    {"id": 4, "start": 22.8, "end": 30.8, "vo": 23.05, "cue": 26.7, "note": "hot/cold surface; cue = dig deeper, room moves down"},
+    {"id": 5, "start": 30.8, "end": 37.4, "vo": 31.05, "cue": 33.1, "note": "no air; cue = airlock + oxygen tanks"},
+    {"id": 6, "start": 37.4, "end": 45.2, "vo": 37.65, "cue": 41.0, "note": "space rocks; cue = thick dust layer over the roof"},
+    {"id": 7, "start": 45.2, "end": 55.0, "vo": 45.5,  "cue": null, "note": "finished house, phone gag"}
+  ],
+  "events": {
+    "phone_out": 49.4,
+    "no_signal_pop": 50.35,
+    "music_stop": 50.35,
+    "look_at_camera": [51.0, 52.9]
+  }
+}
