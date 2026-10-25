@@ -5,18 +5,18 @@
 - duration 74.19 s (target 65–80) → PASS
 
 ## Loudness
-- integrated -14.1 LUFS (target −14), true peak -0.8 dBTP (limit −1) → FAIL
+- integrated -14.2 LUFS (target −14), true peak -2.1 dBTP (limit −1) → PASS
 
 ## Contact sheet
 - `out/qc_contact.jpg`: one frame every 2 s, reviewed by eye (faces vs text, safe zone, floating feet).
 
 ## Blank frames
-- 2222 frames scanned; flat/black frames: 0 → PASS
-- largest frame-to-frame mean-luma jump: 68.5/255 at 13.17 s (cuts are dissolves; flashes are lightning)
+- 2224 frames scanned; flat/black frames: 0 → PASS
+- largest frame-to-frame mean-luma jump: 68.3/255 at 13.03 s (cuts are dissolves; flashes are lightning)
 
 ## Caption sync (caption reveal = word start from TTS durations; measured against acoustic onsets)
-- 10 pause-preceded words checked; median offset -158 ms, 90th pct |offset| 211 ms, max 227 ms → CHECK
-- worst: S17:or -227ms, S2:right? -209ms, S16:and -203ms, S14:Jesus -162ms
+- 21 pause-preceded words checked; median offset +2 ms, 90th pct |offset| 60 ms, max 74 ms → PASS (±80 ms)
+- worst: S3:already -74ms, S10:love, -62ms, S11:PRISON. -60ms, S13:all -55ms
 
 ## Scripture (KJV, word for word)
 - JEREMIAH 29:13 · KJV: “And ye shall seek me, and find me, when ye shall search for me with all your heart.” → MATCH
@@ -25,4 +25,4 @@
 ## Safe zone (x 60–960, y 220–1500)
 - 297 frames × all visible text elements checked; violations: 0 → PASS
 
-**Overall: NEEDS ATTENTION**
+**Overall: PASS**

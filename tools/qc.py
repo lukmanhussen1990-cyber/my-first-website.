@@ -73,18 +73,20 @@ def main():
     hop = sr // 200
     e = np.array([np.sqrt(np.mean(vo[i * hop:(i + 1) * hop] ** 2)) for i in range(len(vo) // hop)])
     edb = 20 * np.log10(e + 1e-6)
+    ref = np.percentile(edb[edb > -60], 95)
     deltas = []
     for L in T["lines"]:
         prev_end = None
         for w in L["words"]:
             # only words that start after a pause have a measurable onset
-            if prev_end is not None and w["s"] - prev_end > 0.12:
+            if prev_end is not None and w["s"] - prev_end > 0.1:
                 # quietest point in the pause, then the first frame 15 dB above it
                 k0, k1 = int((prev_end + 0.02) * 200), int((w["s"] + 0.12) * 200)
                 seg = edb[k0:k1]
                 if len(seg) > 4:
+                    # audible onset: first frame within 34 dB of the narration's speech level
                     m = int(np.argmin(seg[: max(1, int((w["s"] - prev_end) * 200))]))
-                    rise = np.nonzero(seg[m:] > seg[m] + 15)[0]
+                    rise = np.nonzero(seg[m:] > ref - 34)[0]
                     if len(rise):
                         deltas.append((L["id"], w["text"], (k0 + m + rise[0]) / 200 - w["s"]))
             prev_end = w["e"]
