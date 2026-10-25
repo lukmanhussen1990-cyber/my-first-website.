@@ -107,28 +107,62 @@ export function buildTimeline(ctx) {
   };
 
   // ---- S1: the hook — Noah on a ladder, crowd laughing below ----
+  // Look: bright low sun from behind-left (long soft shadows falling toward camera, warm rim on the
+  // frames), a warm front fill so the hull reads sunlit, airy cream haze, dust motes and god-rays.
+  const S1M = (() => {
+    const m = mood('build'); const C3 = (h) => new THREE.Color(h);
+    return {
+      ...m, sunDir: [-0.62, 0.42, -0.36], sun: 3.4, sunColor: C3('#ffeccc'), hemi: 1.45, hemiSky: C3('#fff1d8'), hemiGround: C3('#a68f5c'),
+      skyTop: C3('#a3c4d2'), skyHorizon: C3('#f8e9c2'), skyBottom: C3('#d2b77e'), sunGlow: C3('#fff0c8'),
+      fog: C3('#efdeb2'), fogNear: 24, fogFar: 230, char: [1.03, 1.0, 0.95],
+      post: { ...m.post, hazeColor: C3('#f2e2b6'), haze: 0.36, tint: [1.02, 1.0, 0.94], lift: [0.012, 0.008, 0.0], sat: 1.06, contrast: 1.05, exposure: 1.12, bloom: 0.5, bloomThreshold: 0.86, vignette: 0.4, grain: 0.03 },
+    };
+  })();
+  const S1pose = {
+    pointUp(t, s) { // laughing, arm thrown up at Noah
+      const P = Poses.laughPoint(t, s, 1); const b = Math.abs(Math.sin(TAU * (t + hash01(s, 3) * 3) * 2.6));
+      P.aF = [2.2 + 0.07 * Math.sin(TAU * t * 1.4 + s) + 0.05 * b, 0.06]; P.headTilt = 0.3 + 0.07 * b; P.lookY = 0.9; P.lean = -0.12 - 0.05 * b;
+      return P;
+    },
+    belly(t, s) { // head thrown back, holding the belly
+      const P = Poses.laughCup(t, s, 1); const b = Math.abs(Math.sin(TAU * (t + hash01(s, 4) * 3) * 2.3));
+      P.aF = [0.42, 1.95]; P.aB = [0.32, 1.85]; P.headTilt = 0.4 + 0.08 * b; P.lean = -0.15 - 0.04 * b; P.eye = 0.3; P.mo = 0.6 + 0.4 * b;
+      return P;
+    },
+    shout(t, s) { const P = Poses.laughCup(t, s, 1); P.headTilt = 0.3 + P.headTilt * 0.4; P.lookY = 0.8; return P; },
+    bend: (t, s) => Poses.laughBend(t, s),
+    smirk(t, s) { const P = Poses.smirk(t, s); P.headTilt = 0.22; P.lookY = 0.7; return P; },
+  };
+  const S1C0 = [[6.6, 4.9, 21.4], [-4.7, 2.95, 4.8], 31], S1C1 = [[5.2, 4.55, 19.4], [-4.8, 3.05, 4.8], 29.5];
+  const S1crowd = [ // [crowd idx, pose, x, z] in world space (camera-side arc around the ladder foot)
+    [0, 'pointUp', -7.4, 10.4], [1, 'belly', -5.9, 11.8], [2, 'pointUp', -3.6, 10.0], [3, 'shout', -2.3, 11.4],
+    [4, 'bend', -8.6, 12.6], [5, 'pointUp', -1.4, 12.6], [6, 'smirk', -4.6, 13.4], [7, 'pointUp', -0.6, 9.4],
+  ];
   const S1 = shot({
     id: 'S1', t0: 0, t1: cut('S2'), trans: { type: 'cut' },
     apply(lt, dur, t) {
       reset(); plainOn(t);
+      const DB = (typeof window !== 'undefined' && window.__s1) || {};
       A.root.visible = true; A.set({ progress: 0.56, pitch: 0, door: 1, glow: 0, ramp: 0, scaffold: false });
       const u = lt / dur;
-      camK(u, [[0, [5.8, 3.7, 19.8], [-4.7, 2.9, 4.6], 32], [1, [4.8, 3.45, 18.1], [-4.8, 3.0, 4.6], 30]]);
+      const c0 = DB.c0 || S1C0, c1 = DB.c1 || S1C1;
+      camK(u, [[0, ...c0], [1, ...c1]]);
       const nf = ladderNoah(t, 4);
       put(P.noah, nf.x, nf.z, Poses.climb(t, 11), -1, nf.y); noahSet(0); P.noah.setProp('hammer');
       faceTo(P.noah, V(nf.x, nf.y + 1.5, 2.0)); P.noah.billboard(camera);
       P.noah.blob.visible = false;
-      const spots = [[11.6, -0.78], [12.4, -0.42], [11.2, -0.08], [12.8, 0.22], [11.5, 0.55], [13.4, 0.84], [13.6, -0.62], [14.2, 0.42]];
-      const crowd = P.crowd.slice(0, 8);
-      crowd.forEach((p, i) => {
-        const v = inFrame(spots[i][0], spots[i][1]);
-        const f = mockPoses[i % mockPoses.length];
-        const pose = f === Poses.laughPoint || f === Poses.laughCup ? f(t, p.seed, 1) : f(t, p.seed);
-        putAt(p, v, pose); faceTo(p, P.noah.root.position); p.billboard(camera);
+      (DB.crowd || S1crowd).forEach(([ci, pose, x, z]) => {
+        const p = P.crowd[ci];
+        put(p, x, z, S1pose[pose](t, p.seed), 1); faceTo(p, P.noah.root.position); p.billboard(camera);
       });
       fx.dust.group.visible = true; fx.dust.set(t, V(nf.x, nf.y + 1.5, nf.z - 0.6), S1.strikes);
-      shadowBox(V(-3, 0, 7), 24);
-      return setMood('build', { focus: 15, focusRange: 6, dof: 0.55, tilt: 0.5, tiltTop: 0.72 });
+      // warm front fill (sun-side key stays behind-left for the long shadows)
+      const fill = props.hookFill; fill.visible = true; fill.intensity = DB.fill ?? 1.15;
+      fill.target.position.set(-3, 0, 6); fill.position.set(-3, 0, 6).add(V(...(DB.fillDir || [-0.55, 0.5, 0.75])).normalize().multiplyScalar(60));
+      fill.target.updateMatrixWorld();
+      shadowBox(V(-3, 0, 8), 22);
+      const M = DB.mood ? { ...S1M, ...DB.mood } : S1M;
+      return setMood(M, { focus: DB.focus ?? 17, focusRange: 7, dof: 0.5, tilt: 0.55, tiltTop: 0.74, tiltBottom: 0.12, ...(DB.post || {}) });
     },
   });
   S1.strikes = []; for (let n = 0; n < 12; n++) { const s = (n + 0.8) * 0.62; if (s < S1.t1) S1.strikes.push(s); }

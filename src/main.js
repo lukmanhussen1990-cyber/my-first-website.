@@ -155,6 +155,9 @@ const props = {};
   g.userData = { stripe, x0, len, z }; props.trestle = g;
 }
 { const c = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.9), matte('#7a5232')); c.castShadow = true; scene.add(c); props.crate = c; }
+{ // S1 hook: warm front fill light (no shadows); hidden (so not even counted) unless S1 shows it
+  const fill = new THREE.DirectionalLight('#ffe2b6', 1.0); scene.add(fill, fill.target); props.hookFill = fill;
+}
 Object.values(props).forEach((p) => { p.visible = false; });
 
 const crownPalette = ['#5d6e2c', '#67772f', '#55652a', '#718034'];
