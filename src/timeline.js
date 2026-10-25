@@ -133,10 +133,11 @@ export function buildTimeline(ctx) {
     bend: (t, s) => Poses.laughBend(t, s),
     smirk(t, s) { const P = Poses.smirk(t, s); P.headTilt = 0.22; P.lookY = 0.7; return P; },
   };
-  const S1C0 = [[6.6, 4.9, 21.4], [-4.7, 2.95, 4.8], 31], S1C1 = [[5.2, 4.55, 19.4], [-4.8, 3.05, 4.8], 29.5];
-  const S1crowd = [ // [crowd idx, pose, x, z] in world space (camera-side arc around the ladder foot)
-    [0, 'pointUp', -7.4, 10.4], [1, 'belly', -5.9, 11.8], [2, 'pointUp', -3.6, 10.0], [3, 'shout', -2.3, 11.4],
-    [4, 'bend', -8.6, 12.6], [5, 'pointUp', -1.4, 12.6], [6, 'smirk', -4.6, 13.4], [7, 'pointUp', -0.6, 9.4],
+  const S1C0 = [[7.0, 6.4, 22.4], [-4.6, 2.6, 5.2], 32], S1C1 = [[5.8, 5.95, 20.7], [-4.7, 2.75, 5.2], 30.2];
+  const S1crowd = [ // [crowd idx, pose, x, z, (copy seed, lag)] — world space, three staggered rows in front of the hull
+    [0, 'pointUp', -5.64, 6.72], [1, 'belly', -3.69, 4.95], [19, 'shout', -2.46, 5.01],
+    [9, 'bend', -4.34, 9.28], [13, 'pointUp', -3.23, 8.36], [11, 'pointUp', -2.36, 8.42, 213, 0.14], [2, 'pointUp', -1.74, 7.19],
+    [6, 'belly', -2.38, 10.42], [8, 'pointUp', -0.32, 8.76],
   ];
   const S1 = shot({
     id: 'S1', t0: 0, t1: cut('S2'), trans: { type: 'cut' },
@@ -151,9 +152,9 @@ export function buildTimeline(ctx) {
       put(P.noah, nf.x, nf.z, Poses.climb(t, 11), -1, nf.y); noahSet(0); P.noah.setProp('hammer');
       faceTo(P.noah, V(nf.x, nf.y + 1.5, 2.0)); P.noah.billboard(camera);
       P.noah.blob.visible = false;
-      (DB.crowd || S1crowd).forEach(([ci, pose, x, z]) => {
+      (DB.crowd || S1crowd).forEach(([ci, pose, x, z, cs, lag = 0]) => {
         const p = P.crowd[ci];
-        put(p, x, z, S1pose[pose](t, p.seed), 1); faceTo(p, P.noah.root.position); p.billboard(camera);
+        put(p, x, z, S1pose[pose](t - lag, cs ?? p.seed), 1); faceTo(p, P.noah.root.position); p.billboard(camera);
       });
       fx.dust.group.visible = true; fx.dust.set(t, V(nf.x, nf.y + 1.5, nf.z - 0.6), S1.strikes);
       // warm front fill (sun-side key stays behind-left for the long shadows)
