@@ -60,7 +60,7 @@ const A = {
   refs: (n) =>
     `ATTACHED: ${n} style reference screenshot${n > 1 ? 's' : ''}. Copy only their drawing style (outline, flat colors, minimal faces, proportions, warm light), never their people, animals, trees or scene.`,
   sceneRefs: (n) =>
-    `ATTACHED: ${n} style reference screenshot${n > 1 ? 's' : ''}. Copy only their warm light, haze, low-poly look and level of detail, never their scene.`,
+    `ATTACHED: ${n} style reference screenshot${n > 1 ? 's' : ''}. Copy only ${n > 1 ? 'their' : 'its'} warm light, haze, low-poly look and level of detail, never ${n > 1 ? 'their' : 'its'} scene.`,
   own: (name, bits) =>
     `ATTACHED: our approved ${name} character sheet. Keep his ${bits}, colors and proportions exactly the same.`,
   anchor: (name) =>
@@ -69,7 +69,8 @@ const A = {
   layout: (name) =>
     `Also attached: the ELIJAH parts sheet as a LAYOUT EXAMPLE only. Use the same kind of pieces, scale and spacing, but draw ${name}, not Elijah.`,
   oneRef: 'Also attached: 1 style reference screenshot. Copy only its drawing style, never its people or scene.',
-  scene: (what) => `ATTACHED: ${what} of this same scene. Match its light, colors, haze and level of detail exactly.`,
+  scene: (what, plural = false) =>
+    `ATTACHED: ${what} of this same scene. Match ${plural ? 'their' : 'its'} light, colors, haze and level of detail exactly.`,
 };
 
 const TURN = (name, extra = '') =>
@@ -162,7 +163,7 @@ const assets = [
       'IMAGE: the FAR layer of the golden-hour hill scene: a long row of distant, rolling low-poly hills across the lower half of the image, softly faceted, in hazy peach, dusty lilac and pale ochre (low contrast, as if seen through warm haze), lit from the left by a low golden sun. The hills run across the full width with no gaps, and the left and right ends are at a similar height.'], avoid: 'land' },
   { file: 'bg_enoch_mid.png', size: 'L', bg: 'land', prio: 'MUST', attach: ['bg_enoch_sky.png', 'bg_enoch_far.png', 'style_ref_2.png'],
     use: 'S2 the path Enoch walks on',
-    lines: [`${A.scene('the approved sky and far hills')} ${A.oneRef}`,
+    lines: [`${A.scene('the approved sky and far hills', true)} ${A.oneRef}`,
       'IMAGE: the MIDDLE layer of the golden-hour hill scene: a gentle low-poly hill slope covered in dry golden grass, with a smooth, pale sandy footpath crossing the lower third of the image almost horizontally from left to right (a flat, clear stage where a person will walk in side view). Three or four low-poly olive trees and a few faceted rocks near the left and right edges, warm golden-hour light from the left with long soft shadows to the right. Keep the path clear and empty.'], avoid: 'stage' },
   { file: 'bg_jordan_sky.png', size: 'P', bg: 'full', prio: 'MUST', attach: ['style_ref_2.png'],
     use: 'S3–S5 sky, S7 (re-graded)',
@@ -174,7 +175,7 @@ const assets = [
       'IMAGE: the FAR layer of the Jordan valley: long, flat-topped low-poly desert mountain ridges across the valley, filling the lower 45% of the image across the full width, in hazy dusty violet, soft blue-grey and pale ochre (low contrast, with atmospheric haze), lit from the upper left. The left and right ends are at a similar height.'], avoid: 'land' },
   { file: 'bg_jordan_mid.png', size: 'L', bg: 'land', prio: 'MUST', attach: ['bg_jordan_sky.png', 'bg_jordan_far.png', 'style_ref_2.png'],
     use: 'S3 walk, S4 chariot, S6 whirlwind ground, S7 Elisha alone',
-    lines: [`${A.scene('the approved sky and far mountains')} ${A.oneRef}`,
+    lines: [`${A.scene('the approved sky and far mountains', true)} ${A.oneRef}`,
       'IMAGE: the MIDDLE layer of the Jordan valley: the Jordan river (a calm dusty-blue river, #6F8FA0, with a few pale ripple lines) winding horizontally across the middle of the image, with sandy and olive banks and clumps of low-poly palm trees, tamarisk bushes and green reeds along the far bank. On the near side, a flat, open, sandy walking path runs along the river through the lower third (a clear stage where two people will walk in side view). Low-poly faceted terrain, warm afternoon light from the upper left, soft shadows to the lower right. Keep the path clear and empty.'], avoid: 'stage' },
   { file: 'bg_storm_sky.png', size: 'P', bg: 'full', prio: 'MUST', attach: ['style_ref_2.png'],
     use: 'S1 hook, S6 whirlwind sky, S11 loop',
