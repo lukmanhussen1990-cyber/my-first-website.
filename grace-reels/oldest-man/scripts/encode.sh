@@ -11,10 +11,10 @@ TMP=build/_encode_frames; rm -rf "$TMP"; mkdir -p "$TMP"
 for f in "$SRC"/element-*.jpeg; do ln -s "$(realpath "$f")" "$TMP/$(basename "$f")"; done
 for seg in "$@"; do
   IFS=: read -r dir a b <<< "$seg"
-  for i in $(seq "$a" "$b"); do ln -sf "$(realpath "build/$dir/element-$i.jpeg")" "$TMP/element-$i.jpeg"; done
+  for i in $(seq "$a" "$b"); do n=$(printf %04d "$i"); ln -sf "$(realpath "build/$dir/element-$n.jpeg")" "$TMP/element-$n.jpeg"; done
 done
 N=$(ls "$TMP" | wc -l); DUR=$(python3 -c "print($N / 30)")
-ffmpeg -v error -y -framerate 30 -start_number 0 -i "$TMP/element-%d.jpeg" -i audio/final_mix.wav \
+ffmpeg -v error -y -framerate 30 -start_number 0 -i "$TMP/element-%04d.jpeg" -i audio/final_mix.wav \
   -vf "scale=in_range=full:out_range=tv:out_color_matrix=bt709,format=yuv420p" -map 0:v -map 1:a \
   -c:v libx264 -preset slow -crf 19 -maxrate 9M -bufsize 18M -g 60 -color_range tv -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
   -af apad -c:a aac -b:a 192k -movflags +faststart -t "$DUR" "$OUT"
