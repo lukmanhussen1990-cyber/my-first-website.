@@ -21,7 +21,7 @@ const ground = () => jordanHeight(EX, EZ);
 const POSE_PX = STANDING_PX['elisha/poses'] / RIGS.elisha.heightM;
 const RIG_PX = () => rigInfo('elisha').heightPx / RIGS.elisha.heightM;
 const CLOAK_PX = STANDING_PX['elijah/side'] / RIGS.elijah.heightM;
-const LAND: Vec3 = [EX + 0.62, 0, EZ + 0.25];
+const LAND: Vec3 = [EX + 0.8, 0, EZ + 0.25];
 
 const T_CRY = B.myFather - 0.5;
 const T_LOW = B.sawNoMore + 0.15;
@@ -34,8 +34,9 @@ export const cloakFall = (t: number) => {
 	const t1 = B.cloakLand;
 	const f = seg(t, t0, t1);
 	const y = lerp(9.5, 0.2, 1 - Math.pow(1 - f, 1.35));
-	const swing = Math.sin((t - t0) * 2.4) * (1 - f) * 1.4;
-	const x = LAND[0] + swing - 0.9 * (1 - f);
+	// swing in front of and beside Elisha, never across his face (he stands at x = 0)
+	const swing = Math.sin((t - t0) * 2.4) * (1 - f) * 1.1;
+	const x = LAND[0] + 0.15 * (1 - f) + swing * (0.55 + 0.45 * (1 - f));
 	const rot = -0.55 * Math.cos((t - t0) * 2.4) * (1 - f);
 	const landed = seg(t, t1 - 0.12, t1 + 0.25, easeOut);
 	const lift = seg(t, T_PICK + 0.45, T_PICK + 1.1, easeInOut);

@@ -273,9 +273,18 @@ export const River: React.FC<{curve: THREE.Curve<THREE.Vector3>; width: number; 
 		() =>
 			new THREE.ShaderMaterial({
 				uniforms: {...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), uC: {value: new THREE.Color()}, uL: {value: new THREE.Color()}, uT: {value: 0}, uLen: {value: 1}},
-				vertexShader: `varying vec2 vUv; #include <fog_pars_vertex>
-					void main(){ vUv = uv; vec4 mvPosition = modelViewMatrix * vec4(position,1.); gl_Position = projectionMatrix * mvPosition; #include <fog_vertex> }`.replace(/#include/g, '\n#include'),
-				fragmentShader: `${NOISE} uniform vec3 uC, uL; uniform float uT, uLen; varying vec2 vUv; #include <fog_pars_fragment>
+				// Preprocessor lines (#include, which expand to #ifdef ... #endif) must sit on lines of their own.
+				vertexShader: `varying vec2 vUv;
+					#include <fog_pars_vertex>
+					void main(){
+						vUv = uv;
+						vec4 mvPosition = modelViewMatrix * vec4(position,1.);
+						gl_Position = projectionMatrix * mvPosition;
+						#include <fog_vertex>
+					}`,
+				fragmentShader: `${NOISE}
+					uniform vec3 uC, uL; uniform float uT, uLen; varying vec2 vUv;
+					#include <fog_pars_fragment>
 					void main(){
 						float across = abs(vUv.y - 0.5) * 2.0;
 						vec3 col = mix(uC, uC * 0.82, smoothstep(0.55, 1.0, across));
@@ -286,7 +295,7 @@ export const River: React.FC<{curve: THREE.Curve<THREE.Vector3>; width: number; 
 						col = mix(col, uL, dash * inLane * 0.7 * (1.0 - across * 0.6));
 						gl_FragColor = vec4(col, 1.);
 						#include <fog_fragment>
-					}`.replace(/#include/g, '\n#include'),
+					}`,
 				fog: true,
 			}),
 		[],
