@@ -38,11 +38,14 @@ export const Header = ({ t }) => {
 
 // "GOD HATES 7 THINGS" — huge for the first 1.8 s, punched by the impact, then flies into the caption spot
 export const HookTitle = ({ t, frame }) => {
+  // the last frames bring the title back over the hanging stone, so the loop to frame 0 is seamless
+  const back = clamp((t - (plan.dur - 0.5)) / 0.42);
+  if (back > 0) t = 0;
   const out = ease.inOut((t - E.hookOut) / 0.35);
   if (t > E.hookOut + 0.6) return null;
   const s = t - E.impact; const [sx, sy] = s > 0 && s < 0.3 ? shake(frame, 3, 14 * (1 - s / 0.3) ** 2) : [0, 0];
   const punch = 1 + pop(t, E.impact, 0.07, 22, 9);
-  const y = lerp(1180, 420, out), sc = lerp(1, 0.42, out) * punch, o = 1 - clamp((t - E.hookOut - 0.3) / 0.1);
+  const y = lerp(1180, 420, out), sc = lerp(1, 0.42, out) * punch, o = (1 - clamp((t - E.hookOut - 0.3) / 0.1)) * (back > 0 ? back : 1);
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, top: y, transform: `translate(${sx}px, ${sy - 50}%) scale(${sc})`, transformOrigin: '50% 50%', opacity: o, textAlign: 'center' }}>
       <div style={{ font: `800 142px/0.98 ${SANS}`, letterSpacing: '0.01em', color: '#fff8ee', textShadow: '0 10px 40px rgba(0,0,0,0.55), 0 3px 8px rgba(0,0,0,0.6)' }}>GOD HATES</div>

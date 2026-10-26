@@ -213,7 +213,7 @@ export function cameraShot(plan, shot, t) {
     }
     case 'S13': case 'S14a': { // low angle so the cross stands against the sky; a gentle crane up
       const tt = t - plan.shots.find((s) => s.id === 'S13').t0;
-      const target = at('hill', [0, lerp(5.6, 6.4, smooth(invLerp(0, 12, tt))), 0]);
+      const target = at('hill', [0, lerp(4.5, 5.1, smooth(invLerp(0, 12, tt))), 0]);
       pos = sph(target, lerp(0.16, -0.1, smooth(invLerp(0, 14, tt))), lerp(-0.035, 0.03, smooth(invLerp(0, 12, tt))), lerp(25, 20, smooth(invLerp(0, 14, tt)))); look = target; fov = 24; focus = 22;
       break;
     }

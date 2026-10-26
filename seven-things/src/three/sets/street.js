@@ -36,13 +36,13 @@ export function buildStreet(ctx) {
   const bk = makeBasket(1.1, ['#d98a2c', '#7a9a3a'], 3); bk.position.set(-0.4, 0, WALL_Z + 0.45); g.add(bk);
 
   // ---- people ----
-  const rich = person(g, { seed: 31, height: 1.84, build: 1.14, skin: SKIN[4], hair: 'turban', wrap: '#efe0bc', beard: 'short', beardColor: HAIR.black, outfit: 'robe', cloth: CLOTH.purple, trim: CLOTH.gold, sash: CLOTH.gold, belt: CLOTH.gold, sleeve: '#4a2058', noShadow: true });
+  const rich = person(g, { seed: 31, height: 1.84, build: 1.14, skin: SKIN[4], hair: 'turban', wrap: '#efe0bc', beard: 'short', beardColor: HAIR.black, outfit: 'robe', cloth: CLOTH.purple, trim: CLOTH.gold, belt: CLOTH.gold, sleeve: '#4a2058', noShadow: true });
   const beggar = person(g, { seed: 32, height: 1.68, skin: SKIN[2], hair: 'wrap', wrap: '#8f7d62', beard: 'long', beardColor: HAIR.grey, age: 'old', outfit: 'robe', cloth: CLOTH.rag, belt: null, prop: 'bowl', noShadow: true });
   const walkers = [
     person(g, { seed: 33, height: 1.7, skin: SKIN[3], hair: 'veil', wrap: '#b06a5e', outfit: 'robe', cloth: CLOTH.olive }),
     person(g, { seed: 34, height: 1.76, skin: SKIN[5], hair: 'short', beard: 'short', outfit: 'tunic', cloth: CLOTH.sky, legs: '#8a6a4a' }),
   ];
-  const richSh = puppet(g, { seed: 31, height: 1.84, build: 1.14, hair: 'turban', beard: 'short', outfit: 'robe', sash: '#000', belt: '#000' }, '#2a1432', 0.55);
+  const richSh = puppet(g, { seed: 31, height: 1.84, build: 1.14, hair: 'turban', beard: 'short', outfit: 'robe', belt: '#000' }, '#2a1432', 0.55);
   const begSh = puppet(g, { seed: 32, height: 1.68, hair: 'wrap', beard: 'long', outfit: 'robe', prop: 'bowl' }, '#2a1432', 0.5);
   const persons = [rich, beggar, ...walkers];
 

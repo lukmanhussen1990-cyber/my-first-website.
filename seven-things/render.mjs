@@ -28,6 +28,11 @@ if (mode === 'stills') {
   files.forEach((f, i) => fs.renameSync(path.join(tmp, f), path.join(outDir, `f${String(frames[i]).padStart(4, '0')}.jpg`)));
   fs.rmSync(tmp, { recursive: true, force: true });
   console.log(`rendered ${frames.length} stills in ${((Date.now() - t1) / 1000).toFixed(1)}s -> ${outDir}`);
+} else if (mode === 'cast') {
+  const out = path.resolve(process.argv[3] || 'out/characters.png');
+  const composition = await selectComposition({ serveUrl, id: 'CastSheet', browserExecutable, chromiumOptions });
+  await renderStill({ composition, serveUrl, output: out, imageFormat: 'png', browserExecutable, chromiumOptions, timeoutInMilliseconds });
+  console.log('cast sheet ->', out);
 } else if (mode === 'cover') {
   // node render.mjs cover [frame] [out.jpg]
   const inputProps = { frame: Number(process.argv[3] || 150) };

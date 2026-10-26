@@ -19,7 +19,7 @@ export const RomansCard = ({ t }) => {
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 55%, rgba(10,6,3,0.25), rgba(10,6,3,0.6))', opacity: o }} />
-      <div style={{ position: 'absolute', left: 80, width: 920, top: 760, opacity: o, transform: `translateY(${(1 - inK) * 50 - outK * 30 + 7 * Math.sin(t * 1.3)}px) rotate(${0.5 * Math.sin(t * 0.7)}deg) scale(${0.94 + 0.06 * inK})` }}>
+      <div style={{ position: 'absolute', left: 80, width: 920, top: 990, opacity: o, transform: `translateY(${(1 - inK) * 50 - outK * 30 + 7 * Math.sin(t * 1.3)}px) rotate(${0.5 * Math.sin(t * 0.7)}deg) scale(${0.94 + 0.06 * inK})` }}>
         <div style={{ padding: '46px 56px 52px', borderRadius: 20, background: 'linear-gradient(170deg, #fbf4e4 0%, #f3e6c8 60%, #ead8b2 100%)', boxShadow: '0 40px 90px rgba(0,0,0,0.5), 0 0 0 2px rgba(190,150,80,0.55), inset 0 0 60px rgba(180,130,60,0.18)', textAlign: 'center' }}>
           <div style={{ font: `700 25px ${SANS}`, letterSpacing: '0.34em', color: C.goldInk }}>ROMANS 5:8 · KJV</div>
           <div style={{ height: 2, width: 220, margin: '18px auto 26px', background: 'linear-gradient(90deg, rgba(184,128,31,0), #c9963e, rgba(184,128,31,0))' }} />
