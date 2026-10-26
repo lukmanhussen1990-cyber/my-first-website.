@@ -23,8 +23,8 @@ const Sheet = () => {
   const S = useMemo(() => {
     const scene = new THREE.Scene(); scene.background = new THREE.Color('#d9c49c');
     const cam = new THREE.PerspectiveCamera(20, 1920 / 1440, 0.1, 200);
-    cam.position.set(-2.6, 1.0, 21); cam.lookAt(-2.6, 1.0, 0);
-    const cam2 = new THREE.PerspectiveCamera(20, 0.75, 0.1, 200); cam2.position.set(-8.05, 1.62, 1.6); cam2.lookAt(-8.05, 1.62, 0);
+    cam.position.set(-4.6, 1.0, 21); cam.lookAt(-4.6, 1.0, 0);
+    const cam2 = new THREE.PerspectiveCamera(20, 0.75, 0.1, 200); cam2.position.set(-7.95, 1.5, 2.4); cam2.lookAt(-7.95, 1.5, 0);
     const people = LOOKS.map(([name, o, pose], i) => {
       const p = new Person(o); p.root.position.set(-8.2 + i * 1.15, 0, 0); scene.add(p.root); p.poseFn = pose; return p;
     });
