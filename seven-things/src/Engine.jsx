@@ -8,13 +8,13 @@ import { fontsReady } from './lib/fonts.js';
 import { World } from './three/engine.js';
 import { plan } from './lib/planInstance.js';
 
-export const Engine = ({ frame }) => {
+export const Engine = ({ frame, cam = null }) => {
   const { gl, advance } = useThree();
   const fr = useRef(frame);
   fr.current = frame;
   const world = useMemo(() => new World(gl, plan), [gl]);
   useFrame(() => {
-    world.render(fr.current);
+    world.render(fr.current, cam);
   }, 1);
   // canvas text in the 3D world needs the web fonts: once they are in, draw the frame again
   useEffect(() => {

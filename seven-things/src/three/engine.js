@@ -90,18 +90,18 @@ export class World {
   }
 
   // render one shot (with optional sub-frame motion blur) through the post chain into `target`
-  renderShot(shot, t, target, frame) {
+  renderShot(shot, t, target, frame, camOverride = null) {
     const set = this.sets[SHOT_SET[shot.id]];
     for (const s of Object.values(this.sets)) s.group.visible = s === set;
     if (!set) { this.gl.setRenderTarget(target); this.gl.clear(); return; }
-    const c0 = cameraShot(this.plan, shot, t);
+    const c0 = camOverride ? { ...cameraShot(this.plan, shot, t), ...camOverride, mblur: 0 } : cameraShot(this.plan, shot, t);
     const n = c0.mblur > 1 ? c0.mblur : 1;
     const shutter = 0.5 / 30;                       // 180-degree shutter
     const offs = n === 1 ? [0] : Array.from({ length: n - 1 }, (_, i) => (i / (n - 2) - 0.5) * shutter).concat([0]);
     let M = null, c = c0;
     const cam = this.post.scene(this.scene, n, (i) => {
       const tt = t + offs[i];
-      c = i === n - 1 ? c0 : cameraShot(this.plan, shot, tt);
+      c = i === n - 1 || camOverride ? c0 : cameraShot(this.plan, shot, tt);
       this.setCamera(c);
       U.uTime.value = tt;
       M = resolve(set.mood(tt, shot, c));
@@ -113,8 +113,9 @@ export class World {
     this.post.compose(P, cam, target, frame);
   }
 
-  render(frame) {
+  render(frame, camOverride = null) {
     const t = frame / 30;
+    if (camOverride) { this.renderShot(layersAt(this.plan, t).shot, t, null, frame, camOverride); return null; }
     const L = layersAt(this.plan, t);
     const gl = this.gl;
     const A = L.a3d ? L.A : null, B = L.B && L.b3d ? L.B : null;

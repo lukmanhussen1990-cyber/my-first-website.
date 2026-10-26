@@ -6,6 +6,8 @@ import { ThreeCanvas } from '@remotion/three';
 import { Engine } from './Engine.jsx';
 import { fontsReady, SANS } from './lib/fonts.js';
 
+// a wider, lower camera than the reel so the whole cracked 7 sits under the title
+const COVER_CAM = { pos: [17.5, 7.4, 46.5], look: [0, 4.6, 0], fov: 24, focus: 50 };
 export const Cover = ({ frame = 150 }) => {
   const [h] = useState(() => delayRender('cover fonts', { timeoutInMilliseconds: 240000 }));
   useEffect(() => { fontsReady().then(() => continueRender(h)); }, [h]);
@@ -13,7 +15,7 @@ export const Cover = ({ frame = 150 }) => {
   return (
     <AbsoluteFill style={{ background: '#000' }}>
       <ThreeCanvas width={1080} height={1920} dpr={1} flat linear gl={{ antialias: false, preserveDrawingBuffer: true, depth: false, stencil: false }}>
-        <Engine frame={frame} />
+        <Engine frame={frame} cam={COVER_CAM} />
       </ThreeCanvas>
       <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(10,6,3,0.55) 0%, rgba(10,6,3,0) 34%, rgba(10,6,3,0) 66%, rgba(10,6,3,0.5) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, top: 330, textAlign: 'center' }}>
