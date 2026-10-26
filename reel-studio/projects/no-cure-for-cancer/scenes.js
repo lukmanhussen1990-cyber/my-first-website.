@@ -107,7 +107,7 @@ export default function build(R, { U, W, H }) {
     s.sfx(tMoon + 0.1, 'thud', 0.45);
     s.type('MOON LANDING · 1969  ✓', { at: tReach, x: 110, y: 1370, size: 30, spacing: 3, cps: 30, gain: 0.35, soundEvery: 2 });
     s.type('CANCER CURE  ·  ?', { at: tCure - 0.2, x: 110, y: 1418, size: 30, spacing: 3, cps: 30, color: COLORS.redInk, gain: 0.35, soundEvery: 2 });
-    s.stamp('CANCER CURE:\nNOT FOUND', { at: tNo - 0.05, x: 560, y: 1080, rot: -8, size: 92, scales: [0.8, 1] });
+    s.stamp('CANCER CURE:\nNOT FOUND', { at: tNo - 0.05, x: 560, y: 1080, rot: -8, size: 92, scales: [0.8, 1], gain: 0.6 });
     s.camera([[0, 1.0, 540, 960], [tBut, 1.04, 540, 960], [s.dur, 1.1, 560, 1020, ease.inOutQuad]]);
   });
 
@@ -144,6 +144,10 @@ export default function build(R, { U, W, H }) {
     s.odometer('9,700,000', { at: 0.1, x: 540 - 313, y: 830, rollAt: 0.35, rollDur: Math.max(1.2, tLakh + 0.35 - 0.35) });
     s.type('CANCER DEATHS, WORLD, 2022', { at: tLakh, x: 540, y: 1080, size: 30, spacing: 4, cps: 30, align: 'center', gain: 0.35 });
     s.type('SOURCE: IARC GLOBOCAN', { at: tLakh + 0.8, x: 540, y: 1124, size: 20, spacing: 3, cps: 40, align: 'center', gain: 0.25, soundEvery: 3 });
+    // a red pen line under the number on "die"
+    const tDie = s.w('मरते');
+    s.custom({ at: tDie, layer: 'ui', z: 44 }, (ctx, t) => strokePartial(ctx, wobblyPath([[240, 1000], [840, 994]], 6, 2, 9), prog(t, tDie, 0.35, ease.outQuad), 7, COLORS.redInk));
+    s.sfx(tDie, 'pen', 0.55);
     s.custom({ at: tWhy - 0.1, layer: 'ui', z: 45 }, (ctx, t) => {
       const p = ease.outBack(prog(t, tWhy - 0.1, 0.3));
       const q = inkText('?', FONTS.title, 300, COLORS.red);
@@ -420,7 +424,7 @@ export default function build(R, { U, W, H }) {
     } });
     vialCard(tHPV - 0.1, 700, 'HPV VACCINE', 'CERVICAL CANCER');
     vialCard(tHep - 0.1, 975, 'HEPATITIS B VACCINE', 'LIVER CANCER');
-    s.stamp('IN USE TODAY', { at: Math.min(tHep + 1.0, tEnd - 0.8), x: 560, y: 1330, rot: -7, size: 96 });
+    s.stamp('IN USE TODAY', { at: Math.min(tHep + 1.0, tEnd - 0.8), x: 560, y: 1330, rot: -7, size: 96, gain: 0.6 });
     s.camera([[0, 1.0, 540, 1000], [s.dur, 1.04, 540, 1000]]);
   });
 
@@ -432,6 +436,17 @@ export default function build(R, { U, W, H }) {
       { label: 'STUDY', value: '2024 · PUBLIC HEALTH SCOTLAND', at: 0.9, size: 32 },
       { label: 'WHO', value: 'WOMEN VACCINATED AT 12–13', at: tAge - 0.1, size: 36 },
     ] });
+    // beats while the voice finishes: the age is circled on "वैक्सीन", the vial pops in on "सर्वाइकल"
+    s.custom({ at: tVac, layer: 'ui', z: 46 }, (ctx, t) => {
+      ctx.save(); ctx.translate(130, 640); ctx.rotate(-2 * Math.PI / 180);
+      setFont(ctx, FONTS.monoBold, 36); ctx.letterSpacing = '1px';
+      const x0 = 60 + ctx.measureText('WOMEN VACCINATED AT ').width, w = ctx.measureText('12–13').width;
+      ctx.letterSpacing = '0px';
+      markerEllipse(ctx, x0 + w / 2 + 5, 361, w / 2 + 15, 30, prog(t, tVac, 0.4, ease.outQuad), { color: COLORS.redInk, width: 5 });
+      ctx.restore();
+    });
+    s.sfx(tVac, 'pen', 0.55);
+    s.sprite('vaccine_vial', { at: s.w('सर्वाइकल') - 0.1, x: 190, y: 1350, w: 210, rot: -8, shadow: { ground: 0, drop: 0.25 }, z: 45, layer: 'world', enter: { from: 'scale', s0: 0.7, dur: 0.35, sfx: 'pop' } });
     s.stamp('CERVICAL CANCER CASES\n0', { at: tNot - 0.05, x: 560, y: 1290, rot: -6, size: 64, scales: [0.62, 2.6] });
     s.camera([[0, 1.0, 540, 980], [s.dur, 1.04, 540, 1000]]);
   });
@@ -453,8 +468,8 @@ export default function build(R, { U, W, H }) {
   // =========================================================== THE FUTURE
   S('S17', { look: 'xray', transition: { type: 'scan', dur: 0.4 } }, (s) => {
     s.sfx(0, 'scan', 0.6);
-    const tVac = s.w('वैक्सीन'), tTumor = s.w('ट्यूमर');
-    T2(s, ['A VACCINE', 'JUST FOR YOU'], tVac - 0.4, tVac + 0.05);
+    const tEach = s.w('हर'), tTumor = s.w('ट्यूमर');
+    T2(s, ['A VACCINE', 'JUST FOR YOU'], tEach, tEach + 0.45);
     const st = [0.15, 0.95, 1.9, 2.9];
     // 1. tumour sample in a tube
     s.custom({ at: st[0], z: 20 }, (ctx, t) => {
@@ -504,8 +519,8 @@ export default function build(R, { U, W, H }) {
   });
 
   S('S18', { look: 'paper' }, (s) => {
-    const tSkin = s.w('स्किन'), t1100 = s.w('ग्यारह'), tTrial = s.w('ट्रायल'), tWin = s.w('कामयाब'), tOnly = s.w('बस');
-    T2(s, ['BIG TRIAL', 'SUCCESS'], tWin - 0.45, tWin);
+    const tSkin = s.w('स्किन'), t1100 = s.w('ग्यारह'), tWin = s.w('कामयाब'), tOnly = s.w('बस');
+    T2(s, ['AUGUST 2026', 'THE BIG TRIAL'], 0.05, 0.5);
     s.caseFile({ at: 0.05, x: 130, y: 640, w: 820, h: 530, tab: 'CLINICAL TRIAL', lines: [
       { label: 'STAGE', value: 'PHASE 3', at: 0.2, size: 52, gap: 26 },
       { label: 'CANCER', value: 'MELANOMA (SKIN CANCER)', at: tSkin - 0.1, size: 36, gap: 26 },

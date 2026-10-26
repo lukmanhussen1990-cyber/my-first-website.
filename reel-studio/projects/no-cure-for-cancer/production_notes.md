@@ -18,6 +18,7 @@ Almost everything is drawn in code (`engine/js/cells.js`): normal, cancer and im
 - There is no "सोचो" and no slow intro; the reel starts directly with S01.
 - Audio tags keep Parts 1–3 serious and make Parts 4–6 more hopeful from S13.
 - Whisper writes numbers and English words in digits or Latin script ("97 लाख", "2018", "HPV vaccine"). Every scene was checked word by word against the script; nothing is missing.
+- S16 and S18 say "दो हज़ार छब्बीस" (2026). A plain transcript of Part 5 wrote "चब्बीस", so the word was re-transcribed on its own: it is "छब्बीस", and the same narrator pitch (about 135 Hz) as Parts 1–3 and 6.
 
 ## Facts on screen (all from the brief's checked list)
 | Scene | On screen | Source |

@@ -86,6 +86,11 @@ def main():
         y, sr = sf.read(src, dtype="float32")
         if y.ndim > 1:
             y = y.mean(1)
+        # 8 ms fades: clips are cut in pauses, but a cut can land in a breath or a word's tail
+        f = min(len(y) // 2, int(0.008 * SR))
+        if f > 0:
+            ramp = np.linspace(0, 1, f, dtype=np.float32)
+            y = y.copy(); y[:f] *= ramp; y[-f:] *= ramp[::-1]
         i = int(v["t"] * SR)
         voice[i:i + len(y)] += y[: max(0, N - i)]
     raw_path = os.path.join(out_dir, "voice_raw.wav"); sf.write(raw_path, voice, SR, subtype="FLOAT")
