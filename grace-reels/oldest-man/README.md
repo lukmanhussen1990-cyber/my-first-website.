@@ -11,13 +11,14 @@ but for you (2 Peter 3:9).
 ## Deliverables (`out/`)
 | File | What |
 |------|------|
-| `final_reel.mp4` | The reel (H.264, yuv420p TV range, AAC; audio −14 LUFS, −1.1 dBTP) |
+| `final_reel.mp4` | The reel: 84.47 s, 1080×1920, 30 fps, 90.7 MB (H.264 CRF 19 capped at 9 Mb/s, yuv420p TV range, BT.709; AAC 192k; −14.0 LUFS, −1.0 dBTP) |
 | `cover.jpg` | Cover: Methuselah with his lamp at night, a giant gold 969, the ark far away — "THE OLDEST MAN… AND THE FLOOD" |
 | `caption.txt` | Instagram caption + 15 hashtags |
 | `subtitles.srt`, `subtitles.vtt` | Timed subtitles for every spoken word (the reel also has them burned in) |
 | `storyboard.jpg` | One frame per shot from the final render |
 | `preview_6s.mp4` | The hook |
 | `characters.png` | The paper-cut cast (rig v3) |
+| `qc_contact.jpg` | QC contact sheet, one frame every 2 s |
 
 The logo mark (`public/logo.svg`, used in the top-left watermark and on the end card) is a placeholder, because the
 real logo file was never attached. Replace `public/logo.svg` (same name) and re-render to use your own.
