@@ -118,9 +118,9 @@ export function createParticles(tex) {
   const chunkGeo = new THREE.IcosahedronGeometry(0.12, 0);
   const chunkMat = new THREE.MeshStandardMaterial({ color: 0xe6eef8, roughness: 0.9, flatShading: true, transparent: true, depthWrite: true, emissive: new THREE.Color(0.16, 0.19, 0.24) });
   const chunks = chunkPool(160, chunkGeo, chunkMat);
-  const chipGeo = new THREE.TetrahedronGeometry(0.03, 0);
-  const chipMat = new THREE.MeshStandardMaterial({ color: 0xcfeeff, roughness: 0.15, metalness: 0.1, emissive: new THREE.Color(0.08, 0.16, 0.22), flatShading: true, transparent: true, depthWrite: true });
-  const chips = chunkPool(260, chipGeo, chipMat);
+  const chipGeo = new THREE.TetrahedronGeometry(0.012, 0);
+  const chipMat = new THREE.MeshStandardMaterial({ color: 0x9fd4f2, roughness: 0.08, metalness: 0.3, emissive: new THREE.Color(0.03, 0.08, 0.12), flatShading: true, transparent: true, opacity: 0.85, depthWrite: true });
+  const chips = chunkPool(420, chipGeo, chipMat);
   group.add(snow.points, snow2.points, sprites.points, chunks.mesh, chips.mesh);
   return { group, snow, snow2, sprites, chunks, chips };
 }

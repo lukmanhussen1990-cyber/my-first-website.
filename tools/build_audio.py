@@ -137,14 +137,15 @@ def main():
     preview = '--preview' in sys.argv
     voice = build_voice()
     music = build_music()
-    sfx = os.path.join(STEMS, 'sfx.wav')
-    have_sfx = os.path.exists(sfx) and not preview
+    sfx = os.path.join(ROOT, 'audio', 'sfx_amb.wav')
+    hits = os.path.join(ROOT, 'audio', 'sfx_hits.wav')
+    have_sfx = os.path.exists(sfx) and os.path.exists(hits) and not preview
     duck = 'sidechaincompress=threshold=0.035:ratio=6:attack=25:release=450:makeup=1'
     tmp = os.path.join(ROOT, 'audio', 'premix.wav')
     if have_sfx:
         filt = (f'[0:a]asplit=3[v][vs1][vs2];[1:a][vs1]{duck}[m];[2:a][vs2]sidechaincompress=threshold=0.05:ratio=3:attack=15:release=300[s];'
-                f'[v][m][s]amix=inputs=3:normalize=0:duration=first[out]')
-        ffmpeg_mix([voice, music, sfx], filt, tmp)
+                f'[v][m][s][3:a]amix=inputs=4:normalize=0:duration=first[out]')
+        ffmpeg_mix([voice, music, sfx, hits], filt, tmp)
     else:
         filt = f'[0:a]asplit=2[v][vs1];[1:a][vs1]{duck}[m];[v][m]amix=inputs=2:normalize=0:duration=first[out]'
         ffmpeg_mix([voice, music], filt, tmp)
@@ -152,8 +153,8 @@ def main():
     print('mix (voice + music' + (' + sfx' if have_sfx else '') + '):')
     loudnorm_2pass(tmp, out)
     if have_sfx:
-        filt = f'[0:a]asplit=2[v][vs];[1:a][vs]sidechaincompress=threshold=0.05:ratio=3:attack=15:release=300[s];[v][s]amix=inputs=2:normalize=0:duration=first[out]'
-        ffmpeg_mix([voice, sfx], filt, tmp)
+        filt = f'[0:a]asplit=2[v][vs];[1:a][vs]sidechaincompress=threshold=0.05:ratio=3:attack=15:release=300[s];[v][s][2:a]amix=inputs=3:normalize=0:duration=first[out]'
+        ffmpeg_mix([voice, sfx, hits], filt, tmp)
         out2 = os.path.join(ROOT, 'audio', 'mix_nomusic.wav')
         print('mix (voice + sfx, no music):')
         loudnorm_2pass(tmp, out2)

@@ -5,6 +5,7 @@ import { clamp, ease, ramp } from './util.js';
 export const GOLD = '#F2B544';
 export const RED = '#E5383B';
 export const SAFE = { top: 300, bottom: 1400, right: 160, left: 40 };
+export const WATERMARK = '@garden_reels';
 
 export async function loadFonts() {
   const faces = [
@@ -188,8 +189,25 @@ export class Overlay {
     c.restore();
   }
 
+  watermark() {
+    const c = this.ctx, k = this.k;
+    c.save();
+    c.font = `800 ${26 * k}px MontXB`;
+    c.letterSpacing = `${1 * k}px`;
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    c.globalAlpha = 0.62;
+    c.shadowColor = 'rgba(0,0,0,0.7)';
+    c.shadowBlur = 8 * k;
+    c.shadowOffsetY = 2 * k;
+    c.fillStyle = '#FFFFFF';
+    c.fillText(WATERMARK, 60 * k, 1385 * k);   // bottom-left, inside the safe zone, below the captions
+    c.restore();
+  }
+
   draw(st, t) {
     this.clear();
+    this.watermark();
     if (!st) return;
     if (st.day) {
       const d = st.day;

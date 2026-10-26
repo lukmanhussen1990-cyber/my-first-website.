@@ -60,13 +60,13 @@ export class Shots {
   reset(t) {
     const w = this.w;
     Object.assign(this.post.p, {
-      bloom: 0.5, threshold: 1.0, knee: 0.6, exposure: 1, vignette: 0.55, grain: 0.055, ca: 0, fade: 0, flash: 0,
+      bloom: 0.5, threshold: 1.0, knee: 0.6, exposure: 1, vignette: 0.55, grain: 0.03, ca: 0, fade: 0, flash: 0,
       flashColor: [1, 1, 1], focus: 5, focusRange: 3, maxBlur: 0, nearBlur: 1, sat: 1, contrast: 1.05, lift: [0, 0, 0], shadowTint: [0, 0.25, 0.6],
     });
     w.sky.setPreset('night');
     w.sky.uniforms.uTime.value = t;
     w.sky.uniforms.uBright.value = 1;
-    w.sky.uniforms.uMoonDir.value.set(0.2, 0.125, -0.97).normalize();
+    w.sky.uniforms.uMoonDir.value.set(0.22, 0.2, -0.95).normalize();
     w.sky.mesh.visible = true;
     w.mountains.visible = true;
     const mu = w.mountains.userData.uniforms;
@@ -82,7 +82,7 @@ export class Shots {
     const G = w.glacier.userData;
     const iu = G.wallIce.userData.u;
     iu.uWarmCol.value.set(0, 0, 0); iu.uWarmPos.value.set(0, -1000, 0);
-    for (const m of [G.ice, G.wallIce]) { const u = m.userData.u; u.uHandCrack.value = 0; u.uGlow.value = 0.25; u.uCrackAmt.value = 1; u.uFrostAmt.value = 1; }
+    for (const m of [G.ice, G.wallIce]) { const u = m.userData.u; u.uHandCrack.value = 0; u.uGlow.value = 0.25; u.uCrackAmt.value = 1; u.uFrostAmt.value = 1; u.uDeep.value = 1; }
     G.ice.roughness = 0.3; G.wallIce.roughness = 0.36; G.wallIce.thickness = 0.9; G.ice.thickness = 0.9; G.wallIce.specularIntensity = 1;
     G.deep.userData.u.uGlowAmt.value = 1;
     G.deep.userData.u.uExtraCol.value.set(0, 0, 0);
@@ -156,9 +156,27 @@ export class Shots {
     return { text, x: p.x, y: p.y, size: 36, alpha: a };
   }
 
+  // daytime look: the sky keeps its colour, the ice stays deep blue instead of neon cyan
+  dayLook(kind) {
+    const w = this.w, P = this.post.p, du = w.glacier.userData.deep.userData.u;
+    const cfg = {
+      sunset: { glow: 0.55, sky: 0.75, exp: 0.9, top: [0.07, 0.16, 0.3] },
+      dawn: { glow: 0.5, sky: 0.62, exp: 0.88, top: [0.06, 0.15, 0.3] },
+      sunrise: { glow: 0.5, sky: 0.6, exp: 0.86, top: [0.06, 0.15, 0.3] },
+    }[kind];
+    du.uGlowAmt.value = cfg.glow;
+    du.uTopCol.value.set(...cfg.top);
+    w.sky.uniforms.uBright.value = cfg.sky;
+    P.exposure = cfg.exp;
+    P.sat = 1.05;
+    w.glacier.userData.snow.userData.u.uSparkle.value = 0.5;
+  }
+
   // ------------------------------------------------------------ crack helpers
   envCrackNight(glow = 0.25) {
     const w = this.w;
+    w.sky.mesh.visible = false;          // never visible 40 m down; skipping them saves a full-screen pass
+    w.mountains.visible = false;
     w.moon.intensity = 0.0;
     w.hemi.intensity = 0.05;
     w.hemi.color.set(0x2a4a7a);
@@ -286,11 +304,11 @@ export class Shots {
   // over-the-shoulder -> point of view. p=0: above/behind the helmet (helmet blurred at the bottom
   // of the frame); p=1: in front of Max's face, close on the wall. The path arcs over his head.
   ots(t, target, p, o = {}) {
-    const head = this.headWorld(this.w.max, 0.0);
+    const head = this.headWorld(this.w.max, 0.12);            // helmet centre
     const dir = target.clone().sub(head); dir.y = 0; dir.normalize();
     const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
     const fwd = lerp(-(o.back ?? 0.78), o.front ?? 0.5, p);
-    const up = (o.up ?? 0.3) * (1 - smoothstep(0.42, 0.82, p)) + 0.035;
+    const up = (o.up ?? 0.26) * (1 - smoothstep(0.7, 0.95, p)) - 0.04;   // stays above the helmet until past it
     const side = (o.side ?? 0.08) * (1 - p);
     const pos = head.clone().addScaledVector(dir, fwd).addScaledVector(right, side).add(V(0, up, 0));
     pos.add(this.drift(t, 0.005));
@@ -303,6 +321,10 @@ export class Shots {
     P.focusRange = o.focusRange ?? Math.max(0.15, P.focus * 0.35);
     P.nearBlur = 1.6;
     this.w.glacier.userData.wallIce.specularIntensity = 0.25;
+    this.w.glacier.userData.wallIce.userData.u.uDeep.value = 0.45;     // paler tint, less green on warm images
+    this.w.maxLamp.light.intensity *= 0.45;                               // no blown-out hotspot on the face
+    if (p > 0.55) this.w.glacier.userData.wallIce.userData.u.uWarmCol.value.multiplyScalar(0.15);
+    this.w.bounce.intensity *= 0.6;
     this.w.cap.visible = this.w.capBack.visible = true;
     return pos;
   }
@@ -330,6 +352,10 @@ export class Shots {
     }
     ov.labels = ov.labels.filter(Boolean);
     if (this.w.fullframe.mesh.visible) this.w.fullframe.fit(this.w.camera);
+    // only pay for lights that are on (three.js caches one program per light combination)
+    const W0 = this.w;
+    for (const l of [W0.moon, W0.fill, W0.bounce, W0.maxLamp.light, W0.erikLamp.light, W0.props.flashLamp.light, W0.props.searchLight,
+      ...W0.props.lanterns.map((x) => x.userData.light), W0.props.maxRadio.userData.ledLight]) l.visible = l.intensity > 1e-4;
     this.w.particles.sprites.end();
     this.w.particles.chunks.end();
     this.w.particles.chips.end();
@@ -424,12 +450,11 @@ export class Shots {
     const fallDur = Math.max(1.6, tLedge - fallStart);
     w.sky.setPreset('sunset');
     w.moon.color.set(0xffb27a); w.moon.intensity = 1.3; w.moon.position.set(-60, 14, 40);
-    w.hemi.color.set(0xffa070); w.hemi.groundColor.set(0x1a2a44); w.hemi.intensity = 0.5;
+    w.hemi.color.set(0xffc2b0); w.hemi.groundColor.set(0x3a4a70); w.hemi.intensity = 1.1;
     const mu = w.mountains.userData.uniforms;
     mu.uLight.value.set(1.0, 0.55, 0.35); mu.uFog.value.set(0.4, 0.22, 0.22); mu.uSnow.value.set(0.8, 0.62, 0.6); mu.uWarm.value.set(0.4, 0.15, 0.05);
     mu.uMoonDir.value.set(-0.8, 0.3, 0.4).normalize();
-    w.glacier.userData.deep.userData.u.uGlowAmt.value = 1.4;
-    w.glacier.userData.deep.userData.u.uTopCol.value.set(0.16, 0.3, 0.45);
+    this.dayLook('sunset');
     FROZEN_U.uVis.value = 0.14;
     P.shadowTint = [0.1, 0.15, 0.4];
     const m = w.max;
@@ -452,14 +477,14 @@ export class Shots {
       axe.visible = true;
       axe.position.copy(new THREE.Vector3(0, -0.06, 0.02).applyMatrix4(m.J.wrR.matrixWorld));
       axe.quaternion.setFromRotationMatrix(m.J.wrR.matrixWorld).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.3, 0, 0)));
-      const cx = lerp(-4.0, bridgeX + 0.2, ramp(lt, 0, fallStart));
-      const pos = V(cx + 0.6, 1.4, 13.5).add(this.drift(t, 0.05));
-      const tgt = V(cx + 1.0, -2.6, -1.0);
+      const cx = x + 0.9;   // keep Max a little left of centre, walking into the frame
+      const pos = V(cx, 1.1, 9.5).add(this.drift(t, 0.04));
+      const tgt = V(cx + 0.25, 1.0, -1.2);
       if (lt > tBroke - 0.4) pos.add(this.shakeVec(t, sc.start + tBroke, 0.6, 0.06));
       this.cam(pos, tgt, 36, 0, 0.5);
       P.maxBlur = 0.2; P.focus = 14; P.focusRange = 8;
-      ov.labels.push(this.tag('MAX', m, t, sc.start + 0.6, 2.8, 0.4));
-      ov.dayAlpha = 1 - ramp(lt, tBroke - 0.6, tBroke);
+      ov.labels.push(this.tag('MAX', m, t, sc.start + 1.4, 2.6, 0.4));
+      ov.dayAlpha = 1 - ramp(lt, 1.0, 1.4);
     } else if (lt < tLedge + 0.9) {
       const ft = lt - fallStart;
       const k = clamp(ft / fallDur);
@@ -502,7 +527,7 @@ export class Shots {
       const depthK = clamp(-camY / 40);
       w.moon.intensity = lerp(1.3, 0.1, depthK);
       w.hemi.intensity = lerp(0.5, 0.1, depthK);
-      w.glacier.userData.deep.userData.u.uGlowAmt.value = lerp(1.4, 0.45, depthK);
+      w.glacier.userData.deep.userData.u.uGlowAmt.value = lerp(0.55, 0.35, depthK);
       w.fill.intensity = 0.7 * depthK; w.fill.color.set(0x4a7ab0); w.fill.position.set(SEAT.x + 0.4, LEDGE_Y + 1.2, 0.8);
       P.exposure = lerp(1.0, 1.3, depthK);
       if (landed) {
@@ -543,10 +568,13 @@ export class Shots {
       m.J.knR.updateMatrixWorld(true);
       const knee = new THREE.Vector3().setFromMatrixPosition(m.J.knR.matrixWorld);
       if (lt < tRadio) {
-        const k = ramp(lt, tLedge + 0.9, tRadio);
-        const pos = V(knee.x + 0.15 + k * 0.05, knee.y + 0.45, knee.z + 1.25 - k * 0.15).add(this.drift(t, 0.01));
-        this.cam(pos, knee.clone().add(V(0.05, -0.05, 0)), 38, -0.05, 0.05);
-        P.maxBlur = 0.7; P.focus = pos.distanceTo(knee); P.focusRange = 0.5;
+        // medium side shot: Max crumpled on the ledge, his right leg bent the wrong way
+        const k = ep(lt, tLedge + 0.9, tRadio, ease.inOutSine);
+        const pos = V(knee.x - 0.15, knee.y + 0.75 - k * 0.15, 3.2 - k * 0.9).add(this.drift(t, 0.01));
+        this.cam(pos, knee.clone().add(V(-0.25, -0.05, 0)), 36, -0.02, 0.05);
+        P.maxBlur = 0.4; P.focus = pos.distanceTo(knee); P.focusRange = 1.2;
+        w.fill.intensity = 3.0; w.fill.color.set(0x8ab0e0); w.fill.position.set(knee.x + 0.2, knee.y + 1.2, knee.z + 1.4); w.fill.distance = 5;
+        P.exposure = 1.45;
       } else if (w.fullframe.setImage(w.frozen.images.radio)) {
         // GPT insert: the smashed radio, its red light blinking and dying
         const ff = w.fullframe;
@@ -571,7 +599,7 @@ export class Shots {
         this.cam(pos, rp.clone().add(V(0, 0.01, 0)), 34, 0.04, 0.03);
         P.maxBlur = 0.8; P.focus = pos.distanceTo(rp); P.focusRange = 0.22;
       }
-      P.exposure = 1.3;
+      if (lt >= tRadio) P.exposure = 1.3;
       ov.dayAlpha = 0;
     }
     PS.snow.points.visible = true;
@@ -752,12 +780,12 @@ export class Shots {
       else if (lt >= s0 + len) depth = d;
     }
     if (openEyes) on = 1.0 - 0.25 * ramp(lt, hit + 0.6, sc.T) - (lt > sc.T - 0.3 ? 0.8 : 0);
-    this.maxOnLedge(POSES.sitLedge, Math.max(0.0, on), t, [0.02, 0, 0], 0.0, V(rightWall(EYE_Y), EYE_Y - 0.2, FM_Z), 1);
+    this.maxOnLedge(POSES.sitLedge, Math.max(0.0, on), t, [0.02, 0, 0], 0.0, V(rightWall(EYE_Y), EYE_Y - 0.42, FM_Z), 1);   // light from below
     w.glacier.userData.wallIce.userData.u.uWarmCol.value.multiplyScalar(0.35);
     this.breath(t, 1.8, 0.9);
     this.frozenMan(POSES.frozen, depth, true);
     w.frozen.man.sculpt.userData.setEyes(openEyes);
-    const pl = this.img(openEyes ? 'open' : 'closed', depth, EYE_Y, FM_Z, { glow: (openEyes ? 0.2 : 0.12) * Math.max(on, 0.08) });
+    const pl = this.img(openEyes ? 'open' : 'closed', depth, EYE_Y, FM_Z, { glow: (openEyes ? 0.3 : 0.16) * Math.max(on, 0.08) });
     if (pl) w.frozen.man.root.visible = false;
     const close = clamp((0.17 - depth) / 0.135);
     w.glacier.userData.wallIce.roughness = lerp(0.22, 0.12, close);
@@ -813,10 +841,11 @@ export class Shots {
       const look = ep(lt, L[3].s + 0.3, L[3].s + 1.3, ease.inOutCubic);
       this.maxOnLedge(blendPose(POSES.eyesShut, { ...POSES.sitLedge, neck: [-0.55, 0, 0], head: [-0.4, 0, 0] }, look), dim * 0.8, t);
       this.frozenMan({ ...POSES.frozen, shR: [-1.6, 0, -0.42], elR: [-0.9, 0, 0] }, 0.05);
+      w.sky.mesh.visible = true;
       const sl = w.props.searchLight;
       sl.position.set(crackCenter(-2), 2.0, -1.0);
       w.props.searchTarget.position.set(crackCenter(-40), LEDGE_Y, -0.6);
-      sl.intensity = 900 * k;
+      sl.intensity = 22 * k;
       w.hemi.intensity = 0.05 + 0.08 * k;
       w.glacier.userData.deep.userData.u.uGlowAmt.value = 0.14 + 0.4 * k;
       const pos = V(SEAT.x + 0.55, LEDGE_Y + 0.55, SEAT.z + 0.55).add(this.drift(t, 0.01));
@@ -850,7 +879,8 @@ export class Shots {
     const mu = w.mountains.userData.uniforms;
     mu.uLight.value.set(1.0, 0.7, 0.75); mu.uFog.value.set(0.55, 0.45, 0.6); mu.uSnow.value.set(0.85, 0.8, 0.9); mu.uWarm.value.set(0.3, 0.12, 0.15);
     mu.uMoonDir.value.set(-0.7, 0.4, 0.5).normalize();
-    w.glacier.userData.deep.userData.u.uGlowAmt.value = 1.2;
+    this.dayLook('dawn');
+    w.hemi.intensity = 0.4;
     FROZEN_U.uVis.value = 0.14;
     const tri = w.props.tripod;
     tri.visible = true;
@@ -875,7 +905,7 @@ export class Shots {
     applyPose(e, lt < tClip - 0.35 ? { ...POSES.rappel, hipsRot: [0.15, 0, 0] } : { ...POSES.rappel, shR: [-1.2, 0, -0.3], elR: [-1.0, 0, 0], hipsRot: [0.05, 0, 0] });
     e.root.updateMatrixWorld(true);
     const elampK = lt > tDown ? 1 : 0;
-    w.erikLamp.set(elampK, t);
+    w.erikLamp.set(elampK, t, 0.35, 0.5);
     e.M.lens.color.setRGB(3, 3, 2.8).multiplyScalar(elampK + 0.1);
     if (lt < tRise - 0.3) {
       this.maxOnLedge(lt < tClip ? { ...POSES.sitLedge, neck: [-0.5, 0, 0], head: [-0.3, 0, 0] } : POSES.sitLedge, 0.0, t);
@@ -903,8 +933,8 @@ export class Shots {
       const depthK = clamp(-cy / 40);
       w.moon.intensity = lerp(1.0, 0.12, depthK);
       w.hemi.intensity = lerp(0.55, 0.15, depthK);
-      w.glacier.userData.deep.userData.u.uGlowAmt.value = lerp(1.2, 0.5, depthK);
-      P.exposure = lerp(1.0, 1.25, depthK);
+      w.glacier.userData.deep.userData.u.uGlowAmt.value = lerp(0.5, 0.35, depthK);
+      P.exposure = lerp(0.88, 1.25, depthK);
     }
   }
 
@@ -934,7 +964,7 @@ export class Shots {
       e.root.updateMatrixWorld(true);
       w.maxLamp.set(0.9, t);
       w.max.M.lens.color.setRGB(3.4, 2.4, 1.3);
-      w.erikLamp.set(1.0, t);
+      w.erikLamp.set(1.0, t, 0.35, 0.5);
       e.M.lens.color.setRGB(3, 3, 2.8);
       const pulley = V(TRIPOD.x, TRIPOD.y + 2.45, TRIPOD.z);
       e.J.clip.updateMatrixWorld(true);
@@ -1009,7 +1039,8 @@ export class Shots {
     const mu = w.mountains.userData.uniforms;
     mu.uLight.value.set(1.3, 0.85, 0.6); mu.uFog.value.set(0.7, 0.55, 0.55); mu.uSnow.value.set(0.95, 0.88, 0.85); mu.uWarm.value.set(0.5, 0.25, 0.1);
     mu.uMoonDir.value.set(-0.8, 0.35, 0.45).normalize();
-    w.glacier.userData.deep.userData.u.uGlowAmt.value = 1.3;
+    this.dayLook('sunrise');
+    w.hemi.intensity = 0.45;
     FROZEN_U.uVis.value = 0.16;
     P.shadowTint = [0.05, 0.12, 0.35];
     const tri = w.props.tripod;
@@ -1025,7 +1056,7 @@ export class Shots {
       applyPose(m, blendPose(POSES.carried, POSES.wrapped, k));
     } else {
       m.root.position.copy(sitPos);
-      m.root.rotation.set(0, Math.PI / 2 + 0.35, 0);
+      m.root.rotation.set(0, lt >= L[4].s ? Math.atan2(-0.6, -0.8) : Math.PI / 2 + 0.35, 0);
       applyPose(m, POSES.wrapped);
     }
     m.root.updateMatrixWorld(true);
@@ -1087,12 +1118,15 @@ export class Shots {
       const pos = V(-1 + k * 2, 3 - k * 2, 70 - k * 10).add(this.drift(t, 0.05));
       this.cam(pos, V(0, -14, 0), 32, 0, 0.5);
     } else {
-      // seen from behind/side (no face close-up): Max wrapped in foil, looking at the crack
+      // from behind (no face close-up): Max wrapped in foil, looking into the sunrise
       const k = ep(lt, L[4].s, sc.T, ease.inOutSine);
       const hp = this.headWorld(m);
-      const pos = V(hp.x - 1.5 + k * 0.3, hp.y + 0.55 - k * 0.1, hp.z + 1.9 - k * 0.35).add(this.drift(t, 0.01));
-      this.cam(pos, hp.clone().add(V(0.35, -0.15, -0.4)), 34, 0, 0.05);
-      P.maxBlur = 0.5; P.focus = pos.distanceTo(hp); P.focusRange = 1.2;
+      const fwd = V(-0.6, 0, -0.8);
+      const pos = hp.clone().addScaledVector(fwd, -(2.6 - k * 0.5)).add(V(0.35, 0.45 - k * 0.1, 0)).add(this.drift(t, 0.01));
+      this.cam(pos, hp.clone().addScaledVector(fwd, 3.0).add(V(0.6, 0.0, 0)), 34, 0, 0.1);
+      P.maxBlur = 0.35; P.focus = pos.distanceTo(hp); P.focusRange = 1.6;
+      ra.root.visible = false; w.props.book.visible = false;
+      w.sky.uniforms.uBright.value = 0.42; P.bloom = 0.35; P.exposure = 0.82;
       const tt = lt - t32;
       let a = 0;
       if (tt >= 0) {
@@ -1131,8 +1165,8 @@ export class Shots {
         this.frozenMan({ ...POSES.frozen, shR: [-1.5, 0, -0.3], elR: [-0.2 - curl * 0.3, 0, 0], wrR: [curl * 0.8, 0, 0] }, 0.05 - out * 0.3);
       }
       const rnd = mulberry32(11);
-      for (let i = 0; i < 220; i++) {
-        const sp = 1.5 + rnd() * 3.5;
+      for (let i = 0; i < 400; i++) {
+        const sp = 1.2 + rnd() * 3.2;
         const ang = rnd() * Math.PI * 2, el = (rnd() - 0.5) * 2.2;
         const d = a * sp;
         w.particles.chips.add(xw - d * (0.6 + rnd() * 0.5), y + Math.sin(ang) * d * 0.6 * el - 4.9 * a * a * 0.3, z + Math.cos(ang) * d * 0.6,

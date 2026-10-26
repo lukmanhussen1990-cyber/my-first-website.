@@ -26,11 +26,12 @@ def preview():
     print('->', os.path.relpath(out, ROOT))
 
 
-def final():
+def final(scale='1'):
+    suffix = '' if float(scale) == 1 else f'_s{scale}'
     lst = os.path.join(FR, 'scenes.txt')
     with open(lst, 'w') as f:
         for sc in TL['scenes']:
-            p = os.path.join(FR, f"scene_{sc['id']:02d}.mp4")
+            p = os.path.join(FR, f"scene_{sc['id']:02d}{suffix}.mp4")
             if not os.path.exists(p):
                 sys.exit(f'missing {p}')
             f.write(f"file '{p}'\n")
@@ -40,7 +41,7 @@ def final():
              '-f', 'concat', '-safe', '0', '-i', lst,
              '-framerate', '30', '-i', os.path.join(FR, 'overlay', '%06d.png'),
              '-i', os.path.join(ROOT, 'audio', mix),
-             '-filter_complex', '[0:v][1:v]overlay=0:0:format=auto,format=yuv420p[v]',
+             '-filter_complex', '[0:v]scale=1080:1920:flags=lanczos[bg];[bg][1:v]overlay=0:0:format=auto,format=yuv420p[v]',
              '-map', '[v]', '-map', '2:a',
              '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', '30',
              '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
@@ -49,4 +50,8 @@ def final():
 
 
 if __name__ == '__main__':
-    {'preview': preview, 'final': final}[sys.argv[1] if len(sys.argv) > 1 else 'preview']()
+    mode = sys.argv[1] if len(sys.argv) > 1 else 'preview'
+    if mode == 'final':
+        final(sys.argv[2] if len(sys.argv) > 2 else '1')
+    else:
+        preview()

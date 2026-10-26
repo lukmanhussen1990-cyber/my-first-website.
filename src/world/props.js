@@ -204,7 +204,7 @@ function blanket(env) {
     p.setXYZ(i, x * n, y + 0.012 * noise1(x * 47 + z * 53, 5), z * n);
   }
   geo.computeVertexNormals();
-  const m = tmat(0xe2e6ea, { rough: 0.28, metal: 1.0, env, envI: 1.25 });
+  const m = tmat(0xc9ced4, { rough: 0.32, metal: 1.0, env, envI: 0.55 });
   m.side = THREE.DoubleSide;
   m.flatShading = true;
   return new THREE.Mesh(geo, m);

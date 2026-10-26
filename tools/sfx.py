@@ -16,7 +16,8 @@ DUR = TL['duration']
 N = int(round(DUR * SR))
 RNG = np.random.default_rng(1950)
 
-out = np.zeros((N, 2))      # dry bus
+out = np.zeros((N, 2))      # dry bus (ambience + incidental sounds: ducked under the voice in the mix)
+hits = np.zeros((N, 2))     # scare hits / impacts: never ducked
 rev = np.zeros((N, 2))      # send to the "ice crevasse" reverb
 
 
@@ -54,8 +55,8 @@ def expdecay(n, tau):
     return np.exp(-np.arange(n) / (tau * SR))
 
 
-def place(x, t, gain=1.0, pan=0.0, send=0.0):
-    """Add mono/stereo sound x at time t (s). pan -1..1, send = reverb amount."""
+def place(x, t, gain=1.0, pan=0.0, send=0.0, hit=False):
+    """Add mono/stereo sound x at time t (s). pan -1..1, send = reverb amount, hit = scare bus."""
     if x.ndim == 1:
         l, r = np.cos((pan + 1) * np.pi / 4), np.sin((pan + 1) * np.pi / 4)
         x = np.stack([x * l, x * r], axis=1) * np.sqrt(2)
@@ -65,7 +66,7 @@ def place(x, t, gain=1.0, pan=0.0, send=0.0):
     j0 = max(0, -i0)
     i0 = max(0, i0)
     i1 = min(N, i0 + len(x) - j0)
-    out[i0:i1] += x[j0:j0 + i1 - i0] * gain
+    (hits if hit else out)[i0:i1] += x[j0:j0 + i1 - i0] * gain
     if send > 0:
         rev[i0:i1] += x[j0:j0 + i1 - i0] * gain * send
 
@@ -412,9 +413,9 @@ def main():
     place(creak(1.3, 22, 160), S(1) + 9.0, 0.35, pan=0.5, send=0.5)
     for k2 in range(3):
         place(breath_cycle(30 + k2, 0.6, 3.4), S(1) + 6.4 + k2 * 3.4, 0.35, pan=-0.2)
-    place(riser(0.7, 1), hit1 - 0.7, 0.5)
-    place(bass_hit(1, 1.1), hit1, 1.0, send=0.4)
-    place(ice_crack(2, 0.7), hit1, 0.55, send=0.5)
+    place(riser(0.7, 1), hit1 - 0.7, 0.5, hit=True)
+    place(bass_hit(1, 1.1), hit1, 1.0, send=0.4, hit=True)
+    place(ice_crack(2, 0.7), hit1, 0.55, send=0.5, hit=True)
 
     # ===== scene 2 — the fall
     tB = word(2, 'broke', default=S(2) + 5.4) - 0.05
@@ -434,9 +435,9 @@ def main():
     place(rush(max(0.5, tL - tB - 0.1), 34), tB + 0.12, 0.8)
     for k2 in range(9):
         place(thud(40 + k2) * 0.3, tB + 0.6 + k2 * 0.31, 0.25, pan=RNG.uniform(-0.6, 0.6), send=0.4)
-    place(thud(50), tL, 1.2, send=0.5)
+    place(thud(50), tL, 1.2, send=0.5, hit=True)
     place(ice_crack(51, 0.5), tL + 0.02, 0.4, send=0.5)
-    place(bass_hit(52, 0.55), tL, 0.6)
+    place(bass_hit(52, 0.55), tL, 0.6, hit=True)
     place(groan(1.6, 53, 70), tL + 0.4, 0.4, send=0.6)
     for k2 in range(2):
         place(breath_cycle(60 + k2, 1.2, 1.6), tL + 1.0 + k2 * 1.6, 0.4)
@@ -489,9 +490,9 @@ def main():
         bpm = 62 + 70 * prog ** 1.3
         place(heartbeat(), tt, 0.55 + 0.3 * prog)
         tt += 60.0 / bpm
-    place(riser(0.8, 141), hit6 - 0.8, 0.55)
-    place(bass_hit(142, 1.15), hit6, 1.05, send=0.4)
-    place(ice_crack(143, 0.5), hit6 + 0.02, 0.35, send=0.5)
+    place(riser(0.8, 141), hit6 - 0.8, 0.55, hit=True)
+    place(bass_hit(142, 1.15), hit6, 1.05, send=0.4, hit=True)
+    place(ice_crack(143, 0.5), hit6 + 0.02, 0.35, send=0.5, hit=True)
 
     # ===== scene 7 — day 4: crackles as the cracks spread; light + voice from above
     t2 = L(7, 1)['start']
@@ -522,10 +523,10 @@ def main():
     tDoz = word(9, 'dozens', default=S(9) + 4.0)
     tUp = word(9, 'up', default=S(9) + 9.0)
     place(drone(tDoz - S(9) + 0.2, 180), S(9), 0.7)
-    place(riser(0.9, 181), tDoz - 0.9, 0.55)
-    place(bass_hit(182, 1.1), tDoz, 1.0, send=0.4)
+    place(riser(0.9, 181), tDoz - 0.9, 0.55, hit=True)
+    place(bass_hit(182, 1.1), tDoz, 1.0, send=0.4, hit=True)
     place(drone(E(9) - tDoz, 183)[::-1] * 0.8, tDoz, 0.5)
-    place(bass_hit(184, 0.6), tUp, 0.6, send=0.4)
+    place(bass_hit(184, 0.6), tUp, 0.6, send=0.4, hit=True)
     place(groan(3.5, 185, 38), tDoz + 1.5, 0.5, send=0.6)
 
     # ===== scene 10 — safe: foil crinkle, page rustle, "No. 32" flicker blips
@@ -538,8 +539,8 @@ def main():
     # ===== scene 11 — empty ledge, 1 s total silence, then the loudest crack
     s11 = S(11)
     tCrack = s11 + 1.4
-    place(ice_crack(200, 1.6), tCrack, 2.2, send=0.6)
-    place(bass_hit(201, 1.4), tCrack, 1.4, send=0.5)
+    place(ice_crack(200, 1.6), tCrack, 2.2, send=0.6, hit=True)
+    place(bass_hit(201, 1.4), tCrack, 1.4, send=0.5, hit=True)
     place(crackle(1.8, 500, 202, 3000, 12000) * np.exp(-np.arange(int(1.8 * SR)) / (0.6 * SR)), tCrack + 0.05, 0.9, send=0.5)  # ice chips
     place(creak(1.6, 203, 90), tCrack + 0.5, 0.6, send=0.6)   # fingers curling
     # hard cut to black at +3.3s: kill everything after the cut except a short reverb tail of the crack
@@ -548,19 +549,22 @@ def main():
     # ===== reverb + final assembly
     ir = make_reverb_ir()
     wet = np.stack([fftconvolve(rev[:, c], ir[:, c])[:N] for c in range(2)], axis=1)
-    mix = out + wet * 0.55
-    # total silence before the final crack (scene 11, 0.4 .. 1.4 s)
+    buses = {'amb': out + wet * 0.55, 'hits': hits}
+    # total silence before the final crack (scene 11, 0.4 .. 1.4 s); hard cut to black after the hand
     a, b = t2i(s11 + 0.4), t2i(tCrack)
     fade = t2i(0.08)
-    mix[a - fade:a] *= np.linspace(1, 0, fade)[:, None]
-    mix[a:b] = 0
-    mix[cut:] *= np.exp(-np.arange(N - cut) / (0.35 * SR))[:, None]
-    peak = np.abs(mix).max()
-    mix = mix / max(peak, 1e-9) * 0.89
+    for m in buses.values():
+        m[a - fade:a] *= np.linspace(1, 0, fade)[:, None]
+        m[a:b] = 0
+        m[cut:] *= np.exp(-np.arange(N - cut) / (0.35 * SR))[:, None]
+    peak = max(np.abs(buses['amb'] + buses['hits']).max(), 1e-9)
+    os.makedirs(os.path.join(ROOT, 'final', 'stems'), exist_ok=True)
+    for name, m in buses.items():
+        sf.write(os.path.join(ROOT, 'audio', f'sfx_{name}.wav'), (m / peak * 0.89).astype(np.float32), SR, subtype='FLOAT')
+    total = (buses['amb'] + buses['hits']) / peak * 0.89
     path = os.path.join(ROOT, 'final', 'stems', 'sfx.wav')
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    sf.write(path, mix.astype(np.float32), SR, subtype='FLOAT')
-    print(f'sfx stem written: {path} ({DUR:.2f}s, peak normalised)')
+    sf.write(path, total.astype(np.float32), SR, subtype='FLOAT')
+    print(f'sfx stem written: {path} ({DUR:.2f}s) + audio/sfx_amb.wav, audio/sfx_hits.wav')
 
 
 if __name__ == '__main__':

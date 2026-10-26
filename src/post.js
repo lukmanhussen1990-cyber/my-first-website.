@@ -78,7 +78,8 @@ void main(){
   col = (col - 0.5) * uContrast + 0.5;
   float v = smoothstep(0.95, 0.25, length(dir * vec2(1.0, 0.82)) * 1.15);
   col *= mix(1.0 - uVignette, 1.0, v);
-  float g = h(uv*uRes + vec2(uFrame*17.31, uFrame*7.77)) + h(uv*uRes*0.5 + vec2(uFrame*3.1, uFrame*11.3)) - 1.0;
+  vec2 gp = floor(uv * uRes * 0.5);                 // 2x2-pixel grain clusters: filmic and far easier to encode
+  float g = h(gp + vec2(uFrame*17.31, uFrame*7.77)) + h(floor(gp*0.5) + vec2(uFrame*3.1, uFrame*11.3)) * 0.6 - 0.8;
   float lum = dot(col, vec3(0.299,0.587,0.114));
   col += g * uGrain * (1.0 - 0.65*lum);
   col = mix(col, uFlashColor, uFlash);

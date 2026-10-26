@@ -90,7 +90,7 @@ async function renderStills() {
 
 async function renderScenes() {
   const ids = args.scenes === 'all' ? TL.scenes.map((s) => s.id) : String(args.scenes).split(',').map(Number);
-  const queue = ids.map((id) => TL.scenes.find((s) => s.id === id));
+  const queue = ids.map((id) => TL.scenes.find((s) => s.id === id)).sort((a, b) => (b.end - b.start) - (a.end - a.start)); // longest first
   const workers = Math.min(parseInt(args.workers || '2'), queue.length);
   const tStart = Date.now();
   async function worker(w) {
