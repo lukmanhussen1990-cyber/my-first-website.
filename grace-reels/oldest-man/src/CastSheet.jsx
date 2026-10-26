@@ -49,7 +49,7 @@ function buildSheet() {
         p.root.position.set(gi * (3 * colW + groupGap) + vi * colW, -ri * rowH, 0); scene.add(p.root);
         const fn = vi === 0 ? pSide : vi === 1 ? p3q : preset === CAST.METHUSELAH_OLD ? (t, s) => Poses.oldStand(t, s) : (t, s) => Poses.idle(t, s);
         if (extra.baby && vi === 0) p.hold(new Person(extra.baby));
-        items.push({ p, fn, label: vi === 0 ? label : null, view: v });
+        items.push({ p, fn, label: vi === 0 ? label : null, view: v, lx: gi * (3 * colW + groupGap) + colW, ly: -ri * rowH });
       });
     });
   });
@@ -84,6 +84,10 @@ function buildSheet() {
     }
   };
   const S = { scene, items, camMain, camHero, hero, pose, vw, vh };
+  // HTML label positions (ortho projection of world points into the 20 px-inset main viewport)
+  const toPx = (x, y) => [20 + (x - camMain.position.x - camMain.left) / sc, H - 20 - (y - camMain.position.y - camMain.bottom) / sc];
+  S.labels = items.filter((it) => it.label).map((it) => { const [x, y] = toPx(it.lx, it.ly - 0.12); return { txt: it.label, x, y }; });
+  S.crowdLabel = toPx(-0.3, cy - 0.12);
   // ---- per-frame cost (pose + springs + billboard + outline for every figure), averaged over 30 frames
   const t1 = performance.now();
   for (let f = 0; f < 30; f++) { pose(f / 30); place(S); }
@@ -130,6 +134,8 @@ export const CastSheet = () => {
       {label('CAST · rig v3 — SVG parts → atlas, cel-shaded, 5 px outline', 40, 26, 30, '#2a1d14')}
       {label(`${st.persons} figures · build ${(st.buildMs / 1000).toFixed(2)} s (${st.atlases} atlases, ${st.mpx.toFixed(0)} Mpx, ${(st.atlasMs / 1000).toFixed(2)} s) · per frame ${st.frameMs.toFixed(2)} ms for all figures`, 40, 68, 18)}
       {label('METHUSELAH · close-up (hero atlas ' + st.heroAtlas + '²)', 1866, 486, 18)}
+      {S.labels.map((l, i) => <div key={i} style={{ position: 'absolute', left: l.x - 240, width: 480, top: l.y, textAlign: 'center', color: '#3a2a1c', font: '700 20px Inter, sans-serif', letterSpacing: '0.1em' }}>{l.txt}<div style={{ font: '500 14px Inter, sans-serif', letterSpacing: '0.2em', opacity: 0.7 }}>SIDE · ¾ · BACK</div></div>)}
+      {label('CROWD · 12 mockers (crowd atlases) + BABY LAMECH / BABY NOAH', S.crowdLabel[0], S.crowdLabel[1], 18)}
     </AbsoluteFill>
   );
 };
