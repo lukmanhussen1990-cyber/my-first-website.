@@ -1,0 +1,451 @@
+{
+ "episode": "Q.02",
+ "title": "THE OLDEST MAN",
+ "header": "Q.02 · THE OLDEST MAN",
+ "hook_title": "969 YEARS. THEN THE FLOOD.",
+ "cover": {
+  "text": "THE OLDEST MAN… AND THE FLOOD",
+  "scene": "old Methuselah beside a single oil lamp at night, a giant gold 969 behind him, the finished ark far away under storm clouds"
+ },
+ "voice": {
+  "engine": "edge-tts",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "backup": "en-US-ChristopherNeural",
+  "rate": "-5%",
+  "pitch": "-3Hz",
+  "note": "same voice as Q.01 SEVEN THINGS"
+ },
+ "pauses": {
+  "between_sentences": 0.3
+ },
+ "math": {
+  "methuselah_at_lamech": 187,
+  "lamech_at_noah": 182,
+  "noah_at_flood": 600,
+  "total": 969,
+  "anno_mundi": {
+   "methuselah_born": 687,
+   "adam_died": 930,
+   "lamech_born": 874,
+   "noah_born": 1056,
+   "flood": 1656,
+   "methuselah_age_when_adam_died": 243
+  }
+ },
+ "kjv": {
+  "Genesis 5:21": "And Enoch lived sixty and five years, and begat Methuselah:",
+  "Genesis 5:24": "And Enoch walked with God: and he was not; for God took him.",
+  "Genesis 5:25": "And Methuselah lived an hundred eighty and seven years, and begat Lamech:",
+  "Genesis 5:27": "And all the days of Methuselah were nine hundred sixty and nine years: and he died.",
+  "Genesis 5:28": "And Lamech lived an hundred eighty and two years, and begat a son:",
+  "Genesis 7:6": "And Noah was six hundred years old when the flood of waters was upon the earth.",
+  "Genesis 7:11": "…the same day were all the fountains of the great deep broken up, and the windows of heaven were opened.",
+  "1 Peter 3:20": "…the longsuffering of God waited in the days of Noah, while the ark was a preparing, wherein few, that is, eight souls were saved by water.",
+  "2 Peter 3:9": "The Lord is not slack concerning his promise, as some men count slackness; but is longsuffering to us-ward, not willing that any should perish, but that all should come to repentance."
+ },
+ "rules": [
+  "gentle and family-safe: no drowning people, no bodies, no destruction close-ups",
+  "God is never shown as a person, only as light",
+  "always say 'if you add up the ages in Genesis 5' for dates, and 'some say' for the name meaning"
+ ],
+ "beats": [
+  {
+   "id": "B01",
+   "scene": "S1",
+   "mood": "night_lamp",
+   "text": "The oldest man who ever lived died the same year as the *flood*. Coincidence?",
+   "tts": "The oldest man who ever lived died the same year as the flood. | Coincidence?",
+   "camera": "night hill: old Methuselah beside a single oil lamp; the finished ark far behind under gathering storm clouds; slow push-in",
+   "labels": [],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "night wind",
+    "crickets",
+    "soft lamp crackle",
+    "deep hit on the hook title"
+   ],
+   "keywords": [
+    "flood"
+   ]
+  },
+  {
+   "id": "B02",
+   "scene": "S2",
+   "mood": "night_lamp",
+   "text": "His name was *Methuselah*. He lived *969* years.",
+   "tts": "His name was Methuselah. | He lived 969 years.",
+   "camera": "close-up of his face lit by the lamp, beard swaying in the wind; a thin glowing life-ribbon stretches across the frame",
+   "labels": [
+    {
+     "text": "METHUSELAH · 969 YEARS · GENESIS 5:27",
+     "anchor": "methuselah head"
+    }
+   ],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "lamp crackle",
+    "soft shimmer as the life-ribbon draws"
+   ],
+   "keywords": [
+    "Methuselah",
+    "969"
+   ]
+  },
+  {
+   "id": "B03",
+   "scene": "S3",
+   "mood": "enoch_morning",
+   "text": "His father, Enoch, \"walked with God: and he was not; for God *took* him.\"",
+   "tts": "His father, Enoch, walked with God: and he was not; for God took him.",
+   "camera": "golden morning path beside a soft beam of light; young Methuselah watches from a doorway; Enoch walks into the light and is gone; his footprints simply stop",
+   "labels": [],
+   "card": {
+    "style": "floating cream card",
+    "ref": "GENESIS 5:24 · KJV",
+    "text": "And Enoch walked with God: and he was not; for God *took him*.",
+    "gold": [
+     "GOD TOOK HIM"
+    ]
+   },
+   "tracker": null,
+   "sfx": [
+    "footsteps that stop",
+    "airy shimmer as he disappears"
+   ],
+   "keywords": [
+    "took"
+   ]
+  },
+  {
+   "id": "B04",
+   "scene": "S4",
+   "mood": "parchment",
+   "text": "If you add up the ages in Genesis 5, Methuselah's life overlapped with *Adam*… and with *Noah*.",
+   "tts": "If you add up the ages in Genesis 5, Methuselah's life overlapped with Adam… | and with Noah.",
+   "camera": "parchment timeline across the screen: ADAM 0–930, METHUSELAH 687–1656, NOAH 1056–flood 1656; character icons at the bar ends; overlaps glow gold",
+   "labels": [
+    {
+     "text": "ADDING THE AGES IN GENESIS 5",
+     "anchor": "timeline top"
+    }
+   ],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "soft paper slide",
+    "gold glow chime on each overlap"
+   ],
+   "keywords": [
+    "Adam",
+    "Noah"
+   ]
+  },
+  {
+   "id": "B05",
+   "scene": "S5",
+   "mood": "math_dark",
+   "text": "Now watch the *math*.",
+   "tts": "Now watch the math.",
+   "camera": "dark with warm light: younger Methuselah (dark beard) at his house door; the tracker appears",
+   "labels": [],
+   "card": null,
+   "tracker": {
+    "show": true,
+    "value": 0
+   },
+   "sfx": [
+    "low swell",
+    "tracker appears"
+   ],
+   "keywords": [
+    "math"
+   ]
+  },
+  {
+   "id": "B06",
+   "scene": "S5",
+   "mood": "math_dark",
+   "text": "Methuselah was *187* when his son Lamech was born.",
+   "tts": "Methuselah was 187 when his son Lamech was born.",
+   "camera": "Methuselah rocks baby Lamech; a big 3D gold 187 rises from the ground (dips first)",
+   "labels": [
+    {
+     "text": "GENESIS 5:25",
+     "anchor": "methuselah"
+    }
+   ],
+   "card": null,
+   "tracker": {
+    "value": 187
+   },
+   "sfx": [
+    "deep wooden thock + rising tone 1"
+   ],
+   "keywords": [
+    "187"
+   ]
+  },
+  {
+   "id": "B07",
+   "scene": "S6",
+   "mood": "math_dark",
+   "text": "Lamech was *182* when Noah was born.",
+   "tts": "Lamech was 182 when Noah was born.",
+   "camera": "strong dark-bearded Lamech holds baby Noah; a gold 182 rises",
+   "labels": [
+    {
+     "text": "GENESIS 5:28–29",
+     "anchor": "lamech"
+    }
+   ],
+   "card": null,
+   "tracker": {
+    "value": 369
+   },
+   "sfx": [
+    "deep wooden thock + rising tone 2"
+   ],
+   "keywords": [
+    "182"
+   ]
+  },
+  {
+   "id": "B08",
+   "scene": "S7",
+   "mood": "math_dark",
+   "text": "Noah was *600* when the flood came.",
+   "tts": "Noah was 600 when the flood came.",
+   "camera": "old Noah (white beard, builder's tools) beside the finished ark; a gold 600 rises",
+   "labels": [
+    {
+     "text": "GENESIS 7:6",
+     "anchor": "noah"
+    }
+   ],
+   "card": null,
+   "tracker": {
+    "value": 969
+   },
+   "sfx": [
+    "deep wooden thock + rising tone 3 (the three tones build a chord)"
+   ],
+   "keywords": [
+    "600"
+   ]
+  },
+  {
+   "id": "B09",
+   "scene": "S8",
+   "mood": "math_dark",
+   "text": "187… plus 182… plus 600… equals *969*.",
+   "tts": "One hundred eighty-seven… plus one hundred eighty-two… plus six hundred… equals nine hundred sixty-nine.",
+   "camera": "the three numbers fly together and slam into one huge 969 over Methuselah's lamp; gold dust burst; short shake",
+   "labels": [
+    {
+     "text": "THE YEAR HE DIED · GENESIS 5:27",
+     "anchor": "969"
+    }
+   ],
+   "card": null,
+   "tracker": {
+    "value": 969,
+    "equation": true
+   },
+   "sfx": [
+    "number ticks",
+    "big warm boom with choir-like pad on 969"
+   ],
+   "keywords": [
+    "969"
+   ],
+   "inner_gaps": {
+    "2": 0.35,
+    "6": 0.35,
+    "9": 0.6
+   },
+   "tts_note": "numbers spelled out in one English clip (digits/short clips made the multilingual voice switch to French); pauses inserted at word boundaries; captions still show digits",
+   "numbers_as_words": true
+  },
+  {
+   "id": "B10",
+   "scene": "S9",
+   "mood": "lamp_out",
+   "extra_hold": 1.5,
+   "text": "The exact year Methuselah *died*.",
+   "tts": "The exact year Methuselah died.",
+   "camera": "extreme close-up of the lamp: the flame flickers and dies on 'died', a curl of smoke; 0.6 s near silence; one giant slow-motion raindrop splashes on dry cracked ground",
+   "labels": [],
+   "card": null,
+   "tracker": {
+    "value": 969
+   },
+   "sfx": [
+    "tiny puff",
+    "0.6 s near silence",
+    "huge amplified raindrop plip",
+    "far thunder"
+   ],
+   "keywords": [
+    "died"
+   ]
+  },
+  {
+   "id": "B11",
+   "scene": "S10",
+   "mood": "lamp_out",
+   "text": "Some say his name can mean \"when he dies, it shall be *sent*.\"",
+   "tts": "Some say his name can mean: when he dies, it shall be sent.",
+   "camera": "the cold lamp and his cane leaning on a rock; gentle first rain; the distant ark under storm clouds",
+   "labels": [
+    {
+     "text": "SOME SAY: “WHEN HE DIES, IT SHALL BE SENT”",
+     "sub": "(meaning debated)",
+     "anchor": "sky"
+    }
+   ],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "first soft rain",
+    "low wind"
+   ],
+   "keywords": [
+    "sent"
+   ]
+  },
+  {
+   "id": "B12",
+   "scene": "S11",
+   "mood": "timelapse",
+   "pause_before": 0.8,
+   "text": "But notice: the flood came the same year his long life ended. As if God was *waiting*… as long as He could.",
+   "tts": "But notice: the flood came the same year his long life ended. | As if God was waiting… as long as He could.",
+   "camera": "time-lapse: Noah builds the ark over the years; ribs rise; seasons change green-dry-green; crowds pass laughing and pointing; old Methuselah watches from his hill each year",
+   "labels": [],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "hammer taps in rhythm",
+    "crowd murmur (no words)",
+    "seasonal wind"
+   ],
+   "keywords": [
+    "waiting"
+   ]
+  },
+  {
+   "id": "B13",
+   "scene": "S11",
+   "mood": "timelapse",
+   "extra_hold": 2.6,
+   "text": "\"The longsuffering of God *waited* in the days of Noah, while the ark was a preparing.\"",
+   "tts": "The longsuffering of God waited in the days of Noah, while the ark was a preparing.",
+   "camera": "time-lapse continues with the floating card; then (S12, in the held pause) the sky cracks with light, rain in sheets, camera cranes up as water spreads, the ark lifts (no people in the water)",
+   "labels": [
+    {
+     "text": "GENESIS 7:11 · “…THE WINDOWS OF HEAVEN WERE OPENED.”",
+     "anchor": "sky (S12)"
+    }
+   ],
+   "card": {
+    "style": "floating cream card",
+    "ref": "1 PETER 3:20 · KJV",
+    "text": "…the longsuffering of God *waited* in the days of Noah, while the ark was a preparing…",
+    "gold": [
+     "WAITED"
+    ]
+   },
+   "tracker": null,
+   "sfx": [
+    "warm card shimmer",
+    "deep rumble + rain sheets (S12)",
+    "thunder crack of light"
+   ],
+   "keywords": [
+    "waited"
+   ]
+  },
+  {
+   "id": "B14",
+   "scene": "S13",
+   "mood": "city_night",
+   "text": "And God is still waiting today. Not to punish you… but *for* you.",
+   "tts": "And God is still waiting today. | Not to punish you… but for you.",
+   "camera": "match cut: rain on the ark becomes rain on a modern low-poly city at night; one person alone under a streetlight; the rain slows and a soft warm light falls on them",
+   "labels": [],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "soft rain on streets",
+    "warm pad as the light falls (music resolves to D major)"
+   ],
+   "keywords": [
+    "for"
+   ]
+  },
+  {
+   "id": "B15",
+   "scene": "S13",
+   "mood": "city_warm",
+   "text": "\"The Lord is… not willing that any should *perish*, but that all should come to repentance.\"",
+   "tts": "The Lord is… not willing that any should perish, but that all should come to repentance.",
+   "camera": "the warm light grows; floating card for 2 Peter 3:9",
+   "labels": [],
+   "card": {
+    "style": "floating cream card",
+    "ref": "2 PETER 3:9 · KJV",
+    "text": "The Lord is… *not willing* that any should *perish*, but that all should come to repentance.",
+    "gold": [
+     "NOT WILLING",
+     "PERISH"
+    ]
+   },
+   "tracker": null,
+   "sfx": [
+    "light shimmer",
+    "warm swell"
+   ],
+   "keywords": [
+    "perish"
+   ]
+  },
+  {
+   "id": "B16",
+   "scene": "S14",
+   "mood": "cta",
+   "text": "Coincidence… or God's *timing*? Comment one word.",
+   "tts": "Coincidence… or God's timing? | Comment one word.",
+   "camera": "dark warm background: COINCIDENCE = a pair of dice, TIMING = a golden hourglass that glows; a comment box types TIMING 🙏; hearts float up",
+   "labels": [],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "dice rattle",
+    "hourglass chime",
+    "typing ticks",
+    "heart pops"
+   ],
+   "keywords": [
+    "timing"
+   ]
+  },
+  {
+   "id": "B17",
+   "scene": "S15",
+   "mood": "cta",
+   "text": "",
+   "tts": "",
+   "camera": "end card: logo + GRACE IN MOTION + @grace_in_motion616; the last frame flows back to the lit lamp of S1 (loop)",
+   "labels": [],
+   "card": null,
+   "tracker": null,
+   "sfx": [
+    "soft chime",
+    "whoosh into the loop"
+   ],
+   "keywords": []
+  }
+ ]
+}

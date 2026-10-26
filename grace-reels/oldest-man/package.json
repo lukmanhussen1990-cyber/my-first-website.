@@ -1,0 +1,27 @@
+{
+  "name": "grace-oldest-man",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Q.02 THE OLDEST MAN — Remotion + React Three Fiber reel (1080x1920, 30 fps), 100% code.",
+  "type": "module",
+  "scripts": {
+    "voice": "python3 voice/tts.py",
+    "audio": "node audio/synth.mjs",
+    "studio": "remotion studio src/index.jsx",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@react-three/fiber": "^9.8.2",
+    "@remotion/bundler": "^4.0.538",
+    "@remotion/cli": "^4.0.538",
+    "@remotion/motion-blur": "^4.0.538",
+    "@remotion/renderer": "^4.0.538",
+    "@remotion/three": "^4.0.538",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.538",
+    "three": "^0.186.1"
+  }
+}
