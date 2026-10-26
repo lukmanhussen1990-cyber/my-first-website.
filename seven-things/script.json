@@ -1,0 +1,215 @@
+{
+  "episode": "Q.01",
+  "title": "SEVEN THINGS",
+  "topic": "God says He hates 7 things, and number 7 surprises almost everyone (Proverbs 6:16-19)",
+  "voice": "calm, warm male storyteller",
+  "hook_title": "GOD HATES 7 THINGS",
+  "cover": { "image": "giant cracked stone 7 in the desert", "title": "GOD HATES 7 THINGS", "subtitle": "#7 SURPRISES EVERYONE" },
+  "kjv": {
+    "PROVERBS 6:16": "These six things doth the LORD hate: yea, seven are an abomination unto him:",
+    "PROVERBS 6:17": "A proud look, a lying tongue, and hands that shed innocent blood,",
+    "PROVERBS 6:18": "An heart that deviseth wicked imaginations, feet that be swift in running to mischief,",
+    "PROVERBS 6:19": "A false witness that speaketh lies, and he that soweth discord among brethren.",
+    "ROMANS 5:8": "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
+    "1 JOHN 1:9": "If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.",
+    "MATTHEW 5:9 (caption only)": "Blessed are the peacemakers: for they shall be called the children of God."
+  },
+  "pauses": { "between_sentences": 0.3, "after_number_x": 0.25, "before_discord": 1.0, "before_good_news": 0.7 },
+  "beats": [
+    {
+      "id": "B01", "scene": "S1", "mood": "hook_ochre_dust",
+      "text": "God says He *hates* 7 things.",
+      "tts": "God says He hates seven things.",
+      "keywords": ["HATES"],
+      "camera": "high wide over the desert; the stone 7 hangs at the top (anticipation), drops, slams; 6-frame shake; slow push-in",
+      "labels": [], "card": null,
+      "tracker": { "visible": false, "note": "hook title GOD HATES 7 THINGS punches in on impact (0-1.8 s), then flies into the caption spot" },
+      "sfx": ["deep soft impact", "dust whoosh", "small rock clatter", "sheep scatter"]
+    },
+    {
+      "id": "B02", "scene": "S1", "mood": "hook_ochre_dust",
+      "text": "And number 7 surprises almost *everyone*.",
+      "tts": "And number seven surprises almost everyone.",
+      "keywords": ["EVERYONE"],
+      "camera": "crane down and around the cracked 7 while dust settles; palms still swaying back",
+      "labels": [], "card": null,
+      "tracker": { "visible": true, "build": "tiles 1-7 drop in one by one; tile 7 is a shaking, glowing ?" },
+      "sfx": ["soft tick per tile", "settling dust"]
+    },
+    {
+      "id": "B03", "scene": "S2", "mood": "warm_parchment",
+      "text": "\"These six things doth the LORD *hate*: yea, *seven* are an abomination unto him.\"",
+      "tts": "These six things doth the LORD hate: yea, seven are an abomination unto him.",
+      "keywords": ["HATE", "SEVEN"],
+      "camera": "3D scroll unrolls toward the lens; camera glides along it through a dusty light beam",
+      "labels": [],
+      "card": { "style": "scroll (HTML text tracked onto the 3D parchment)", "ref": "PROVERBS 6:16 · KJV", "text": "These six things doth the LORD hate: yea, *SEVEN* are an abomination unto him:" },
+      "tracker": { "visible": true },
+      "sfx": ["parchment unroll", "soft shimmer on SEVEN"]
+    },
+    {
+      "id": "B04", "scene": "S3", "mood": "purple_gold",
+      "text": "Number 1: \"A *proud* look.\"",
+      "tts": "Number one: | A proud look.",
+      "keywords": ["PROUD"],
+      "camera": "medium tracking shot; rich man in purple and gold walks past a beggar, chin high; his shadow grows huge, the beggar's shrinks",
+      "labels": [{ "text": "PROVERBS 6:17", "anchor": "rich man's head" }], "card": null,
+      "tracker": { "visible": true, "flip": 1 },
+      "sfx": ["riser into tile thud (pitch 1)", "footsteps on stone", "coins jingle"]
+    },
+    {
+      "id": "B05", "scene": "S3", "mood": "purple_gold",
+      "text": "Before murder… before lies… *pride* is listed first.",
+      "tts": "Before murder… before lies… pride is listed first.",
+      "keywords": ["PRIDE"],
+      "camera": "slow crane up so the giant shadow fills the frame; beggar small in the corner",
+      "labels": [], "card": null,
+      "tracker": { "visible": true },
+      "sfx": ["low swell"]
+    },
+    {
+      "id": "B06", "scene": "S4", "mood": "market_noon",
+      "text": "Number 2: \"A *lying* tongue.\" Yes… even the small ones.",
+      "tts": "Number two: | A lying tongue. | Yes… even the small ones.",
+      "keywords": ["LYING"],
+      "camera": "market stall; rack focus from the smiling seller to his shadow on the wall swapping good fruit for rotten",
+      "labels": [{ "text": "PROVERBS 6:17", "anchor": "seller" }], "card": null,
+      "tracker": { "visible": true, "flip": 2 },
+      "sfx": ["riser into tile thud (pitch 2)", "market murmur", "awning flutter"]
+    },
+    {
+      "id": "B07", "scene": "S5", "mood": "dusk_red_muted",
+      "text": "Number 3: \"Hands that shed *innocent* blood.\"",
+      "tts": "Number three: | Hands that shed innocent blood.",
+      "keywords": ["INNOCENT"],
+      "camera": "very wide, high, still: two brothers in a field at dusk; one walks away alone; a single red flower bends and wilts (no violence shown)",
+      "labels": [{ "text": "PROVERBS 6:17", "anchor": "the flower" }], "card": null,
+      "tracker": { "visible": true, "flip": 3 },
+      "sfx": ["riser into tile thud (pitch 3, softer)", "evening crickets", "soft wind"],
+      "extra_hold": 0.6
+    },
+    {
+      "id": "B08", "scene": "S6", "mood": "storm_inside",
+      "text": "Number 4: \"An heart that deviseth *wicked* imaginations.\" Sin starts in the *mind*.",
+      "tts": "Number four: | An heart that deviseth wicked imaginations. | Sin starts in the mind.",
+      "keywords": ["WICKED", "MIND"],
+      "camera": "calm man on a bench; slow push-through into his head: a small dark storm cloud with tiny lightning swirls inside a glowing outline",
+      "labels": [{ "text": "PROVERBS 6:18", "anchor": "man" }, { "text": "SIN STARTS IN THE MIND", "anchor": "storm cloud" }], "card": null,
+      "tracker": { "visible": true, "flip": 4 },
+      "sfx": ["riser into tile thud (pitch 4)", "low rumble", "tiny thunder clicks"]
+    },
+    {
+      "id": "B09", "scene": "S7", "mood": "harsh_noon",
+      "text": "Number 5: \"Feet that be swift in running to *mischief*.\" Running toward trouble.",
+      "tts": "Number five: | Feet that be swift in running to mischief. | Running toward trouble.",
+      "keywords": ["MISCHIEF"],
+      "camera": "fast low tracking shot alongside a sprinting man heading for a shouting crowd; dust kicks, robe flaps; motion blur",
+      "labels": [{ "text": "PROVERBS 6:18", "anchor": "runner" }], "card": null,
+      "tracker": { "visible": true, "flip": 5 },
+      "sfx": ["riser into tile thud (pitch 5)", "running footsteps", "wind rush", "distant crowd (no words)"]
+    },
+    {
+      "id": "B10", "scene": "S8", "mood": "grey_stone_gate",
+      "text": "Number 6: \"A *false witness* that speaketh lies.\" Ruining someone's *name*.",
+      "tts": "Number six: | A false witness that speaketh lies. | Ruining someone's name.",
+      "keywords": ["FALSE WITNESS", "NAME"],
+      "camera": "city gate, elders on stone seats; the accuser pulls back, then points; push-in on the innocent man as his name tag cracks",
+      "labels": [{ "text": "PROVERBS 6:19", "anchor": "accuser" }, { "text": "NABOTH", "anchor": "innocent man (name tag cracks in two)", "note": "a real false-witness case at a city gate, 1 Kings 21:13" }], "card": null,
+      "tracker": { "visible": true, "flip": 6 },
+      "sfx": ["riser into tile thud (pitch 6)", "gate wind", "stone crack on the name tag"]
+    },
+    {
+      "id": "B11", "scene": "S9", "mood": "cold_blue_night",
+      "text": "And number 7… the one He saved for *last*:",
+      "tts": "And number seven… the one He saved for last:",
+      "keywords": ["LAST"],
+      "camera": "slow dolly-zoom on a quiet village at night; the ? tile shakes harder",
+      "labels": [], "card": null,
+      "tracker": { "visible": true, "shake": "strong" },
+      "sfx": ["music drops to near silence", "slow heartbeat starts"]
+    },
+    {
+      "id": "B12", "scene": "S10", "mood": "night_fire",
+      "text": "\"He that soweth *discord* among brethren.\"",
+      "tts": "He that soweth discord among brethren.",
+      "keywords": ["DISCORD"],
+      "pause_before": 1.0,
+      "camera": "hard hit: tracker ? bursts into a gold 7 with a short shake; cut to friends around a fire joined by thin glowing gold threads",
+      "labels": [{ "text": "PROVERBS 6:19", "anchor": "the whisperer" }], "card": null,
+      "tracker": { "visible": true, "flip": 7, "reveal": true },
+      "sfx": ["deep hit + bright shimmer on the reveal", "fire crackle"]
+    },
+    {
+      "id": "B13", "scene": "S10", "mood": "night_fire",
+      "text": "Gossip. Stirring drama. Turning friends against each *other*.",
+      "tts": "Gossip. | Stirring drama. | Turning friends against each other.",
+      "keywords": ["OTHER"],
+      "camera": "slow orbit; one man leans in and whispers ear to ear; each time a gold thread SNAPS; people turn their backs; the circle splits in two",
+      "labels": [], "card": null,
+      "tracker": { "visible": true },
+      "sfx": ["breathy whispers (filtered noise, no words)", "string-pluck snap per thread", "fire crackle"]
+    },
+    {
+      "id": "B14", "scene": "S11", "mood": "neutral_dark",
+      "text": "Most of us *never* think of that as sin.",
+      "tts": "Most of us never think of that as sin.",
+      "keywords": ["NEVER"],
+      "camera": "stylized cut: the whispers become a generic phone chat (no app names): \"did you hear what she…\", \"don't tell anyone but…\"",
+      "labels": [], "card": null,
+      "tracker": { "visible": false },
+      "sfx": ["soft message pops"]
+    },
+    {
+      "id": "B15", "scene": "S12", "mood": "cold_grey",
+      "text": "Be honest… how many did *you* do this week?",
+      "tts": "Be honest… how many did you do this week?",
+      "keywords": ["YOU"],
+      "camera": "all 7 tiles big in the middle; they pulse one by one like a self-check; slow push toward the viewer",
+      "labels": [], "card": null,
+      "tracker": { "visible": true, "layout": "big center", "pulse": "1..7" },
+      "sfx": ["soft tick per tile pulse", "low pad"]
+    },
+    {
+      "id": "B16", "scene": "S13", "mood": "warm_glory_gold",
+      "text": "But here's the good news: \"God commendeth his *love* toward us, in that, while we were yet sinners, *Christ* died for us.\"",
+      "tts": "But here's the good news: | God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
+      "keywords": ["LOVE", "CHRIST"],
+      "pause_before": 0.7,
+      "camera": "slow warm dissolve from cold grey to gold; a soft beam of light falls on a cross on a hill; gentle crane up",
+      "labels": [],
+      "card": { "style": "floating cream card over darkened scene", "ref": "ROMANS 5:8 · KJV", "text": "…God commendeth his *LOVE* toward us, in that, while we were yet sinners, *CHRIST* died for us." },
+      "tracker": { "visible": false },
+      "sfx": ["warm major chord swell", "light shimmer"]
+    },
+    {
+      "id": "B17", "scene": "S14", "mood": "warm_glory_gold",
+      "text": "\"If we *confess* our sins, he is faithful and just to *forgive* us our sins, and to cleanse us from all unrighteousness.\"",
+      "tts": "If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.",
+      "keywords": ["CONFESS", "FORGIVE"],
+      "camera": "the 7 tiles are washed white by light one by one; cut back to the village: snapped threads regrow, the two groups turn and come together around the fire",
+      "labels": [{ "text": "1 JOHN 1:9", "anchor": "fire circle" }], "card": null,
+      "tracker": { "visible": true, "wash": "1..7 white" },
+      "sfx": ["soft shimmer sweep per tile", "fire crackle", "warm pad"]
+    },
+    {
+      "id": "B18", "scene": "S15", "mood": "dark_warm",
+      "text": "So which one is hardest for you? Just comment the *number*.",
+      "tts": "So which one is hardest for you? | Just comment the number.",
+      "keywords": ["NUMBER"],
+      "camera": "dark warm background, 7 number tiles in a row; a comment box types \"7… 😔\"; small hearts float up",
+      "labels": [], "card": null,
+      "tracker": { "visible": true, "layout": "row", "tap": "light tap per tile" },
+      "sfx": ["light tap per tile", "typing ticks", "heart pops"]
+    },
+    {
+      "id": "B19", "scene": "S16", "mood": "dark_warm",
+      "text": "",
+      "tts": "",
+      "keywords": [],
+      "camera": "end card: logo + GRACE IN MOTION + @grace_in_motion616 with a gold shimmer; last frames flow back into the stone 7 falling (loop)",
+      "labels": [], "card": null,
+      "tracker": { "visible": false },
+      "sfx": ["soft chime", "whoosh into the loop"]
+    }
+  ]
+}
