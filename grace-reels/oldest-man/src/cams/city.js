@@ -4,4 +4,8 @@ export function camera(plan, B, shot, t, H) {
   const target = H.at('city', [0, 1.2, 0]);
   return { pos: H.sph(target, 0.35, 0.28, 14 + 0.6 * (t - shot.t0)), look: target, fov: 24 };
 }
-export const anchors = {};
+// overlay label anchors (world points); the overlay calls anchorAt(plan, 'city', name, t)
+export const anchors = {
+  person: (plan, B, t, H) => H.at('city', [0, 1.9, 0]),
+  light: (plan, B, t, H) => H.at('city', [0, 5, 0]),
+};

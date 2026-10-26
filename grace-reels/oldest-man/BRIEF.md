@@ -162,3 +162,10 @@ The references are in `grace-reels/reference/*.mp4`. Style notes are in `grace-r
 - **Characters:** `src/three/rig.js`, with the `Person` / `Poses` / `expr` API and `src/three/cast.js` helpers. Earlier sets are in `src/three/sets_legacy/` (reference only, not imported).
 - **Overlay:** `src/overlay/`. Fonts come from `src/lib/fonts.js`.
 - **Git:** do NOT run git commit/push (the lead integrates and commits).
+
+## Shared assets for the world team
+- `src/three/arkmodel.js`: the ark ported from our Noah reel. `buildArk()` returns `A`.
+  - `A.set({ progress 0..1, pitch, door, glow, ramp, scaffold, ladderOn })`. The keel, ribs and plank rows appear with `progress`. It also has a roof, one side door, a ramp, scaffolding and a ladder.
+  - Local length runs along x (−18..18), the door side faces +z, the ground is at y = 0.
+  - Use the SAME model in the hill set (finished, far away) and the ark set (time-lapse, S7, flood).
+- The Noah reel's code (`/home/user/my-first-website./src/*.js`: world.js, fx.js, timeline.js, characters.js) has a flood sea, rain, crowds and the ark site. Reference only; don't import from it.
