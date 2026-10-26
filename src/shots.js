@@ -90,6 +90,9 @@ export class Shots {
     w.glacier.visible = true;
     w.cap.visible = w.capBack.visible = false;
     w.fullframe.mesh.visible = false;
+    // the radio / logbook inserts swap the image and LED settings; scene 9 expects the crowd
+    w.fullframe.setImage(w.frozen.images.crowd);
+    w.fullframe.u.uLed.value.set(0, 0, 0.01, 0); w.fullframe.u.uLedKill.value = 0;
     for (const f of [w.max, w.erik, w.friendBlue, w.friendGreen, w.rescuerA, w.rescuerB]) { f.root.visible = false; f.root.rotation.set(0, 0, 0); f.root.position.set(0, 0, 0); }
     w.maxLamp.set(0, t); w.erikLamp.set(0, t);
     w.max.M.lens.color.setRGB(0.2, 0.15, 0.1);
