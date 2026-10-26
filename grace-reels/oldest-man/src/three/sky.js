@@ -4,7 +4,8 @@
 //   - a lightning "crack of light" across the sky (branching, grows from its centre, flashes, can hold open)
 // The sky dome itself (gradient, sun disc, glow, stars, moon) is fx.js makeSky().
 // Mood keys (under mood.sky): clouds, cloudLit, cloudShade, cloudSpeed, cloudAlt, cloudR, cloudScale, cloudSeed,
-//   storm, stormDark, stormLit, stormAlt, stormSpeed, crack { age, pos, size, seed, color, hold, flash, tilt }.
+//   storm, stormDark, stormLit, stormAlt, stormSpeed, crack { age, pos, size, seed, color, glowColor, glowK, cloudK, hold, hole, flash, tilt, skyColor, hemiK }.
+//   crack.hole (default 1) opens a rift in the storm decks where the view ray to the crack crosses them (put the crack ABOVE the decks).
 // Everything is a pure function of t.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -103,9 +104,19 @@ void main(){ vec4 wp = modelMatrix * vec4(position, 1.0);
   wp.y -= (n * 22.0 + vn(q * 3.1) * 6.0) * uAmt;
   vWP = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }`;
 const DECK_FS = `uniform vec3 uDark; uniform vec3 uLit; uniform vec3 uHorizon; uniform vec3 uCam; uniform float uOpen; uniform float uFar;
-uniform vec3 uFlashCol; uniform vec3 uFlashPos; uniform float uFlash; varying vec3 vWP; varying float vN;
+uniform vec3 uFlashCol; uniform vec3 uFlashPos; uniform float uFlash; uniform vec2 uHoleC; uniform vec2 uHoleA; uniform vec2 uHoleR; uniform float uHoleK; uniform vec3 uHoleCol;
+varying vec3 vWP; varying float vN;
 void main(){
   if (vN < uOpen) discard;
+  // the rift: an elliptical opening where the camera->crack ray crosses this deck (ragged by the deck noise)
+  float rim = 0.0;
+  if (uHoleK > 0.001) {
+    vec2 d = vWP.xz - uHoleC; vec2 A = uHoleA, B = vec2(-A.y, A.x);
+    float a = dot(d, A) / max(uHoleR.x * uHoleK, 1e-3), b = dot(d, B) / max(uHoleR.y * uHoleK, 1e-3);
+    float e = a * a + b * b + (vN - 0.5) * 0.9;
+    if (e < 1.0) discard;
+    rim = (1.0 - smoothstep(1.0, 2.6, e)) * uHoleK;
+  }
   vec3 N = normalize(cross(dFdx(vWP), dFdy(vWP)));
   if (dot(N, uCam - vWP) < 0.0) N = -N;
   float l = clamp(dot(N, normalize(vec3(-0.4, -0.6, 0.5))) * 0.5 + 0.5, 0.0, 1.0);
@@ -113,6 +124,7 @@ void main(){
   float d = length(vWP - uCam);
   c = mix(c, uHorizon, clamp(1.0 - exp(-d / uFar), 0.0, 0.95));
   c += uFlashCol * uFlash * exp(-pow(length(vWP - uFlashPos) / 320.0, 2.0)) * (0.6 + 0.6 * l);
+  c += uHoleCol * rim * rim * 2.2;                 // cloud edges lit from inside the rift
   gl_FragColor = vec4(c, 1.0);
 }`;
 export function makeStormDecks({ layers = 3, size = 1800, seg = 64, seed = 4 } = {}) {
@@ -123,13 +135,16 @@ export function makeStormDecks({ layers = 3, size = 1800, seg = 64, seed = 4 } =
       vertexShader: DECK_VS, fragmentShader: DECK_FS, fog: false, side: THREE.DoubleSide,
       uniforms: { uTime: { value: 0 }, uAmt: { value: 1 }, uDrift: { value: new THREE.Vector2(0.004 + i * 0.002, 0.0015) }, uSeed: { value: seed + i * 17.3 },
         uDark: { value: new THREE.Color('#2b3038') }, uLit: { value: new THREE.Color('#5d6670') }, uHorizon: { value: new THREE.Color('#6b6f74') }, uCam: { value: new THREE.Vector3() },
-        uOpen: { value: 0 }, uFar: { value: 700 }, uFlashCol: { value: new THREE.Color(0, 0, 0) }, uFlashPos: { value: new THREE.Vector3() }, uFlash: { value: 0 } },
+        uOpen: { value: 0 }, uFar: { value: 700 }, uFlashCol: { value: new THREE.Color(0, 0, 0) }, uFlashPos: { value: new THREE.Vector3() }, uFlash: { value: 0 },
+        uHoleC: { value: new THREE.Vector2() }, uHoleA: { value: new THREE.Vector2(1, 0) }, uHoleR: { value: new THREE.Vector2(1, 1) }, uHoleK: { value: 0 }, uHoleCol: { value: new THREE.Color(1, 0.95, 0.85) } },
     });
     const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; m.renderOrder = 990 + i; g.add(m); decks.push(m);
   }
+  const _r = new THREE.Vector3();
   return {
     group: g,
-    set(t, S, camera, center, flash = null) {
+    // hole = { pos: world Vector3 of the crack, size (m), k 0..1 opening, color } -> a rift where the view ray crosses each deck
+    set(t, S, camera, center, flash = null, hole = null) {
       const k = S.storm ?? 0; g.visible = k > 0.001; if (!g.visible) return;
       const alt = S.stormAlt ?? 70;
       decks.forEach((m, i) => {
@@ -141,6 +156,21 @@ export function makeStormDecks({ layers = 3, size = 1800, seg = 64, seed = 4 } =
         u.uOpen.value = i === 0 ? lerp(0.62, 0.0, smooth(k)) : lerp(0.75, 0.35 - i * 0.05, smooth(k));
         if (flash) { u.uFlash.value = flash.k; u.uFlashCol.value.set(flash.color); u.uFlashPos.value.copy(flash.pos); } else u.uFlash.value = 0;
         m.position.set(center.x, alt + i * 16 + (1 - k) * 25, center.z);
+        u.uHoleK.value = 0;
+        if (hole && hole.k > 0.001) {
+          const cam = camera.position, P = hole.pos, yD = m.position.y - 14 * u.uAmt.value;   // mean underside height
+          if (P.y > yD && cam.y < yD) {
+            const tt = (yD - cam.y) / (P.y - cam.y);
+            _r.copy(P).sub(cam).multiplyScalar(tt).add(cam);
+            u.uHoleC.value.set(_r.x, _r.z);
+            _r.set(1, 0, 0).applyQuaternion(camera.quaternion); _r.y = 0; if (_r.lengthSq() < 1e-6) _r.set(1, 0, 0); _r.normalize();
+            u.uHoleA.value.set(_r.x, _r.z);
+            // the opening spans the bolt across the view; depth-wise it is stretched by the grazing view angle
+            const sz = hole.size * tt, grazing = Math.max(0.25, Math.abs((P.y - cam.y) / P.distanceTo(cam)));
+            u.uHoleR.value.set(sz * 0.42, sz * 0.12 / grazing);
+            u.uHoleK.value = hole.k; u.uHoleCol.value.set(hole.color || '#fff1d6');
+          }
+        }
       });
     },
   };
@@ -213,8 +243,8 @@ export function makeLightningCrack({ seed = 7, size = 300 } = {}) {
       g.position.copy(worldPos); g.quaternion.copy(camera.quaternion); g.rotateZ(C.tilt ?? -0.08);
       const s = (C.size ?? size) / size; g.scale.setScalar(s);
       mat.uniforms.uGrow.value = E.grow; mat.uniforms.uCore.value = E.core; mat.uniforms.uColor.value.set(C.color ?? '#fff3dc');
-      glow.scale.set(size * 1.25 * (0.35 + 0.65 * E.grow), size * 0.42, 1);
-      glowMat.color.set(C.glowColor ?? '#ffe2b8').multiplyScalar(E.glow * (C.glowK ?? 1.6));
+      glow.scale.set(size * 1.1 * (0.35 + 0.65 * E.grow), size * 0.32, 1);
+      glowMat.color.set(C.glowColor ?? '#ffe2b8').multiplyScalar(E.glow * (C.glowK ?? 1.1));
       return E;
     },
   };
@@ -235,14 +265,17 @@ export function makeSkyFx() {
       _c.set(c.look[0], 0, c.look[2]);
       let E = { grow: 0, core: 0, flash: 0, glow: 0 }, flash = null;
       const C = S.crack;
+      let hole = null;
       if (C && C.age != null && C.age >= 0) {
         const p = C.pos || [0, 140, -420];
         _p.set(p[0] + o[0], p[1] + o[1], p[2] + o[2]);
         E = crack.set(t, C, camera, _p);
-        flash = { k: E.glow * (C.cloudK ?? 1.2), color: C.color ?? '#fff3dc', pos: _p };
+        flash = { k: E.glow * (C.cloudK ?? 0.55), color: C.color ?? '#fff3dc', pos: _p };
+        // the rift in the storm decks ("the windows of heaven were opened"): opens with the bolt, stays open while it holds
+        if ((C.hole ?? 1) > 0) hole = { pos: _p, size: C.size ?? crack.size, k: (C.hole ?? 1) * smooth(clamp(C.age / 0.45)) * (C.hold === false ? Math.exp(-C.age / 1.2) : 1), color: C.glowColor ?? '#ffe9c8' };
       } else crack.group.visible = false;
       clouds.set(t, S, camera, _c, M.sunDir, flash);
-      decks.set(t, S, camera, _c, flash);
+      decks.set(t, S, camera, _c, flash, hole);
       return E;
     },
   };

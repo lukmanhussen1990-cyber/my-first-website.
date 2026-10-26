@@ -62,7 +62,7 @@ export class World {
     const E = this.crackE = this.skyFx.set(U.uTime.value, M, this.camera, c, o);
     if (E.flash > 0.001 || E.glow > 0.001) {
       const C = S.crack || {};
-      const f = E.flash * (C.flash ?? 0.35);
+      const f = E.flash * (C.flash ?? 0.22);
       M.post = { ...M.post, flash: (M.post.flash || 0) + f };
       u.top.value.lerp(this._c.set(C.skyColor ?? '#c9d2e0'), Math.min(1, E.flash * 0.6));
       u.horizon.value.lerp(this._c.set(C.skyColor ?? '#c9d2e0'), Math.min(1, E.flash * 0.35));

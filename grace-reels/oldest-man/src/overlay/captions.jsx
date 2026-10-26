@@ -114,7 +114,7 @@ export const HookTitle = ({ t, frame }) => {
 };
 
 // ------------------------------------------------------------------ captions
-const CAP_IN = E.hookOut + 0.18;                                 // first caption crossfades with the dissolving hook title
+const CAP_IN = E.hookOut + 0.22;                                 // first caption crossfades with the dissolving hook title (no blank frame)
 export const Captions = ({ t }) => {
   const bl = captionAt(t);
   if (!bl) return null;
