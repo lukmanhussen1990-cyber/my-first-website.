@@ -1,0 +1,100 @@
+{
+  "fps": 30,
+  "sceneTail": 0.4,
+  "lineGap": 0.28,
+  "scenes": [
+    {
+      "id": 1, "name": "HOOK", "part": "part01", "label": "DAY 4", "battery": 0.05,
+      "lines": [
+        { "text": "A climber fell into a deep crack in the ice." },
+        { "text": "He wasn't alone down there.", "red": ["alone"] },
+        { "text": "A man was frozen inside the ice wall, right next to him." },
+        { "text": "And every day... the frozen man moved.", "red": ["moved"], "hitWord": "moved" }
+      ],
+      "extraTail": 0.75
+    },
+    {
+      "id": 2, "name": "THE FALL", "part": "part02", "label": "4 DAYS EARLIER", "battery": null,
+      "lines": [
+        { "text": "Four days earlier, Max was crossing the glacier alone." },
+        { "text": "The snow under his feet broke." },
+        { "text": "He fell 40 meters onto a narrow ledge of ice." },
+        { "text": "His leg was broken. His radio was smashed." }
+      ]
+    },
+    {
+      "id": 3, "name": "THE STORM", "part": "part03", "label": null, "battery": null,
+      "lines": [
+        { "text": "At camp, his friends called for help." },
+        { "text": "But a snowstorm kept the rescuers away." }
+      ],
+      "extraTail": 0.5
+    },
+    {
+      "id": 4, "name": "DAY 1", "part": "part04", "label": "DAY 1", "battery": 1.0,
+      "lines": [
+        { "text": "That night, Max turned on his headlamp." },
+        { "text": "Inside the ice, one meter from his face, was a man." },
+        { "text": "Frozen solid. Facing away from him.", "red": ["frozen"] }
+      ]
+    },
+    {
+      "id": 5, "name": "DAY 2", "part": "part05", "label": "DAY 2", "battery": 0.6,
+      "lines": [
+        { "text": "On day two, Max looked again." },
+        { "text": "The frozen man was facing him now.", "red": ["facing"] }
+      ],
+      "extraTail": 0.4
+    },
+    {
+      "id": 6, "name": "DAY 3", "part": "part06", "label": "DAY 3", "battery": 0.15,
+      "lines": [
+        { "text": "On day three, his light began to flicker." },
+        { "text": "And in the flicker, he saw it." },
+        { "text": "The frozen man's eyes were open.", "red": ["open"], "hitWord": "open" }
+      ],
+      "extraTail": 0.5
+    },
+    {
+      "id": 7, "name": "DAY 4", "part": "part07", "label": "DAY 4", "battery": 0.04,
+      "lines": [
+        { "text": "On day four, his light was almost dead." },
+        { "text": "The frozen man's hand was pressed flat against the ice..." },
+        { "text": "from the inside.", "red": ["inside"] },
+        { "text": "Hello?! Can anyone hear me?", "speaker": "rescuer", "part": "part07b_rescuer", "gapBefore": 0.55 }
+      ]
+    },
+    {
+      "id": 8, "name": "THE RESCUE", "part": "part08", "label": null, "battery": null,
+      "lines": [
+        { "text": "The storm was over." },
+        { "text": "A rescuer came down on a rope, clipped Max to his harness, and they started to rise." }
+      ]
+    },
+    {
+      "id": 9, "name": "THE REVEAL", "part": "part09", "label": null, "battery": null,
+      "lines": [
+        { "text": "On the way up, their lights hit the ice below the ledge." },
+        { "text": "There were dozens of frozen people down there.", "red": ["dozens"] },
+        { "text": "And every single one of them... was looking up at him.", "red": ["up"] }
+      ],
+      "extraTail": 0.5
+    },
+    {
+      "id": 10, "name": "SAFE", "part": "part10", "label": null, "battery": null,
+      "lines": [
+        { "text": "Max made it out alive." },
+        { "text": "Later, the rescuers checked the old records." },
+        { "text": "Since 1950, 31 climbers have vanished on this glacier.", "red": ["31"] },
+        { "text": "None were ever found." },
+        { "text": "Max was supposed to be number 32.", "red": ["32"] }
+      ],
+      "extraTail": 1.1
+    },
+    {
+      "id": 11, "name": "THE LAST SHOT", "part": null, "label": null, "battery": null,
+      "lines": [],
+      "fixed": 4.3
+    }
+  ]
+}

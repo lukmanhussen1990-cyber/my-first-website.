@@ -1,0 +1,16 @@
+{
+  "name": "man-in-the-ice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vertical 3D horror reel rendered deterministically with three.js + headless Chrome + ffmpeg",
+  "type": "module",
+  "scripts": {
+    "still": "node tools/render.js --still",
+    "render": "node tools/render.js",
+    "timeline": "node tools/build_timeline.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.16.0",
+    "three": "^0.186.1"
+  }
+}
