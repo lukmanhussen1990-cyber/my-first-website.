@@ -1,0 +1,454 @@
+[
+  {
+    "n": 1,
+    "file": "char_elijah_turnaround.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_1.png",
+      "style_ref_3.png"
+    ],
+    "use": "S3–S8 design master, badge face (S1/S6/S10)"
+  },
+  {
+    "n": 2,
+    "file": "char_elijah_parts.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "bone rig: walk (S3), talk, reach (S6)"
+  },
+  {
+    "n": 3,
+    "file": "char_elijah_poses.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S3 walk/talk, S6 rising, S8 talking"
+  },
+  {
+    "n": 4,
+    "file": "char_elisha_turnaround.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S3–S7 design master"
+  },
+  {
+    "n": 5,
+    "file": "char_elisha_parts.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elisha_turnaround.png",
+      "char_elijah_parts.png"
+    ],
+    "use": "bone rig: walk (S3), reach (S6), kneel and pick up (S7)"
+  },
+  {
+    "n": 6,
+    "file": "char_elisha_poses.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elisha_turnaround.png",
+      "char_elijah_turnaround.png"
+    ],
+    "use": "S3 walk/talk, S6 reach up, S7 cry out, kneel, pick up cloak"
+  },
+  {
+    "n": 7,
+    "file": "char_enoch_turnaround.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S2 design master, badge face (S2/S10)"
+  },
+  {
+    "n": 8,
+    "file": "char_enoch_parts.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_enoch_turnaround.png",
+      "char_elijah_parts.png"
+    ],
+    "use": "bone rig: walk into the light (S2)"
+  },
+  {
+    "n": 9,
+    "file": "char_enoch_poses.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_enoch_turnaround.png",
+      "char_elijah_turnaround.png"
+    ],
+    "use": "S2 walk, look up, reach toward the light"
+  },
+  {
+    "n": 10,
+    "file": "char_moses_poses.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S8 mountain"
+  },
+  {
+    "n": 11,
+    "file": "char_jesus_poses.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S8 mountain (glow added in code)"
+  },
+  {
+    "n": 12,
+    "file": "char_disciples_poses.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_3.png"
+    ],
+    "use": "S8 mountain (Peter, James, John)"
+  },
+  {
+    "n": 13,
+    "file": "prop_elijah_cloak.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S1 hook, S6 falls away, S7 floats down and lands"
+  },
+  {
+    "n": 14,
+    "file": "fx_chariot.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "style_ref_2.png"
+    ],
+    "use": "S4 burst, S6 replay (wheels spin in code)"
+  },
+  {
+    "n": 15,
+    "file": "fx_horse_gallop.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "fx_chariot.png",
+      "style_ref_2.png"
+    ],
+    "use": "S4 gallop cycle (2 horses), S5 myth picture"
+  },
+  {
+    "n": 16,
+    "file": "fx_flames.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "fx_chariot.png"
+    ],
+    "use": "S4 fire bursts, chariot trail, S5 myth picture glow"
+  },
+  {
+    "n": 17,
+    "file": "bg_enoch_sky.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_2.png",
+      "style_ref_3.png"
+    ],
+    "use": "S2 sky, S9 sunrise sky (re-graded)"
+  },
+  {
+    "n": 18,
+    "file": "bg_enoch_far.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "land",
+    "priority": "MUST",
+    "attach": [
+      "bg_enoch_sky.png",
+      "style_ref_2.png"
+    ],
+    "use": "S2 far hills, S9 sunrise (re-graded)"
+  },
+  {
+    "n": 19,
+    "file": "bg_enoch_mid.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "land",
+    "priority": "MUST",
+    "attach": [
+      "bg_enoch_sky.png",
+      "bg_enoch_far.png",
+      "style_ref_2.png"
+    ],
+    "use": "S2 the path Enoch walks on"
+  },
+  {
+    "n": 20,
+    "file": "bg_jordan_sky.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_2.png"
+    ],
+    "use": "S3–S5 sky, S7 (re-graded)"
+  },
+  {
+    "n": 21,
+    "file": "bg_jordan_far.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "land",
+    "priority": "MUST",
+    "attach": [
+      "bg_jordan_sky.png",
+      "style_ref_2.png"
+    ],
+    "use": "S3–S7 far mountains (storm grade in S6)"
+  },
+  {
+    "n": 22,
+    "file": "bg_jordan_mid.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "land",
+    "priority": "MUST",
+    "attach": [
+      "bg_jordan_sky.png",
+      "bg_jordan_far.png",
+      "style_ref_2.png"
+    ],
+    "use": "S3 walk, S4 chariot, S6 whirlwind ground, S7 Elisha alone"
+  },
+  {
+    "n": 23,
+    "file": "bg_storm_sky.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_2.png"
+    ],
+    "use": "S1 hook, S6 whirlwind sky, S11 loop"
+  },
+  {
+    "n": 24,
+    "file": "bg_mountain_far.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "land",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_2.png",
+      "style_ref_3.png"
+    ],
+    "use": "S8 cloud sea and far peaks"
+  },
+  {
+    "n": 25,
+    "file": "bg_mountain_mid.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "land",
+    "priority": "MUST",
+    "attach": [
+      "bg_mountain_far.png",
+      "style_ref_2.png"
+    ],
+    "use": "S8 the summit stage"
+  },
+  {
+    "n": 26,
+    "file": "fx_whirlwind_1.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "bg_storm_sky.png",
+      "style_ref_2.png"
+    ],
+    "use": "S1 + S6 whirlwind cylinder, back layer"
+  },
+  {
+    "n": 27,
+    "file": "fx_whirlwind_2.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "MUST",
+    "attach": [
+      "fx_whirlwind_1.png",
+      "bg_storm_sky.png"
+    ],
+    "use": "S1 + S6 whirlwind cylinder, middle layer"
+  },
+  {
+    "n": 28,
+    "file": "fx_myth_painting.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "priority": "MUST",
+    "attach": [
+      "char_elijah_turnaround.png",
+      "fx_chariot.png",
+      "fx_horse_gallop.png"
+    ],
+    "use": "S5 the \"most people think\" picture (aged and framed in code, then stamped with the red X)"
+  },
+  {
+    "n": 29,
+    "file": "fx_whirlwind_3.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "NICE",
+    "attach": [
+      "fx_whirlwind_2.png",
+      "bg_storm_sky.png"
+    ],
+    "use": "S1 + S6 whirlwind cylinder, front layer (code particles if skipped)"
+  },
+  {
+    "n": 30,
+    "file": "fx_embers_sparks.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "black",
+    "priority": "NICE",
+    "attach": [
+      "fx_flames.png"
+    ],
+    "use": "S4 sparks, S6 embers (code particles if skipped)"
+  },
+  {
+    "n": 31,
+    "file": "fx_light_beam.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "black",
+    "priority": "NICE",
+    "attach": [
+      "style_ref_3.png"
+    ],
+    "use": "S2 holy light, S8 mountain light (shader beam if skipped)"
+  },
+  {
+    "n": 32,
+    "file": "prop_footprints.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "NICE",
+    "attach": [
+      "bg_enoch_mid.png"
+    ],
+    "use": "S2 footprints that stop (drawn in code if skipped)"
+  },
+  {
+    "n": 33,
+    "file": "bg_storm_clouds.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "NICE",
+    "attach": [
+      "bg_storm_sky.png"
+    ],
+    "use": "S6 cloud layer the whirlwind enters (code fog if skipped)"
+  },
+  {
+    "n": 34,
+    "file": "bg_mountain_sky.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "priority": "NICE",
+    "attach": [
+      "bg_mountain_far.png",
+      "style_ref_3.png"
+    ],
+    "use": "S8 bright sky (code gradient if skipped)"
+  },
+  {
+    "n": 35,
+    "file": "bg_near_kit.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "priority": "NICE",
+    "attach": [
+      "bg_jordan_mid.png",
+      "bg_enoch_mid.png",
+      "style_ref_2.png"
+    ],
+    "use": "foreground pieces for parallax in S2, S3, S7, S8 (code-blurred)"
+  }
+]
