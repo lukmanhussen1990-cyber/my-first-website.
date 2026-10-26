@@ -637,6 +637,21 @@ export const Poses = {
     P.hemFlare = 0.03 * Math.abs(sw);
     return withBlink(P, t, s);
   },
+  // old man standing bent over his cane: heavy slow breathing, small sway, slow head turns, tremor
+  oldStand(t, s = 1, lookK = 0) {
+    const P = basePose(); const ph = hash01(s, 7) * TAU;
+    P.breath = Math.sin(TAU * t / 4.4 + ph) * 1.3;
+    P.bob = 0.004 * P.breath - 0.025;
+    P.lean = 0.36 + 0.015 * Math.sin(TAU * t / 6.5 + ph);
+    P.dx = 0.008 * Math.sin(TAU * t / 6.5 + ph);
+    P.lF = [0.12, -0.2, 0.08]; P.lB = [-0.06, -0.16, 0.08];
+    P.aF = [0.78 + 0.012 * tremor(t, s), -0.15, -0.12]; P.aB = [0.2, 0.3];
+    P.propUp = -0.04 + 0.015 * tremor(t, s, 5.7); P.plant = true;
+    P.headTilt = 0.3 + 0.04 * Math.sin(TAU * t / 8.5 + ph) + 0.25 * lookK;
+    P.look = 0.5 * Math.sin(TAU * t / 9.5 + ph); P.lookY = 0.1 + 0.6 * lookK;
+    expr(P, 'tired', 0.5);
+    return withBlink(P, t, s);
+  },
   // 9 frames per step, forward lean, big arm pump, flight phase
   run(t, s = 1, speed = 1) {
     const P = basePose(); const ph = hash01(s, 3) * TAU;

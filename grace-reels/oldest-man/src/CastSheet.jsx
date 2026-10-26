@@ -18,7 +18,7 @@ const T = 1.3; // sheet time (s)
 // [label, preset, side pose, 3/4 pose, extra]
 const ROWS = [
   [
-    ['METHUSELAH · old', CAST.METHUSELAH_OLD, (t, s) => Poses.oldWalk(t, s), (t, s) => expr(Poses.sitOld(t, s, 0.0, 0.2), 'kind', 0.6)],
+    ['METHUSELAH · old', CAST.METHUSELAH_OLD, (t, s) => Poses.oldWalk(t, s), (t, s) => expr(Poses.oldStand(t, s), 'kind', 0.6)],
     ['METHUSELAH · young', CAST.METHUSELAH_YOUNG, (t, s) => Poses.holdBaby(t, s), (t, s) => expr(Poses.idle(t, s), 'wonder', 0.7), { baby: CAST.BABY_LAMECH }],
     ['ENOCH', CAST.ENOCH, (t, s) => Poses.walk(t, s, 0.8), (t, s) => expr(Poses.idle(t, s), 'peace', 1)],
   ],
@@ -47,7 +47,7 @@ function buildSheet() {
       VIEWS.forEach((v, vi) => {
         const p = new Person({ ...preset, view: v });
         p.root.position.set(gi * (3 * colW + groupGap) + vi * colW, -ri * rowH, 0); scene.add(p.root);
-        const fn = vi === 0 ? pSide : vi === 1 ? p3q : (t, s) => Poses.idle(t, s);
+        const fn = vi === 0 ? pSide : vi === 1 ? p3q : preset === CAST.METHUSELAH_OLD ? (t, s) => Poses.oldStand(t, s) : (t, s) => Poses.idle(t, s);
         if (extra.baby && vi === 0) p.hold(new Person(extra.baby));
         items.push({ p, fn, label: vi === 0 ? label : null, view: v });
       });
@@ -94,7 +94,7 @@ function buildSheet() {
 }
 function place(S) {
   const hp = S.hero.jointWorld('head', new THREE.Vector3());
-  S.camHero.position.set(hp.x + 0.07, hp.y + 0.12, hp.z + 1.3); S.camHero.lookAt(hp.x + 0.07, hp.y + 0.05, hp.z); S.camHero.updateMatrixWorld();
+  S.camHero.position.set(hp.x + 0.02, hp.y + 0.05, hp.z + 2.3); S.camHero.lookAt(hp.x + 0.02, hp.y - 0.08, hp.z); S.camHero.updateMatrixWorld();
   for (const it of S.items) { const c = it.hero ? S.camHero : S.camMain; it.p.billboard(c, 0); it.p.autoOutline(c, it.hero ? 900 : S.vh); }
 }
 

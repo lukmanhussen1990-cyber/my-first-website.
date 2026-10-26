@@ -69,7 +69,7 @@ function regionKeyOf(p) {
 
 // ---------------------------------------------------------------- the atlas
 // parts: [{ id, shape, holes?, draw:[elems], density, bulge?, prof?, rim?, shapeFrom?:{id,dx,dy}, solid?, grain? }]
-export function buildAtlas(cacheKey, parts, { W = 2048, H = 2048, grain = 0.22, fill = 0.9, maxScale = 2.2 } = {}) {
+export function buildAtlas(cacheKey, parts, { W = 2048, H = 2048, grain = 0.16, fill = 0.9, maxScale = 2.2 } = {}) {
   if (cacheKey && ATLAS_CACHE.has(cacheKey)) return ATLAS_CACHE.get(cacheKey);
   const t0 = performance.now();
   const regs = new Map();
