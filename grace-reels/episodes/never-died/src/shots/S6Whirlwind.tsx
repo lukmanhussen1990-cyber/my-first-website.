@@ -180,7 +180,7 @@ export const S6: ShotDef = {
 // The cover: the same moment framed closer, looking up at Elijah in the whirlwind with Elisha reaching
 // from below (kept inside Instagram's 4:5 grid crop). Never active in the reel timeline.
 const T_COVER = 39.1;
-const coverCam = (): CamState => orbit([EX() - 0.85, 2.15, EL_Z + 0.2], 7.6, -12, 10, 46, {drift: 0});
+const coverCam = (): CamState => orbit([0.25, 3.0, EL_Z + 0.25], 8.6, -6, 4, 46, {drift: 0});
 export const COVER: ShotDef = {
 	id: 'COVER',
 	start: -10,
