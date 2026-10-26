@@ -59,12 +59,12 @@ export function renderSfx(ctx) {
     const a = SC.S3.t0 - 0.2, b = SC.S4.t0 + 0.4;
     place(sfx, fadeSt(X.wind({ dur: b - a, lo: 400, hi: 2600, gust: 0.4, rate: 0.15, seed: 'morning' }), 0.6, 0.5), a, dB(-33), 0, null);
     place(sfx, fadeSt(X.rustle({ dur: b - a, rate: 0.3, density: 90, seed: 'morningLeaves' }), 0.6, 0.5), a, dB(-37), 0, SS(0.05));
-    const r = D.makeRng('enochSteps'), t0 = SC.S3.t0 + 0.25, tLast = E.enochGone - 0.32; let k = 0, t = t0;
+    const r = D.makeRng('enochSteps'), t0 = SC.S3.t0 + 0.25, tLast = E.enochGone - 0.32; let k = 0, t = t0, last = t0;
     for (; t <= tLast; t += 0.56 + r.uni(-0.02, 0.02), k++) {
-      const u = (t - t0) / (tLast - t0);
+      const u = (t - t0) / (tLast - t0); last = q(t);
       place(sfx, X.stepSand({ weight: k % 2 ? 0.85 : 1, seed: 'st' + k }), q(t), dB(lerp(-24, -29, u)) * r.uni(0.85, 1), lerp(-0.25, 0.1, u) + (k % 2 ? 0.06 : -0.06), SS(0.12, 0.05));
     }
-    cue(t0, `Enoch's footsteps on sand (${k}, last at ${(t - 0.56).toFixed(2)} s: they stop before "took")`);
+    cue(q(t0), `Enoch's footsteps on sand (${k} steps)`); cue(last, `last footstep (they stop ${(E.enochGone - last).toFixed(2)} s before "took")`);
     const tc = q(E.card524); place(sfx, X.shimmer({ notes: ['F6', 'A6', 'C7'], spacing: 0.05, dur: 1.5, bright: 0.25, air: 0.15, seed: 'card524' }), tc, dB(-32), 0.25, SS(0, 0.45)); cue(tc, 'card shimmer (Genesis 5:24)');
     const tg = q(E.enochGone); place(sfx, X.airyRise({ seed: 'enochGone' }), tg - 0.25, dB(-21), 0, SS(0, 0.35, 0.35)); cue(tg, 'ENOCH GONE: airy rising shimmer');
   }
@@ -153,7 +153,7 @@ export function renderSfx(ctx) {
   // ================================================================ S12 the flood: the sky cracks with light, rain sheets, the ark lifts
   {
     const tc = q(E.floodCrack);
-    place(sfx, X.revSwell({ dur: 0.3, f0: 600, oct: 3, seed: 'preCrack' }), tc - 0.3, dB(-28), 0, SS(0, 0.1));
+    place(sfx, X.revSwell({ dur: 0.3, f0: 600, oct: 3, seed: 'preCrack' }), tc - 0.3, dB(-28), 0, SS(0, 0.1)); cue(tc - 0.3, 'flare -> S12: suck-in into the crack');
     place(sfx, X.skyCrack({ seed: 'skyCrack' }), tc, dB(-13), 0, SS(0, 0.2, 0.25)); cue(tc, 'FLOOD CRACK: bright crack + deep rumble');
     const a = q(E.floodRain), b = E.city + 0.45;
     const I = ramp([[a, 0.1], [a + 0.6, 0.9], [E.arkLift, 1], [E.city, 0.95]]);
