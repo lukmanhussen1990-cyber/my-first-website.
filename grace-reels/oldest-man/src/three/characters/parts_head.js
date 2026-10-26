@@ -178,6 +178,7 @@ export function headParts(D, view) {
     draw.push(L(smooth([[0.152 + 0.01 * nz, 0.124], [0.138, 0.115], [0.122, 0.118]], false), ln, 0.0036, { a: 0.9 }));
     if (!D.beard || D.beard === 'none' || D.beard === 'stubble') draw.push(L(smooth([[0.125, 0.07], [0.098, 0.066], [0.07, 0.07]], false), ln, 0.0034, { a: 0.7 }));
     if (D.stubble) draw.push(F(smooth([[-0.12, 0.13], [-0.08, 0.06], [0.0, 0.0], [0.08, -0.004], [0.13, 0.05], [0.142, 0.09], [0.1, 0.06], [0.0, 0.09], [-0.1, 0.16]], true), D.stubble, { a: 0.35, blur: 0.006 }));
+    if (D.hair === 'oldLong') for (const [k, st] of [[[0.06, 0.352], [-0.02, 0.36], [-0.1, 0.338], [-0.15, 0.29]], [[0.02, 0.342], [-0.05, 0.348], [-0.12, 0.312]], [[0.09, 0.334], [0.02, 0.35], [-0.07, 0.345], [-0.13, 0.31]]].entries()) draw.push(L(smooth(st, false), D.hairColor || '#e8e3da', 0.0034 - k * 0.0003, { a: 0.85 }));
     if (D.gaunt) { const g = D.gaunt; draw.push(F(ellipse(0.0, 0.104, 0.05, 0.03), shade(s, 0.78), { a: 0.32 * g, blur: 0.02 }), F(ellipse(0.12, 0.1, 0.022, 0.03), shade(s, 0.8), { a: 0.3 * g, blur: 0.014 }), F(ellipse(0.02, 0.152, 0.05, 0.013), lift(s, 0.22), { a: 0.36 * g, blur: 0.01 })); }
     if (['wrap', 'turban'].includes(D.hair)) draw.push(F(smooth([[0.16, 0.262], [0.16, 0.236], [0.0, 0.244], [-0.16, 0.2], [-0.16, 0.225], [0.0, 0.27]], true), shade(s, 0.7), { a: 0.45, blur: 0.012 }));
     draw.push(...wrinkles(D, 'threeQuarter'));
@@ -366,10 +367,9 @@ export function hairParts(D, view) {
         cap('hairBack', back, [S([[-0.16, 0.18], [-0.175, 0.0], [-0.16, -0.14]]), S([[-0.12, 0.16], [-0.14, 0.0], [-0.12, -0.15]])], { pivot: 'hairBack', layer: 18, strip: { bend: 'hair', cols: 4, w0: 0.3 }, density: 'face3' });
       }
     } else if (st === 'oldLong') {
-      const back = [[-0.09, 0.275], [-0.15, 0.25], [-0.188, 0.17], [-0.195, 0.04], [-0.188, -0.1], [-0.17, -0.2], ...wavy(-0.17, -0.2, -0.09, -0.23, 5, 0.03, (D.seed || 1) + 5), [-0.09, -0.23], [-0.11, -0.1], [-0.13, 0.04], [-0.15, 0.13], [-0.13, 0.22]];
+      const back = [[-0.07, 0.258, 0.8], [-0.125, 0.268], [-0.172, 0.232], [-0.192, 0.16], [-0.198, 0.04], [-0.19, -0.1], [-0.17, -0.2], ...wavy(-0.17, -0.2, -0.09, -0.23, 5, 0.03, (D.seed || 1) + 5), [-0.09, -0.23], [-0.108, -0.1], [-0.118, 0.04], [-0.108, 0.14], [-0.085, 0.21]];
       cap('hairBack', back, [S([[-0.11, 0.26], [-0.17, 0.17], [-0.18, 0.0], [-0.16, -0.18]], 0.0032), S([[-0.15, 0.2], [-0.16, 0.05], [-0.14, -0.15]], 0.003), S([[-0.13, 0.12], [-0.12, -0.05], [-0.11, -0.2]], 0.003)], { pivot: 'hairBack', layer: 29.5, strip: { bend: 'hair', cols: 4, w0: 0.3 }, density: 'face3' });
-      const back2 = [[0.13, 0.25], [0.15, 0.2], [0.152, 0.12], [0.14, 0.12], [0.13, 0.2]];
-      cap('hairWisp', back2, [], { layer: 29.6, density: 'face3', bulge: 0.3 });
+
     } else if (st === 'bald') {
       cap('hair', [[-0.12, 0.27], [-0.17, 0.22], [-0.178, 0.14], [-0.16, 0.08], [-0.145, 0.13], [-0.14, 0.2], [-0.11, 0.25]], [], { density: 'face3' });
     } else if (cloth) {
@@ -434,6 +434,11 @@ const lockEdge = (a, b, n, amp, seed, out = 1) => {
   }
   return pts;
 };
+const curveEdge = (xf, yf, t0, t1, n, amp, seed, out = 1) => {
+  const r = mulberry32(seed), pts = [];
+  for (let i = 0; i <= n; i++) { const t = t0 + (t1 - t0) * i / n; pts.push([xf(t) + out * (i % 2 ? 1 : 0.2) * amp * (0.6 + 0.8 * r()), yf(t), i % 2 ? 1.1 : 0.8]); }
+  return pts;
+};
 export function beardParts(D, view, beardLenBody = 0) {
   const st = D.beard || 'none';
   if (st === 'none' || st === 'stubble' || view === 'back') return [];
@@ -454,12 +459,12 @@ export function beardParts(D, view, beardLenBody = 0) {
       shadeEl.push(F(smooth([[-0.01, 0.15], [0.03, 0.06], [0.04, -0.03], [0.0, -0.01], [-0.016, 0.08]], true), sh, { a: 0.5, blur: 0.012 }));
     } else {
       const yAt = (t) => -0.02 - L0 * t;
-      const fx = (t) => 0.18 - (st === 'knee' ? 0.095 : 0.07) * Math.pow(t, 1.3);
-      const rx = (t) => 0.018 + (st === 'knee' ? 0.05 : 0.03) * Math.pow(t, 1.15);
+      const fx = (t) => 0.18 - (st === 'knee' ? 0.078 : 0.07) * Math.pow(t, 1.3);
+      const rx = (t) => 0.018 + (st === 'knee' ? 0.036 : 0.03) * Math.pow(t, 1.15);
       const tipF = [fx(0.92), yAt(0.92)], tipR = [rx(0.95) + 0.01, yAt(0.96)];
-      const front = [[0.18, -0.01], ...lockEdge([0.18, -0.02], tipF, 7, 0.006, seed + 21)];
+      const front = [[0.18, -0.01], ...curveEdge(fx, yAt, 0.04, 0.88, 9, 0.006, seed + 21, 1)];
       const tip = wavy(tipF[0], tipF[1], tipR[0], tipY, 4, 0.02, seed + 11);
-      const rear = lockEdge([rx(0.95), yAt(0.95)], [0.016, -0.02], 6, 0.005, seed + 23);
+      const rear = curveEdge(rx, yAt, 0.92, 0.06, 8, 0.005, seed + 23, -1);
       pts = [...top, ...front, [tipF[0], tipF[1], 0.6], ...tip, [tipR[0], tipY, 0.6], ...rear, [0.006, -0.01], [-0.016, 0.06], [-0.012, 0.13]];
       // 9 strand lines (s-curves) + short tip flicks + highlights
       for (let i = 0; i < 9; i++) {
@@ -483,8 +488,8 @@ export function beardParts(D, view, beardLenBody = 0) {
       shadeEl.push(F(smooth([[-0.14, 0.18], [-0.11, 0.05], [-0.05, -0.02], [-0.08, 0.05], [-0.11, 0.14]], true), sh, { a: 0.5, blur: 0.012 }));
     } else {
       const yAt = (t) => -0.02 - L0 * t;
-      const tp = st === 'knee' ? 0.6 : 0.42, lx = (t) => -0.135 + 0.29 * tp * 0.55 * Math.pow(t, 0.9), rxx = (t) => 0.155 - 0.29 * tp * 0.45 * Math.pow(t, 0.9);
-      pts = [[-0.14, 0.19], ...lockEdge([-0.135, 0.1], [lx(0.85), yAt(0.85)], 6, 0.006, seed + 31, -1), ...wavy(lx(0.88), yAt(0.9), rxx(0.88), yAt(0.9), 5, 0.02, seed + 13), ...lockEdge([rxx(0.85), yAt(0.85)], [0.155, 0.04], 6, 0.006, seed + 33, -1), [0.146, 0.1], [0.1, 0.075], [0.04, 0.07], [-0.02, 0.09], [-0.08, 0.12], [-0.115, 0.18]];
+      const tp = st === 'knee' ? 0.68 : 0.5, cx = (t) => 0.01 + 0.025 * t, hw = (t) => 0.145 * (1 - tp * Math.pow(t, 0.55)), lx = (t) => cx(t) - hw(t), rxx = (t) => cx(t) + hw(t) * 0.92;
+      pts = [[-0.14, 0.19], [-0.138, 0.1], ...curveEdge(lx, yAt, 0.03, 0.86, 9, 0.006, seed + 31, -1), ...wavy(lx(0.88), yAt(0.9), rxx(0.88), yAt(0.9), 5, 0.02, seed + 13), ...curveEdge(rxx, yAt, 0.86, 0.03, 9, 0.006, seed + 33, 1), [0.155, 0.04], [0.146, 0.1], [0.1, 0.075], [0.04, 0.07], [-0.02, 0.09], [-0.08, 0.12], [-0.115, 0.18]];
       for (let i = 0; i < 9; i++) {
         const u = (i + 0.5) / 9, x0 = lerp(-0.11, 0.13, u), end = 0.6 + 0.35 * r(), xe = lerp(lx(end), rxx(end), 0.1 + 0.8 * u), sway = (i % 2 ? 1 : -1) * 0.008;
         strands.push({ pts: [[x0, 0.05], [lerp(x0, xe, 0.4) + sway, yAt(end * 0.4)], [lerp(x0, xe, 0.75) - sway, yAt(end * 0.75)], [xe, yAt(end)]], w: 0.0026 + 0.0012 * r(), a: 0.55 + 0.3 * r() });
@@ -507,7 +512,7 @@ export function beardParts(D, view, beardLenBody = 0) {
     mp = D.age > 0.6
       ? [[0.166, 0.116], [0.178, 0.108], [0.182, 0.09], [0.178, 0.068], [0.168, 0.046, 0.8], [0.156, 0.03, 0.5], [0.148, 0.046], [0.138, 0.068], [0.128, 0.088], [0.146, 0.106]]
       : [[0.166, 0.116], [0.178, 0.106], [0.181, 0.09], [0.174, 0.072, 0.8], [0.16, 0.06, 0.5], [0.146, 0.068], [0.132, 0.086], [0.148, 0.106]];
-  } else mp = [[0.152, 0.118], [0.157, 0.098], [0.142, 0.07, 0.8], [0.12, 0.052, 0.5], [0.098, 0.064], [0.07, 0.066, 0.6], [0.042, 0.06, 0.5], [0.03, 0.076], [0.06, 0.094], [0.1, 0.104], [0.13, 0.112]];
+  } else mp = [[0.136, 0.114], [0.154, 0.102], [0.152, 0.08, 0.7], [0.14, 0.054, 0.5], [0.124, 0.062], [0.11, 0.08], [0.096, 0.074], [0.072, 0.06], [0.048, 0.044, 0.5], [0.036, 0.06], [0.052, 0.082], [0.082, 0.098], [0.112, 0.106]];
   const ms = smooth(mp, true);
   const mDraw = [F(ms, c), F(ellipse(view === 'side' ? 0.16 : 0.09, 0.07, 0.03, 0.014), sh, { a: 0.45, blur: 0.01 })];
   if (view === 'side') mDraw.push(L(smooth([[0.17, 0.106], [0.174, 0.084], [0.166, 0.056]], false), ln, 0.0028, { a: 0.75 }), L(smooth([[0.156, 0.1], [0.16, 0.078], [0.154, 0.05]], false), ln, 0.0026, { a: 0.65 }), L(smooth([[0.142, 0.09], [0.144, 0.072]], false), ln, 0.0024, { a: 0.55 }), L(smooth([[0.176, 0.1], [0.178, 0.084]], false), hi, 0.0024, { a: 0.6 }));

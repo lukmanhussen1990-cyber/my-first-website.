@@ -397,7 +397,7 @@ export const PROPS = {
       b.rotateY(k * 1.26); b.translate(Math.cos(k * 2.1) * 0.04, 0, Math.sin(k * 2.1) * 0.04); parts.push(b.toNonIndexed());
     }
     const g = mergeGeometries(parts); g.computeVertexNormals();
-    return gradientColors(g, { axis: 'y', from: 0, to: 0.5, a: '#5d6236', b: '#ffffff', ease: (x) => Math.sqrt(x) });
+    return gradientColors(g, { axis: 'y', from: 0, to: 0.5, a: '#a49c74', b: '#ffffff', ease: (x) => Math.sqrt(x) });
   },
   pebble() { return faceColors(stoneGeometry(0.5, 3, { points: 9, squash: 0.5, flatten: 0.2 }), '#ffffff', { lum: 0.12, seed: 4, top: 0.12 }); },
   pot() { // clay jar with rim and per-face shading
@@ -427,8 +427,21 @@ export const PROPS = {
 const _propGeo = {};
 export const propGeometry = (name) => _propGeo[name] || (_propGeo[name] = PROPS[name]());
 // convenience wrappers (InstancedMesh, white vertex-colour material so instance colours tint the shading)
-export const scatterGrass = (n, o = {}) => scatter(propGeometry('tuft'), vcMat(), n, { scale: [0.7, 1.3], squash: [0.7, 1.3], tilt: 0.15, color: '#9a9a52', jitter: 0.14, cast: false, ...o });
-export const scatterPebbles = (n, o = {}) => scatter(propGeometry('pebble'), vcMat(), n, { scale: [0.05, 0.16], squash: [0.6, 1], tilt: 0.3, colors: ['#9c8c74', '#8a7a64', '#b0a088', '#7c6e5c'], sink: 0.1, ...o });
+// grass: tufts come in clumps (clump: tufts per clump point, spread m) so they read as plants, not noise
+export function scatterGrass(n, o = {}) {
+  const { clump = 4, spread = 0.35, area = [-10, -10, 10, 10], skip = null, seed = 1 } = o;
+  let points = o.points;
+  if (!points && clump > 1) {
+    const R = mulberry32(seed + 101); points = [];
+    for (let i = 0; i < n * 3 && points.length < n; i++) {
+      const cx = lerp(area[0], area[2], R()), cz = lerp(area[1], area[3], R());
+      if (skip && skip(cx, cz)) continue;
+      for (let k = 0; k < clump && points.length < n; k++) { const a = R() * 6.283, r = spread * Math.sqrt(R()); const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (!skip || !skip(x, z)) points.push([x, z]); }
+    }
+  }
+  return scatter(propGeometry('tuft'), vcMat(), n, { scale: [0.8, 1.5], squash: [0.7, 1.3], tilt: 0.15, colors: ['#a8a457', '#9aa04e', '#b3a65e', '#8f9a4a'], jitter: 0.1, cast: false, ...o, points });
+}
+export const scatterPebbles = (n, o = {}) => scatter(propGeometry('pebble'), vcMat(), n, { scale: [0.08, 0.24], squash: [0.55, 0.9], tilt: 0.3, colors: ['#b4a288', '#a39078', '#c2b298', '#9a8a72'], sink: 0.1, ...o });
 export const scatterPots = (n, o = {}) => scatter(propGeometry('pot'), vcMat(), n, { scale: [0.7, 1.15], tilt: 0.03, colors: ['#b0683c', '#9a5a34', '#c47a48', '#a8704a'], ...o });
 export const scatterBaskets = (n, o = {}) => scatter(propGeometry('basket'), vcMat(), n, { scale: [0.8, 1.2], tilt: 0.04, colors: ['#b48a52', '#a07a46', '#c49a5e'], ...o });
 export const scatterFirewood = (n, o = {}) => scatter(propGeometry('firewood'), vcMat(), n, { scale: [0.8, 1.2], tilt: 0.02, colors: ['#7a5636', '#6a4a2e', '#8a6440'], ...o });
@@ -501,7 +514,10 @@ export function makeFootprints(points, { stride = 0.36, gauge = 0.11, size = 0.1
 // Bevelled walls with brick courses (vertex colour bands + per-face jitter), a darker plinth, flat roof of
 // beams + straw/clay slab + parapet, recessed door with lintel, small windows, optional ladder and roof jars.
 // Faces +z. Lit/shade contrast comes from the flat-shaded chamfers (>= 1.4 lit/shade on buildings, per style notes).
-export function makeMudHouse({ w = 4, d = 3.6, h = 2.8, color = '#b98c5a', roof = '#9c7a52', door = '#24170e', seed = 1, ladder = true, windows = 2, glow = 0, parapet = 0.32, dome = false } = {}) {
+// accents (our palette, all optional): awning [colA, colB] striped cloth over the door, curtain = door-cloth colour,
+// roofClutter = jars / rug / firewood on the flat roof (true or a rug colour pair)
+export function makeMudHouse({ w = 4, d = 3.6, h = 2.8, color = '#b98c5a', roof = '#9c7a52', door = '#24170e', seed = 1, ladder = true, windows = 2, glow = 0, parapet = 0.32, dome = false,
+  awning = null, curtain = null, roofClutter = false } = {}) {
   const g = new THREE.Group(); const R = mulberry32(seed);
   const wallGeo = faceColors(chamferBoxGeometry(w, h, d, 0.08), color, { lum: 0.05, seed, top: 0.04 });
   const base = toColor(color);
@@ -529,6 +545,24 @@ export function makeMudHouse({ w = 4, d = 3.6, h = 2.8, color = '#b98c5a', roof 
   const lin = makeBevelBox(dw + 0.34, 0.14, 0.2, '#6a4a2e', { bevel: 0.02, seed: seed + 7 }); lin.position.set(dx, dh + 0.07, d / 2 + 0.04); g.add(lin);
   const thr = makeBevelBox(dw + 0.2, 0.08, 0.32, '#9a8a74', { bevel: 0.02, seed: seed + 8 }); thr.position.set(dx, 0.04, d / 2 + 0.12); g.add(thr);
   g.userData.door = new THREE.Vector3(dx, 0, d / 2 + 0.2);
+  if (curtain) { // door cloth hanging half open
+    const cg = faceColors(new THREE.PlaneGeometry(dw * 0.62, dh * 0.92, 3, 2).toNonIndexed(), curtain, { lum: 0.06, seed: seed + 11 });
+    const cm = new THREE.Mesh(cg, vcMat({ side: THREE.DoubleSide })); cm.position.set(dx - dw * 0.19, dh * 0.54, d / 2 + 0.05); cm.rotation.z = 0.04; g.add(cm);
+  }
+  if (awning) { // striped cloth on two poles over the door
+    const aw = makeRug(dw + 1.1, 1.05, { colors: awning, stripes: 7, seed: seed + 12, fringe: false });
+    aw.rotation.x = 0.32; aw.position.set(dx, dh + 0.3, d / 2 + 0.5); g.add(aw);
+    const pg = faceColors(new THREE.CylinderGeometry(0.035, 0.04, dh + 0.25, 5), '#5a3e26', { seed: seed + 13 });
+    for (const sx of [-1, 1]) { const p = new THREE.Mesh(pg, vcMat()); p.position.set(dx + sx * (dw / 2 + 0.5), (dh + 0.25) / 2, d / 2 + 0.98); p.castShadow = true; g.add(p); }
+  }
+  if (roofClutter && !dome) { // life on the roof: jars, a rug drying, firewood
+    const R2 = mulberry32(seed + 14), y0 = h + 0.17;
+    const rug = makeRug(Math.min(1.8, w * 0.42), Math.min(1.1, d * 0.34), { colors: Array.isArray(roofClutter) ? roofClutter : ['#7a2e3a', '#d9b46a'], seed: seed + 15 });
+    rug.position.set(-w * 0.18, y0 + 0.01, -d * 0.12); rug.rotation.y = (R2() - 0.5) * 0.4; g.add(rug);
+    for (let i = 0; i < 3; i++) { const j = new THREE.Mesh(propGeometry('pot'), vcMat()); j.scale.setScalar(0.75 + 0.3 * R2()); j.position.set(w * 0.28 - i * 0.32, y0, d * 0.28 - 0.1 * i); j.castShadow = true;
+      const cc = new THREE.Color(['#b0683c', '#c47a48', '#9a5a34'][i]); const cg = j.geometry.attributes.color; j.material = new THREE.MeshLambertMaterial({ color: cc, vertexColors: true, flatShading: true }); g.add(j); }
+    const fw = new THREE.Mesh(propGeometry('firewood'), new THREE.MeshLambertMaterial({ color: '#7a5636', vertexColors: true, flatShading: true })); fw.position.set(w * 0.22, y0, -d * 0.25); fw.rotation.y = 1.4; fw.castShadow = true; g.add(fw);
+  }
   // windows (small dark or glowing slots)
   const wm = glow > 0 ? new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2 * glow, 1.3 * glow, 0.5 * glow) }) : new THREE.MeshLambertMaterial({ color: door });
   g.userData.windows = [];
@@ -584,4 +618,43 @@ export function makeTent({ w = 4.2, d = 3, h = 2.1, colors = ['#3e2f26', '#7a5c4
   const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); g.add(new THREE.LineSegments(rg, ropeM));
   g.userData.door = new THREE.Vector3(w * 0.25, 0, d / 2 + 0.3);
   return g;
+}
+
+// ---------- rugs / cloth ----------
+// Flat woven rug (or awning cloth) with stripes, a slight drape and an optional fringe. Lies in the xz plane, centred.
+export function makeRug(w = 1.6, d = 1.0, { colors = ['#7a2e3a', '#d9b46a', '#2f4a6a'], stripes = 9, seed = 1, fringe = true, sag = 0.02 } = {}) {
+  const NX = 12, NZ = 6, pos = [], col = [], idx = [];
+  for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) {
+    const u = i / NX, v = j / NZ, x = (u - 0.5) * w, z = (v - 0.5) * d;
+    pos.push(x, 0.012 + sag * Math.sin(u * 9 + seed) * Math.sin(v * 3.1), z);
+    const band = Math.floor(u * stripes), c = colors[band % colors.length];
+    _c1.set(c).multiplyScalar((Math.abs(u - 0.5) > 0.42 ? 0.85 : 1) * (0.94 + 0.1 * hash01(i * 13 + j, seed)));
+    col.push(_c1.r, _c1.g, _c1.b);
+  }
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + NX + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  let geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx);
+  geo = geo.toNonIndexed(); geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, vcMat({ side: THREE.DoubleSide })); m.receiveShadow = true; m.castShadow = true;
+  if (fringe) {
+    const fr = []; for (const sx of [-1, 1]) for (let k = 0; k < 9; k++) { const b = new THREE.BoxGeometry(0.06, 0.006, 0.02); b.translate(sx * (w / 2 + 0.03), 0.01, (k / 8 - 0.5) * d * 0.9); fr.push(b.toNonIndexed()); }
+    const fm = new THREE.Mesh(mergeGeometries(fr), new THREE.MeshLambertMaterial({ color: '#e6d6b0' })); m.add(fm);
+  }
+  return m;
+}
+
+// ---------- bushes ----------
+// Faceted low-poly bush: 3-5 jittered icosahedron lobes with per-face colour jitter and a darker underside.
+export function makeBush(size = 0.8, { seed = 1, colors = ['#6f7a3a', '#7d8642', '#646f34'], flat = 0.7 } = {}) {
+  const R = mulberry32(seed), parts = [];
+  const n = 3 + Math.floor(R() * 3);
+  for (let i = 0; i < n; i++) {
+    const r = size * (0.45 + 0.35 * R());
+    const g = new THREE.IcosahedronGeometry(r, 1); const p = g.attributes.position;
+    for (let k = 0; k < p.count; k++) p.setXYZ(k, p.getX(k) * (0.85 + 0.3 * R()), p.getY(k) * flat * (0.85 + 0.3 * R()), p.getZ(k) * (0.85 + 0.3 * R()));
+    g.translate((R() - 0.5) * size * 0.9, r * flat * 0.75, (R() - 0.5) * size * 0.8);
+    parts.push(faceColors(g.toNonIndexed(), colors[i % colors.length], { lum: 0.08, seed: seed * 7 + i, top: 0.18 }));
+  }
+  const geo = mergeGeometries(parts); geo.computeVertexNormals();
+  gradientColors(geo, { axis: 'y', from: 0, to: size * 0.8, a: '#8a8a7a', b: '#ffffff' });
+  const m = new THREE.Mesh(geo, vcMat()); m.castShadow = m.receiveShadow = true; return m;
 }

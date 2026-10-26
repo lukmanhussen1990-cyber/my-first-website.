@@ -159,27 +159,61 @@ function drawElem(g, e, P2, rho) {
   g.restore();
 }
 
-// signed distance -> direction / pillow / edge distance for one region
+// signed distance -> direction / pillow / edge distance for one region.
+//  1. exact EDT of the thresholded mask, corrected to sub-texel accuracy on anti-aliased edge texels
+//     (coverage - 0.5), then lightly smoothed near the edge: the rim and terminators stay smooth when a
+//     close-up magnifies the field 8x.
+//  2. "inflated" height = circle profile of the distance (round like a pillow / cylinder), box-blurred
+//     (3 passes ≈ Gaussian) so the normal has no medial-axis crease; its gradient is the in-plane normal.
+function boxBlur(a, w, h, r, tmp) {
+  if (r < 1) return;
+  const k = 1 / (2 * r + 1);
+  for (let y = 0; y < h; y++) { const o = y * w; let acc = 0; for (let x = -r; x <= r; x++) acc += a[o + Math.min(w - 1, Math.max(0, x))]; for (let x = 0; x < w; x++) { tmp[o + x] = acc * k; acc += a[o + Math.min(w - 1, x + r + 1)] - a[o + Math.max(0, x - r)]; } }
+  for (let x = 0; x < w; x++) { let acc = 0; for (let y = -r; y <= r; y++) acc += tmp[Math.min(h - 1, Math.max(0, y)) * w + x]; for (let y = 0; y < h; y++) { a[y * w + x] = acc * k; acc += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x]; } }
+}
 function shapeField(r, mask, out, SW) {
   const x0 = r.ox / 2, y0 = r.oy / 2, w = r.w / 2, h = r.h / 2, n = w * h;
-  const din = new Float64Array(n), dout = new Float64Array(n), inside = new Uint8Array(n);
+  const din = new Float64Array(n), dout = new Float64Array(n), inside = new Uint8Array(n), cov = new Float32Array(n);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const m = mask[((y0 + y) * SW + x0 + x) * 4] > 127; const i = y * w + x;
-    inside[i] = m ? 1 : 0; din[i] = m ? INF : 0; dout[i] = m ? 0 : INF;
+    const c = mask ? mask[((y0 + y) * SW + x0 + x) * 4] / 255 : 0; const i = y * w + x; const m = c > 0.5;
+    cov[i] = c; inside[i] = m ? 1 : 0; din[i] = m ? INF : 0; dout[i] = m ? 0 : INF;
   }
   edt2d(din, w, h); edt2d(dout, w, h);
   const sd = new Float32Array(n); let maxSd = 0.5;
-  for (let i = 0; i < n; i++) { sd[i] = inside[i] ? Math.sqrt(din[i]) - 0.5 : 0.5 - Math.sqrt(dout[i]); if (sd[i] > maxSd) maxSd = sd[i]; }
+  for (let i = 0; i < n; i++) {
+    let d = inside[i] ? Math.sqrt(din[i]) - 0.5 : 0.5 - Math.sqrt(dout[i]);
+    if (cov[i] > 0.01 && cov[i] < 0.99 && Math.abs(d) <= 1.0) d = cov[i] - 0.5;
+    sd[i] = d; if (d > maxSd) maxSd = d;
+  }
+  { // smooth the near-edge band (keeps the zero crossing, removes the EDT's stair steps)
+    const t = new Float32Array(n);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x; if (Math.abs(sd[i]) > 4) { t[i] = sd[i]; continue; }
+      let acc = 0, wt = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = Math.min(w - 1, Math.max(0, x + dx)), yy = Math.min(h - 1, Math.max(0, y + dy)); const k = dx || dy ? (dx && dy ? 0.5 : 1) : 2; acc += sd[yy * w + xx] * k; wt += k; }
+      t[i] = sd[i] * 0.4 + (acc / wt) * 0.6;
+    }
+    sd.set(t);
+  }
   const s = r.spec, bulge = s.bulge ?? 1, prof = s.prof ?? 1, rim = s.rim ?? true;
   r.maxSd = maxSd; r.sd = sd; r.sw = w; r.sh = h;
+  // inflated height (circle profile) + blur
+  const H = new Float32Array(n), tmp = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const u = Math.max(0, Math.min(1, sd[i] / maxSd)); H[i] = sd[i] > 0 ? maxSd * Math.sqrt(1 - (1 - u) * (1 - u)) : 0; }
+  const rb = Math.max(1, Math.round(maxSd * (0.16 + 0.05 * (prof - 1))));
+  for (let k = 0; k < 3; k++) boxBlur(H, w, h, rb, tmp);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
-    const xl = sd[y * w + Math.max(0, x - 1)], xr = sd[y * w + Math.min(w - 1, x + 1)];
-    const yu = sd[Math.max(0, y - 1) * w + x], yd = sd[Math.min(h - 1, y + 1) * w + x];
-    let gx = -(xr - xl), gy = (yd - yu); // outward, part space (canvas y is down -> flip)
-    const l = Math.hypot(gx, gy); if (l > 1e-6) { gx /= l; gy /= l; } else { gx = 0; gy = 0; }
-    const u = Math.max(0, Math.min(1, sd[i] / maxSd));
-    const xm = bulge * Math.pow(1 - u, prof);
+    const xl = H[y * w + Math.max(0, x - 1)], xr = H[y * w + Math.min(w - 1, x + 1)];
+    const yu = H[Math.max(0, y - 1) * w + x], yd = H[Math.min(h - 1, y + 1) * w + x];
+    let gx = -(xr - xl) * 0.5, gy = (yd - yu) * 0.5; // outward (downhill), part space (canvas y is down)
+    const sl = Math.hypot(gx, gy);
+    if (sl > 1e-6) { gx /= sl; gy /= sl; } else {
+      // flat top: fall back to the distance-field direction
+      const a = sd[y * w + Math.max(0, x - 1)], b = sd[y * w + Math.min(w - 1, x + 1)], c = sd[Math.max(0, y - 1) * w + x], d = sd[Math.min(h - 1, y + 1) * w + x];
+      gx = -(b - a); gy = d - c; const l = Math.hypot(gx, gy); if (l > 1e-6) { gx /= l; gy /= l; } else { gx = 0; gy = 0; }
+    }
+    const xm = Math.min(1, bulge * sl / Math.sqrt(1 + sl * sl));
     const o = ((y0 + y) * SW + x0 + x) * 4;
     out[o] = Math.round(128 + 127 * gx); out[o + 1] = Math.round(128 + 127 * gy);
     out[o + 2] = Math.round(255 * Math.max(0, Math.min(1, xm)));

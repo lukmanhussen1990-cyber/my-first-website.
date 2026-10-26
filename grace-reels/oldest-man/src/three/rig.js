@@ -304,7 +304,7 @@ export class Person {
     if (this.held && this.held !== other) this.release();
     if (!other) return null;
     this.held = other; other.holder = this;
-    other.root.position.set(0, 0, 0); other.root.scale.set(-1 / this.scale, 1 / this.scale, 1 / this.scale);
+    other.root.position.set(0, 0, 0); other.root.scale.setScalar(1 / this.scale);
     other.bb.rotation.set(0, 0, 0);
     other.uni.uLayerBase.value = (this.kind === 'baby' ? 0 : 23);
     if (other.blob) other.blob.visible = false;
@@ -413,11 +413,17 @@ export class Person {
     const seatY = P.seat != null ? (P.seat - (D.hipY - 0.07) * this.scale) : 0;
     this.body.position.set(P.dx || 0, (P.bob || 0) + seatY, 0);
     const br = P.breath || 0;
-    J.torso.rotation.z = -(P.lean || 0);
-    J.torso.scale.set(1 - 0.004 * br, 1 + 0.011 * br, 1);
     const ht = P.headTilt || 0;
-    J.neck.rotation.z = ht * 0.45 + (P.neckRot || 0);
-    J.head.rotation.z = ht * 0.55 + (P.headRot || 0);
+    if (v === 'back') { // forward lean / nod happen toward the camera: foreshorten instead of rotating
+      J.torso.rotation.z = 0;
+      J.torso.scale.set(1 - 0.004 * br, (1 + 0.011 * br) * (0.72 + 0.28 * Math.cos(clamp(P.lean || 0, -1, 1.2))), 1);
+      J.neck.rotation.z = 0; J.head.rotation.z = (P.headRot || 0) * 0.5;
+    } else {
+      J.torso.rotation.z = -(P.lean || 0);
+      J.torso.scale.set(1 - 0.004 * br, 1 + 0.011 * br, 1);
+      J.neck.rotation.z = ht * 0.45 + (P.neckRot || 0);
+      J.head.rotation.z = ht * 0.55 + (P.headRot || 0);
+    }
     // limbs: picture-plane rotations in side view, damped in 3/4, foreshortened in back view
     const aF = P.aF || [0, 0], aB = P.aB || [0, 0], lF = P.lF || [0, 0], lB = P.lB || [0, 0];
     if (v === 'back') {
@@ -763,7 +769,7 @@ export const Poses = {
     P.aF = [0.5 + 0.04 * rock, 1.25 - 0.03 * rock, 0.25]; P.aB = [0.42 + 0.03 * rock, 1.45, 0.2];
     P.handF = 'open'; P.handB = 'open';
     P.lean = 0.05 + 0.025 * rock; P.dx = 0.01 * rock;
-    P.cradleRot = 0.07 * rock;
+    P.cradleRot = 0.16 + 0.07 * rock;
     P.headTilt = -0.2 + 0.03 * rock; P.lookY = -0.75; P.look = 0.2;
     expr(P, 'peace', 0.85);
     P.baby = Poses.baby(t, s + 100, false);

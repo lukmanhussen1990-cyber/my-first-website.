@@ -107,7 +107,7 @@ const Sheet = ({ S }) => {
   const { gl } = useThree();
   useFrame(() => {
     gl.autoClear = false;
-    U.uCharLight.value.set('#ffffff'); U.uSunDir.value.set(-0.62, 0.62, 0.48).normalize(); U.uSunColor.value.setRGB(1, 0.92, 0.78);
+    U.uCharLight.value.set('#ffffff'); U.uSunDir.value.set(-0.72, 0.6, -0.3).normalize(); U.uSunColor.value.setRGB(1, 0.92, 0.78);
     U.uPointColor.value.setRGB(0, 0, 0); U.uPointPos.value.set(0, -999, 0); U.uAO.value = 0.12; U.uGroundY.value = -999;
     S.pose(T); place(S);
     gl.setClearColor('#dcc9a3', 1); gl.clear();
@@ -136,6 +136,68 @@ export const CastSheet = () => {
       {label('METHUSELAH · close-up (hero atlas ' + st.heroAtlas + '²)', 1866, 486, 18)}
       {S.labels.map((l, i) => <div key={i} style={{ position: 'absolute', left: l.x - 240, width: 480, top: l.y, textAlign: 'center', color: '#3a2a1c', font: '700 20px Inter, sans-serif', letterSpacing: '0.1em' }}>{l.txt}<div style={{ font: '500 14px Inter, sans-serif', letterSpacing: '0.2em', opacity: 0.7 }}>SIDE · ¾ · BACK</div></div>)}
       {label('CROWD · 12 mockers (crowd atlases) + BABY LAMECH / BABY NOAH', S.crowdLabel[0], S.crowdLabel[1], 18)}
+    </AbsoluteFill>
+  );
+};
+
+// ================================================================ S2-style close-up (quality loop)
+// Methuselah's head and shoulders, night, lit warmly by an oil lamp from one side (lamp light = U.uPointPos).
+// props: view ('threeQuarter' | 'side'), t (seconds), lamp (0..1 strength)
+const CW = 1080, CH = 1920;
+function buildCloseup(view) {
+  const scene = new THREE.Scene();
+  // night backdrop: vertical gradient + faint distant ridge + a few stars
+  const bg = document.createElement('canvas'); bg.width = 64; bg.height = 512;
+  const g = bg.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 512);
+  gr.addColorStop(0, '#0b1124'); gr.addColorStop(0.55, '#1b2846'); gr.addColorStop(0.8, '#2a2f45'); gr.addColorStop(1, '#1a1a24');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 512);
+  const bgTex = new THREE.CanvasTexture(bg); bgTex.colorSpace = THREE.SRGBColorSpace;
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(16, 20), new THREE.MeshBasicMaterial({ map: bgTex, depthWrite: false }));
+  back.position.set(0, 1.0, -6); scene.add(back);
+  const ridge = new THREE.Mesh(new THREE.PlaneGeometry(16, 3), new THREE.MeshBasicMaterial({ color: '#141a2a' }));
+  ridge.position.set(0, -1.6, -5.5); ridge.rotation.z = 0.04; scene.add(ridge);
+  const p = new Person({ ...CAST.METHUSELAH_OLD, view });
+  scene.add(p.root);
+  // lamp: warm glow sprite low in front of him (out of frame bottom-right, its light on the face)
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const r = x.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,220,160,1)'); r.addColorStop(0.25, 'rgba(255,160,80,0.45)'); r.addColorStop(1, 'rgba(255,120,40,0)'); x.fillStyle = r; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); return t; })();
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  scene.add(glow);
+  const cam = new THREE.PerspectiveCamera(24, CW / CH, 0.1, 50);
+  return { scene, p, cam, glow, view };
+}
+const Closeup = ({ C, t, lamp }) => {
+  const { gl } = useThree();
+  useFrame(() => {
+    const { p, cam, glow } = C;
+    const poseFn = (tt) => Poses.sitOld(tt, p.seed, 0.42, 0.45);
+    p.act(poseFn, t, { wind: 0.7 });
+    p.root.updateMatrixWorld(true);
+    const hp = p.jointWorld('head', new THREE.Vector3());
+    const face = hp.clone().add(new THREE.Vector3(C.view === 'side' ? 0.05 : 0.02, 0.17, 0));
+    // head (≈0.4 m incl. hair) ≈ 55 % of the frame width: visible width ≈ 0.68 m; camera ~8° above eye level
+    const dist = 0.3 / Math.tan(THREE.MathUtils.degToRad(24) / 2 * (CW / CH) * 1.02);
+    cam.position.set(face.x, face.y + 0.06 + dist * 0.14, face.z + dist); cam.lookAt(face.x, face.y - 0.2, face.z); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+    p.billboard(cam, 0.15); p.autoOutline(cam, CH);
+    // lamp in front-right, a little below the face; flicker ±8 % at ~7 Hz (seeded noise, pure)
+    const lampPos = new THREE.Vector3(face.x + 0.62, face.y - 0.42, 0.12);
+    const fl = 1 + 0.08 * Math.sin(t * 2 * Math.PI * 7.1) * Math.sin(t * 2 * Math.PI * 1.3 + 1);
+    U.uCharLight.value.setRGB(0.3, 0.34, 0.5); U.uAO.value = 0.0; U.uGroundY.value = -999;
+    U.uSunDir.value.set(-0.55, 0.45, -0.7).normalize(); U.uSunColor.value.setRGB(0.45, 0.55, 0.85);
+    U.uPointPos.value.copy(lampPos); U.uPointColor.value.setRGB(1.2 * fl * lamp, 0.78 * fl * lamp, 0.42 * fl * lamp); U.uPointRange.value = 2.6;
+    glow.position.copy(lampPos).add(new THREE.Vector3(0.05, -0.05, 0.3)); glow.lookAt(cam.position); glow.material.opacity = 0.9 * lamp;
+    gl.setClearColor('#0b1124', 1); gl.render(C.scene, cam);
+  }, 1);
+  return null;
+};
+const CLOSE = {};
+export const CastCloseup = ({ view = 'threeQuarter', t = 1.0, lamp = 1 }) => {
+  const C = useMemo(() => (CLOSE[view] ||= buildCloseup(view)), [view]);
+  return (
+    <AbsoluteFill style={{ background: '#0b1124' }}>
+      <ThreeCanvas width={CW} height={CH} gl={{ antialias: true, preserveDrawingBuffer: true }}>
+        <Closeup C={C} t={t} lamp={lamp} />
+      </ThreeCanvas>
+      <AbsoluteFill style={{ background: 'radial-gradient(ellipse 75% 60% at 55% 45%, rgba(0,0,0,0) 55%, rgba(5,8,18,0.55) 100%)' }} />
     </AbsoluteFill>
   );
 };

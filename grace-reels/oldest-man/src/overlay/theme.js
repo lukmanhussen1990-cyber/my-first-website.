@@ -14,7 +14,12 @@ export const C = {
 };
 // Instagram safe zone: text inside x 60–1000, y 220–1560; the right ~120 px between y 1100–1700 is under the IG buttons
 export const SAFE = { x0: 60, x1: 1000, y0: 220, y1: 1560, igX: 950, igY0: 1100, igY1: 1700 };
-export const L = { headerY: 150, capTop: 250, capBottom: 600, capX: 72, capW: 916, trackY: 640, trackH: 120 };
+// header sits just inside the safe line (IG's own top bar covers y < 220); captions start under it
+export const L = { headerY: 236, capTop: 300, capBottom: 620, capX: 72, capW: 916, trackY: 640, trackH: 120 };
+// S10 "some say" note: it carries the whole spoken B11 line (that caption block is hidden), so it starts on "Some"
+const _b11 = plan.words.filter((w) => w.block === 'B11#0');
+const _s10 = plan.shots.find((s) => s.id === 'S10');
+export const SOMESAY = { t0: Math.max(_s10.t0, Math.min(plan.ev.nameMeaning, _b11[0].start - 0.15)), t1: _s10.t1 - 0.1 };
 
 // ------------------------------------------------------------------ tiny pure animation helpers
 export const ease = {
@@ -81,6 +86,34 @@ export function layoutWords(items, { maxW, lineH, align = 'left', space }) {
   lineW[line] = x;
   if (align !== 'left') out.forEach((o) => { const free = maxW - lineW[o.line]; o.x += align === 'center' ? free / 2 : free; });
   return { items: out, lines: line + 1, lineW, width: Math.max(...lineW), height: (line + 1) * lineH };
+}
+// balanced wrap: the narrowest width (down to 60 %) that keeps the same number of lines, so no line is
+// left with a lone word ("repentance.”") and the lines read as an even block; centred in the full box
+export function layoutBalanced(items, opts) {
+  const o0 = { ...opts, align: 'left' };
+  const full = layoutWords(items, o0);
+  let best = full;
+  if (full.lines > 1) for (let mw = opts.maxW - 10; mw >= opts.maxW * 0.6; mw -= 10) {
+    const lay = layoutWords(items, { ...o0, maxW: mw });
+    if (lay.lines !== full.lines) break;
+    best = lay;
+  }
+  if (opts.align === 'center') best.items.forEach((o) => { o.x += (opts.maxW - best.lineW[o.line]) / 2; });
+  return best;
+}
+// a keyword "pop" that never collides with its neighbours: from the free room left/right of word i on
+// its line (gap to the neighbour, or to the box edge) pick the scale amplitude and the x transform-origin
+// so the grown word stays inside that room. A neighbour that pops too only gets half of the shared gap.
+export function popFit(items, i, { maxAmp, edgeL, edgeR, isPop = () => false }) {
+  const it = items[i], prev = items[i - 1], next = items[i + 1];
+  const sameL = prev && prev.line === it.line, sameR = next && next.line === it.line;
+  const Lr = Math.max(0, (sameL ? it.x - (prev.x + prev.w) : it.x + edgeL) * (sameL && isPop(i - 1) ? 0.45 : 0.9));
+  const Rr = Math.max(0, (sameR ? next.x - (it.x + it.w) : edgeR - (it.x + it.w)) * (sameR && isPop(i + 1) ? 0.45 : 0.9));
+  const w = Math.max(1, it.w);
+  const amp = Math.min(maxAmp, (Lr + Rr) / w);
+  if (amp <= 0) return { amp: 0, ox: 50 };
+  const lo = 1 - Rr / (amp * w), hi = Lr / (amp * w);              // allowed origin fraction range
+  return { amp, ox: clamp(0.5, Math.max(0, lo), Math.min(1, hi)) * 100 };
 }
 // display form of a timeline word: typographic quotes and apostrophes
 export const pretty = (s) => s.replace(/^"/, '“').replace(/"$/, '”').replace(/"([.,;:!?…]*)$/, '”$1').replace(/'/g, '’');

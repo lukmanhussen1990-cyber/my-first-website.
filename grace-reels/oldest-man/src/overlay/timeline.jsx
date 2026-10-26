@@ -1,33 +1,38 @@
 // S4 (HTML only, the 3D is black under it): a parchment timeline of the years of the world (anno mundi).
 // Bars ADAM 0–930, METHUSELAH 687–1656, NOAH born 1056 -> flood 1656 on a 0..1700 axis, paper-cut
-// portrait medallions at the bar starts, overlaps glowing gold (Adam/Methuselah at barAdam,
+// portrait medallions at the bar starts, overlaps glazed gold (Adam/Methuselah at barAdam,
 // Methuselah/Noah at barNoah), FLOOD 1656 marker exactly where Methuselah's bar ends.
 // Paper slides in with a dust burst, slow tilt/parallax, dust motes, grain + vignette; blows away into S5.
 import React from 'react';
 import { plan } from '../lib/planInstance.js';
-import { C, SERIF, SANS, ease, pop, clamp, lerp, hash01, parchmentURL, grainURL } from './theme.js';
+import { C, SERIF, SANS, ease, pop, clamp, lerp, hash01, mixHex, parchmentURL, grainURL } from './theme.js';
 
 const E = plan.ev;
 const S4 = plan.shots.find((s) => s.id === 'S4'), S5 = plan.shots.find((s) => s.id === 'S5');
-const AX0 = 130, AX1 = 930, YMAX = 1700;
+// AX1 keeps X(1656) (the FLOOD line and its year) left of the IG buttons column after the sheet's 1.075 scale
+const AX0 = 130, AX1 = 880, YMAX = 1700;
 const X = (yr) => AX0 + (yr / YMAX) * (AX1 - AX0);
-const ROW = { adam: 862, meth: 1076, noah: 1290 }, BH = 36, AXY = 1428;
+const ROW = { adam: 832, meth: 1046, noah: 1260 }, BH = 36, AXY = 1398;
 const INK = '#3a2414', TEAL = '#2e5a66';
 
-// timing (seconds)
+// timing (seconds). The source title comes in with the axis (no date is ever on the sheet without it);
+// "GENESIS 5" in it lights up gold when the voice says it.
+const GEN = plan.word('B04', 'Genesis').start;
 const T = {
-  axis: S4.t0 + 0.05, adam: S4.t0 + 0.3, title: plan.word('B04', 'Genesis').start - 0.05, noah: plan.word('B04', 'Genesis').start + 0.15,
-  flood: plan.word('B04', 'Genesis').start + 0.75, meth: E.barMeth, methDur: 1.0, ovA: E.barAdam, ovN: E.barNoah,
+  axis: S4.t0 + 0.05, adam: S4.t0 + 0.3, title: S4.t0 + 0.05, gen: GEN - 0.03, noah: GEN + 0.15,
+  flood: GEN + 0.75, meth: E.barMeth, methDur: 1.0, ovA: E.barAdam, ovN: E.barNoah,
 };
+// the sheet holds a little longer for the "600 YEARS WITH NOAH" payoff and is gone as "Now watch the math" starts
+const OUT = { t: S5.t0 - 0.12, d: 0.36 };
 export const timelineCover = (t) => {
-  const inK = clamp((t - (S4.t0 - 0.25)) / 0.5), outK = clamp((t - (S5.t0 - 0.2)) / 0.42);
+  const inK = clamp((t - (S4.t0 - 0.25)) / 0.5), outK = clamp((t - OUT.t) / OUT.d);
   return inK * (1 - outK);
 };
 
 export const Timeline = ({ t, frame }) => {
-  const a = S4.t0 - 0.25, b = S5.t0 + 0.25;
+  const a = S4.t0 - 0.25, b = OUT.t + OUT.d + 0.75;
   if (t < a || t > b) return null;
-  const inK = clamp((t - a) / 0.5), outK = clamp((t - (S5.t0 - 0.2)) / 0.42);
+  const inK = clamp((t - a) / 0.5), outK = clamp((t - OUT.t) / OUT.d);
   const inE = ease.out(inK), outE = ease.in(outK);
   const u = clamp((t - S4.t0) / (S4.t1 - S4.t0));
   const tilt = `perspective(1700px) rotateX(${lerp(6, 2.5, u)}deg) rotateZ(${lerp(-0.9, -0.25, u)}deg) scale(${lerp(1.03, 1.075, ease.sine(u)) * (1 + 0.12 * outE)})`;
@@ -47,7 +52,7 @@ export const Timeline = ({ t, frame }) => {
       </div>
       <Motes t={t} />
       <DustBurst t={t - a} edge={(1 - inE) * 1150 + 20} dir={1} />
-      <DustBurst t={t - (S5.t0 - 0.2)} edge={null} dir={-1} />
+      <DustBurst t={t - OUT.t} edge={null} dir={-1} />
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 75% 60% at 50% 50%, rgba(60,30,10,0) 55%, rgba(40,20,6,0.45) 100%)', opacity: inK }} />
       <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${grainURL()})`, backgroundPosition: `${Math.round(hash01(frame, 1) * 256)}px ${Math.round(hash01(frame, 2) * 256)}px`, opacity: 0.07, mixBlendMode: 'overlay' }} />
     </div>
@@ -57,12 +62,20 @@ export const Timeline = ({ t, frame }) => {
 function Content({ t }) {
   const axK = ease.inOut((t - T.axis) / 0.8);
   const titleK = ease.out((t - T.title) / 0.5);
+  const genK = ease.out((t - T.gen) / 0.3), genP = pop(t, T.gen, 0.12, 14, 7);
   return (
     <>
       {/* small title */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 684, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 18, opacity: titleK, transform: `translateY(${(1 - titleK) * 8}px)` }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 654, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 18, opacity: titleK, transform: `translateY(${(1 - titleK) * 8}px)` }}>
         <div style={{ width: 70 * titleK, height: 1.5, background: `linear-gradient(90deg, rgba(58,36,20,0), ${INK})` }} />
-        <div style={{ font: `700 23px ${SANS}`, letterSpacing: '0.28em', color: INK, whiteSpace: 'nowrap' }}>ADDING THE AGES IN GENESIS 5</div>
+        <div style={{ font: `700 23px ${SANS}`, letterSpacing: '0.28em', color: INK, whiteSpace: 'nowrap' }}>
+          ADDING THE AGES IN{' '}
+          <span style={{ position: 'relative', display: 'inline-block', color: mixHex(INK, '#9a5f10', genK), transform: `scale(${1 + genP})`, transformOrigin: '50% 60%',
+            textShadow: genK > 0 ? `0 0 ${12 * genK}px rgba(255,190,90,${0.45 * genK})` : 'none' }}>
+            GENESIS 5
+            <span style={{ position: 'absolute', left: 0, top: '100%', marginTop: 3, height: 2, width: `calc(${(100 * genK).toFixed(1)}% - 0.28em)`, background: '#b98a2e', borderRadius: 2 }} />
+          </span>
+        </div>
         <div style={{ width: 70 * titleK, height: 1.5, background: `linear-gradient(90deg, ${INK}, rgba(58,36,20,0))` }} />
       </div>
       {/* axis */}
@@ -73,11 +86,11 @@ function Content({ t }) {
         return (
           <React.Fragment key={i}>
             <div style={{ position: 'absolute', left: x - 1, top: AXY - (big ? 10 : 5), width: 2, height: big ? 20 : 10, background: INK, opacity: k * (big ? 1 : 0.6) }} />
-            {big ? <div style={{ position: 'absolute', left: x - 40, width: 80, top: AXY + 16, textAlign: 'center', font: `600 31px ${SERIF}`, color: INK, opacity: k * 0.85, fontVariantNumeric: 'lining-nums' }}>{yr}</div> : null}
+            {big && yr !== 1500 ? <div style={{ position: 'absolute', left: x - 40, width: 80, top: AXY + 16, textAlign: 'center', font: `600 31px ${SERIF}`, color: INK, opacity: k * 0.85, fontVariantNumeric: 'lining-nums' }}>{yr}</div> : null}
           </React.Fragment>
         );
       })}
-      <div style={{ position: 'absolute', left: AX0, top: AXY + 66, font: `600 17px ${SANS}`, letterSpacing: '0.22em', color: 'rgba(58,36,20,0.7)', opacity: axK }}>YEAR OF THE WORLD (ANNO MUNDI)</div>
+      <div style={{ position: 'absolute', left: AX0, top: AXY + 62, font: `600 22px ${SANS}`, letterSpacing: '0.2em', color: 'rgba(58,36,20,0.75)', opacity: axK }}>YEAR OF THE WORLD (ANNO MUNDI)</div>
       <Flood t={t} />
       <Overlap t={t} at={T.ovA} y0={ROW.adam + BH / 2} y1={ROW.meth - BH / 2} x0={X(687)} x1={X(930)} label="243 YEARS WITH ADAM" lx={X(687) - 14} ly={(ROW.adam + ROW.meth) / 2} />
       <Overlap t={t} at={T.ovN} y0={ROW.meth + BH / 2} y1={ROW.noah - BH / 2} x0={X(1056)} x1={X(1656)} label="600 YEARS WITH NOAH" lx={(X(1056) + X(1656)) / 2} ly={(ROW.meth + ROW.noah) / 2 - 12} center />
@@ -105,8 +118,10 @@ function Bar({ t, at, dur, y, y0, y1, fill, name, born, end, who, hero, arrow, g
         {glow.map(([g0, g1, ga], i) => {
           const gk = ease.out((t - ga) / 0.45); if (gk <= 0) return null;
           const pulse = 0.85 + 0.15 * Math.sin((t - ga) * 5);
+          // a warm gold glaze (the bar colour still shows through) with only a faint hatch texture
           return <div key={i} style={{ position: 'absolute', left: X(g0) - x0 - 2, width: (X(g1) - X(g0)) * gk, top: 0, bottom: 0, opacity: pulse,
-            background: 'repeating-linear-gradient(-55deg, rgba(255,226,140,0.95) 0 7px, rgba(255,210,110,0.18) 7px 13px), linear-gradient(180deg, rgba(255,240,200,0.35), rgba(255,200,90,0.1))' }} />;
+            background: 'repeating-linear-gradient(-55deg, rgba(255,250,225,0.2) 0 2px, rgba(255,250,225,0) 2px 9px), linear-gradient(180deg, rgba(255,238,175,0.72), rgba(244,192,90,0.55))',
+            boxShadow: 'inset 0 0 10px rgba(255,246,215,0.75), inset 0 0 0 1.5px rgba(255,222,140,0.85)' }} />;
         })}
       </div>
       {glow.map(([g0, g1, ga], i) => {
@@ -117,9 +132,11 @@ function Bar({ t, at, dur, y, y0, y1, fill, name, born, end, who, hero, arrow, g
       {k > 0 && k < 1 ? <div style={{ position: 'absolute', left: xe - 18, top: y - 18, width: 36, height: 36, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,240,200,0.95), rgba(255,200,110,0) 70%)' }} /> : null}
       {arrow && k > 0.98 ? <svg width="30" height="40" style={{ position: 'absolute', left: x1 - 4, top: y - 20, overflow: 'visible' }}><path d="M 0 6 L 16 20 L 0 34" fill="none" stroke={INK} strokeWidth="3" strokeLinejoin="round" /></svg> : null}
       {hero && t > at + dur - 0.02 ? <SealRing t={t - at - dur} x={x1} y={y} amp={endPop} /> : null}
-      {/* name + years */}
-      <div style={{ position: 'absolute', left: x0 + 60, top: y - BH / 2 - 58, whiteSpace: 'nowrap', opacity: nameK, transform: `translateX(${(1 - nameK) * -10}px)` }}>
-        <span style={{ font: `700 39px ${SERIF}`, letterSpacing: '0.07em', color: INK }}>{name}</span>
+      {/* name: ADAM above its bar; METHUSELAH above its bar between the Adam overlap and the FLOOD line (clear of
+          the overlap rules); NOAH left of its medallion (clear of the "600 YEARS WITH NOAH" glow above it) */}
+      <div style={{ position: 'absolute', whiteSpace: 'nowrap', opacity: nameK, transform: `translateX(${(1 - nameK) * (who === 'noah' ? 10 : -10)}px)`,
+        ...(who === 'noah' ? { right: 1080 - (x0 - 62), top: y - 26, textAlign: 'right' } : { left: who === 'meth' ? X(930) + 16 : x0 + 60, top: y - BH / 2 - 58 }) }}>
+        <span style={{ font: `700 39px/48px ${SERIF}`, letterSpacing: who === 'meth' ? '0.04em' : '0.07em', color: INK }}>{name}</span>
       </div>
       {/* birth year under the medallion, end year after the bar (Methuselah and Noah end at the FLOOD line) */}
       <div style={{ position: 'absolute', left: x0 - 60, width: 120, top: y + 56, textAlign: 'center', font: `italic 700 28px ${SERIF}`, color: 'rgba(58,36,20,0.8)', opacity: nameK }}>{born}</div>
@@ -144,7 +161,7 @@ const SealRing = ({ t, x, y, amp }) => {
 function Overlap({ t, at, y0, y1, x0, x1, label, lx, ly, center }) {
   const k = ease.out((t - at) / 0.4);
   if (k <= 0) return null;
-  const lk = ease.out((t - at - 0.12) / 0.4);
+  const lk = ease.out((t - at - 0.04) / 0.3);
   const h = (y1 - y0) * k;
   const pulse = 0.85 + 0.15 * Math.sin((t - at) * 5);
   return (
@@ -154,7 +171,7 @@ function Overlap({ t, at, y0, y1, x0, x1, label, lx, ly, center }) {
       <div style={{ position: 'absolute', left: x1 - 1, top: y0, width: 2, height: h, background: 'rgba(190,125,30,0.9)' }} />
       <div style={{ position: 'absolute', ...(center ? { left: lx - 200, width: 400, textAlign: 'center' } : { right: 1080 - lx, textAlign: 'right' }), top: ly - 40, opacity: lk, transform: `translateX(${(1 - lk) * (center ? 0 : 12)}px) scale(${center ? lerp(0.9, 1, lk) : 1})`, whiteSpace: 'nowrap' }}>
         <div style={{ font: `700 52px/48px ${SERIF}`, color: '#9a5f10', textShadow: '0 0 16px rgba(255,200,100,0.5)' }}>{label.split(' ')[0]}</div>
-        <div style={{ font: `700 17px/24px ${SANS}`, letterSpacing: '0.18em', color: INK }}>{label.split(' ').slice(1).join(' ')}</div>
+        <div style={{ font: `700 22px/28px ${SANS}`, letterSpacing: '0.16em', color: INK }}>{label.split(' ').slice(1).join(' ')}</div>
       </div>
     </>
   );
@@ -163,7 +180,7 @@ function Overlap({ t, at, y0, y1, x0, x1, label, lx, ly, center }) {
 function Flood({ t }) {
   const k = ease.inOut((t - T.flood) / 0.6);
   if (k <= 0) return null;
-  const x = X(1656), yTop = 790, len = AXY + 10 - yTop;
+  const x = X(1656), yTop = 760, len = AXY + 10 - yTop;
   const lk = ease.out((t - T.flood - 0.2) / 0.4);
   return (
     <>

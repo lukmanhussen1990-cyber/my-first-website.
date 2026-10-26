@@ -403,21 +403,32 @@ export function propParts(kind, D) {
   return P;
 }
 
-// ---------------------------------------------------------------- baby (swaddled bundle; lies along x, head at +x)
+// ---------------------------------------------------------------- baby (swaddled bundle; lies along x, head at +x, face looking UP)
 export function babyParts(D) {
-  const s = D.skin, c = D.cloth || '#efe3c8', ln = ink(c, 0.68), bl = mixc(s, '#d0604a', 0.5);
+  const s = D.skin, c = D.cloth || '#efe3c8', ln = ink(c, 0.68), bl = mixc(s, '#d0604a', 0.5), sl = ink(s, 0.58);
+  const band = D.band || '#b8894a';
   const P = [];
-  const hood = smooth([[0.09, 0.07], [0.15, 0.115], [0.24, 0.11], [0.29, 0.05], [0.28, -0.03], [0.22, -0.07], [0.12, -0.05]], true);
-  P.push({ id: 'hood', pivot: 'body', layer: 10, density: 'face', bulge: 0.8, shape: hood, draw: [F(hood, shade(c, 0.93)), L(smooth([[0.13, 0.09], [0.22, 0.1], [0.27, 0.04]], false), ln, 0.004, { a: 0.6 })] });
-  const head = smooth([[0.135, 0.02], [0.15, 0.07], [0.195, 0.095], [0.245, 0.08], [0.268, 0.04], [0.272, 0.02, 0.6], [0.262, 0.0], [0.25, -0.03], [0.21, -0.045], [0.165, -0.035]], true);
-  P.push({ id: 'babyHead', pivot: 'babyHead', layer: 12, density: 'face', bulge: 0.95, shape: head, draw: [F(head, s), F(ellipse(0.215, 0.0, 0.022, 0.016), bl, { a: 0.35, blur: 0.01 }), L(smooth([[0.165, 0.075], [0.19, 0.09], [0.215, 0.085]], false), D.hairColor || '#3a2a1c', 0.006, { a: 0.85 }), L(smooth([[0.256, 0.012], [0.262, 0.004]], false), ink(s, 0.6), 0.003)] });
-  P.push({ id: 'babyEyeClosed', pivot: 'babyHead', layer: 12.2, outline: false, density: 'face', bulge: 0, rim: false, toggle: 'babyEye:closed', shape: smooth([[0.212, 0.03], [0.225, 0.022], [0.238, 0.03], [0.238, 0.034], [0.225, 0.028], [0.212, 0.034]], true), draw: [F(smooth([[0.212, 0.03], [0.225, 0.022], [0.238, 0.03], [0.238, 0.034], [0.225, 0.028], [0.212, 0.034]], true), '#2c170d')] });
-  P.push({ id: 'babyEyeOpen', pivot: 'babyHead', layer: 12.2, outline: false, density: 'face', bulge: 0.2, rim: false, toggle: 'babyEye:open', shape: ellipse(0.226, 0.03, 0.009, 0.011), draw: [F(ellipse(0.226, 0.03, 0.009, 0.011), '#1d120a'), F(ellipse(0.229, 0.034, 0.003, 0.003), '#fff3de')] });
-  const body = smooth([[-0.24, 0.0], [-0.22, 0.06], [-0.12, 0.09], [0.0, 0.095], [0.1, 0.08], [0.16, 0.04], [0.17, -0.01], [0.15, -0.06], [0.05, -0.085], [-0.1, -0.08], [-0.2, -0.055]], true);
+  // hood: frames the back and crown of the head, leaves the face (top) open
+  const hood = smooth([[0.1, 0.02], [0.12, -0.07], [0.2, -0.098], [0.29, -0.07], [0.33, 0.0], [0.322, 0.07], [0.29, 0.11], [0.262, 0.1], [0.27, 0.04], [0.24, -0.03], [0.17, -0.04]], true);
+  P.push({ id: 'hood', pivot: 'body', layer: 10, density: 'face', bulge: 0.8, shape: hood, shadow: true,
+    draw: [F(hood, shade(c, 0.94)), L(smooth([[0.13, -0.06], [0.22, -0.082], [0.3, -0.05], [0.316, 0.03]], false), ln, 0.004, { a: 0.6 }), L(smooth([[0.285, 0.1], [0.3, 0.06], [0.296, 0.0]], false), lift(c, 0.4), 0.004, { a: 0.6 })] });
+  // head in profile, looking up: chin (-x) .. lips .. nose (top) .. brow .. forehead .. crown (+x)
+  const hp = [[0.13, 0.03], [0.142, 0.062], [0.16, 0.074, 0.6], [0.168, 0.07], [0.178, 0.082], [0.19, 0.104, 0.5], [0.204, 0.096, 0.6], [0.222, 0.092], [0.25, 0.088], [0.275, 0.07], [0.288, 0.035], [0.282, -0.01], [0.258, -0.04], [0.21, -0.052], [0.165, -0.04], [0.138, -0.01]];
+  const head = smooth(hp, true);
+  P.push({ id: 'babyHead', pivot: 'babyHead', layer: 12, density: 'face', bulge: 0.95, shape: head, shadow: true,
+    draw: [F(head, s), F(ellipse(0.175, 0.04, 0.026, 0.018), bl, { a: 0.4, blur: 0.01 }), F(ellipse(0.205, 0.0, 0.016, 0.02), shade(s, 0.9)), L(smooth([[0.198, 0.012], [0.21, 0.008], [0.212, -0.008]], false), sl, 0.003, { a: 0.7 }),
+      L(smooth([[0.27, 0.07], [0.282, 0.05], [0.29, 0.03]], false), D.hairColor || '#3a2a1c', 0.006, { a: 0.85 }), L(smooth([[0.262, 0.08], [0.276, 0.062]], false), D.hairColor || '#3a2a1c', 0.004, { a: 0.7 }),
+      L(smooth([[0.161, 0.072], [0.168, 0.068]], false), sl, 0.003, { a: 0.8 }), L(smooth([[0.2, 0.094], [0.208, 0.09]], false), sl, 0.0025, { a: 0.4 })] });
+  const ec = smooth([[0.216, 0.066], [0.226, 0.058], [0.238, 0.064], [0.238, 0.068], [0.226, 0.063], [0.216, 0.07]], true);
+  P.push({ id: 'babyEyeClosed', pivot: 'babyHead', layer: 12.2, outline: false, density: 'face', bulge: 0, rim: false, toggle: 'babyEye:closed', shape: ec, draw: [F(ec, '#2c170d')] });
+  P.push({ id: 'babyEyeOpen', pivot: 'babyHead', layer: 12.2, outline: false, density: 'face', bulge: 0.2, rim: false, toggle: 'babyEye:open', shape: ellipse(0.228, 0.066, 0.009, 0.01), draw: [F(ellipse(0.228, 0.066, 0.009, 0.01), '#1d120a'), F(ellipse(0.231, 0.07, 0.003, 0.003), '#fff3de')] });
+  // swaddle body with a folded-over top edge and a band
+  const body = smooth([[-0.24, 0.0], [-0.225, 0.06], [-0.12, 0.09], [0.0, 0.098], [0.1, 0.09], [0.15, 0.06], [0.16, 0.0], [0.15, -0.06], [0.05, -0.088], [-0.1, -0.082], [-0.2, -0.056]], true);
   P.push({ id: 'swaddle', pivot: 'body', layer: 14, density: 'face', bulge: 0.85, prof: 1.2, shape: body, shadow: true,
-    draw: [F(body, c), L(smooth([[-0.1, 0.085], [-0.05, 0.0], [0.0, -0.08]], false), ln, 0.004, { a: 0.6 }), L(smooth([[0.02, 0.09], [0.06, 0.0], [0.1, -0.07]], false), ln, 0.004, { a: 0.6 }), L(smooth([[-0.19, 0.05], [-0.16, -0.02], [-0.15, -0.07]], false), ln, 0.0035, { a: 0.5 }),
-      F(poly([[-0.02, 0.1], [0.025, 0.1], [0.045, -0.09], [0.0, -0.09]]), D.band || '#b8894a'), L(poly([[0.004, 0.1], [0.024, -0.09]], false), lift(D.band || '#b8894a', 0.4), 0.003, { a: 0.6 }), L(smooth([[0.1, 0.075], [0.15, 0.03], [0.16, -0.03]], false), lift(c, 0.4), 0.004, { a: 0.6 })] });
-  const hand = smooth([[0.11, 0.07], [0.135, 0.085], [0.15, 0.072], [0.142, 0.055], [0.118, 0.055]], true);
-  P.push({ id: 'babyHand', pivot: 'body', layer: 15, density: 'face', bulge: 0.9, shape: hand, draw: [F(hand, s), L(smooth([[0.13, 0.08], [0.136, 0.07]], false), ink(s, 0.6), 0.0025, { a: 0.6 })] });
+    draw: [F(body, c), F(smooth([[0.03, 0.1], [0.155, 0.07], [0.15, -0.01], [0.04, 0.04]], true), shade(c, 0.93)), L(smooth([[0.04, 0.04], [0.1, 0.03], [0.15, -0.01]], false), ln, 0.004, { a: 0.6 }),
+      L(smooth([[-0.1, 0.085], [-0.05, 0.0], [0.0, -0.08]], false), ln, 0.004, { a: 0.55 }), L(smooth([[-0.19, 0.05], [-0.16, -0.02], [-0.15, -0.07]], false), ln, 0.0035, { a: 0.5 }),
+      F(poly([[-0.07, 0.1], [-0.03, 0.1], [-0.01, -0.09], [-0.05, -0.09]]), band), L(poly([[-0.048, 0.1], [-0.028, -0.09]], false), lift(band, 0.4), 0.003, { a: 0.6 }), L(smooth([[-0.2, 0.04], [-0.12, 0.07], [-0.02, 0.08]], false), lift(c, 0.4), 0.004, { a: 0.6 })] });
+  const hand = smooth([[0.115, 0.075], [0.13, 0.098], [0.15, 0.094], [0.152, 0.076], [0.132, 0.066]], true);
+  P.push({ id: 'babyHand', pivot: 'body', layer: 15, density: 'face', bulge: 0.9, shape: hand, draw: [F(hand, s), L(smooth([[0.135, 0.09], [0.142, 0.08]], false), ink(s, 0.6), 0.0025, { a: 0.6 })] });
   return P;
 }

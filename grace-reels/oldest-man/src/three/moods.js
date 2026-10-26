@@ -61,7 +61,19 @@ export function moodAt(t, keys) {
 
 // ---------------------------------------------------------------- per-scene presets (BRIEF "Moods")
 // The sun comes from the BACK-LEFT in day scenes (sunDir points TOWARD the sun): shadows fall toward camera-right.
+// Calibration (pass B of the quality loop): Lambert irradiance on lit ground = sun * cos + hemi; ~2.1x albedo with
+// exposure ~0.92 lands lit sand '#cfa76c' near '#c0905a' and shade near '#8c6a46' (hue kept), like the reference mid-tones.
 export const MOODS = {
+  // world day (village, fields, ark site): warm key from the back-left, warm bounce, light haze only in the top band
+  dayWarm: {
+    sky: { top: '#a9bccb', horizon: '#ead8b2', bottom: '#c09a62', sunGlow: '#ffd9a0', sunDisk: '#fff3d6', clouds: 0.35, cloudLit: '#fff8ec', cloudShade: '#c9bba8' },
+    sunDir: [-0.55, 0.62, -0.5], sun: { color: '#ffe6c0', intensity: 2.25 },
+    hemi: { sky: '#d3dbe4', ground: '#b48a56', intensity: 0.72 },
+    fog: { color: '#e2c99a', near: 140, far: 700, density: 0.005, height: 9, sun: 0.35 },
+    char: '#fff6ea', ao: 0.18,
+    post: { exposure: 0.92, sat: 1.12, contrast: 1.05, haze: 0.16, hazeTop: 0.62, hazeColor: '#e2c99a', vignette: 0.36, grain: 0.024, bloom: 0.35,
+      split: 0.12, splitShadow: '#5f5a7e', splitHigh: '#ffd9a0', ao: 0.5, aoRadius: 0.55, tilt: 0.42, tiltTop: 0.7, tiltBottom: 0.1 },
+  },
   // S1, S2, S8: deep blue night + warm amber lamp (the set adds point: lamp.light(t, level))
   nightLamp: {
     sky: { top: '#050a1a', horizon: '#26365f', bottom: '#0b0f1a', band: '#1c2a52', stars: 1.2, moon: 0.8, moonDir: [-0.32, 0.2, -1],
@@ -76,12 +88,12 @@ export const MOODS = {
   // S3: soft morning gold, holy beam (set: post.godrays.pos = beam source, strength ~0.7)
   morningGold: {
     sky: { top: '#d9c7a6', horizon: '#f6dcae', bottom: '#c9a26c', band: '#3a2810', sunGlow: '#ffcf8a', sunDisk: '#fff0cc', clouds: 0.3, cloudLit: '#fff1d6', cloudShade: '#d9b48a', cloudSpeed: 1.0 },
-    sunDir: [-0.55, 0.36, -0.62], sun: { color: '#ffd9a0', intensity: 2.9 },
-    hemi: { sky: '#e8dcc6', ground: '#9a7a4e', intensity: 0.95 },
-    fog: { color: '#ecd3a4', near: 50, far: 380, density: 0.02, height: 7, sun: 0.6 },
+    sunDir: [-0.55, 0.36, -0.62], sun: { color: '#ffd29a', intensity: 2.3 },
+    hemi: { sky: '#e0d6c6', ground: '#a8804e', intensity: 0.7 },
+    fog: { color: '#ecd0a0', near: 90, far: 600, density: 0.007, height: 7, sun: 0.6 },
     char: '#fff4e2', ao: 0.18,
-    post: { exposure: 1.02, bloom: 0.7, bloomThreshold: 0.92, hazeColor: '#f2d9a8', haze: 0.18, vignette: 0.32, grain: 0.024,
-      split: 0.3, splitShadow: '#7a5a86', splitHigh: '#ffcf7a', ao: 0.5, aoRadius: 0.5,
+    post: { exposure: 0.9, sat: 1.1, contrast: 1.04, bloom: 0.7, bloomThreshold: 0.92, hazeColor: '#f2d9a8', haze: 0.16, hazeTop: 0.6, vignette: 0.38, grain: 0.024,
+      split: 0.2, splitShadow: '#6a5480', splitHigh: '#ffcf7a', ao: 0.5, aoRadius: 0.5, tilt: 0.4, tiltBottom: 0.1,
       godrays: { color: '#ffe0a8', strength: 0, radius: 0.14, decay: 0.968, density: 0.92, streaks: 0.7 } },
   },
   // S4: warm parchment (HTML scene; kept for transitions)

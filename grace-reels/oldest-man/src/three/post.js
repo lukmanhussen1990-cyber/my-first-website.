@@ -112,7 +112,7 @@ uniform sampler2D tScene; uniform sampler2D tBlur; uniform sampler2D tBlur2; uni
 uniform sampler2D tAO; uniform sampler2D tRays;
 uniform float near; uniform float far; uniform float focus; uniform float focusRange; uniform float dof;
 uniform float tiltTop; uniform float tiltBottom; uniform float tilt;
-uniform float bloom; uniform vec3 hazeColor; uniform float haze;
+uniform float bloom; uniform vec3 hazeColor; uniform float haze; uniform float hazeTop;
 uniform vec3 tint; uniform vec3 lift; uniform float sat; uniform float contrast; uniform float exposure;
 uniform float vignette; uniform float grain; uniform float seed; uniform float flash; uniform float ca;
 uniform vec3 fadeColor; uniform float fade; uniform float aces; uniform float agxLook;
@@ -219,7 +219,7 @@ void main(){
   c = mix(toSRGB(roll), toSRGB(acesFilmic(c)), aces);
 #endif
 #ifdef HAZE
-  c = mix(c, hazeColor, haze * smoothstep(0.45, 1.0, vUv.y));
+  c = mix(c, hazeColor, haze * smoothstep(hazeTop, 1.0, vUv.y));
 #endif
   c = c * tint + lift;
   float l = dot(c, vec3(0.299, 0.587, 0.114));
@@ -381,8 +381,9 @@ export const MODES = { dissolve: 0, dust: 1, flare: 2, push: 3, whip: 4 };
 // Every key a mood may set under `post` (moods.js BASE.post is a copy of this).
 export const DEFAULT_POST = {
   focus: 20, focusRange: 6, dof: 0, tiltTop: 0.7, tiltBottom: 0.12, tilt: 0.55,
-  bloom: 0.5, bloomThreshold: 0.85, hazeColor: '#d9c497', haze: 0.25,
-  tint: '#ffffff', lift: '#000000', sat: 1, contrast: 1, exposure: 1, aces: 1, ca: 0.004,
+  // haze: post-tonemap mix toward hazeColor in the top band of the frame (from vUv.y = hazeTop up)
+  bloom: 0.5, bloomThreshold: 0.85, hazeColor: '#d9c497', haze: 0.25, hazeTop: 0.62,
+  tint: '#ffffff', lift: '#000000', sat: 1, contrast: 1, exposure: 1, aces: 1, ca: 0.0025,
   vignette: 0.5, grain: 0.03, flash: 0, fadeColor: '#000000', fade: 0,
   // tone mapping: 'aces' (ACES filmic; `aces` 0..1 mixes from a soft roll-off to ACES) | 'agx' (+ agxLook 0..1 = 'punchy')
   tonemap: 'aces', agxLook: 0.6,
@@ -482,7 +483,7 @@ export class Post {
       tScene: { value: null }, tBlur: { value: null }, tBlur2: { value: null }, tBloom: { value: null }, tDepth: { value: null },
       tAO: { value: null }, tRays: { value: null }, near: { value: 0.5 }, far: { value: 1000 }, seed: { value: 0 },
       focus: { value: 20 }, focusRange: { value: 6 }, dof: { value: 0 }, tiltTop: { value: 0.7 }, tiltBottom: { value: 0.12 }, tilt: { value: 0.55 },
-      bloom: { value: 0.5 }, hazeColor: { value: new THREE.Color() }, haze: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) }, lift: { value: new THREE.Color(0, 0, 0) },
+      bloom: { value: 0.5 }, hazeColor: { value: new THREE.Color() }, haze: { value: 0 }, hazeTop: { value: 0.62 }, tint: { value: new THREE.Color(1, 1, 1) }, lift: { value: new THREE.Color(0, 0, 0) },
       sat: { value: 1 }, contrast: { value: 1 }, exposure: { value: 1 }, vignette: { value: 0.5 }, grain: { value: 0.03 }, flash: { value: 0 }, ca: { value: 0 },
       fadeColor: { value: new THREE.Color() }, fade: { value: 0 }, aces: { value: 1 }, agxLook: { value: 0.6 },
       aoK: { value: 0 }, aoPow: { value: 1 }, raysColor: { value: new THREE.Color() }, raysK: { value: 0 },
@@ -673,7 +674,7 @@ export class Post {
     if (!aoOn) u.tAO.value = any;
     if (!defs.RAYS) u.tRays.value = any;
     u.near.value = camera.near; u.far.value = camera.far; u.seed.value = frame % 997;
-    for (const k of ['focus', 'focusRange', 'dof', 'tiltTop', 'tiltBottom', 'tilt', 'bloom', 'haze', 'sat', 'contrast', 'exposure', 'vignette', 'grain', 'flash', 'ca', 'fade', 'aces', 'agxLook', 'split', 'splitBalance']) u[k].value = P[k];
+    for (const k of ['focus', 'focusRange', 'dof', 'tiltTop', 'tiltBottom', 'tilt', 'bloom', 'haze', 'hazeTop', 'sat', 'contrast', 'exposure', 'vignette', 'grain', 'flash', 'ca', 'fade', 'aces', 'agxLook', 'split', 'splitBalance']) u[k].value = P[k];
     for (const k of ['hazeColor', 'tint', 'lift', 'fadeColor', 'splitShadow', 'splitHigh']) u[k].value.set(P[k]);
     for (const k of ['gLift', 'gGamma', 'gGain']) u[k].value.set(...P[k]);
     // exponential height fog (mood keys fog.density / fog.height / fog.base / fog.sun / fog.max / fog.sky / fog.hcolor)

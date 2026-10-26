@@ -17,7 +17,8 @@ const TERMS = [
   { n: '182', at: E.n182, sum: E.sum182, x: X.t2, label: 'NOAH BORN' },
   { n: '600', at: E.n600, sum: E.sum600, x: X.t3, label: 'THE FLOOD' },
 ];
-export const TRACK = { t0: E.tracker - 0.05, t1: E.lampOut + 1.15 };
+// gone before the near silence (the frame is cleared for the one giant raindrop)
+export const TRACK = { t0: E.tracker - 0.05, t1: E.silence + 0.25 };
 
 // running total as a pure function of t (eased roll after each landing)
 function total(t) {
@@ -37,7 +38,7 @@ function digitPos(v, k) {
 export const Tracker = ({ t, frame }) => {
   if (t < TRACK.t0 || t > TRACK.t1) return null;
   const inK = ease.out((t - E.tracker) / 0.5);
-  const outK = clamp((t - (E.lampOut + 0.45)) / 0.65);
+  const outK = clamp((t - (E.lampOut + 0.1)) / 0.45);           // fades with the dying flame
   const o = clamp((t - TRACK.t0) / 0.2) * (1 - ease.inOut(outK));
   if (o <= 0.001) return null;
   const slamD = t - E.slam;
@@ -89,7 +90,7 @@ function Term({ T, i, t, focus, dim, locked }) {
       <div style={{ position: 'absolute', left: 0, width: 140, top: 6, textAlign: 'center', font: `700 62px/80px ${SERIF}`, color: gold, opacity: ld.o,
         transform: `translateY(${ld.y}px) scale(${ld.s * (1 + hk)})`, transformOrigin: '50% 70%', fontVariantNumeric: 'lining-nums',
         textShadow: landed ? `0 0 ${hl || locked ? 26 : 14}px rgba(255,180,70,${hl || locked ? 0.85 : 0.5}), 0 2px 8px rgba(0,0,0,0.6)` : 'none' }}>{T.n}</div>
-      <div style={{ position: 'absolute', left: -14, width: 168, top: 94, textAlign: 'center', font: `700 16px ${SANS}`, letterSpacing: '0.1em', whiteSpace: 'nowrap',
+      <div style={{ position: 'absolute', left: -20, width: 180, top: 92, textAlign: 'center', font: `700 21px ${SANS}`, letterSpacing: '0.08em', whiteSpace: 'nowrap',
         color: hl ? C.goldHi : 'rgba(251,241,220,0.62)', opacity: landed ? clamp((t - T.at - 0.1) / 0.3) : 0 }}>{T.label}</div>
     </div>
   );
@@ -137,7 +138,7 @@ function Total({ t, v, speed, locked, flash, focus }) {
         {flash > 0.02 ? <div style={{ position: 'absolute', inset: 0, background: `rgba(255,252,235,${0.85 * flash})` }} /> : null}
         {locked ? <Shine t={t - E.slam - 0.15} /> : null}
       </div>
-      <div style={{ position: 'absolute', left: 0, width: bw, top: 86, textAlign: 'center', font: `700 16px ${SANS}`, letterSpacing: '0.16em', whiteSpace: 'nowrap',
+      <div style={{ position: 'absolute', left: 0, width: bw, top: 84, textAlign: 'center', font: `700 21px ${SANS}`, letterSpacing: '0.12em', whiteSpace: 'nowrap',
         color: locked ? C.goldHi : 'rgba(251,241,220,0.62)' }}>
         <span style={{ opacity: 1 - clamp((t - E.slam - 0.2) / 0.25) }}>TOTAL</span>
         <span style={{ position: 'absolute', left: 0, right: 0, opacity: clamp((t - E.slam - 0.2) / 0.25) }}>= HIS AGE</span>

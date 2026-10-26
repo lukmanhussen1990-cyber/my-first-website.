@@ -1,6 +1,6 @@
 // The HTML layer over the 3D canvas. Pure function of the frame (t = frame / 30).
-// Layers, bottom -> top: verse cards, S4 parchment timeline (slides over the outgoing card), S15 end card, S2 life-ribbon, world labels,
-// S10 note, S14 CTA, math tracker, captions, hook title, header.
+// Layers, bottom -> top: verse cards, S4 parchment timeline (slides over the outgoing card), S2 life-ribbon, world labels,
+// S10 note, S14 CTA, S15 end card (its flare wipe covers the fading CTA), math tracker, captions, hook title, header.
 import React, { useEffect, useState } from 'react';
 import { AbsoluteFill, delayRender, continueRender } from 'remotion';
 import { plan } from '../lib/planInstance.js';
@@ -28,11 +28,11 @@ export const Overlay = ({ frame, debug }) => {
       <style>{'.gim-ov, .gim-ov * { font-variant-numeric: lining-nums !important; font-feature-settings: "lnum" 1 !important; }'}</style>
       <VerseCards t={t} frame={frame} />
       <Timeline t={t} frame={frame} />
-      <EndCard t={t} frame={frame} />
       <LifeRibbon t={t} frame={frame} />
       <Labels t={t} />
       <SomeSay t={t} />
       <Cta t={t} frame={frame} />
+      <EndCard t={t} frame={frame} />
       <Tracker t={t} frame={frame} />
       <Captions t={t} />
       <HookTitle t={t} frame={frame} />

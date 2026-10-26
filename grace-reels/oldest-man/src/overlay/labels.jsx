@@ -1,12 +1,12 @@
 // World-anchored labels with leader lines (projected every frame with the engine's own camera via
-// cameraShot), the screen-fixed "some say" note (S10) and the S2 life-ribbon.
+// cameraShot), the S10 "some say" note (screen-fixed, it carries the spoken B11 line) and the S2 life-ribbon.
 // Draw-on: the dot pops, the leader grows, the pill slides out of the line. Pills are clamped inside
 // the IG safe zone and kept clear of the captions band and the math tracker.
 import React from 'react';
 import { plan } from '../lib/planInstance.js';
 import { anchorAt } from '../lib/director.js';
 import { shotAt } from '../plan.js';
-import { C, SERIF, SANS, SAFE, ease, pop, clamp, lerp, hash01, measure, project, shotById } from './theme.js';
+import { C, L, SERIF, SANS, SAFE, SOMESAY, ease, pop, clamp, lerp, hash01, measure, layoutWords, popFit, pretty, project } from './theme.js';
 import { TRACK } from './tracker.jsx';
 
 const E = plan.ev;
@@ -15,7 +15,7 @@ const S = Object.fromEntries(plan.shots.map((s) => [s.id, s]));
 
 // kind: 'pill' (NAME · REF on one line), 'name' (big serif name + small gold line), 'quote' (gold ref + quote line)
 export const LABELS = [
-  { id: 'name', shots: ['S2'], set: 'hill', anchor: 'methuselahHead', from: E.nameLabel + 0.1, to: S.S2.t1 - 0.12, kind: 'name',
+  { id: 'name', shots: ['S2'], set: 'hill', anchor: 'methuselahHead', from: E.nameLabel, to: S.S2.t1 - 0.12, kind: 'name',
     a: 'METHUSELAH', b: '969 YEARS · GENESIS 5:27', dx: 170, dy: -210, fallback: [540, 980], yMax: 1230 },   // stays above the life-ribbon
   { id: 'g525', shots: ['S5'], set: 'family', anchor: 'methuselah', from: beat('B06').start + 0.15, to: S.S5.t1 - 0.1, kind: 'pill',
     a: 'METHUSELAH', b: 'GENESIS 5:25', dx: 150, dy: -190, fallback: [540, 1180] },
@@ -23,24 +23,27 @@ export const LABELS = [
     a: 'LAMECH', b: 'GENESIS 5:28–29', dx: -150, dy: -190, fallback: [540, 1180] },
   { id: 'g76', shots: ['S7'], set: 'ark', anchor: 'noah', from: beat('B08').start + 0.08, to: S.S7.t1 - 0.06, kind: 'pill',
     a: 'NOAH', b: 'GENESIS 7:6', dx: 150, dy: -190, fallback: [540, 1180] },
-  { id: 'year', shots: ['S8', 'S9'], set: 'hill', anchor: { S8: 'n969', S9: 'lamp' }, from: E.yearLabel, to: E.lampOut + 0.7, kind: 'pill',
+  // across the S8 -> S9 cut the pill glides from its S8 spot to its S9 spot and the leader re-grows to the lamp;
+  // it leaves as the flame dies (the near silence gets a clean frame)
+  { id: 'year', shots: ['S8', 'S9'], set: 'hill', anchor: { S8: 'n969', S9: 'lamp' }, from: E.yearLabel, to: E.lampOut + 0.3, kind: 'pill',
     a: 'THE YEAR HE DIED', b: 'GENESIS 5:27', dx: 0, dy: 300, fallback: [540, 1240] },
   { id: 'heaven', shots: ['S12'], set: 'ark', anchor: 'sky', from: E.floodCrack + 0.3, to: S.S12.t1 - 0.1, kind: 'quote', yMin: 300,
     a: 'GENESIS 7:11', b: '“…THE WINDOWS OF HEAVEN WERE OPENED.”', dx: 0, dy: 210, fallback: [540, 560] },
 ];
 
-const PILL_A = `700 23px ${SANS}`, PILL_LS = 0.16;
+const PILL_FS = 26, PILL_A = `700 ${PILL_FS}px ${SANS}`, PILL_LS = 0.16;
+const NAME_B = 22, QUOTE_A = 22, QUOTE_B = 25;
 function geom(Lb) {
   if (Lb.kind === 'name') {
-    const wa = measure(`700 46px ${SERIF}`, Lb.a) + Lb.a.length * 46 * 0.1, wb = measure(`700 18px ${SANS}`, Lb.b) + Lb.b.length * 18 * 0.2;
-    return { w: Math.max(wa, wb) + 60, h: 104 };
+    const wa = measure(`700 46px ${SERIF}`, Lb.a) + Lb.a.length * 46 * 0.1, wb = measure(`700 ${NAME_B}px ${SANS}`, Lb.b) + Lb.b.length * NAME_B * 0.2;
+    return { w: Math.max(wa, wb) + 64, h: 110 };
   }
   if (Lb.kind === 'quote') {
-    const wa = measure(`700 18px ${SANS}`, Lb.a) + Lb.a.length * 18 * 0.28, wb = measure(`600 23px ${SANS}`, Lb.b) + Lb.b.length * 23 * 0.1;
-    return { w: Math.max(wa, wb) + 56, h: 92 };
+    const wa = measure(`700 ${QUOTE_A}px ${SANS}`, Lb.a) + Lb.a.length * QUOTE_A * 0.28, wb = measure(`600 ${QUOTE_B}px ${SANS}`, Lb.b) + Lb.b.length * QUOTE_B * 0.08;
+    return { w: Math.max(wa, wb) + 60, h: 98 };
   }
   const txt = `${Lb.a} · ${Lb.b}`;
-  return { w: measure(PILL_A, txt) + txt.length * 23 * PILL_LS + 52, h: 54 };
+  return { w: measure(PILL_A, txt) + txt.length * PILL_FS * PILL_LS + 56, h: 54 };
 }
 
 export const Labels = ({ t }) => {
@@ -48,45 +51,66 @@ export const Labels = ({ t }) => {
   return <>{LABELS.map((Lb) => (Lb.shots.includes(cur.id) && t > Lb.from - 0.05 && t < Lb.to + 0.3 ? <Label key={Lb.id} Lb={Lb} t={t} cur={cur} /> : null))}</>;
 };
 
-function Label({ Lb, t, cur }) {
-  const a = Lb.from, z = Lb.to;
-  const o = clamp((t - a) / 0.2) * clamp((z - t) / 0.25);
-  if (o <= 0) return null;
-  const name = typeof Lb.anchor === 'string' ? Lb.anchor : Lb.anchor[cur.id];
-  const A = name ? project(cur, t, anchorAt(plan, Lb.set, name, t)) : null;
+// where the pill goes in a given shot at time t (anchor projected with that shot's camera)
+function place(Lb, shot, t) {
+  const name = typeof Lb.anchor === 'string' ? Lb.anchor : Lb.anchor[shot.id];
+  const A = name ? project(shot, t, anchorAt(plan, Lb.set, name, t)) : null;
   const { w, h } = geom(Lb);
   const trackOn = t > TRACK.t0 && t < TRACK.t1;
   const yMin = Lb.yMin ?? (trackOn ? 800 : 660);
   // anchors inside the captions band / tracker zone get no dot or leader (never draw over them)
-  const useA = A && A.on && A.y > yMin - 10 && A.y < 1560;
+  const useA = !!(A && A.on && A.y > yMin - 10 && A.y < 1560);
   let cx = useA ? A.x + Lb.dx : Lb.fallback[0], cy = useA ? A.y + Lb.dy : Lb.fallback[1];
   cy = clamp(cy, yMin + h / 2, (Lb.yMax ?? 1480) - h / 2);
   const inIG = cy + h / 2 > SAFE.igY0;
   cx = clamp(cx, SAFE.x0 + 10 + w / 2, (inIG ? SAFE.igX : SAFE.x1 - 10) - w / 2);
+  return { A, useA, cx, cy, w, h };
+}
+
+function Label({ Lb, t, cur }) {
+  const a = Lb.from, z = Lb.to;
+  const o = clamp((t - a) / 0.2) * clamp((z - t) / 0.25);
+  if (o <= 0) return null;
+  let P = place(Lb, cur, t);
+  // the dot + leader draw from the label's start, or (in a later shot of the same label) from that cut,
+  // while the pill glides from where it sat at the end of the previous shot
+  let aa = a, first = true;
+  const si = Lb.shots.indexOf(cur.id);
+  if (si > 0 && a < cur.t0) {
+    const prev = S[Lb.shots[si - 1]];
+    const Q = place(Lb, prev, prev.t1 - 1e-3);
+    const g = ease.inOut((t - cur.t0) / 0.42);
+    P = { ...P, cx: lerp(Q.cx, P.cx, g), cy: lerp(Q.cy, P.cy, g) };
+    aa = Math.max(a, cur.t0 + 0.12); first = false;
+  }
+  const { A, useA, cx, cy, w, h } = P;
   const bx = cx - w / 2, by = cy - h / 2;
-  // nearest point of the pill box towards the anchor
+  // nearest point of the pill box towards the anchor (no dot when the anchor sits under the pill)
+  const under = useA && A.x > bx - 12 && A.x < bx + w + 12 && A.y > by - 12 && A.y < by + h + 12;
+  const showA = useA && !under;
   let ex = cx, ey = cy, line = false;
-  if (useA) {
+  if (showA) {
     ex = clamp(A.x, bx + 18, bx + w - 18); ey = clamp(A.y, by, by + h);
     if (A.y > by && A.y < by + h) ex = A.x < cx ? bx : bx + w;
     line = Math.hypot(ex - A.x, ey - A.y) > 40;
   }
-  const dotK = ease.back((t - a) / 0.28, 2.2);
-  const draw = ease.out((t - a - 0.08) / 0.32);
-  const reveal = ease.out((t - a - 0.28) / 0.38);
-  const lx = useA ? lerp(A.x, ex, draw) : ex, ly = useA ? lerp(A.y, ey, draw) : ey;
-  const ring = ((t - a) * 0.9) % 1;
+  const dotK = ease.back((t - aa) / 0.28, 2.2);
+  const draw = ease.out((t - aa - 0.08) / 0.32);
+  // without a dot + leader the pill does not wait for them
+  const reveal = first ? ease.out((t - a - (showA ? 0.28 : 0.05)) / 0.38) : 1;
+  const lx = showA ? lerp(A.x, ex, draw) : ex, ly = showA ? lerp(A.y, ey, draw) : ey;
+  const ring = ((t - aa) * 0.9) % 1;
   // pill slides out of the line end
-  const fromSide = !useA ? 'c' : Math.abs(ey - by) < 1 ? 't' : Math.abs(ey - by - h) < 1 ? 'b' : ex <= bx + 1 ? 'l' : 'r';
+  const fromSide = !showA ? 'c' : Math.abs(ey - by) < 1 ? 't' : Math.abs(ey - by - h) < 1 ? 'b' : ex <= bx + 1 ? 'l' : 'r';
   const clip = fromSide === 'l' ? `inset(0 ${100 - reveal * 100}% 0 0 round 14px)` : fromSide === 'r' ? `inset(0 0 0 ${100 - reveal * 100}% round 14px)`
     : fromSide === 't' ? `inset(0 ${50 - reveal * 50}% ${100 - reveal * 100}% ${50 - reveal * 50}% round 14px)` : fromSide === 'b' ? `inset(${100 - reveal * 100}% ${50 - reveal * 50}% 0 ${50 - reveal * 50}% round 14px)`
       : `inset(0 ${50 - reveal * 50}% 0 ${50 - reveal * 50}% round 14px)`;
   return (
     <div style={{ position: 'absolute', inset: 0, opacity: o }}>
-      {useA ? (
+      {showA && dotK > 0 ? (
         <svg width="1080" height="1920" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-          {line ? <line x1={A.x} y1={A.y} x2={lx} y2={ly} stroke="rgba(0,0,0,0.35)" strokeWidth="5" strokeLinecap="round" /> : null}
-          {line ? <line x1={A.x} y1={A.y} x2={lx} y2={ly} stroke="rgba(255,240,210,0.95)" strokeWidth="2.2" strokeLinecap="round" /> : null}
+          {line && draw > 0 ? <line x1={A.x} y1={A.y} x2={lx} y2={ly} stroke="rgba(0,0,0,0.35)" strokeWidth="5" strokeLinecap="round" /> : null}
+          {line && draw > 0 ? <line x1={A.x} y1={A.y} x2={lx} y2={ly} stroke="rgba(255,240,210,0.95)" strokeWidth="2.2" strokeLinecap="round" /> : null}
           <circle cx={A.x} cy={A.y} r={16 + 22 * ring} fill="none" stroke={`rgba(244,199,102,${0.75 * (1 - ring) * clamp(dotK)})`} strokeWidth="2" />
           <circle cx={A.x} cy={A.y} r={Math.max(0, 8 * dotK)} fill={C.gold} stroke="#fff6e0" strokeWidth="2.5" />
         </svg>
@@ -105,58 +129,98 @@ function Plate({ Lb, w, h, t, a }) {
   const sh = sheen > 0 && sheen < 1 ? <div style={{ position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden' }}><div style={{ position: 'absolute', top: '-60%', left: `${lerp(-40, 130, sheen)}%`, width: '22%', height: '220%', transform: 'rotate(18deg)', background: 'linear-gradient(90deg, rgba(255,240,200,0), rgba(255,240,200,0.22), rgba(255,240,200,0))' }} /></div> : null;
   if (Lb.kind === 'name') return (
     <div style={base}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 12, textAlign: 'center', font: `700 46px/52px ${SERIF}`, letterSpacing: '0.1em', color: '#fbf1dc', whiteSpace: 'nowrap', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{Lb.a}</div>
-      <div style={{ position: 'absolute', left: '22%', right: '22%', top: 66, height: 1, background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.8), rgba(244,199,102,0))' }} />
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 74, textAlign: 'center', font: `700 18px/20px ${SANS}`, letterSpacing: '0.2em', color: C.gold, whiteSpace: 'nowrap' }}>{Lb.b}</div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 12, textAlign: 'center', font: `700 46px/52px ${SERIF}`, letterSpacing: '0.1em', textIndent: '0.1em', color: '#fbf1dc', whiteSpace: 'nowrap', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{Lb.a}</div>
+      <div style={{ position: 'absolute', left: '22%', right: '22%', top: 68, height: 1, background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.8), rgba(244,199,102,0))' }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 76, textAlign: 'center', font: `700 ${NAME_B}px/24px ${SANS}`, letterSpacing: '0.2em', textIndent: '0.2em', color: C.gold, whiteSpace: 'nowrap' }}>{Lb.b}</div>
       {sh}
     </div>
   );
   if (Lb.kind === 'quote') return (
     <div style={base}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 14, textAlign: 'center', font: `700 18px/22px ${SANS}`, letterSpacing: '0.28em', color: C.gold, whiteSpace: 'nowrap' }}>{Lb.a}</div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 46, textAlign: 'center', font: `600 23px/30px ${SANS}`, letterSpacing: '0.1em', color: '#fbf1dc', whiteSpace: 'nowrap' }}>{Lb.b}</div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 14, textAlign: 'center', font: `700 ${QUOTE_A}px/26px ${SANS}`, letterSpacing: '0.28em', textIndent: '0.28em', color: C.gold, whiteSpace: 'nowrap' }}>{Lb.a}</div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 50, textAlign: 'center', font: `600 ${QUOTE_B}px/32px ${SANS}`, letterSpacing: '0.08em', textIndent: '0.08em', color: '#fbf1dc', whiteSpace: 'nowrap' }}>{Lb.b}</div>
       {sh}
     </div>
   );
   return (
-    <div style={{ ...base, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `${PILL_A}`, letterSpacing: `${PILL_LS}em`, whiteSpace: 'nowrap' }}>
+    <div style={{ ...base, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `${PILL_A}`, letterSpacing: `${PILL_LS}em`, paddingLeft: `${PILL_LS}em`, boxSizing: 'border-box', whiteSpace: 'nowrap' }}>
       <span style={{ color: '#fbf1dc' }}>{Lb.a}</span><span style={{ color: 'rgba(244,199,102,0.9)', margin: '0 0.5em' }}>{'·'}</span><span style={{ color: C.gold }}>{Lb.b}</span>
       {sh}
     </div>
   );
 }
 
-// ------------------------------------------------------------------ S10: "SOME SAY" note (screen-fixed, soft)
-const S10 = S.S10;
+// ------------------------------------------------------------------ S10: "SOME SAY" note
+// It IS the caption of B11 (that caption block is hidden), sitting in the caption spot: every word comes
+// in on its spoken time (next word ghosted, as in the captions), so the quote never runs ahead of the
+// voice, and "(meaning debated)" arrives together with the first word of the meaning.
+const clean = (s) => s.replace(/[^A-Za-z0-9']/g, '').toUpperCase();
+const B11W = plan.words.filter((w) => w.block === 'B11#0');
+const iHis = B11W.findIndex((w) => clean(w.w) === 'HIS'), iWhen = B11W.findIndex((w) => clean(w.w) === 'WHEN');
+const iDies = B11W.findIndex((w) => clean(w.w) === 'DIES');
+const SS = { x: 130, w: 820, top: L.capTop + 14, leadFS: 44, qFS: 54, qLH: 66, qLS: 0.05 };
+const quoteItems = (from, to) => B11W.slice(from, to).map((w) => { const tx = pretty(w.w).toUpperCase(); return { text: tx, font: `700 ${SS.qFS}px ${SERIF}`, extra: tx.length * SS.qFS * SS.qLS }; });
+const lay = (items) => layoutWords(items, { maxW: SS.w, lineH: SS.qLH, align: 'center', space: SS.qFS * 0.26 });
+
 export const SomeSay = ({ t }) => {
-  const a = E.nameMeaning, z = S10.t1 - 0.1;
-  if (t < a - 0.05 || t > z + 0.05) return null;
-  const o = clamp((t - a) / 0.35) * clamp((z - t) / 0.3);
-  const k1 = ease.out((t - a) / 0.5), k2 = ease.out((t - a - 0.25) / 0.6), k3 = ease.out((t - a - 1.0) / 0.6);
-  const quote = '“WHEN HE DIES, IT SHALL BE SENT”';
-  const qw = Math.min(900, measure(`700 42px ${SERIF}`, quote) + quote.length * 42 * 0.06 + 70);
-  const cy = 1200, drift = 6 * Math.sin(t * 0.8);
+  const a = SOMESAY.t0, z = SOMESAY.t1;
+  if (t < a - 0.02 || t > z + 0.05) return null;
+  // measured in the frame (fonts are loaded by then)
+  const Q1 = lay(quoteItems(iWhen, iDies + 1)), Q2 = lay(quoteItems(iDies + 1, B11W.length));
+  const lead = layoutWords(B11W.slice(iHis, iWhen).map((w) => ({ text: pretty(w.w), font: `italic 600 ${SS.leadFS}px ${SERIF}` })), { maxW: SS.w, lineH: 54, align: 'center', space: SS.leadFS * 0.24 });
+  const o = clamp((t - a) / 0.25) * clamp((z - t) / 0.3);
+  const kK = ease.out((t - (B11W[0].start - 0.06)) / 0.35);
+  const wq = B11W[iWhen].start;
+  const qK = ease.out((t - (wq - 0.08)) / 0.4);
+  const nextI = B11W.findIndex((w) => t < w.start - 0.03);
+  const yLead = SS.top + 40, yQ = yLead + 62, yQual = yQ + 2 * SS.qLH + 10;
+  // one word: ghost (40 %) while it is the next word, then lands with a 6 px rise
+  const word = (i, it, top, style) => {
+    const w = B11W[i];
+    const k = clamp((t - (w.start - 0.03)) / 0.12);
+    const wo = k > 0 ? lerp(0.4, 1, k) : i === nextI ? 0.4 : 0;
+    if (wo <= 0) return null;
+    return <span key={i} style={{ position: 'absolute', left: SS.x + it.x, top: top + it.y, font: it.font, lineHeight: `${style.lh}px`, whiteSpace: 'nowrap', opacity: wo,
+      transform: `translateY(${(1 - k) * 6}px)`, ...style.css(w, k, it) }}>{it.text}</span>;
+  };
+  const quoteCss = (items) => (w, k, it) => {
+    if (!w.kw) return { color: '#f6efe2', letterSpacing: `${SS.qLS}em`, textShadow: '0 2px 12px rgba(0,0,0,0.65)' };
+    const j = items.indexOf(it);
+    const pf = popFit(items, j, { maxAmp: 0.2, edgeL: SS.x - SAFE.x0, edgeR: SAFE.igX - SS.x });
+    const kp = k > 0 ? pop(t, w.start, pf.amp, 13, 6) : 0;
+    return { color: k > 0 ? C.gold : '#f6efe2', letterSpacing: `${SS.qLS}em`, transform: `translateY(${(1 - k) * 6}px) scale(${1 + kp})`, transformOrigin: `${pf.ox.toFixed(1)}% 62%`,
+      textShadow: k > 0 ? '0 0 22px rgba(255,180,70,0.6), 0 2px 10px rgba(0,0,0,0.6)' : '0 2px 12px rgba(0,0,0,0.65)' };
+  };
   return (
-    <div style={{ position: 'absolute', left: 540 - qw / 2, top: cy - 100 + drift, width: qw, height: 200, opacity: o }}>
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 22, background: 'radial-gradient(ellipse at 50% 50%, rgba(12,14,18,0.78) 0%, rgba(12,14,18,0.62) 60%, rgba(12,14,18,0.0) 100%)', transform: `scaleX(${lerp(0.7, 1, k1)})` }} />
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 22, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, opacity: k1 }}>
-        <div style={{ width: 70 * k1, height: 1.5, background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.9))' }} />
-        <div style={{ font: `700 19px ${SANS}`, letterSpacing: '0.34em', color: C.gold }}>SOME SAY:</div>
-        <div style={{ width: 70 * k1, height: 1.5, background: 'linear-gradient(90deg, rgba(244,199,102,0.9), rgba(244,199,102,0))' }} />
+    <div style={{ position: 'absolute', inset: 0, opacity: o }}>
+      {/* warm soft shade that fades to nothing at its edges (no slab) */}
+      <div style={{ position: 'absolute', left: 40, width: 1000, top: SS.top - 70, height: yQual + 44 + 70 - (SS.top - 70), opacity: ease.out((t - a) / 0.4),
+        background: 'radial-gradient(closest-side, rgba(14,11,9,0.66), rgba(14,11,9,0.42) 62%, rgba(14,11,9,0) 100%)' }} />
+      {/* kicker */}
+      <div style={{ position: 'absolute', left: 0, width: 1080, top: SS.top, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, opacity: kK, transform: `translateY(${(1 - kK) * 6}px)` }}>
+        <div style={{ width: 70 * kK, height: 1.5, background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.9))' }} />
+        <div style={{ font: `700 22px ${SANS}`, letterSpacing: '0.34em', marginRight: '-0.34em', color: C.gold, textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>SOME SAY</div>
+        <div style={{ width: 70 * kK, height: 1.5, background: 'linear-gradient(90deg, rgba(244,199,102,0.9), rgba(244,199,102,0))' }} />
       </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 60, textAlign: 'center', font: `700 42px/56px ${SERIF}`, letterSpacing: '0.06em', color: '#f3efe6', whiteSpace: 'nowrap',
-        opacity: k2, transform: `translateY(${(1 - k2) * 10}px)`, textShadow: '0 2px 14px rgba(0,0,0,0.6), 0 0 24px rgba(190,210,235,0.25)' }}>{quote}</div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 124, textAlign: 'center', font: `italic 600 35px/42px ${SERIF}`, color: 'rgba(243,239,230,0.82)', opacity: k3, transform: `translateY(${(1 - k3) * 8}px)` }}>(meaning debated)</div>
+      {/* "his name can mean" */}
+      {lead.items.map((it, j) => word(iHis + j, it, yLead, { lh: 54, css: () => ({ color: 'rgba(246,239,226,0.9)', textShadow: '0 2px 12px rgba(0,0,0,0.65)' }) }))}
+      {/* the meaning, in two lines */}
+      {Q1.items.map((it, j) => word(iWhen + j, it, yQ, { lh: SS.qLH, css: quoteCss(Q1.items) }))}
+      {Q2.items.map((it, j) => word(iDies + 1 + j, it, yQ + SS.qLH, { lh: SS.qLH, css: quoteCss(Q2.items) }))}
+      {/* always with the meaning */}
+      <div style={{ position: 'absolute', left: 0, width: 1080, top: yQual, textAlign: 'center', font: `italic 600 36px/44px ${SERIF}`, color: 'rgba(246,239,226,0.86)', opacity: qK,
+        transform: `translateY(${(1 - qK) * 6}px)`, textShadow: '0 2px 10px rgba(0,0,0,0.6)' }}>(meaning debated)</div>
     </div>
   );
 };
 
 // ------------------------------------------------------------------ S2: life-ribbon (0 ... 969), synced to "He lived 969 years"
 const RB = { x0: 110, x1: 930, y: 1372 };
+const W969 = plan.word('B02', '969');
 export const LifeRibbon = ({ t, frame }) => {
   const a = E.ribbon - 0.05, end = S.S2.t1 - 0.05;
   if (t < a || t > end) return null;
-  const dEnd = E.ribbon969 + 1.35;                       // the line reaches 969 as the word ends
+  const dEnd = W969.end;                                  // the line reaches 969 as the spoken "969" ends
   const p = ease.inOut((t - E.ribbon) / (dEnd - E.ribbon));
   const o = clamp((t - a) / 0.15) * clamp((end - t) / 0.2);
   const hx = lerp(RB.x0, RB.x1, p);
@@ -175,8 +239,8 @@ export const LifeRibbon = ({ t, frame }) => {
         const x = X(yr); const vis = clamp((hx - x) / 30);
         return <div key={i} style={{ position: 'absolute', left: x - 0.75, top: RB.y + 8, width: 1.5, height: yr % 500 === 0 ? 16 : 9, background: 'rgba(255,226,160,0.7)', opacity: vis }} />;
       })}
-      <div style={{ position: 'absolute', left: RB.x0 - 40, width: 80, top: RB.y + 28, textAlign: 'center', font: `700 16px ${SANS}`, letterSpacing: '0.2em', color: 'rgba(255,236,200,0.75)', opacity: clamp((t - a) / 0.3) }}>BORN</div>
-      <div style={{ position: 'absolute', left: X(500) - 40, width: 80, top: RB.y + 28, textAlign: 'center', font: `600 16px ${SANS}`, letterSpacing: '0.12em', color: 'rgba(255,236,200,0.55)', opacity: clamp((hx - X(500)) / 40) }}>500</div>
+      <div style={{ position: 'absolute', left: RB.x0 - 50, width: 100, top: RB.y + 28, textAlign: 'center', font: `700 21px ${SANS}`, letterSpacing: '0.18em', textIndent: '0.18em', color: 'rgba(255,236,200,0.8)', opacity: clamp((t - a) / 0.3), textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>BORN</div>
+      <div style={{ position: 'absolute', left: X(500) - 50, width: 100, top: RB.y + 28, textAlign: 'center', font: `600 21px ${SANS}`, letterSpacing: '0.1em', color: 'rgba(255,236,200,0.65)', opacity: clamp((hx - X(500)) / 40), textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>500</div>
       {/* the line: wide glow, glow, core */}
       <div style={{ position: 'absolute', left: RB.x0, top: RB.y - 1.5, width: hx - RB.x0, height: 3, borderRadius: 3, background: 'linear-gradient(90deg, rgba(255,214,130,0.55), #ffe6a6 30%, #fff2cf)',
         boxShadow: '0 0 8px 1px rgba(255,200,90,0.9), 0 0 26px 5px rgba(255,170,60,0.4)' }} />
@@ -188,9 +252,9 @@ export const LifeRibbon = ({ t, frame }) => {
         const age = ((t * 1.6 + hash01(k, 7)) % 1); const x = hx - 30 * age - 10 * hash01(k, 8); const y = RB.y - 6 - 46 * age * (0.6 + hash01(k, 9));
         return p < 0.995 ? <div key={k} style={{ position: 'absolute', left: x, top: y, width: 3, height: 3, borderRadius: 2, background: '#ffe2a0', opacity: (1 - age) * 0.9, boxShadow: '0 0 6px rgba(255,190,80,0.9)' }} /> : null;
       })}
-      <div style={{ position: 'absolute', left: Math.min(hx, 850) - 120, width: 240, top: RB.y - 84, textAlign: 'center', whiteSpace: 'nowrap', transform: `scale(${1 + popK})`, transformOrigin: '50% 80%' }}>
+      <div style={{ position: 'absolute', left: Math.min(hx, 840) - 130, width: 260, top: RB.y - 84, textAlign: 'center', whiteSpace: 'nowrap', transform: `scale(${1 + popK})`, transformOrigin: '50% 80%' }}>
         <span style={{ font: `700 52px/56px ${SERIF}`, color: done ? C.gold : '#fff2d6', fontVariantNumeric: 'lining-nums tabular-nums', textShadow: `0 0 ${done ? 26 : 12}px rgba(255,180,70,0.8), 0 2px 8px rgba(0,0,0,0.6)` }}>{yrs}</span>
-        <span style={{ font: `700 18px ${SANS}`, letterSpacing: '0.2em', color: 'rgba(255,236,200,0.85)', marginLeft: 10, opacity: done ? 1 : 0.6 }}>YEARS</span>
+        <span style={{ font: `700 22px ${SANS}`, letterSpacing: '0.2em', color: 'rgba(255,236,200,0.9)', marginLeft: 10, opacity: done ? 1 : 0.6, textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>YEARS</span>
       </div>
     </div>
   );

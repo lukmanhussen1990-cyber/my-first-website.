@@ -288,17 +288,20 @@ export function makeGoldNumber(text, { renderer = null, size = 1.4, depth = null
       }
       return per[Math.floor(per.length / 2)];
     },
-    // fly along an arc (u 0..1) between two parent-space points
-    fly(u, a, b, opts = {}) { const F = flyPath(u, a, b, opts); api.pose({ pos: F.pos, rotY: (opts.rotY ?? 0) + F.rotY, rotZ: F.rotZ, scale: F.scale * (opts.scale ?? 1) }); return F; },
+    // fly along an arc (u 0..1) between two parent-space points (clears the dust; call set() after it for gleam/halo)
+    fly(u, a, b, opts = {}) { const F = flyPath(u, a, b, opts); api.pose({ pos: F.pos, rotY: (opts.rotY ?? 0) + F.rotY, rotZ: F.rotZ, scale: F.scale * (opts.scale ?? 1) }); api.quiet(); return F; },
+    // empty the dust / puffs / halo (frames render in any order: every frame must define the fx state —
+    // rise(), fly() and slam() do it; if you only call pose(), call quiet() too)
+    quiet() { if (fx) { fx.set([]); puffs.begin(); puffs.end(); } if (glow) { glow.begin(); glow.end(); } return api; },
     // appear with the slam punch at pos (age = t - ev.slam); returns slamCurve (feed .flash/.shake to the mood/camera)
     slam(age, { pos = null, rotY = 0, scale = 1, t = age, haloK = 0.6, burst = true } = {}) {
       const S = slamCurve(age);
       api.pose({ pos, rotY, scale: S.scale * scale, visible: S.vis });
       if (pos && S.vis) group.position.z += S.z * scale;
       api.set(t, { sweepAge: age - 0.15, halo: haloK * S.glow });
-      if (fx && burst) {
+      if (fx) {
         const P = group.position;
-        fx.set([{ pos: [P.x, P.y + size * 0.5 * scale, P.z + 0.1], age, n: 160, radius: size * 1.6 * scale, up: 0.8, ring: 0.15, size: size * 0.04 * scale, life: 2.6 }]);
+        fx.set(burst && S.vis ? [{ pos: [P.x, P.y + size * 0.5 * scale, P.z + 0.1], age, n: 160, radius: size * 1.6 * scale, up: 0.8, ring: 0.15, size: size * 0.04 * scale, life: 2.6 }] : []);
         puffs.begin(); puffs.end();
       }
       return S;
