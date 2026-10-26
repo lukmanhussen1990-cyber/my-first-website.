@@ -7,7 +7,7 @@ import { Engine } from './Engine.jsx';
 import { fontsReady, SANS } from './lib/fonts.js';
 
 export const Cover = ({ frame = 150 }) => {
-  const [h] = useState(() => delayRender('cover fonts'));
+  const [h] = useState(() => delayRender('cover fonts', { timeoutInMilliseconds: 240000 }));
   useEffect(() => { fontsReady().then(() => continueRender(h)); }, [h]);
   const shadow = '0 10px 40px rgba(0,0,0,0.55), 0 3px 10px rgba(0,0,0,0.6)';
   return (

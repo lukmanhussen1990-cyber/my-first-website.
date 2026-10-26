@@ -25,7 +25,7 @@ export function buildBench(ctx) {
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 3.2, 6), matte('#2e2a26')); post.position.set(1.9, 1.6, -0.9); post.castShadow = true; g.add(post);
   const lampH = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.1, 0.32, 6), matte('#3a3530')); lampH.position.set(1.9, 3.3, -0.9); g.add(lampH);
   for (const [x, z] of [[-1.5, -1.1], [2.6, -1.2]]) { const j = makeJar(1.1, '#a05c3a'); j.position.set(x, 0, z); g.add(j); }
-  const doves = [0, 1, 2].map((i) => { const d = makeAnimal('dove', 60 + i); d.group.scale.setScalar(1.25); g.add(d.group); return d; });
+  const doves = [];
   const man = person(g, { seed: 61, height: 1.76, skin: SKIN[3], hair: 'short', hairColor: HAIR.dark, beard: 'short', outfit: 'tunic', cloth: CLOTH.slate, belt: '#c9b28a', legs: '#5a5048' });
   const persons = [man];
   const S6a = plan.shots.find((s) => s.id === 'S6a');
@@ -65,18 +65,18 @@ export function buildMind(ctx) {
   const g = new THREE.Group();
   const C = [0.15, 2.3, 0];
   // head outline: profile + neck, as a glowing tube (open at the neck)
-  const S = 11.5, cx = 0.02, cy = 0.15;
+  const S = 6.6, cx = 0.02, cy = 0.15;
   const prof = smoothClosed(HEAD, 120).map(([x, y]) => new THREE.Vector3(C[0] + (x - cx) * S, C[1] + (y - cy) * S - 0.2, 0));
   const cut = prof.filter((p) => p.y > C[1] + (-0.045 - cy) * S - 0.2);
   const curve = new THREE.CatmullRomCurve3(cut, false);
-  const glowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 1.75, 0.8), fog: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const glowMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 0.82, 0.28), fog: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 260, 0.022, 6, false), glowMat); g.add(tube);
   const halo = new THREE.Mesh(new THREE.TubeGeometry(curve, 260, 0.09, 6, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 0.33, 0.12), fog: false, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(halo);
   const fillShape = new THREE.Shape(prof.map((p) => new THREE.Vector2(p.x, p.y)));
-  const fill = new THREE.Mesh(new THREE.ShapeGeometry(fillShape), new THREE.MeshBasicMaterial({ color: '#1a1830', transparent: true, opacity: 0.55, depthWrite: false, fog: false })); fill.position.z = -0.6; g.add(fill);
+  const fill = new THREE.Mesh(new THREE.ShapeGeometry(fillShape), new THREE.MeshBasicMaterial({ color: '#2a2f52', transparent: true, opacity: 0.85, depthWrite: false, fog: false })); fill.position.z = -0.6; g.add(fill);
   // the storm cloud
-  const cloud = new THREE.Group(); cloud.position.set(C[0] - 0.25, C[1] + 0.55, 0.2); g.add(cloud);
-  const puffs = []; const cm = new THREE.MeshLambertMaterial({ color: '#4a4f62', flatShading: true, emissive: new THREE.Color(0, 0, 0) });
+  const cloud = new THREE.Group(); cloud.position.set(C[0] - 0.12, C[1] + 0.32, 0.2); cloud.scale.setScalar(0.62); g.add(cloud);
+  const puffs = []; const cm = new THREE.MeshLambertMaterial({ color: '#5a6078', flatShading: true, emissive: new THREE.Color(0, 0, 0) });
   for (let i = 0; i < 11; i++) {
     const r = 0.22 + 0.16 * hash01(i, 1); const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), cm);
     m.position.set((i - 5) * 0.12 + (hash01(i, 2) - 0.5) * 0.15, (hash01(i, 3) - 0.3) * 0.22 + (Math.abs(i - 5) < 3 ? 0.12 : 0), (hash01(i, 4) - 0.5) * 0.3);
@@ -113,14 +113,14 @@ export function buildMind(ctx) {
       rain.begin();
       for (let i = 0; i < 60; i++) { const u = ((t * 1.6 + hash01(i, 9)) % 1); rain.add(o.x - 0.5 + hash01(i, 10) * 1.0, o.y - 0.25 - u * 0.7, o.z + 0.1, 0.03, 0.35, 0.4, 0.6, 0.6 * (1 - u)); }
       rain.end();
-      glowMat.color.setRGB(2.4 + f * 0.6, 1.75 + f * 0.5, 0.8 + f * 0.6);
+      glowMat.color.setRGB(1.3 + f * 0.5, 0.82 + f * 0.45, 0.28 + f * 0.5);
     },
     mood(t) {
       const f = this.flash(t);
       return {
         sky: { top: '#090b18', horizon: '#171c34', bottom: '#05060c' },
         sunDir: [-0.3, 0.8, 0.5], sun: { color: '#9fb2ff', intensity: 0.9 },
-        hemi: { sky: '#5a6a9a', ground: '#0c0c18', intensity: 0.8 },
+        hemi: { sky: '#8a9ad0', ground: '#1a1a30', intensity: 1.5 },
         fog: { color: '#0c0f1e', near: 40, far: 200 }, char: '#ffffff', ao: 0,
         shadow: { size: 5 },
         post: { exposure: 1.0 + 0.15 * f, bloom: 0.95, bloomThreshold: 0.7, haze: 0, tint: '#eef0ff', lift: '#04050c', sat: 1.0, contrast: 1.06, vignette: 0.7, dof: 0.25, focusRange: 2, tilt: 0, grain: 0.035, flash: 0.04 * f },

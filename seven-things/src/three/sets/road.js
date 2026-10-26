@@ -22,13 +22,13 @@ export function buildRoad(ctx) {
   g.add(makeTerrain({ size: 400, seg: 200, height, color: (x, z, y) => { const n = fbm(x * 0.1, z * 0.1, 3, 6); const road = roadW(x, z) ? 1 : smooth(invLerp(2.4, 1.7, Math.abs(z - 0.4))); return mixc(mixc(gB, gA, smooth(0.5 + n)), mixc(dB, dA, smooth(0.5 + n)), road); } }));
   g.add(makeMountains({ seed: 8, n: 18, r0: 150, r1: 260, h0: 8, h1: 26, color: '#b9a88e' }));
   // walls, olive trees, rocks, a few houses where the crowd gathers
-  for (let i = 0; i < 9; i++) { const w = makeWall({ len: 4 + 3 * hash01(i, 1), h: 0.8, t: 0.45, color: '#c2b294', seed: 30 + i }); w.position.set(-36 + i * 7.2, 0, i % 2 ? -2.6 : 3.4); g.add(w); }
+  for (let i = 0; i < 9; i++) { const w = makeWall({ len: 4 + 3 * hash01(i, 1), h: 0.8, t: 0.45, color: '#c2b294', seed: 30 + i }); w.position.set(-36 + i * 7.2, 0, i % 2 ? -2.6 : -4.4); g.add(w); }
   for (let i = 0; i < 12; i++) { const o = makeOlive(1.0 + 0.4 * hash01(i, 2), 40 + i); o.position.set(-40 + i * 6.3 + 2 * hash01(i, 3), 0, -5 - 9 * hash01(i, 4)); g.add(o); }
   for (let i = 0; i < 16; i++) { const r = makeRock(0.15 + 0.35 * hash01(i, 5), 50 + i, '#b8a688'); r.position.set(-38 + i * 4.1, 0, (hash01(i, 6) > 0.5 ? 2.6 : -1.9) + hash01(i, 7)); g.add(r); }
-  g.add(makeGrass(2200, [-42, -12, 30, 9], 9, '#b0a062', 0.5, height, roadW));
+  g.add(makeGrass(2200, [-42, -12, 30, 9], 9, '#b0a062', 0.5, height, (x, z) => roadW(x, z) || (z > -1.6 && z < 5)));
   for (const [x, z, w, h, seed] of [[17, -6, 5, 3.6, 71], [22, -2, 4, 3.0, 72], [15, 5, 4, 3.2, 73]]) { const hs = makeHouse({ w, d: 4, h, wall: '#dccbaa', roofCol: '#a89474', windows: 2, seed }); hs.position.set(x, 0, z); hs.rotation.y = -0.5; g.add(hs); }
   // foreground posts that flick past the lens (speed cue)
-  const posts = []; for (let i = 0; i < 14; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.4 + 0.3 * hash01(i, 8), 0.16), matte('#6a5038')); p.position.set(-34 + i * 3.3, 0.7, 4.6 + 0.5 * hash01(i, 9)); p.castShadow = true; g.add(p); posts.push(p); }
+  const posts = []; for (let i = 0; i < 14; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.4 + 0.3 * hash01(i, 8), 0.16), matte('#6a5038')); p.position.set(-34 + i * 3.3, 0.7, -1.7 - 0.4 * hash01(i, 9)); p.castShadow = true; g.add(p); posts.push(p); }
 
   const runner = person(g, { seed: 71, height: 1.78, skin: SKIN[3], hair: 'wrap', wrap: '#c9a36a', wrapTail: true, beard: 'short', beardColor: HAIR.black, outfit: 'tunic', cloth: CLOTH.ochre, belt: '#6a4a2a', legs: SKIN[3] });
   const crowdLooks = [

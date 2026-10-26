@@ -10,7 +10,7 @@ import { Labels } from './labels.jsx';
 import { RomansCard, PhoneScene, CheckBackdrop, CtaScene, EndCard } from './cards.jsx';
 
 export const Overlay = ({ frame, debug }) => {
-  const [handle] = useState(() => delayRender('overlay fonts'));
+  const [handle] = useState(() => delayRender('overlay fonts', { timeoutInMilliseconds: 240000 }));
   useEffect(() => { fontsReady().then(() => continueRender(handle)); }, [handle]);
   const t = frame / 30;
   const { shot } = shotAt(plan, t);

@@ -16,7 +16,7 @@ export function buildHill(ctx) {
   const gA = srgb('#7f8a44'), gB = srgb('#5f6a34'), gC = srgb('#a49a58');
   g.add(makeTerrain({ size: 460, seg: 180, height, color: (x, z, y) => { const n = fbm(x * 0.1, z * 0.1, 3, 8); return mixc(mixc(gB, gA, smooth(0.5 + n)), gC, smooth(invLerp(0.15, 0.55, n))); } }));
   g.add(makeMountains({ seed: 12, n: 22, r0: 150, r1: 270, h0: 10, h1: 30, color: '#8a8a8e' }));
-  g.add(makeGrass(4200, [-20, -16, 20, 22], 13, '#9aa050', 0.55, height, (x, z) => Math.hypot(x, z) < 0.9));
+  g.add(makeGrass(3200, [-16, -16, 16, 12], 13, '#9aa050', 0.5, height, (x, z) => Math.hypot(x, z) < 0.9 || Math.hypot(x, z) > 14));
   // small white + gold flowers in the grass (hope)
   const fl = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.05, 0), new THREE.MeshLambertMaterial({ color: '#ffffff' }), 260);
   { const m4 = new THREE.Matrix4(); for (let i = 0; i < 260; i++) { const x = (hash01(i, 1) - 0.5) * 34, z = (hash01(i, 2) - 0.5) * 34 + 4; m4.makeTranslation(x, height(x, z) + 0.32, z); fl.setMatrixAt(i, m4); fl.setColorAt(i, new THREE.Color(hash01(i, 3) > 0.5 ? '#f4f0e0' : '#f0c850')); } }
@@ -34,7 +34,7 @@ export function buildHill(ctx) {
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
     uniforms: { color: { value: new THREE.Color(1.0, 0.85, 0.55) }, k: { value: 1 } },
     vertexShader: 'varying vec3 vN; varying vec3 vV; varying float vY; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - wp.xyz); vY = uv.y; gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: 'uniform vec3 color; uniform float k; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float f = pow(abs(dot(normalize(vN), normalize(vV))), 2.4); float v = smoothstep(0.0, 0.12, vY) * (1.0 - smoothstep(0.6, 1.0, vY) * 0.7); gl_FragColor = vec4(color * f * v * k * 0.5, 1.0); }',
+    fragmentShader: 'uniform vec3 color; uniform float k; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float f = pow(abs(dot(normalize(vN), normalize(vV))), 2.0); float v = smoothstep(0.0, 0.1, vY) * (1.0 - smoothstep(0.6, 1.0, vY) * 0.6); gl_FragColor = vec4(color * f * v * k * 0.85, 1.0); }',
   });
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3.6, 70, 40, 1, true), beamMat); beam.position.set(0, top + 33, 0); g.add(beam);
   const beam2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.5, 70, 32, 1, true), beamMat.clone()); beam2.position.copy(beam.position); g.add(beam2);

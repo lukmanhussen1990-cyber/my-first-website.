@@ -51,7 +51,7 @@ const Bubble = ({ t, t0, children, right = false, avatar = '#c9785a' }) => {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, justifyContent: right ? 'flex-end' : 'flex-start', margin: '16px 0', transform: `scale(${k})`, transformOrigin: right ? '100% 100%' : '0 100%', opacity: clamp((t - t0) / 0.12) }}>
       {!right && <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(150deg, ${avatar}, #3a2a24)`, flex: 'none' }} />}
-      <div style={{ maxWidth: 380, padding: '16px 22px', borderRadius: 26, borderBottomLeftRadius: right ? 26 : 6, background: right ? '#3d6b8f' : '#2c2f36', color: '#eceef2', font: `500 31px/1.3 ${SANS}` }}>{children}</div>
+      <div style={{ maxWidth: 470, padding: '18px 26px', borderRadius: 28, borderBottomLeftRadius: right ? 28 : 6, background: right ? '#3d6b8f' : '#2c2f36', color: '#eceef2', font: `500 38px/1.3 ${SANS}` }}>{children}</div>
     </div>
   );
 };
@@ -64,7 +64,7 @@ export const PhoneScene = ({ t, frame }) => {
     <div style={{ position: 'absolute', inset: 0, opacity: 1 - push, transform: `scale(${1 + 0.6 * push * push})`, transformOrigin: '50% 60%' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, #2a1c14 0%, #120c09 70%, #080605 100%)' }} />
       <Bokeh t={t} seed={5} />
-      <div style={{ position: 'absolute', left: 250, top: 760, width: 580, height: 1000, borderRadius: 72, background: '#0b0b0d', boxShadow: '0 40px 100px rgba(0,0,0,0.6), 0 0 0 3px #2a2a2e, 0 0 60px rgba(255,160,70,0.12)', transform: `translateY(${(1 - inK) * 120}px) scale(${0.82 + 0.18 * inK}) rotate(${-1.2 + 0.6 * Math.sin(t * 0.8)}deg)`, opacity: inK }}>
+      <div style={{ position: 'absolute', left: 205, top: 770, width: 670, height: 1060, borderRadius: 76, background: '#0b0b0d', boxShadow: '0 40px 100px rgba(0,0,0,0.6), 0 0 0 3px #2a2a2e, 0 0 60px rgba(255,160,70,0.12)', transform: `translateY(${(1 - inK) * 120}px) scale(${0.82 + 0.18 * inK}) rotate(${-1.2 + 0.6 * Math.sin(t * 0.8)}deg)`, opacity: inK }}>
         <div style={{ position: 'absolute', inset: 16, borderRadius: 58, overflow: 'hidden', background: 'linear-gradient(180deg, #17191e, #101216)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 40px 0', font: `600 24px ${SANS}`, color: '#d8dade' }}><span>9:41</span><span style={{ letterSpacing: 4 }}>▮▮▮ ▭</span></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '22px 30px', borderBottom: '1px solid #262a31' }}>
@@ -136,12 +136,12 @@ export const EndCard = ({ t, frame }) => {
     <div style={{ position: 'absolute', inset: 0, opacity: 1 - out, WebkitMaskImage: `linear-gradient(90deg, black ${p}%, transparent ${p + 6}%)`, maskImage: `linear-gradient(90deg, black ${p}%, transparent ${p + 6}%)` }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 46%, #3a2414 0%, #1a100a 60%, #0a0605 100%)' }} />
       <Bokeh t={t} seed={17} />
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 560, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: 300, height: 300, transform: `scale(${k1})`, filter: 'drop-shadow(0 0 40px rgba(255,190,90,0.45))' }}><Img src={staticFile('logo.svg')} style={{ width: 300, height: 300 }} /></div>
-        <div style={{ marginTop: 50, font: `700 84px ${SERIF}`, letterSpacing: '0.12em', opacity: k2, transform: `translateY(${(1 - k2) * 24}px)`,
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 500, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ width: 380, height: 380, transform: `scale(${k1})`, filter: 'drop-shadow(0 0 50px rgba(255,190,90,0.5))' }}><Img src={staticFile('logo.svg')} style={{ width: 380, height: 380 }} /></div>
+        <div style={{ marginTop: 56, font: `700 100px ${SERIF}`, letterSpacing: '0.1em', opacity: k2, transform: `translateY(${(1 - k2) * 24}px)`,
           background: `linear-gradient(100deg, #f4e2bf ${shimmer - 30}%, #fffbea ${shimmer}%, #f4e2bf ${shimmer + 30}%)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>GRACE IN MOTION</div>
         <div style={{ marginTop: 18, height: 2, width: 360 * k3, background: 'linear-gradient(90deg, rgba(240,191,90,0), #f0bf5a, rgba(240,191,90,0))' }} />
-        <div style={{ marginTop: 20, font: `600 40px ${SANS}`, letterSpacing: '0.06em', color: C.gold, opacity: k3 }}>@grace_in_motion616</div>
+        <div style={{ marginTop: 22, font: `600 48px ${SANS}`, letterSpacing: '0.05em', color: C.gold, opacity: k3 }}>@grace_in_motion616</div>
       </div>
       {p < 120 ? <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, rgba(255,220,160,0) ${p - 6}%, rgba(255,236,200,0.95) ${p + 2}%, rgba(255,220,160,0) ${p + 8}%)` }} /> : null}
       <Grain frame={frame} />

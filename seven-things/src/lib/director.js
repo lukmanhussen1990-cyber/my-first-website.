@@ -43,7 +43,7 @@ export function blocking(plan) {
   B.swapT = [W('B06', 'Yes'), W('B06', 'small')];
   // S5: field at dusk
   B.brotherA = (t) => { const k = invLerp(sh.S5a.t0 + 0.35, sh.S5b.t1, t); return at('field', [-0.2 - 3.4 * k, 0, -0.75 * k]); };
-  B.brotherB = () => at('field', [0.75, 0, 0.15]);
+  B.brotherB = () => at('field', [1.5, 0, -1.7]);
   B.flower = () => at('field', [0.75, 0, 0.42]);
   B.wiltT = W('B07', 'innocent');
   // S6: bench + mind
@@ -131,7 +131,7 @@ export function cameraShot(plan, shot, t) {
       break;
     }
     case 'S2': {
-      const target = at('scroll', [0, 1.02, lerp(-1.45, -1.15, easeInOut(u))]);
+      const target = at('scroll', [0, 1.02, lerp(-1.82, -1.66, easeInOut(u))]);
       pos = sph(target, lerp(-0.08, 0.06, u), 0.98, lerp(9.3, 8.6, u)); look = target; fov = 22; focus = lerp(9.3, 8.6, u);
       break;
     }
@@ -144,21 +144,21 @@ export function cameraShot(plan, shot, t) {
       break;
     }
     case 'S4': {
-      const target = at('market', [0.45, 1.3, -1.7]);
+      const target = at('market', [0.45, 1.62, -1.7]);
       pos = sph(target, lerp(-0.16, -0.08, u), lerp(0.15, 0.11, u), lerp(10.6, 9.8, u)); look = target; fov = 24;
       const rk = smooth(invLerp(B.rackT - 0.2, B.rackT + 0.6, t));
       focus = lerp(10.0, 11.0, rk);
       break;
     }
     case 'S5a': { // very wide, high and nearly still: two brothers in a vast dusk field
-      const target = at('field', [-0.6, 0.4, 0.0]);
-      pos = sph(target, lerp(0.1, 0.14, u), lerp(0.5, 0.47, u), lerp(38, 35, u)); look = target; fov = 22; focus = 36;
+      const target = at('field', [-0.9, 1.6, -1.0]);
+      pos = sph(target, lerp(0.1, 0.13, u), lerp(0.17, 0.15, u), lerp(30, 28, u)); look = target; fov = 24; focus = 29;
       break;
     }
     case 'S5b': { // low, close on the flower; brother B behind it, brother A small in the distance
       const f = B.flower();
-      const target = add(f, [-0.15, 0.42, 0]);
-      pos = sph(target, lerp(0.42, 0.36, u), lerp(0.1, 0.13, u), lerp(4.6, 3.9, u)); look = target; fov = 22; focus = lerp(4.6, 3.9, u);
+      const target = add(f, [0.05, 0.85, 0]);
+      pos = sph(target, lerp(0.28, 0.22, u), lerp(0.06, 0.09, u), lerp(4.6, 4.0, u)); look = target; fov = 24; focus = lerp(4.6, 4.0, u);
       break;
     }
     case 'S6a': {
@@ -170,7 +170,7 @@ export function cameraShot(plan, shot, t) {
       break;
     }
     case 'S6b': {
-      const c = at('mind', [0.15, 2.3, 0]);
+      const c = at('mind', [0.15, 2.85, 0]);
       const k = easeOut(invLerp(0, 0.9, lt));
       pos = sph(c, lerp(0.0, 0.1, u), lerp(0.02, 0.08, u), lerp(1.2, 9.6, k) + lerp(0, 0.8, u)); look = c; fov = 26; focus = 9;
       break;
@@ -178,8 +178,8 @@ export function cameraShot(plan, shot, t) {
     case 'S7': { // low, fast tracking alongside, angled ahead so the road leads to the crowd
       const rx = B.runX(t);
       const runner = at('road', [rx, 0, 0.4]);
-      pos = add(runner, [-4.6 + Math.sin(t * 1.3) * 0.12, 1.15 + noise2(t * 2.2, 3, 7) * 0.06 + 0.04 * Math.abs(Math.sin(t * 10.5)), 8.6]);
-      look = add(runner, [3.6, 1.05, -1.2]); fov = 26;
+      pos = add(runner, [-7.6 + Math.sin(t * 1.3) * 0.12, 1.45 + noise2(t * 2.2, 3, 7) * 0.06 + 0.04 * Math.abs(Math.sin(t * 10.5)), 2.9]);
+      look = add(runner, [0.6, 1.25, 0.05]); fov = 26;
       focus = Math.hypot(runner[0] - pos[0], runner[2] - pos[2]);
       mblur = 4;
       break;
@@ -201,8 +201,8 @@ export function cameraShot(plan, shot, t) {
     }
     case 'S10': case 'S14b': {
       const target = at('village', [0, 1.9, -0.3]);
-      const orbit = shot.id === 'S10' ? lerp(-0.45, 0.25, easeInOut(u)) : lerp(0.35, -0.2, easeInOut(u));
-      const dist = shot.id === 'S10' ? lerp(19.5, 17, u) : lerp(21, 18, u);
+      const orbit = shot.id === 'S10' ? lerp(-0.45, 0.25, easeInOut(u)) : lerp(1.25, 0.35, easeInOut(u));
+      const dist = shot.id === 'S10' ? lerp(19.5, 17, u) : lerp(24, 18.5, easeInOut(u));
       pos = sph(target, orbit, shot.id === 'S10' ? 0.5 : 0.44, dist); look = target; fov = 26; focus = dist;
       const s = t - E.reveal;
       if (shot.id === 'S10' && s >= 0 && s < 0.32) {
@@ -213,8 +213,8 @@ export function cameraShot(plan, shot, t) {
     }
     case 'S13': case 'S14a': { // low angle so the cross stands against the sky; a gentle crane up
       const tt = t - plan.shots.find((s) => s.id === 'S13').t0;
-      const target = at('hill', [0, lerp(4.6, 6.0, smooth(invLerp(0, 12, tt))), 0]);
-      pos = sph(target, lerp(0.16, -0.1, smooth(invLerp(0, 14, tt))), lerp(-0.02, 0.07, smooth(invLerp(0, 12, tt))), lerp(34, 26, smooth(invLerp(0, 14, tt)))); look = target; fov = 24; focus = 30;
+      const target = at('hill', [0, lerp(5.6, 6.4, smooth(invLerp(0, 12, tt))), 0]);
+      pos = sph(target, lerp(0.16, -0.1, smooth(invLerp(0, 14, tt))), lerp(-0.035, 0.03, smooth(invLerp(0, 12, tt))), lerp(25, 20, smooth(invLerp(0, 14, tt)))); look = target; fov = 24; focus = 22;
       break;
     }
     default: { // HTML-only scenes keep a neutral camera

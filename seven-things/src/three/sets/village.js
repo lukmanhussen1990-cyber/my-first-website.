@@ -29,7 +29,7 @@ export function buildVillage(ctx) {
   const ring = [[-9, -8, 5, 3.6, 0.6], [-2, -12, 6, 4.4, 0.1], [6.5, -10, 5, 3.4, -0.5], [12, -3, 4.5, 3.2, -1.2], [-13, -1, 4.5, 3.0, 1.3], [-11, 8, 5, 3.4, 2.2], [11, 7, 5, 3.6, -2.2], [1, -19, 6, 5.0, 0], [-6, -17, 4, 3.0, 0.3]];
   ring.forEach(([x, z, w, h, ry], i) => { const hs = makeHouse({ w, d: 4.5, h, wall: ['#b8a284', '#c4ad8c', '#ad977a'][i % 3], roofCol: '#7a6a54', windows: 2, glow: 0.9 + 0.3 * hash01(i, 2), seed: 100 + i }); hs.position.set(x, height(x, z), z); hs.rotation.y = ry; g.add(hs); });
   for (const [x, z, s, seed] of [[-6.5, -4.5, 1.5, 1], [7.5, -5.5, 1.7, 2], [-15, -9, 1.6, 3], [15, -11, 1.8, 4]]) { const p = makePalm(s, seed); p.position.set(x, height(x, z), z); g.add(p); }
-  const ol = makeOlive(1.4, 3); ol.position.set(5.5, height(5.5, 4.5), 4.5); g.add(ol);
+  const ol = makeOlive(1.4, 3); ol.position.set(-8.5, height(-8.5, -12), -12); g.add(ol);
   const well = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.85, 0.8, 12, 1, true), matte('#8a8070', { params: { side: THREE.DoubleSide } })); well.position.set(-4.5, 0.4, -6); well.castShadow = true; g.add(well);
   const wall = makeWall({ len: 7, h: 0.8, t: 0.4, color: '#8a7e6a', seed: 31 }); wall.position.set(3, 0, -6.5); wall.rotation.y = -0.2; g.add(wall);
   for (const [x, z] of [[-3.6, -5.6], [3.9, -7.4]]) { const j = makeJar(0.9, '#7a5a42'); j.position.set(x, 0, z); g.add(j); }

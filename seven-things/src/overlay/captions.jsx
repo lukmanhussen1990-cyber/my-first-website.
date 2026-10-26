@@ -8,7 +8,7 @@ import { clamp, lerp } from '../lib/util.js';
 const E = plan.ev;
 
 // caption blocks with display windows
-const HIDE = new Set(['B03#0', 'B16#1']);           // shown on the scroll / the Romans card instead
+const HIDE = new Set(['B01#0', 'B03#0', 'B16#1']);           // shown on the scroll / the Romans card instead
 export const BLOCKS = (() => {
   const out = [];
   for (const b of Object.values(plan.beats)) b.blocks.forEach((text, k) => {
@@ -39,10 +39,10 @@ export const Header = ({ t }) => {
 // "GOD HATES 7 THINGS" — huge for the first 1.8 s, punched by the impact, then flies into the caption spot
 export const HookTitle = ({ t, frame }) => {
   const out = ease.inOut((t - E.hookOut) / 0.35);
-  if (t > E.hookOut + 0.45) return null;
+  if (t > E.hookOut + 0.6) return null;
   const s = t - E.impact; const [sx, sy] = s > 0 && s < 0.3 ? shake(frame, 3, 14 * (1 - s / 0.3) ** 2) : [0, 0];
   const punch = 1 + pop(t, E.impact, 0.07, 22, 9);
-  const y = lerp(1180, 420, out), sc = lerp(1, 0.42, out) * punch, o = 1 - clamp((t - E.hookOut - 0.25) / 0.2);
+  const y = lerp(1180, 420, out), sc = lerp(1, 0.42, out) * punch, o = 1 - clamp((t - E.hookOut - 0.3) / 0.1);
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, top: y, transform: `translate(${sx}px, ${sy - 50}%) scale(${sc})`, transformOrigin: '50% 50%', opacity: o, textAlign: 'center' }}>
       <div style={{ font: `800 142px/0.98 ${SANS}`, letterSpacing: '0.01em', color: '#fff8ee', textShadow: '0 10px 40px rgba(0,0,0,0.55), 0 3px 8px rgba(0,0,0,0.6)' }}>GOD HATES</div>
@@ -55,7 +55,7 @@ export const HookTitle = ({ t, frame }) => {
 
 export const Captions = ({ t }) => {
   const bl = BLOCKS.find((b) => t >= b.t0 && t < b.t1);
-  if (!bl || t < E.hookOut + 0.2) return null;
+  if (!bl || t < E.hookOut + 0.4) return null; // the hook title is the first caption
   const theme = plan.theme[bl.scene] || 'dark';
   const light = theme === 'light';
   const fin = ease.out((t - bl.t0) / 0.2), fout = clamp((bl.t1 - t) / 0.14);

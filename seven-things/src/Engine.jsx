@@ -18,7 +18,7 @@ export const Engine = ({ frame }) => {
   }, 1);
   // canvas text in the 3D world needs the web fonts: once they are in, draw the frame again
   useEffect(() => {
-    const h = delayRender('fonts for 3D canvas text');
+    const h = delayRender('fonts for 3D canvas text', { timeoutInMilliseconds: 240000 });
     fontsReady().then(() => { world.fontsOk = true; advance(performance.now()); continueRender(h); });
   }, [world, advance]);
   return null;

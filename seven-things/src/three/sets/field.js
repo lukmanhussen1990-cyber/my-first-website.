@@ -23,7 +23,7 @@ export function buildField(ctx) {
   for (let i = 0; i < 9; i++) { const r = makeRock(0.2 + 0.3 * hash01(i, 1), i + 3, '#8a7a66'); const x = -10 + 20 * hash01(i, 2), z = -12 + 14 * hash01(i, 3); r.position.set(x, height(x, z), z); g.add(r); }
 
   // ---- the red flower: segmented stem (bends from the base), two leaves, six petals ----
-  const flower = new THREE.Group(); g.add(flower);
+  const flower = new THREE.Group(); flower.scale.setScalar(1.9); g.add(flower);
   const stemSegs = []; let parent = flower;
   const stemMat = matte('#4f6a2a');
   for (let i = 0; i < 6; i++) {
@@ -65,8 +65,8 @@ export function buildField(ctx) {
       const f = B.flower(); flower.position.set(f[0] - O[0], height(f[0] - O[0], f[2] - O[2]), f[2] - O[2]);
       const w = smooth(invLerp(B.wiltT, B.wiltT + 1.5, t));
       const breeze = 0.05 * Math.sin(t * 1.6) + 0.03 * noise2(t * 0.9, 2, 5);
-      stemSegs.forEach((s, i) => { s.rotation.z = breeze * (0.3 + i * 0.15) + w * (0.05 + i * 0.09); s.rotation.x = 0.02 * Math.sin(t * 1.3 + i); });
-      head.rotation.z = w * 0.9;
+      stemSegs.forEach((s, i) => { s.rotation.z = breeze * (0.3 + i * 0.15) - w * (0.02 + i * 0.035); s.rotation.x = 0.02 * Math.sin(t * 1.3 + i) + w * (0.03 + i * 0.07); });
+      head.rotation.x = w * 0.85;
       leaves.forEach((l, k) => { l.rotation.z = 0.5 - w * 0.9; });
       const col = new THREE.Color('#c8231e').lerp(new THREE.Color('#5a1a14'), w * 0.75);
       petals.forEach((p, i) => { p.rotation.z = -0.1 - w * (0.9 + 0.2 * hash01(i, 3)); petalMats[i].color.copy(col); p.visible = !(fallers.includes(i) && t > B.wiltT + 0.9 + fallers.indexOf(i) * 0.35); });
@@ -86,11 +86,11 @@ export function buildField(ctx) {
     mood() {
       return {
         sky: { top: '#3a3352', horizon: '#e27a4c', bottom: '#7a4a38', band: '#5a2410', sunGlow: '#ff8a4e', sunDisk: '#ffd2a0' },
-        sunDir: sun, sun: { color: '#ff9a62', intensity: 2.6 },
-        hemi: { sky: '#7a6a92', ground: '#5a3a2a', intensity: 0.95 },
-        fog: { color: '#c9785a', near: 30, far: 230 }, char: '#f2cdb8', ao: 0.15, wind: 0.6,
+        sunDir: sun, sun: { color: '#ffa872', intensity: 3.2 },
+        hemi: { sky: '#b8a4c4', ground: '#7a5a3a', intensity: 1.55 },
+        fog: { color: '#d88a62', near: 35, far: 260 }, char: '#ffe2cc', ao: 0.15, wind: 0.6,
         shadow: { size: 16 },
-        post: { exposure: 0.98, bloom: 0.6, bloomThreshold: 0.82, haze: 0.18, hazeColor: '#e8946a', tint: '#fff0e6', lift: '#0e0608', sat: 0.86, contrast: 1.05, vignette: 0.6, dof: 0.6, focusRange: 1.2, tilt: 0.25, grain: 0.032 },
+        post: { exposure: 1.12, bloom: 0.6, bloomThreshold: 0.82, haze: 0.18, hazeColor: '#e8946a', tint: '#fff0e6', lift: '#0e0608', sat: 0.86, contrast: 1.05, vignette: 0.6, dof: 0.6, focusRange: 1.2, tilt: 0.25, grain: 0.032 },
       };
     },
   };

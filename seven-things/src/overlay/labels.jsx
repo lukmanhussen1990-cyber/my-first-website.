@@ -19,7 +19,7 @@ const LABELS = [
   { text: 'PROVERBS 6:17', shot: 'S4', beat: 'B06', anchor: () => add(B.seller(), [0.12, 1.98, 0]), dx: 120, dy: -150, until: B.rackT + 0.3 },
   { text: 'PROVERBS 6:17', shot: 'S5b', beat: 'B07', anchor: () => add(B.flower(), [0, 0.52, 0]), dx: -170, dy: -190 },
   { text: 'PROVERBS 6:18', shot: 'S6a', beat: 'B08', anchor: () => add(B.benchMan(), [0.1, 1.62, 0]), dx: 150, dy: -170 },
-  { text: 'SIN STARTS IN THE MIND', shot: 'S6b', beat: 'B08', anchor: () => at('mind', [-0.1, 2.75, 0.25]), dx: -40, dy: -330, from: () => plan.word('B08', 'Sin').start - 0.1 },
+  { text: 'SIN STARTS IN THE MIND', shot: 'S6b', beat: 'B08', anchor: () => at('mind', [0.0, 2.55, 0.25]), dx: -150, dy: 330, from: () => plan.word('B08', 'Sin').start - 0.1 },
   { text: 'PROVERBS 6:18', shot: 'S7', beat: 'B09', anchor: (t) => add(B.runner(t), [0.25, 2.0, 0.4]), dx: 130, dy: -190 },
   { text: 'PROVERBS 6:19', shot: 'S8', beat: 'B10', anchor: () => add(B.accuser(), [0.1, 2.02, 0]), dx: -60, dy: -210, until: B.crackT - 0.4 },
   { text: 'PROVERBS 6:19', shot: 'S10', beat: 'B12', anchor: (t) => add(B.whisperer(t), [0, 2.0, 0]), dx: 140, dy: -170 },
@@ -48,7 +48,8 @@ export const Labels = ({ t }) => {
         if (o <= 0) return null;
         const A = project(cur, t, Lb.anchor(t));
         const draw = ease.out((t - a) / 0.35);
-        let bx = clamp(A.x + Lb.dx, 70, 1010), by = clamp(A.y + Lb.dy, 700, 1500);
+        const bw = Lb.text.length * 19 + 48;
+        let bx = Lb.dx < 0 ? clamp(A.x + Lb.dx, 60 + bw, 1020) : clamp(A.x + Lb.dx, 60, 1020 - bw), by = clamp(A.y + Lb.dy, 800, 1480);
         const lx = lerp(A.x, bx, draw), ly = lerp(A.y, by, draw);
         return (
           <div key={i} style={{ position: 'absolute', inset: 0, opacity: o }}>

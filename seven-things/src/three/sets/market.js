@@ -24,6 +24,7 @@ export function buildMarket(ctx) {
   for (let i = 0; i < 5; i++) { const h = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.42, 5), matte(i % 2 ? '#8a8a3a' : '#c9b06a')); h.position.set(1.2 + i * 0.16, 3.05 - 0.05 * (i % 2), WALL_Z + 0.08); h.rotation.x = Math.PI; g.add(h); }
   // the stall in front of the seller
   const stall = makeStall({ awning: ['#a83e2a', '#efe0bf'], goods: ['#e0742c', '#b8352c', '#d9a640', '#7a2a4a'], seed: 5, w: 2.9 }); stall.position.set(-0.3, 0, -0.75); g.add(stall);
+  stall.children.forEach((c) => { if (c.geometry && c.geometry.type === 'PlaneGeometry') c.castShadow = false; }); // keep the shadow wall readable
   // neighbouring stalls + the alley to the right, other shoppers
   const s2 = makeStall({ awning: ['#2f6b66', '#e8dcc0'], goods: ['#7a9a3a', '#e0c04a', '#c0602c'], seed: 6, w: 2.6 }); s2.position.set(-3.6, 0, -0.9); s2.rotation.y = 0.15; g.add(s2);
   const s3 = makeStall({ awning: ['#c9922c', '#f0e4c8'], goods: ['#b8352c', '#e0742c'], seed: 7, w: 2.6 }); s3.position.set(4.2, 0, -6.5); s3.rotation.y = -0.4; g.add(s3);
@@ -42,7 +43,7 @@ export function buildMarket(ctx) {
   ];
   const shadow = puppet(g, { seed: 41, height: 1.78, hair: 'short', beard: 'short', outfit: 'tunic', prop: 'fruitGood' }, '#2a1a12', 0.5);
   const persons = [seller, buyer, ...shoppers];
-  const flies = Array.from({ length: 3 }, () => { const f = new THREE.Mesh(new THREE.CircleGeometry(0.018, 6), shadow.mat); g.add(f); return f; });
+  const flies = Array.from({ length: 4 }, () => { const f = new THREE.Mesh(new THREE.CircleGeometry(0.026, 6), shadow.mat); g.add(f); return f; });
   const _hp = new THREE.Vector3();
   const motes = makeMotes(120, 21); g.add(motes.group);
   const [sw0, sw1] = B.swapT;
@@ -58,18 +59,18 @@ export function buildMarket(ctx) {
       seller.setFacing(1); seller.pose(P); place(seller, O, B.seller());
       // the shadow: same man, but the hand dips below the table and comes back with a rotten fruit
       const SP = { ...P, aF: [...P.aF], aB: [...P.aB] };
-      const dn = smooth(invLerp(sw0, sw0 + 0.32, t)), up = smooth(invLerp(sw0 + 0.42, sw0 + 0.85, t));
-      const k = dn * (1 - up);
-      SP.aF = [lerp(P.aF[0], -0.25, k), lerp(P.aF[1], 0.15, k)];
-      SP.aB = [lerp(P.aB[0], -0.55, dn), lerp(P.aB[1], 1.3, dn)];
+      const dn = smooth(invLerp(sw0, sw0 + 0.3, t)), up = smooth(invLerp(sw0 + 0.4, sw0 + 0.8, t));
+      const k = dn * (1 - up);                                   // arm swings behind his back and returns
+      SP.aF = [lerp(P.aF[0], -0.85, k), lerp(P.aF[1], 0.7, k)];
+      SP.aB = [lerp(P.aB[0], -0.5, dn), lerp(P.aB[1], 1.25, dn)]; SP.headTilt = (P.headTilt || 0) + 0.12 * k;
       shadow.setProp(t > sw0 + 0.38 ? 'fruitBad' : 'fruitGood');
       if (shadow.prop) shadow.prop.scale.setScalar(2.1 * (t > sw0 + 0.38 ? lerp(0.6, 1, easeOutBack(clamp((t - sw0 - 0.38) / 0.3))) : 1));
       shadow.setFacing(1); shadow.pose(SP);
-      const sp = B.wallShadow(); shadow.root.position.set(sp[0] - O[0] + 0.15, 0.05, WALL_Z + 0.02); shadow.root.scale.set(1.3, 1.3, 1);
+      const sp = B.wallShadow(); shadow.root.position.set(sp[0] - O[0] + 0.25, -0.12, WALL_Z + 0.02); shadow.root.scale.set(1.22, 1.22, 1);
       // three tiny flies buzz round the rotten fruit (in shadow)
       shadow.armF.hand.updateWorldMatrix(true, false); const hp = shadow.armF.hand.getWorldPosition(_hp);
       flies.forEach((f, i) => { const on = t > sw0 + 0.55; f.visible = on; if (!on) return; const a = t * (9 + i * 2.3) + i * 2.1;
-        f.position.set(hp.x - g.position.x + Math.cos(a) * 0.13, hp.y - g.position.y + 0.07 + Math.sin(a * 1.7) * 0.07, WALL_Z + 0.03); });
+        f.position.set(hp.x - g.position.x + Math.cos(a) * 0.2, hp.y - g.position.y + 0.12 + Math.sin(a * 1.7) * 0.1, WALL_Z + 0.03); });
       // the buyer waits, then reaches for it
       const BP = Poses.idle(t, 42); BP.aF = [lerp(0.4, 1.05, smooth(invLerp(sw1 + 0.3, sw1 + 0.9, t))), lerp(1.2, 0.4, smooth(invLerp(sw1 + 0.3, sw1 + 0.9, t)))]; BP.look = 0.4; expr(BP, 'happy', 0.6);
       buyer.setFacing(-1); buyer.pose(BP); place(buyer, O, B.buyer());
