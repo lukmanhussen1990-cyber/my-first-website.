@@ -7,15 +7,15 @@ import { GLSL_NOISE, lerp, smoothstep, noise1, fbm1 } from '../util.js';
 export const LEDGE_Y = -40;
 export const CRACK_BOTTOM = -135;
 export const SLAB_X = 60;        // half width of the visible slab
-export const CRACK_DEPTH_Z = 46; // how far the crevasse runs back into the glacier
+export const CRACK_DEPTH_Z = 26; // how far the crevasse runs back into the glacier
 
 export function crackCenter(y) {
   return 0.22 * Math.sin(y * 0.083 + 0.4) + 0.12 * Math.sin(y * 0.21 + 2.0) - 0.06;
 }
 export function crackHalf(y) {
   let w;
-  if (y > LEDGE_Y) w = lerp(0.74, 1.7, Math.pow(smoothstep(LEDGE_Y, 0, y), 1.2));
-  else w = lerp(0.74, 0.5, smoothstep(LEDGE_Y, CRACK_BOTTOM, y));
+  if (y > LEDGE_Y) w = lerp(0.62, 1.7, Math.pow(smoothstep(LEDGE_Y, 0, y), 1.2));
+  else w = lerp(0.62, 0.48, smoothstep(LEDGE_Y, CRACK_BOTTOM, y));
   w += 0.07 * fbm1(y * 0.35, 3) + 0.03 * noise1(y * 2.1, 9);
   return w;
 }
@@ -27,6 +27,11 @@ export function snowTop(x) {
   return 0.0 + 0.18 * fbm1(x * 0.07, 5) + 0.06 * noise1(x * 0.5, 2);
 }
 export const SNOW_DEPTH = 1.1;
+
+// the deep-ice backdrop must only ever be seen THROUGH the ice (in three's transmission pass),
+// never directly: it discards itself while the main scene target is bound
+let MAIN_RT = null;
+export function setMainTarget(rt) { MAIN_RT = rt; }
 
 // ---------------------------------------------------------------- ice material
 export function createIceMaterial(tex, env, opts = {}) {
@@ -56,6 +61,7 @@ export function createIceMaterial(tex, env, opts = {}) {
     uHandPos: { value: new THREE.Vector3(0, -1000, 0) },   // day-4 crack spread origin
     uHandCrack: { value: 0 },
     uFrostCol: { value: new THREE.Vector3(0.62, 0.78, 0.95) },
+    uFrostVis: { value: 0.12 },
   };
   mat.userData.u = u;
   mat.onBeforeCompile = (sh) => {
@@ -66,7 +72,7 @@ export function createIceMaterial(tex, env, opts = {}) {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec3 vIceW; varying vec3 vIceN;
-        uniform sampler2D tIce; uniform float uCrackAmt, uFrostAmt, uGlow, uDeep, uWarmRad, uHandCrack;
+        uniform sampler2D tIce; uniform float uCrackAmt, uFrostAmt, uGlow, uDeep, uWarmRad, uHandCrack, uFrostVis;
         uniform vec3 uWarmPos, uWarmCol, uHandPos, uFrostCol;
         ${GLSL_NOISE}
         float iceCrack, iceBub, iceCloud, iceFrost;
@@ -79,71 +85,83 @@ export function createIceMaterial(tex, env, opts = {}) {
         {
           vec3 an = abs(vIceN);
           vec2 p = an.z > 0.5 ? vIceW.xy : (an.x > 0.5 ? vIceW.zy : vIceW.xz);
+          float px = length(fwidth(p));                 // metres per pixel
+          vec4 D = texture2D(tIce, p / 190.0 + 0.13);
           vec4 A = texture2D(tIce, p / 61.0);
           vec4 B = texture2D(tIce, p / 13.0 + 0.37);
           vec4 C = texture2D(tIce, p / 3.1 + 0.71);
-          iceCrack = max(max(A.r, B.r*0.8), C.r*0.55) * uCrackAmt;
-          iceBub = max(B.g*0.7, C.g) ;
-          iceCloud = A.b*0.6 + B.b*0.4;
+          float wD = smoothstep(0.012, 0.05, px), wB = 1.0 - smoothstep(0.03, 0.09, px), wC = 1.0 - smoothstep(0.006, 0.025, px);
+          iceCrack = max(max(D.r*wD*0.9, A.r*(0.55 + 0.45*wD)), max(B.r*0.8*wB, C.r*0.55*wC)) * uCrackAmt;
+          iceBub = max(B.g*0.7*wB, C.g*wC) + A.g*0.35*(1.0 - wC);
+          iceCloud = mix(A.b*0.6 + B.b*0.4, D.b*0.5 + A.b*0.5, wD);
           iceFrost = mix(B.a, C.a, 0.5) * uFrostAmt;
           // day-4: hairline cracks radiating from the hand print
           if (uHandCrack > 0.0) {
             vec3 dp = vIceW - uHandPos;
             float r = length(dp);
             float ang = atan(dp.y, an.x > 0.5 ? dp.z : dp.x);
-            float rays = pow(abs(sin(ang*7.0 + fbm(vec2(ang*3.0, r*4.0))*2.5)), 30.0);
-            float lines = rays * smoothstep(uHandCrack, uHandCrack*0.6, r) * smoothstep(0.02, 0.06, r);
-            float web = (1.0 - smoothstep(0.0, 0.015, abs(sin(r*55.0 + fbm(vec2(ang*6., r*9.))*3.)))) * smoothstep(uHandCrack*0.8, 0., r) * 0.6 * step(0.5, fbm(vec2(ang*5., r*3.)));
+            float jag = fbm(vec2(ang*4.0, r*14.0)) * 1.6 + fbm(vec2(ang*9.0, r*40.0)) * 0.5;
+            float rays = pow(abs(sin(ang*4.5 + jag)), 160.0) + 0.6*pow(abs(sin(ang*7.0 + jag*1.3 + 1.7)), 220.0);
+            float lines = rays * smoothstep(uHandCrack, uHandCrack*0.55, r) * smoothstep(0.03, 0.08, r);
+            float web = (1.0 - smoothstep(0.0, 0.003, abs(sin(r*48.0 + jag*3.)))) * smoothstep(uHandCrack*0.7, 0., r) * 0.2 * step(0.6, fbm(vec2(ang*5., r*3.)));
             iceCrack = max(iceCrack, clamp(lines + web, 0., 1.));
           }
-          vec3 tint = iceTint(vIceW.y) * mix(1.0, 0.82 + 0.36*iceCloud, 0.7);
+          vec3 tint = iceTint(vIceW.y) * (0.62 + 0.75*iceCloud);
           diffuseColor.rgb *= mix(vec3(1.0), tint, uDeep);
-          diffuseColor.rgb = mix(diffuseColor.rgb, uFrostCol, clamp(iceCrack*0.9 + iceBub*0.6 + iceFrost*0.12, 0., 1.));
+          diffuseColor.rgb = mix(diffuseColor.rgb, uFrostCol, clamp(iceCrack*0.9 + iceBub*0.6 + iceFrost*uFrostVis, 0., 1.));
         }`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
         roughnessFactor = clamp(roughnessFactor + iceFrost*0.22 + iceCrack*0.25, 0.05, 1.0);`)
       .replace('#include <transmission_fragment>', `
         #include <transmission_fragment>
         `)
-      .replace('material.transmission = transmission;', 'material.transmission = transmission * (1.0 - clamp(iceCrack*0.85 + iceBub*0.55 + iceFrost*0.1, 0., 0.95));')
+      .replace('material.transmission = transmission;', 'material.transmission = transmission * (1.0 - clamp(iceCrack*0.85 + iceBub*0.55 + iceFrost*uFrostVis*0.8, 0., 0.95));')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         {
           totalEmissiveRadiance += uFrostCol * (iceCrack*0.5 + iceBub*0.25) * uGlow;
           float wd = length(vIceW - uWarmPos);
-          totalEmissiveRadiance += uWarmCol * exp(-wd*wd/(uWarmRad*uWarmRad)) * (0.35 + iceCrack*1.5 + iceBub*0.8);
+          totalEmissiveRadiance += uWarmCol * exp(-wd*wd/(uWarmRad*uWarmRad)) * (0.12 + iceCrack*0.9 + iceBub*0.5);
         }`);
   };
   mat.customProgramCacheKey = () => 'ice-v1';
   return mat;
 }
 
-// glowing interior of the ice (what you see through it). Lit material + emissive depth gradient.
-export function createDeepMaterial() {
-  const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.35, 0.6, 0.75), roughness: 1, metalness: 0 });
+// glowing interior of the ice (only ever seen through the ice). Unlit: depth gradient + soft
+// clouds + warm scattering where the headlamp hits the wall.
+export function createDeepMaterial(iceU) {
   const u = {
-    uTopCol: { value: new THREE.Vector3(0.1, 0.32, 0.55) },
-    uMidCol: { value: new THREE.Vector3(0.02, 0.11, 0.24) },
-    uDeepCol: { value: new THREE.Vector3(0.0, 0.015, 0.035) },
+    uTopCol: { value: new THREE.Vector3(0.06, 0.2, 0.38) },
+    uMidCol: { value: new THREE.Vector3(0.01, 0.055, 0.13) },
+    uDeepCol: { value: new THREE.Vector3(0.0, 0.008, 0.022) },
     uGlowAmt: { value: 1 },
+    uWarmPos: iceU.uWarmPos, uWarmCol: iceU.uWarmCol,
+    uExtraPos: { value: new THREE.Vector3(0, -1000, 0) }, uExtraCol: { value: new THREE.Vector3(0, 0, 0) }, uExtraRad: { value: 6 },
+    uMainPass: { value: 0 },
   };
+  const mat = new THREE.ShaderMaterial({
+    uniforms: u,
+    vertexShader: 'varying vec3 vDW; void main(){ vec4 w = modelMatrix*vec4(position,1.); vDW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }',
+    fragmentShader: GLSL_NOISE + /* glsl */ `
+      uniform vec3 uTopCol, uMidCol, uDeepCol, uWarmPos, uWarmCol, uExtraPos, uExtraCol; uniform float uGlowAmt, uExtraRad, uMainPass;
+      varying vec3 vDW;
+      void main(){
+        if (uMainPass > 0.5) discard;
+        float y = vDW.y;
+        vec3 g = mix(uDeepCol, uMidCol, smoothstep(-115., -30., y));
+        g = mix(g, uTopCol, smoothstep(-40., 0., y) * smoothstep(-40., 0., y));
+        float n = fbm(vDW.xy*0.07 + vDW.z*0.05 + vec2(3.1, 7.7));
+        float layers = 0.75 + 0.5*smoothstep(0.3, 0.7, fbm(vec2(vDW.x*0.02 + vDW.z*0.02, y*0.35)));
+        vec3 col = g * (0.45 + 1.1*n) * layers * uGlowAmt;
+        float wd = length(vDW - uWarmPos);
+        col += uWarmCol * (exp(-wd*wd/0.9)*0.55 + exp(-wd*wd/4.0)*0.12);
+        float ed = length(vDW - uExtraPos);
+        col += uExtraCol * exp(-ed*ed/(uExtraRad*uExtraRad));
+        gl_FragColor = vec4(col, 1.);
+      }`,
+  });
   mat.userData.u = u;
-  mat.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, u);
-    sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vDW;')
-      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvDW = (modelMatrix * vec4(transformed,1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vDW; uniform vec3 uTopCol, uMidCol, uDeepCol; uniform float uGlowAmt;\n' + GLSL_NOISE)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        {
-          float y = vDW.y;
-          vec3 g = y > -35. ? mix(uMidCol, uTopCol, smoothstep(-35., -1., y)) : mix(uDeepCol, uMidCol, smoothstep(-115., -35., y));
-          float n = fbm(vDW.xy*0.08 + vDW.z*0.06) ;
-          float shafts = pow(fbm(vec2(vDW.x*0.05 + vDW.z*0.05, 3.0)), 3.0) * smoothstep(-60., 0., y);
-          totalEmissiveRadiance += g * (0.6 + 0.8*n + shafts*1.5) * uGlowAmt;
-        }`);
-  };
-  mat.customProgramCacheKey = () => 'deep-v1';
+  mat.userData.hook = (mesh) => { mesh.onBeforeRender = (renderer) => { u.uMainPass.value = renderer.getRenderTarget() === MAIN_RT ? 1 : 0; }; };
   return mat;
 }
 
@@ -208,10 +226,12 @@ export function createGlacier(tex, env) {
   const group = new THREE.Group();
   const ice = createIceMaterial(tex, env);
   const wallIce = createIceMaterial(tex, env, { roughness: 0.38, envMapIntensity: 0.9 });
-  const deep = createDeepMaterial();
+  ice.userData.u.uWarmPos = wallIce.userData.u.uWarmPos;
+  ice.userData.u.uWarmCol = wallIce.userData.u.uWarmCol;
+  const deep = createDeepMaterial(wallIce.userData.u);
   const snow = createSnowMaterial(tex);
-  const snowCut = createSnowMaterial(tex, { color: 0xc9d8e8, sparkle: 0.3, scale: 3 });
-  const frost = new THREE.MeshStandardMaterial({ color: 0xf2f8ff, roughness: 0.85, emissive: new THREE.Color(0.12, 0.16, 0.22) });
+  const snowCut = createSnowMaterial(tex, { color: 0x9fb3c8, sparkle: 0.3, scale: 3 });
+  const frost = new THREE.MeshStandardMaterial({ color: 0xcfe4f6, roughness: 0.7, emissive: new THREE.Color(0.035, 0.06, 0.09) });
 
   const NV = 300;
   // -------- cut face (z=0), left and right of the crack, from below the snow down to the bottom
@@ -272,7 +292,7 @@ export function createGlacier(tex, env) {
   const far = gridGeometry(60, 60, (u, v) => {
     const x = lerp(-SLAB_X * 6, SLAB_X * 6, u);
     const z = lerp(-CRACK_DEPTH_Z - 2, -420, Math.pow(v, 1.5));
-    const y = snowTop(x) + 0.15 * fbm1(z * 0.05, 4) + Math.pow(Math.max(0, (-z - 60) / 360), 2) * 40 + 8 * fbm1(x * 0.01 + z * 0.004, 8) * smoothstep(60, 200, -z);
+    const y = snowTop(x) + 0.15 * fbm1(z * 0.05, 4) + Math.pow(Math.max(0, (-z - 60) / 360), 2) * 12 + 4 * fbm1(x * 0.01 + z * 0.004, 8) * smoothstep(60, 200, -z);
     return [x, y, z];
   });
   {
@@ -347,13 +367,15 @@ export function createGlacier(tex, env) {
   const deepGroup = new THREE.Group();
   for (const side of [-1, 1]) {
     // back plane behind the cut face
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(SLAB_X, 170, 4, 40), deep);
-    back.position.set(side * (SLAB_X / 2 + 1.6), -80, -7.5);
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(SLAB_X + 4, 170, 4, 40), deep);
+    back.position.set(side * (SLAB_X / 2 + 1.0), -80, -7.5);
+    deep.userData.hook(back);
     deepGroup.add(back);
     // side plane behind each crack wall, facing the crack
-    const sideP = new THREE.Mesh(new THREE.PlaneGeometry(CRACK_DEPTH_Z + 10, 170, 20, 40), deep);
+    const sideP = new THREE.Mesh(new THREE.PlaneGeometry(CRACK_DEPTH_Z + 20, 170, 20, 40), deep);
     sideP.rotation.y = -side * Math.PI / 2;
-    sideP.position.set(side * 3.4, -80, -(CRACK_DEPTH_Z + 10) / 2 + 0.5);
+    sideP.position.set(side * 3.4, -80, -(CRACK_DEPTH_Z + 20) / 2 + 6);
+    deep.userData.hook(sideP);
     deepGroup.add(sideP);
   }
   group.add(deepGroup);
@@ -363,8 +385,8 @@ export function createGlacier(tex, env) {
 }
 
 function createLedge(tex, env) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x9cc6e4, roughness: 0.6, metalness: 0, envMap: env, envMapIntensity: 0.4 });
-  const snowMat = new THREE.MeshStandardMaterial({ color: 0xe6eef7, roughness: 0.95 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x4f7fa8, roughness: 0.45, metalness: 0, envMap: env, envMapIntensity: 0.5 });
+  const snowMat = new THREE.MeshStandardMaterial({ color: 0xaec3d6, roughness: 0.95 });
   const g = new THREE.Group();
   const y = LEDGE_Y;
   const x0 = wallX(-1, y, -0.8);

@@ -134,14 +134,18 @@ export function makeTextures(renderer) {
   return { ice, snow, sprite, puff };
 }
 
-// small environment map for subtle ice reflections
-export function makeEnv(renderer) {
+// small environment map for subtle ice reflections ('day' = bright sunrise sky, for foil etc.)
+export function makeEnv(renderer, mode = 'night') {
   const scene = new THREE.Scene();
   const geo = new THREE.SphereGeometry(10, 32, 16);
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-    fragmentShader: `varying vec3 vP; void main(){ vec3 d = normalize(vP);
+    fragmentShader: mode === 'day' ? `varying vec3 vP; void main(){ vec3 d = normalize(vP);
+      vec3 c = mix(vec3(1.3,0.85,0.7), vec3(0.35,0.55,1.0), smoothstep(0.0,0.7,d.y));
+      c = mix(c, vec3(0.9,0.92,1.0), smoothstep(0.0,-0.3,d.y));
+      c += vec3(3.0,1.8,1.0) * pow(max(dot(d, normalize(vec3(-0.6,0.1,-0.8))),0.), 40.) * 4.;
+      gl_FragColor = vec4(c,1.); }` : `varying vec3 vP; void main(){ vec3 d = normalize(vP);
       vec3 c = mix(vec3(0.004,0.01,0.03), vec3(0.05,0.12,0.25), smoothstep(-0.2,0.8,d.y));
       c += vec3(0.8,0.9,1.0) * pow(max(dot(d, normalize(vec3(0.4,0.7,0.3))),0.), 200.) * 6.;
       c += vec3(0.12,0.2,0.3) * smoothstep(0.1,-0.4,d.y) * 0.3;

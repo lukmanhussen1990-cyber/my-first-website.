@@ -2,3 +2,9 @@ node_modules/
 frames/
 audio/cache/
 *.log
+# regenerable audio (made by tools/ingest_voice.py and tools/build_audio.py)
+audio/voice/lines/*.wav
+audio/*.wav
+# third-party music (copyrighted; supplied by the user, kept local only)
+audio/music/
+final/stems/*.wav

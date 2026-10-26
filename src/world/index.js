@@ -8,8 +8,9 @@ import { createHeadlamp } from './headlamp.js';
 import { createProps } from './props.js';
 import { createParticles } from './particles.js';
 import { createFrozen } from './frozen.js';
+import { createFullFrame } from './fullframe.js';
 
-export function buildWorld(renderer, tex, env, images) {
+export function buildWorld(renderer, tex, env, images, envDay) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, renderer.domElement.width / renderer.domElement.height, 0.1, 4000);
   scene.add(camera);
@@ -30,6 +31,8 @@ export function buildWorld(renderer, tex, env, images) {
   scene.add(moon, moon.target);
   const fill = new THREE.PointLight(0x4a90d0, 0, 6, 1.5); // generic cold fill near the subject
   scene.add(fill);
+  const bounce = new THREE.PointLight(0xff9a50, 0, 2.6, 1.6); // headlamp light bouncing off the lit ice back onto Max
+  scene.add(bounce);
 
   // Max
   const max = createFigure({
@@ -59,15 +62,29 @@ export function buildWorld(renderer, tex, env, images) {
   const frozen = createFrozen(tex, images);
   scene.add(frozen.group);
 
-  const props = createProps(tex, env);
+  const props = createProps(tex, env, envDay);
   scene.add(props.group);
   const particles = createParticles(tex);
   scene.add(particles.group);
+  // full-frame image (scene 9 reveal), lives in front of the camera
+  const fullframe = createFullFrame(images.crowd);
+  camera.add(fullframe.mesh);
+  // close-up "cap": closes the open cut face near the ledge so close-ups never see outside the slab
+  const cap = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), glacier.userData.wallIce);
+  cap.position.set(0, LEDGE_Y + 0.5, 0.02);
+  cap.rotation.y = Math.PI; // faces -z (into the crack)
+  cap.visible = false;
+  const capBack = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), glacier.userData.deep);
+  glacier.userData.deep.userData.hook(capBack);
+  capBack.position.set(0, LEDGE_Y + 0.5, 2.8);
+  capBack.rotation.y = Math.PI;
+  capBack.visible = false;
+  scene.add(cap, capBack);
 
   const world = {
-    scene, camera, sky, mountains, glacier, hemi, moon, fill,
+    scene, camera, sky, mountains, glacier, hemi, moon, fill, bounce,
     max, maxLamp, erik, erikLamp, friendBlue, friendGreen, rescuerA, rescuerB,
-    frozen, props, particles, tex, env, renderer,
+    frozen, props, particles, fullframe, cap, capBack, tex, env, renderer,
     LEDGE_Y, wallX, crackCenter, POSES,
   };
   return world;

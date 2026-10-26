@@ -2,6 +2,7 @@
 // deep in the ice. All of these are OPAQUE so they show up through the transmissive ice.
 import * as THREE from 'three';
 import { createFigure, applyPose, POSES, blendPose } from './figures.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLSL_NOISE, mulberry32, lerp } from '../util.js';
 import { LEDGE_Y, wallX } from './glacier.js';
 
@@ -165,6 +166,8 @@ const IMAGE_FILES = {
   reach: 'frozen_hand_reach.png',
   claw: 'frozen_hand_claw.png',
   crowd: 'frozen_crowd_reveal.png',
+  radio: 'radio_broken.png',
+  logbook: 'logbook.png',
 };
 export { IMAGE_FILES };
 
@@ -173,9 +176,8 @@ function imagePlane(texture, h = 1, opts = {}) {
   const aspect = img ? img.width / img.height : 2 / 3;
   const m = new THREE.MeshStandardMaterial({
     map: texture, alphaTest: opts.alphaTest ?? 0.35, roughness: 0.6, metalness: 0, side: THREE.DoubleSide,
-    color: opts.color ?? 0xffffff,
+    color: opts.color ?? 0xffffff, emissiveMap: texture, emissive: new THREE.Color(0, 0, 0),
   });
-  frostify(m, { frostScale: 90, frostLo: 0.86, desat: 0.05 });
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(h * aspect, h), m);
   mesh.frustumCulled = false;
   return mesh;
@@ -248,7 +250,57 @@ export function createFrozen(tex, images) {
     crowd.push(f);
   }
 
-  return { group, man, planes, crowd, images };
+  // merge the (static) crowd into 2 meshes: ~1200 draw calls -> 2 (huge win on a CPU renderer)
+  const merged = mergeCrowd(crowd);
+  for (const f of crowd) group.remove(f.root);
+  for (const m of merged) group.add(m.root);
+  crowd.length = 0;
+  crowd.push(...merged);
+
+  // glow card: warm-cyan light scattering in the ice behind the frozen man (opaque, seen through the cut face)
+  const glowCard = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.8), new THREE.ShaderMaterial({
+    uniforms: { uK: { value: 0 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
+    fragmentShader: `uniform float uK; varying vec2 vUv;
+      void main(){ vec2 d = (vUv - vec2(0.5, 0.55)) * vec2(1.0, 0.8); float r = length(d);
+        vec3 base = vec3(0.004, 0.02, 0.05);
+        vec3 glow = mix(vec3(0.55, 0.32, 0.14), vec3(0.08, 0.3, 0.5), smoothstep(0.0, 0.35, r)) * exp(-r*r*9.0);
+        gl_FragColor = vec4(base + glow * uK, 1.0); }`,
+  }));
+  glowCard.visible = false;
+  group.add(glowCard);
+
+  return { group, man, planes, crowd, images, glowCard };
+}
+
+function mergeCrowd(figs) {
+  const body = [], eyes = [];
+  for (const f of figs) {
+    f.root.updateMatrixWorld(true);
+    f.root.traverse((o) => {
+      if (!o.isMesh) return;
+      const g = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
+      g.applyMatrix4(o.matrixWorld);
+      for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+      if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]);
+      const c = o.material.color || new THREE.Color(0x020305);
+      const n = g.attributes.position.count;
+      const col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      (o.material.userData.eye ? eyes : body).push(g);
+    });
+  }
+  const bodyMat = frostify(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), { frostScale: 110, frostLo: 0.64, desat: 0.35 });
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0xcfe2ee, emissive: new THREE.Color(0.25, 0.32, 0.38), roughness: 0.2 });
+  const out = [];
+  for (const [list, mat] of [[body, bodyMat], [eyes, eyeMat]]) {
+    if (!list.length) continue;
+    const mesh = new THREE.Mesh(mergeGeometries(list, false), mat);
+    mesh.frustumCulled = false;
+    out.push({ root: mesh });
+  }
+  return out;
 }
 
 // where the frozen man stands (in the right wall, across from Max)

@@ -195,15 +195,16 @@ function logbook() {
 }
 
 function blanket(env) {
-  const geo = new THREE.CylinderGeometry(0.36, 0.42, 0.95, 40, 16, true, -Math.PI * 0.95, Math.PI * 1.9);
+  // crinkled emergency foil wrapped around the shoulders
+  const geo = new THREE.CylinderGeometry(0.3, 0.44, 0.9, 110, 36, true, -Math.PI * 0.92, Math.PI * 1.84);
   const p = geo.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const n = 1 + 0.06 * noise1(x * 23 + y * 7, 3) + 0.05 * noise1(z * 31 - y * 11, 8);
-    p.setXYZ(i, x * n, y + 0.02 * noise1(x * 17 + z * 13, 5), z * n);
+    const n = 1 + 0.035 * noise1(x * 60 + y * 23, 3) + 0.03 * noise1(z * 71 - y * 37, 8) + 0.05 * noise1(x * 9 + z * 7 + y * 3, 1);
+    p.setXYZ(i, x * n, y + 0.012 * noise1(x * 47 + z * 53, 5), z * n);
   }
   geo.computeVertexNormals();
-  const m = tmat(0xd8dde2, { rough: 0.22, metal: 1.0, env, envI: 1.6 });
+  const m = tmat(0xe2e6ea, { rough: 0.28, metal: 1.0, env, envI: 1.25 });
   m.side = THREE.DoubleSide;
   m.flatShading = true;
   return new THREE.Mesh(geo, m);
@@ -212,7 +213,7 @@ function blanket(env) {
 function snowBridge() {
   // thin, slightly sagging slab of snow across the crack mouth
   const g = new THREE.Group();
-  const m = tmat(0xe2ebf5, { rough: 0.95 });
+  const m = tmat(0xe8f0f8, { rough: 0.95, emissive: 0x5a6878 });
   const pieces = [];
   const r = mulberry32(5);
   for (let i = 0; i < 9; i++) {
@@ -232,7 +233,7 @@ function snowBridge() {
   return g;
 }
 
-export function createProps(tex, env) {
+export function createProps(tex, env, envDay) {
   const group = new THREE.Group();
   const axe = iceAxe();
   const maxRadio = radio(0x2b2f36);
@@ -251,7 +252,7 @@ export function createProps(tex, env) {
   const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 6), ropeM);
   const rope2 = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 1, 6), tmat(0xc23a2a, { rough: 0.7 }));
   const book = logbook();
-  const blank = blanket(env);
+  const blank = blanket(envDay || env);
   const bridge = snowBridge();
   // light from far above (rescuers' searchlight down the crack, scene 7)
   const searchLight = new THREE.SpotLight(0xe8f2ff, 0, 80, 0.22, 0.7, 0.6);

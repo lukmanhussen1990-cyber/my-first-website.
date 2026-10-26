@@ -94,7 +94,8 @@ export function createHeadlamp(tex, o = {}) {
         float tw = 0.5 + 0.5*sin(uTime*(2.0+seed.y*3.0) + seed.z*40.);
         vA = inBeam * (0.35 + 0.65*tw) * uInt / (0.6 + p.z*0.6);
         vec4 mv = modelViewMatrix * vec4(p, 1.);
-        gl_PointSize = uSize * uPx * (0.4 + seed.x) / -mv.z;
+        vA *= smoothstep(0.18, 0.6, -mv.z);
+        gl_PointSize = min(uSize * uPx * (0.4 + seed.x) / -mv.z, 18.0 * uPx);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: /* glsl */ `
@@ -108,14 +109,14 @@ export function createHeadlamp(tex, o = {}) {
 
   const lamp = {
     group, light, beam, dust, beamU, dustU, baseIntensity: o.intensity ?? 9,
-    set(k, t, beamAmt = 1) {
+    set(k, t, beamAmt = 1, dustAmt = beamAmt) {
       light.intensity = lamp.baseIntensity * k;
-      light.visible = k > 0.001;
       beamU.uInt.value = k * beamAmt;
-      dustU.uInt.value = k * beamAmt;
+      dustU.uInt.value = k * dustAmt;
       beamU.uTime.value = t;
       dustU.uTime.value = t;
-      beam.visible = dust.visible = k * beamAmt > 0.001;
+      beam.visible = k * beamAmt > 0.001;
+      dust.visible = k * dustAmt > 0.001;
     },
   };
   return lamp;

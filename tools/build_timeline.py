@@ -152,6 +152,8 @@ def main():
             cur += dur
         if sc.get('fixed'):
             end = start + sc['fixed']
+        elif sc.get('endAfterHit'):
+            end = max(l.get('hit', 0) for l in lines) + sc['endAfterHit']
         else:
             end = cur + SCRIPT['sceneTail'] - LEAD_IN + sc.get('extraTail', 0.0)
         # snap scene boundaries to whole frames

@@ -33,8 +33,8 @@ function snowSystem(tex, N, seed) {
         p = uCenter - uBox*0.5 + rel;
         vec4 mv = modelViewMatrix * vec4(p, 1.);
         float edge = min(min(rel.x, uBox.x-rel.x)/uBox.x, min(rel.y, uBox.y-rel.y)/uBox.y);
-        vA = uAlpha * smoothstep(0.0, 0.08, edge) * (0.5 + 0.5*seed.w);
-        gl_PointSize = uSize * uPx * (0.4 + seed.x*0.9) / max(-mv.z, 0.1);
+        vA = uAlpha * smoothstep(0.0, 0.08, edge) * (0.5 + 0.5*seed.w) * smoothstep(0.25, 1.0, -mv.z);
+        gl_PointSize = min(uSize * uPx * (0.4 + seed.x*0.9) / max(-mv.z, 0.1), 40.0 * uPx);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: /* glsl */ `
@@ -61,7 +61,7 @@ function spritePool(tex, N) {
     uniforms: u, transparent: true, depthWrite: false,
     vertexShader: /* glsl */ `
       attribute float psize; attribute float palpha; attribute vec3 pcol; uniform float uPx; varying float vA; varying vec3 vC;
-      void main(){ vA = palpha; vC = pcol; vec4 mv = modelViewMatrix * vec4(position,1.); gl_PointSize = psize * uPx * 900.0 / max(-mv.z, 0.05); gl_Position = projectionMatrix * mv; }`,
+      void main(){ vC = pcol; vec4 mv = modelViewMatrix * vec4(position,1.); vA = palpha * smoothstep(0.12, 0.4, -mv.z); gl_PointSize = min(psize * uPx * 900.0 / max(-mv.z, 0.05), 380.0 * uPx); gl_Position = projectionMatrix * mv; }`,
     fragmentShader: /* glsl */ `
       uniform sampler2D tSprite; varying float vA; varying vec3 vC;
       void main(){ float s = texture2D(tSprite, gl_PointCoord).r; if (s*vA < 0.002) discard; gl_FragColor = vec4(vC, s*vA); }`,
@@ -116,7 +116,7 @@ export function createParticles(tex) {
   const snow2 = snowSystem(tex, 1200, 202); // second layer (near, bigger flakes / storm streaks)
   const sprites = spritePool(tex, 600);
   const chunkGeo = new THREE.IcosahedronGeometry(0.12, 0);
-  const chunkMat = new THREE.MeshStandardMaterial({ color: 0xe6eef8, roughness: 0.9, flatShading: true, transparent: true, depthWrite: true });
+  const chunkMat = new THREE.MeshStandardMaterial({ color: 0xe6eef8, roughness: 0.9, flatShading: true, transparent: true, depthWrite: true, emissive: new THREE.Color(0.16, 0.19, 0.24) });
   const chunks = chunkPool(160, chunkGeo, chunkMat);
   const chipGeo = new THREE.TetrahedronGeometry(0.03, 0);
   const chipMat = new THREE.MeshStandardMaterial({ color: 0xcfeeff, roughness: 0.15, metalness: 0.1, emissive: new THREE.Color(0.08, 0.16, 0.22), flatShading: true, transparent: true, depthWrite: true });
