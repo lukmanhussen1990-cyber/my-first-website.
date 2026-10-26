@@ -1,8 +1,9 @@
 // Head part library (unit head space: origin = head pivot on top of the neck, facing +x, y up,
 // skull ~0.36 tall; the design scales it). Every part is SVG path data + drawing elements.
 // Views: 'side' (profile), 'threeQuarter', 'back'.
-import { smooth, poly, ellipse, arc, mirrorX, shift } from './svg.js';
-import { F, L, shade, mixc, ink, lift } from './paint.js';
+import { smooth, poly, ellipse, arc, mirrorX, shift, shift as shiftPath } from './svg.js';
+import { F, L, shade, mixc, ink, lift, lum } from './paint.js';
+const lerp = (a, b, t) => a + (b - a) * t;
 import { mulberry32 } from '../../lib/util.js';
 
 export const EYE_WHITE = '#f6dcbc';
@@ -37,7 +38,7 @@ export function eyeParts(D, tag, E, hw, ht, hb, layer, extra = {}) {
   // upper lid: skin with the dark lid line along its lower edge (the almond's upper arc, slightly lowered)
   const top = almond(hw, ht, hb).slice(0, 5).map(([x, y]) => [x, y - ht * 0.16]);
   const lidEdge = [[-hw * 1.28, -ht * 0.05], ...top.map(([x, y], i) => [x, y, i === 0 || i === 4 ? 0.6 : 1]), [hw * 1.28, -ht * 0.12]];
-  const lidShape = smooth([...lidEdge, [hw * 1.3, ht + 0.03], [-hw * 1.3, ht + 0.03]].map((p, i, a) => (i >= a.length - 2 ? [p[0], p[1], 0] : p)), true);
+  const lidShape = smooth([...lidEdge, [hw * 1.3, ht + 0.075], [-hw * 1.3, ht + 0.075]].map((p, i, a) => (i >= a.length - 2 ? [p[0], p[1], 0] : p)), true);
   const edgeD = smooth(lidEdge, false);
   const crease = smooth(lidEdge.slice(1, -1).map(([x, y]) => [x * 0.95, y + ht * 0.62 + (old ? 0.003 : 0)]), false);
   const lidDraw = [F(lidShape, skin), L(edgeD, LID_LINE, hw * 0.24), L(crease, ink(skin, 0.68), hw * 0.07, { a: 0.75 })];
@@ -86,8 +87,25 @@ export const EYE = {
 const holeOf = (e, k = 1) => shift(smooth(almond(e.hw * k, e.ht * k, e.hb * k), true), e.E[0], e.E[1]);
 
 function wrinkles(D, view) {
-  const s = D.skin, old = D.age ?? 0, out = [], ln = ink(s, 0.6);
-  const W = (d, w, a = 0.85) => out.push(L(d, ln, w, { a }));
+  const s = D.skin, old = D.age ?? 0, out = [], ln = ink(s, 0.6), deep = ink(s, 0.48);
+  const W = (d, w, a = 0.85, c = ln) => out.push(L(d, c, w, { a }));
+  const vold = Math.max(0, Math.min(1, (old - 0.85) / 0.15)); // the very old (Methuselah)
+  if (vold > 0 && view === 'side') {
+    W(smooth([[0.072, 0.336], [0.1, 0.341], [0.128, 0.336]], false), 0.0028, 0.75 * vold);
+    W(smooth([[0.163, 0.122], [0.152, 0.1], [0.146, 0.074], [0.149, 0.052]], false), 0.0046, 0.95 * vold, deep);
+    W(smooth([[0.068, 0.166], [0.09, 0.156], [0.116, 0.159]], false), 0.0034, 0.85 * vold, deep);
+    W(smooth([[0.064, 0.152], [0.088, 0.141], [0.113, 0.145]], false), 0.0026, 0.6 * vold);
+    W(smooth([[0.036, 0.135], [0.055, 0.106], [0.082, 0.084]], false), 0.003, 0.6 * vold);
+    W(smooth([[0.118, 0.03], [0.1, 0.012], [0.078, 0.002]], false), 0.003, 0.5 * vold);
+    W(smooth([[0.004, 0.262], [0.012, 0.238], [0.01, 0.222]], false), 0.0026, 0.55 * vold);
+    W(smooth([[0.058, 0.208], [0.04, 0.222], [0.03, 0.234]], false), 0.0026, 0.7 * vold);
+  } else if (vold > 0 && view === 'threeQuarter') {
+    W(smooth([[-0.014, 0.334], [0.05, 0.342], [0.11, 0.334]], false), 0.0028, 0.7 * vold);
+    W(smooth([[0.128, 0.124], [0.112, 0.1], [0.108, 0.072]], false), 0.0044, 0.9 * vold, deep);
+    W(smooth([[0.006, 0.166], [0.03, 0.157], [0.058, 0.162]], false), 0.0032, 0.8 * vold, deep);
+    W(smooth([[0.096, 0.168], [0.11, 0.16], [0.128, 0.165]], false), 0.0026, 0.6 * vold);
+    W(smooth([[-0.06, 0.13], [-0.04, 0.1], [-0.015, 0.08]], false), 0.003, 0.55 * vold);
+  }
   if (view === 'side') {
     if (old > 0.25) {
       W(smooth([[0.066, 0.166], [0.093, 0.158], [0.122, 0.165]], false), 0.0032, 0.7 * old);
@@ -139,7 +157,10 @@ export function headParts(D, view) {
     if (!D.beard || D.beard === 'none' || D.beard === 'stubble') draw.push(L(smooth([[0.157, 0.069], [0.145, 0.067], [0.136, 0.071]], false), ln, 0.0034, { a: 0.7 }));
     draw.push(L(smooth([[0.13, 0.002], [0.09, -0.012], [0.05, -0.02]], false), ln, 0.004, { a: 0.35 })); // under-jaw
     if (D.stubble) draw.push(F(smooth([[0.0, 0.14], [0.06, 0.1], [0.14, 0.085], [0.165, 0.05], [0.13, -0.004], [0.04, -0.02], [-0.01, 0.08]], true), D.stubble, { a: 0.35, blur: 0.006 }));
-    if (old > 0.6 && D.hair === 'oldLong') for (const [x, y, r] of [[-0.02, 0.33, 0.014], [0.03, 0.345, 0.009], [-0.07, 0.31, 0.011]]) draw.push(F(ellipse(x, y, r, r * 0.8), shade(s, 0.82), { a: 0.35, blur: r * 0.3 }));
+    if (old > 0.6 && D.hair === 'oldLong') for (const [x, y, r] of [[-0.02, 0.33, 0.014], [0.03, 0.345, 0.009], [-0.07, 0.31, 0.011], [0.06, 0.31, 0.007]]) draw.push(F(ellipse(x, y, r, r * 0.8), shade(s, 0.82), { a: 0.35, blur: r * 0.3 }));
+    if (D.hair === 'oldLong') for (const [k, st] of [[[0.03, 0.352], [-0.04, 0.356], [-0.11, 0.33], [-0.15, 0.28]], [[0.0, 0.344], [-0.06, 0.345], [-0.12, 0.31]], [[0.05, 0.338], [-0.02, 0.348], [-0.09, 0.34], [-0.14, 0.3]], [[-0.03, 0.33], [-0.09, 0.322], [-0.13, 0.29]]].entries()) draw.push(L(smooth(st, false), D.hairColor || '#e8e3da', 0.0034 - k * 0.0003, { a: 0.85 }));
+    if (D.gaunt) { const g = D.gaunt; draw.push(F(ellipse(0.072, 0.104, 0.048, 0.03), shade(s, 0.78), { a: 0.38 * g, blur: 0.02 }), F(ellipse(0.088, 0.152, 0.042, 0.013), lift(s, 0.22), { a: 0.4 * g, blur: 0.01 }), F(ellipse(0.022, 0.248, 0.03, 0.032), shade(s, 0.84), { a: 0.32 * g, blur: 0.016 })); }
+    if (['wrap', 'turban'].includes(D.hair)) draw.push(F(smooth([[0.17, 0.262], [0.17, 0.235], [0.08, 0.222], [-0.02, 0.19], [-0.05, 0.215], [0.05, 0.25]], true), shade(s, 0.7), { a: 0.45, blur: 0.012 }));
     draw.push(...wrinkles(D, 'side'));
     parts.push({ id: 'head', pivot: 'head', layer: 28, density: 'face', bulge: 0.95, prof: 1.2, shape, holes: [holeOf(e)], draw, shadow: true, anchors: { eye: e.E, mouth: [0.152, 0.069], nose: [0.2, 0.128], chin: [0.14, 0.0], brow: [e.E[0], e.E[1] + 0.045], crown: [0.0, 0.362], ear: [-0.004, 0.168] } });
     parts.push(...eyeParts(D, 'N', e.E, e.hw, e.ht, e.hb, 26, { headId: 'head' }));
@@ -157,6 +178,8 @@ export function headParts(D, view) {
     draw.push(L(smooth([[0.152 + 0.01 * nz, 0.124], [0.138, 0.115], [0.122, 0.118]], false), ln, 0.0036, { a: 0.9 }));
     if (!D.beard || D.beard === 'none' || D.beard === 'stubble') draw.push(L(smooth([[0.125, 0.07], [0.098, 0.066], [0.07, 0.07]], false), ln, 0.0034, { a: 0.7 }));
     if (D.stubble) draw.push(F(smooth([[-0.12, 0.13], [-0.08, 0.06], [0.0, 0.0], [0.08, -0.004], [0.13, 0.05], [0.142, 0.09], [0.1, 0.06], [0.0, 0.09], [-0.1, 0.16]], true), D.stubble, { a: 0.35, blur: 0.006 }));
+    if (D.gaunt) { const g = D.gaunt; draw.push(F(ellipse(0.0, 0.104, 0.05, 0.03), shade(s, 0.78), { a: 0.32 * g, blur: 0.02 }), F(ellipse(0.12, 0.1, 0.022, 0.03), shade(s, 0.8), { a: 0.3 * g, blur: 0.014 }), F(ellipse(0.02, 0.152, 0.05, 0.013), lift(s, 0.22), { a: 0.36 * g, blur: 0.01 })); }
+    if (['wrap', 'turban'].includes(D.hair)) draw.push(F(smooth([[0.16, 0.262], [0.16, 0.236], [0.0, 0.244], [-0.16, 0.2], [-0.16, 0.225], [0.0, 0.27]], true), shade(s, 0.7), { a: 0.45, blur: 0.012 }));
     draw.push(...wrinkles(D, 'threeQuarter'));
     parts.push({ id: 'head', pivot: 'head', layer: 28, density: 'face3', bulge: 0.95, prof: 1.2, shape, holes: [holeOf(eN), holeOf(eF)], draw, shadow: true, anchors: { eye: eN.E, mouth: [0.1, 0.068], nose: [0.16, 0.128], chin: [0.08, 0.0], brow: [0.07, 0.235], crown: [0.0, 0.362], ear: [-0.16, 0.17] } });
     parts.push(...eyeParts(D, 'N', eN.E, eN.hw, eN.ht, eN.hb, 26, { headId: 'head' }));
@@ -217,6 +240,48 @@ export function mouthParts(D, view) {
   return out;
 }
 
+
+// ---------------------------------------------------------------- wrapped head-cloth (folds converge into a knot at the back)
+// returns drawing elements for the main wrap, plus knot and tail specs (head space)
+function clothWrap(view, wc, tall, lowerEdge) {
+  const wl = ink(wc, 0.66), hi = lift(wc, 0.35), dk = shade(wc, 0.88);
+  const cfg = {
+    side: { K: [-0.192, 0.238], C: [-0.02, 0.27], ends: [[0.158, 0.292], [0.153, 0.33 + tall], [0.124, 0.366 + tall], [0.066, 0.396 + tall * 1.3], [-0.018, 0.408 + tall * 1.3], [-0.1, 0.392 + tall]] },
+    threeQuarter: { K: [-0.198, 0.236], C: [-0.02, 0.28], ends: [[0.15, 0.29], [0.142, 0.33 + tall], [0.104, 0.37 + tall], [0.034, 0.4 + tall], [-0.048, 0.408 + tall], [-0.128, 0.385 + tall]] },
+    back: { K: [0.0, 0.17], C: [0.0, 0.27], ends: [[0.192, 0.27], [0.17, 0.33], [0.105, 0.385 + tall], [0.0, 0.41 + tall], [-0.105, 0.385 + tall], [-0.17, 0.33], [-0.192, 0.27]] },
+  }[view];
+  const { K, C, ends } = cfg;
+  const ctrl = (e, k = 0.026) => { const m = [(K[0] + e[0]) / 2, (K[1] + e[1]) / 2]; const dx = m[0] - C[0], dy = m[1] - C[1], l = Math.hypot(dx, dy) || 1; return [m[0] + dx / l * k, m[1] + dy / l * k]; };
+  const draw = [];
+  // soft alternating wedges between folds (cloth layers), then the fold lines with a highlight lip
+  for (let i = 0; i + 1 < ends.length; i += 2) draw.push(F(smooth([[K[0], K[1], 0], ctrl(ends[i]), [ends[i][0], ends[i][1], 0.5], [ends[i + 1][0], ends[i + 1][1], 0.5], ctrl(ends[i + 1])], true), dk, { a: 0.75, blur: 0.005 }));
+  ends.forEach((e, i) => {
+    const c = ctrl(e);
+    draw.push(L(smooth([K, c, e], false), wl, 0.0042, { a: 0.78 }));
+    draw.push(L(smooth([[K[0] + 0.006, K[1] + 0.008], [c[0], c[1] + 0.007], [e[0] - 0.004, e[1] + 0.007]], false), hi, 0.0028, { a: i % 2 ? 0.55 : 0.35 }));
+  });
+  // brim: a narrow rolled edge along the lower boundary (not a stripe across the head)
+  if (lowerEdge) {
+    const up = lowerEdge.map(([x, y]) => [x - 0.004, y + 0.026]);
+    draw.push(F(smooth([...lowerEdge.map(([x, y]) => [x, y - 0.01]), ...up.slice().reverse()].map((p, i, a) => (i === 0 || i === a.length - 1 || i === lowerEdge.length - 1 || i === lowerEdge.length ? [p[0], p[1], 0.4] : p)), true), dk));
+    draw.push(L(smooth(up, false), wl, 0.0042, { a: 0.8 }), L(smooth(up.map(([x, y]) => [x, y + 0.006]), false), hi, 0.0028, { a: 0.5 }));
+  }
+  // knot (two lobes) + hanging tail
+  let knot, tail;
+  if (view === 'back') {
+    knot = { pts: [[0.0, 0.205], [0.035, 0.205], [0.058, 0.18], [0.05, 0.145], [0.018, 0.135], [0.0, 0.15, 0.6], [-0.018, 0.135], [-0.05, 0.145], [-0.058, 0.18], [-0.035, 0.205]],
+      lines: [[[0.0, 0.2], [0.004, 0.17], [0.0, 0.15]], [[0.04, 0.19], [0.03, 0.165], [0.012, 0.15]], [[-0.04, 0.19], [-0.03, 0.165], [-0.012, 0.15]]] };
+    tail = { pts: [[-0.03, 0.17], [0.03, 0.17], [0.04, 0.05], [0.05, -0.06], [0.064, -0.15, 0.6], [-0.032, -0.155, 0.6], [-0.04, -0.05], [-0.038, 0.06]], lines: [[[0.0, 0.15], [0.006, 0.02], [0.016, -0.13]], [[0.024, 0.12], [0.032, -0.02], [0.046, -0.13]]], fringe: [[-0.03, -0.152], [0.06, -0.15]] };
+  } else {
+    const dx = view === 'side' ? 0 : -0.006;
+    knot = { pts: [[-0.166 + dx, 0.262], [-0.19 + dx, 0.286], [-0.222 + dx, 0.278], [-0.24 + dx, 0.252], [-0.234 + dx, 0.222], [-0.212 + dx, 0.204], [-0.182 + dx, 0.21], [-0.165 + dx, 0.234]],
+      lines: [[[-0.2 + dx, 0.282], [-0.206 + dx, 0.246], [-0.196 + dx, 0.212]], [[-0.17 + dx, 0.25], [-0.2 + dx, 0.244], [-0.234 + dx, 0.238]]] };
+    tail = { pts: [[-0.208 + dx, 0.236], [-0.178 + dx, 0.228], [-0.17 + dx, 0.12], [-0.178 + dx, -0.02], [-0.194 + dx, -0.15, 0.6], [-0.242 + dx, -0.142, 0.6], [-0.24 + dx, -0.02], [-0.232 + dx, 0.12]],
+      lines: [[[-0.2 + dx, 0.2], [-0.205 + dx, 0.05], [-0.218 + dx, -0.12]], [[-0.185 + dx, 0.15], [-0.188 + dx, 0.0], [-0.2 + dx, -0.13]]], fringe: [[-0.242 + dx, -0.142], [-0.194 + dx, -0.15]] };
+  }
+  return { draw, knot, tail, wl, hi };
+}
+
 // ---------------------------------------------------------------- hair
 // returns parts on 'head' (caps) and on 'hairBack' (long hanging mass, deformable strip)
 export function hairParts(D, view) {
@@ -234,6 +299,13 @@ export function hairParts(D, view) {
   const S = (pts, w, a, col) => ({ pts, w, a, col });
   const cloth = ['wrap', 'turban', 'veil'].includes(st);
   const wc = D.wrap || '#d9c9a6', wl = ink(wc, 0.7);
+  const knotAndTail = (W, dens, tailLayer) => {
+    cap('wrapKnot', W.knot.pts, W.knot.lines.map((l) => S(l, 0.0038, 0.75, W.wl)), { fill: shade(wc, 0.96), layer: 30.7, bulge: 0.6, density: dens });
+    if (D.wrapTail) {
+      const fr = []; const [a, b] = W.tail.fringe; for (let i = 0; i <= 6; i++) { const x = a[0] + (b[0] - a[0]) * i / 6, y = a[1] + (b[1] - a[1]) * i / 6; fr.push(S([[x, y + 0.012], [x + 0.002, y + 0.002]], 0.0026, 0.7, W.wl)); }
+      cap('wrapTail', W.tail.pts, [...W.tail.lines.map((l) => S(l, 0.0036, 0.7, W.wl)), S(W.tail.lines[0].map(([x, y]) => [x + 0.008, y]), 0.0026, 0.45, W.hi), ...fr], { fill: shade(wc, 0.93), pivot: 'hairBack', layer: tailLayer, strip: { bend: 'tail', cols: 3, w0: 0.1 }, density: dens });
+    }
+  };
   if (view === 'side') {
     if (st === 'short' || st === 'modern') {
       const q = st === 'modern' ? 0.012 : 0;
@@ -248,9 +320,14 @@ export function hairParts(D, view) {
       // bald crown, a white fringe behind the ear, long thin hair falling to the shoulders
       const back = [[-0.035, 0.262], [-0.1, 0.27], [-0.162, 0.23], [-0.184, 0.14], [-0.184, 0.02], [-0.176, -0.12], [-0.16, -0.22], ...wavy(-0.16, -0.22, -0.035, -0.26, 7, 0.035, (D.seed || 1) + 4), [-0.035, -0.26], [-0.045, -0.12], [-0.04, 0.02], [-0.032, 0.12], [-0.034, 0.2]];
       cap('hairBack', back, [S([[-0.06, 0.25], [-0.15, 0.2], [-0.172, 0.04], [-0.15, -0.2]], 0.0034), S([[-0.07, 0.2], [-0.13, 0.14], [-0.14, -0.02], [-0.115, -0.22]], 0.003), S([[-0.05, 0.14], [-0.09, 0.06], [-0.095, -0.1], [-0.075, -0.23]], 0.003), S([[-0.165, 0.12], [-0.17, -0.06], [-0.145, -0.2]], 0.0026, 0.6), S([[-0.1, 0.24], [-0.16, 0.15], [-0.16, 0.0]], 0.0026, 0.5, shade(c, 1.04))],
-        { pivot: 'hairBack', layer: 29.5, strip: { bend: 'hair', cols: 4, w0: 0.3 } });
+        { pivot: 'hairBack', layer: 29.5, strip: { bend: 'hair', cols: 4, w0: 0.3 }, extraDraw: [
+          F(smooth([[-0.04, 0.24], [-0.06, 0.1], [-0.07, -0.08], [-0.06, -0.22], [-0.035, -0.24], [-0.03, 0.0], [-0.03, 0.2]], true), shade(c, 0.8), { a: 0.55, blur: 0.018 }),
+          F(ellipse(-0.1, 0.2, 0.06, 0.03), shade(c, 0.86), { a: 0.4, blur: 0.02 }),
+          L(smooth([[-0.12, 0.22], [-0.158, 0.1], [-0.162, -0.08], [-0.135, -0.24]], false), mixc(c, '#8f897f', 0.45), 0.0024, { a: 0.6 }),
+          L(smooth([[-0.085, 0.16], [-0.11, 0.0], [-0.1, -0.2]], false), mixc(c, '#8f897f', 0.45), 0.0024, { a: 0.55 }),
+          L(smooth([[-0.14, 0.17], [-0.18, 0.0], [-0.168, -0.16]], false), lift(c, 0.6), 0.0024, { a: 0.6 })] });
       // wispy strands over the bald top
-      cap('hairWisp', [[0.02, 0.352], [-0.04, 0.37], [-0.1, 0.35], [-0.14, 0.3], [-0.12, 0.31], [-0.07, 0.338], [-0.02, 0.348]], [S([[0.01, 0.356], [-0.06, 0.355], [-0.12, 0.318]], 0.0025, 0.7)], { layer: 29.6, bulge: 0.3 });
+      // (thin crown strands are drawn on the head itself — see headParts)
     } else if (st === 'curly') {
       const outer = [[0.13, 0.29], [0.13, 0.335], [0.1, 0.37], [0.06, 0.39], [0.015, 0.405], [-0.035, 0.405], [-0.085, 0.395], [-0.125, 0.37], [-0.16, 0.335], [-0.185, 0.29], [-0.195, 0.24], [-0.195, 0.185], [-0.188, 0.13], [-0.17, 0.08], [-0.14, 0.04], [-0.1, 0.03]];
       const pts = outer.map(([x, y], i) => [x, y, i % 2 ? 1.4 : 0.35]).concat([[-0.075, 0.08], [-0.05, 0.16], [-0.015, 0.21], [0.03, 0.2, 0.5], [0.04, 0.15, 0.4], [0.055, 0.15, 0.4], [0.065, 0.225], [0.095, 0.27]]);
@@ -267,15 +344,9 @@ export function hairParts(D, view) {
         cap('veil', pts, [S([[0.12, 0.32], [0.0, 0.36], [-0.14, 0.3], [-0.2, 0.14]], 0.004, 0.8, wl), S([[-0.06, 0.2], [-0.13, 0.05], [-0.16, -0.2]], 0.0038, 0.7, wl), S([[-0.13, 0.25], [-0.2, 0.05], [-0.21, -0.25]], 0.0038, 0.7, wl), S([[0.14, 0.285], [0.06, 0.24], [0.0, 0.14]], 0.006, 0.9, shade(wc, 0.86))], { fill: wc, pivot: 'hairBack', layer: 30, strip: { bend: 'hair', cols: 5, w0: 0.4 }, density: 'face' });
       } else {
         const pts = [[0.155, 0.268], [0.158, 0.31 + tall], [0.13, 0.36 + tall], [0.07, 0.398 + tall * 1.4], [-0.02, 0.41 + tall * 1.4], [-0.1, 0.395 + tall], [-0.165, 0.35], [-0.2, 0.27], [-0.205, 0.17], [-0.18, 0.08], [-0.14, 0.03, 0.6], [-0.09, 0.07], [-0.07, 0.15], [-0.04, 0.2], [0.03, 0.235], [0.1, 0.25]];
-        const draw = [F(smooth([[0.16, 0.255], [0.162, 0.3], [-0.08, 0.3], [-0.205, 0.22], [-0.205, 0.17], [-0.09, 0.24], [0.04, 0.25]], true), shade(wc, 0.86))];
-        const folds = [S([[0.15, 0.31], [0.04, 0.33], [-0.1, 0.3], [-0.19, 0.24]], 0.0042, 0.75, wl), S([[0.13, 0.355 + tall], [0.0, 0.37 + tall], [-0.13, 0.34], [-0.19, 0.27]], 0.004, 0.7, wl), S([[-0.15, 0.3], [-0.18, 0.18], [-0.15, 0.07]], 0.004, 0.6, wl)];
-        if (tall) folds.push(S([[0.1, 0.39 + tall], [-0.02, 0.405 + tall], [-0.12, 0.37]], 0.004, 0.7, wl));
-        cap('wrap', pts, folds, { fill: wc, extraDraw: draw.slice(1) });
-        P[P.length - 1].draw.splice(1, 0, draw[0]);
-        if (D.wrapTail) {
-          const t = [[-0.17, 0.25], [-0.12, 0.24], [-0.14, 0.05], [-0.17, -0.14], [-0.2, -0.13], [-0.215, 0.02], [-0.2, 0.17]];
-          cap('wrapTail', t, [S([[-0.16, 0.2], [-0.175, 0.0], [-0.19, -0.1]], 0.0035, 0.7, wl)], { fill: shade(wc, 0.93), pivot: 'hairBack', layer: 18, strip: { bend: 'tail', cols: 3, w0: 0.1 } });
-        }
+        const W = clothWrap('side', wc, tall, [[0.162, 0.268], [0.1, 0.25], [0.03, 0.235], [-0.04, 0.2], [-0.07, 0.15]]);
+        cap('wrap', pts, [], { fill: wc, extraDraw: W.draw, bulge: 0.8 });
+        knotAndTail(W, 'face', 18);
         if (D.hairUnder) cap('hairUnder', [[-0.14, 0.05], [-0.1, 0.07], [-0.07, 0.0], [-0.09, -0.08], [-0.13, -0.1], [-0.17, -0.04]], [S([[-0.12, 0.04], [-0.12, -0.06]], 0.003, 0.7)], { fill: D.hairUnder, layer: 27.6 });
       }
     }
@@ -308,7 +379,9 @@ export function hairParts(D, view) {
       } else {
         const tall = st === 'turban' ? 0.03 : 0;
         const pts = [[0.15, 0.255], [0.155, 0.31 + tall], [0.12, 0.36 + tall], [0.05, 0.4 + tall], [-0.04, 0.408 + tall], [-0.12, 0.385 + tall], [-0.175, 0.33], [-0.2, 0.25], [-0.2, 0.17], [-0.17, 0.14], [-0.15, 0.2], [-0.1, 0.25], [0.0, 0.27], [0.08, 0.262]];
-        cap('wrap', pts, [S([[0.14, 0.3], [0.02, 0.33], [-0.12, 0.31], [-0.19, 0.25]], 0.0042, 0.75, wl), S([[0.12, 0.35 + tall], [-0.02, 0.37 + tall], [-0.15, 0.34]], 0.004, 0.7, wl)], { fill: wc, density: 'face3', extraDraw: [F(smooth([[0.152, 0.255], [0.155, 0.29], [0.0, 0.305], [-0.2, 0.25], [-0.2, 0.21], [0.0, 0.27]], true), shade(wc, 0.86))] });
+        const W = clothWrap('threeQuarter', wc, tall, [[0.155, 0.256], [0.08, 0.263], [0.0, 0.27], [-0.1, 0.25], [-0.15, 0.2]]);
+        cap('wrap', pts, [], { fill: wc, density: 'face3', extraDraw: W.draw, bulge: 0.8 });
+        knotAndTail(W, 'face3', 18);
       }
     }
     if (D.headband) cap('headband', [[0.148, 0.258], [0.152, 0.286], [0.0, 0.31], [-0.14, 0.29], [-0.18, 0.25], [-0.17, 0.225], [-0.06, 0.27], [0.06, 0.272]], [], { fill: D.headband, layer: 30.5, density: 'face3', bulge: 0.5 });
@@ -318,15 +391,16 @@ export function hairParts(D, view) {
       const curly = st === 'curly';
       const half = curly ? [[0.0, 0.41], [0.07, 0.4, 0.35], [0.13, 0.37, 1.4], [0.175, 0.31, 0.35], [0.195, 0.24, 1.4], [0.19, 0.16, 0.35], [0.165, 0.09, 1.4], [0.12, 0.04, 0.4]] : [[0.0, 0.392], [0.09, 0.378], [0.152, 0.33], [0.178, 0.25], [0.175, 0.15], [0.15, 0.07], [0.11, 0.035, 0.6]];
       const pts = [...half, [0.0, 0.05], ...mirrorPts(half.slice().reverse())].slice(0, -1);
-      cap('hair', pts, [S([[0.0, 0.38], [0.01, 0.25], [0.0, 0.1]], 0.0035, 0.6), S([[0.1, 0.36], [0.13, 0.25], [0.11, 0.1]]), S([[-0.1, 0.36], [-0.13, 0.25], [-0.11, 0.1]])], { density: 'face3', layer: 30 });
       if (st === 'long') {
-        const back = [[0.0, 0.2], [0.14, 0.15], [0.16, 0.0], [0.15, -0.18], ...wavy(0.15, -0.18, -0.15, -0.18, 8, 0.025, (D.seed || 3) + 7), [-0.15, -0.18], [-0.16, 0.0], [-0.14, 0.15]];
-        cap('hairBack', back, [S([[0.08, 0.12], [0.09, -0.15]]), S([[-0.08, 0.12], [-0.09, -0.15]]), S([[0.0, 0.14], [0.0, -0.16]], 0.003, 0.6)], { pivot: 'hairBack', layer: 30.2, strip: { bend: 'hair', cols: 5, w0: 0.2 }, density: 'face3' });
-      }
+        const lh = [[0.0, 0.392], [0.09, 0.378], [0.152, 0.33], [0.18, 0.25], [0.184, 0.12], [0.176, -0.02], [0.162, -0.18]];
+        const pl = [...lh, ...wavy(0.162, -0.18, -0.162, -0.18, 8, 0.025, (D.seed || 3) + 7), ...mirrorPts(lh.slice(1).reverse())];
+        cap('hair', pl, [S([[0.0, 0.38], [0.01, 0.2], [0.0, -0.16]], 0.0035, 0.6), S([[0.1, 0.36], [0.13, 0.15], [0.1, -0.16]]), S([[-0.1, 0.36], [-0.13, 0.15], [-0.1, -0.16]]), S([[0.05, 0.37], [0.065, 0.1], [0.05, -0.17]], 0.003, 0.6), S([[-0.05, 0.37], [-0.065, 0.1], [-0.05, -0.17]], 0.003, 0.6)],
+          { density: 'face3', layer: 30, strip: { bend: 'hair', cols: 5, w0: 0.55 }, extraDraw: [F(ellipse(0, 0.06, 0.13, 0.06), shade(c, 0.85), { a: 0.35, blur: 0.03 })] });
+      } else cap('hair', pts, [S([[0.0, 0.38], [0.01, 0.25], [0.0, 0.1]], 0.0035, 0.6), S([[0.1, 0.36], [0.13, 0.25], [0.11, 0.1]]), S([[-0.1, 0.36], [-0.13, 0.25], [-0.11, 0.1]])], { density: 'face3', layer: 30 });
     } else if (st === 'oldLong' || st === 'bald') {
       const lng = st === 'oldLong';
       const pts = lng
-        ? [[0.0, 0.265], [0.1, 0.262], [0.16, 0.22], [0.175, 0.12], [0.168, -0.05], [0.15, -0.2], ...wavy(0.15, -0.2, -0.15, -0.2, 9, 0.03, (D.seed || 1) + 9), [-0.15, -0.2], [-0.168, -0.05], [-0.175, 0.12], [-0.16, 0.22], [-0.1, 0.262]]
+        ? [[0.0, 0.265], [0.1, 0.262], [0.16, 0.22], [0.175, 0.12], [0.16, -0.05], [0.13, -0.2], ...wavy(0.13, -0.2, -0.13, -0.2, 9, 0.03, (D.seed || 1) + 9), [-0.13, -0.2], [-0.16, -0.05], [-0.175, 0.12], [-0.16, 0.22], [-0.1, 0.262]]
         : [[0.0, 0.2], [0.1, 0.2], [0.16, 0.17], [0.17, 0.1], [0.12, 0.03], [0.0, 0.02], [-0.12, 0.03], [-0.17, 0.1], [-0.16, 0.17], [-0.1, 0.2]];
       cap(lng ? 'hairBack' : 'hair', pts, [S([[0.1, 0.24], [0.13, 0.05], [0.11, -0.18]], 0.0032), S([[-0.1, 0.24], [-0.13, 0.05], [-0.11, -0.18]], 0.0032), S([[0.03, 0.25], [0.04, 0.05], [0.03, -0.18]], 0.003), S([[-0.04, 0.25], [-0.05, 0.05], [-0.04, -0.18]], 0.003)], lng ? { pivot: 'hairBack', layer: 30.2, strip: { bend: 'hair', cols: 6, w0: 0.25 }, density: 'face3' } : { density: 'face3' });
     } else if (cloth) {
@@ -337,8 +411,9 @@ export function hairParts(D, view) {
         const tall = st === 'turban' ? 0.03 : 0;
         const half = [[0.0, 0.41 + tall], [0.1, 0.39 + tall], [0.17, 0.33], [0.2, 0.24], [0.19, 0.12], [0.15, 0.06, 0.6]];
         const pts = [...half, [0.0, 0.08], ...mirrorPts(half.slice().reverse())].slice(0, -1);
-        cap('wrap', pts, [S([[0.18, 0.28], [0.0, 0.3], [-0.18, 0.28]], 0.0042, 0.75, wl), S([[0.15, 0.35], [0.0, 0.38], [-0.15, 0.35]], 0.004, 0.7, wl), S([[0.1, 0.2], [0.0, 0.12], [-0.1, 0.2]], 0.004, 0.6, wl)], { fill: wc, density: 'face3', layer: 30 });
-        if (D.wrapTail) cap('wrapTail', [[0.0, 0.2], [0.05, 0.18], [0.06, 0.0], [0.07, -0.14], [-0.04, -0.15], [-0.05, 0.0], [-0.05, 0.18]], [S([[0.0, 0.15], [0.01, -0.12]], 0.0035, 0.6, wl)], { fill: shade(wc, 0.93), pivot: 'hairBack', layer: 30.3, strip: { bend: 'tail', cols: 3, w0: 0.1 }, density: 'face3' });
+        const W = clothWrap('back', wc, tall, null);
+        cap('wrap', pts, [], { fill: wc, density: 'face3', layer: 30, extraDraw: W.draw, bulge: 0.8 });
+        knotAndTail(W, 'face3', 30.3);
       }
     }
     if (D.headband && !cloth) cap('headband', [[0.17, 0.235], [0.172, 0.262], [0.0, 0.3], [-0.172, 0.262], [-0.17, 0.235], [0.0, 0.272]], [], { fill: D.headband, layer: 30.5, density: 'face3', bulge: 0.5 });
@@ -349,54 +424,94 @@ export function hairParts(D, view) {
 // ---------------------------------------------------------------- beards + moustaches (beard pivot on the head)
 // beard pivot sits at BEARD_PIV (head space); shapes are given in head space and shifted.
 export const BEARD_PIV = { side: [0.07, 0.06], threeQuarter: [0.03, 0.05], back: [0.0, 0.05] };
+// organic edge: points from a to b with gentle lock bumps (k: smoothing per point)
+const lockEdge = (a, b, n, amp, seed, out = 1) => {
+  const r = mulberry32(seed), pts = [];
+  for (let i = 1; i < n; i++) {
+    const t = i / n, nx = -(b[1] - a[1]), ny = b[0] - a[0], l = Math.hypot(nx, ny) || 1;
+    const bump = (i % 2 ? 1 : 0.25) * amp * (0.6 + 0.8 * r()) * out;
+    pts.push([a[0] + (b[0] - a[0]) * t + nx / l * bump, a[1] + (b[1] - a[1]) * t + ny / l * bump, i % 2 ? 1.1 : 0.7]);
+  }
+  return pts;
+};
 export function beardParts(D, view, beardLenBody = 0) {
   const st = D.beard || 'none';
   if (st === 'none' || st === 'stubble' || view === 'back') return [];
-  const c = D.beardColor || D.hairColor || '#33251b', ln = mixc(c, D.age > 0.5 ? '#8f897f' : '#000000', 0.3), hi = lift(c, 0.2);
+  const c = D.beardColor || D.hairColor || '#33251b', light = lum(c) > 0.55;
+  const ln = mixc(c, light ? '#857e74' : '#000000', light ? 0.42 : 0.3), hi = lift(c, light ? 0.6 : 0.22), sh = shade(c, light ? 0.8 : 0.75);
   const out = [];
   const piv = BEARD_PIV[view];
-  // length of the hanging part in head units
   const tipY = { short: -0.04, medium: -0.2, long: -0.42, knee: -(beardLenBody || 0.95) }[st] ?? -0.04;
   const seed = D.seed || 1;
-  let pts, strands = [];
+  const r = mulberry32(seed * 7 + 3);
+  let pts, strands = [], shadeEl = [];
+  const L0 = -tipY;
   if (view === 'side') {
-    const top = [[0.004, 0.18], [0.03, 0.15], [0.075, 0.118], [0.118, 0.1], [0.148, 0.084], [0.168, 0.058], [0.174, 0.03]];
-    const back = [[-0.016, 0.1], [-0.006, 0.03], [0.012, -0.02]];
-    if (st === 'short') pts = [...top, [0.166, -0.005], [0.14, -0.038], [0.095, -0.05], [0.045, -0.04], ...back.reverse(), [-0.012, 0.15]];
-    else {
-      const L = -tipY, wB = st === 'knee' ? 0.17 : 0.155;
-      const front = [[0.178, -0.02], [0.18, -0.02 - L * 0.18], [0.172, -0.02 - L * 0.42], [0.15, -0.02 - L * 0.68], [0.12, -0.02 - L * 0.86]];
-      const tip = wavy(0.115, tipY + 0.03, 0.055, tipY, 4, 0.018, seed + 11);
-      const rear = [[0.04, -0.02 - L * 0.86], [0.02, -0.02 - L * 0.62], [0.016, -0.02 - L * 0.36], [0.02, -0.02 - L * 0.12]];
-      pts = [...top, ...front, [0.115, tipY + 0.03, 0.6], ...tip, [0.055, tipY, 0.6], ...rear, [0.004, -0.01], [-0.016, 0.06], [-0.012, 0.13]];
-      for (let i = 0; i < 5; i++) {
-        const x0 = 0.05 + i * 0.026, sway = (i % 2 ? 1 : -1) * 0.008;
-        strands.push({ pts: [[x0, 0.06 - i * 0.01], [x0 + 0.01 + sway, -0.02 - L * 0.3], [x0 - 0.01 - sway, -0.02 - L * 0.6], [0.06 + i * 0.012, tipY + 0.05 + (i % 3) * 0.02]], w: 0.0034 - i * 0.0002, a: 0.8 });
+    const top = [[0.004, 0.18], [0.03, 0.15], [0.075, 0.118], [0.118, 0.1], [0.148, 0.084], [0.168, 0.058], [0.176, 0.03]];
+    if (st === 'short') {
+      pts = [...top, [0.17, -0.005], [0.15, -0.036], [0.12, -0.05, 0.8], [0.09, -0.044], [0.06, -0.05, 0.8], [0.035, -0.035], [0.012, -0.02], [-0.006, 0.03], [-0.016, 0.1], [-0.012, 0.15]];
+      for (let i = 0; i < 5; i++) { const x = 0.03 + i * 0.03; strands.push({ pts: [[x - 0.01, 0.08 - i * 0.008], [x, 0.02], [x + 0.004, -0.03]], w: 0.003, a: 0.7 }); }
+      shadeEl.push(F(smooth([[-0.01, 0.15], [0.03, 0.06], [0.04, -0.03], [0.0, -0.01], [-0.016, 0.08]], true), sh, { a: 0.5, blur: 0.012 }));
+    } else {
+      const yAt = (t) => -0.02 - L0 * t;
+      const fx = (t) => 0.18 - (st === 'knee' ? 0.095 : 0.07) * Math.pow(t, 1.3);
+      const rx = (t) => 0.018 + (st === 'knee' ? 0.05 : 0.03) * Math.pow(t, 1.15);
+      const tipF = [fx(0.92), yAt(0.92)], tipR = [rx(0.95) + 0.01, yAt(0.96)];
+      const front = [[0.18, -0.01], ...lockEdge([0.18, -0.02], tipF, 7, 0.006, seed + 21)];
+      const tip = wavy(tipF[0], tipF[1], tipR[0], tipY, 4, 0.02, seed + 11);
+      const rear = lockEdge([rx(0.95), yAt(0.95)], [0.016, -0.02], 6, 0.005, seed + 23);
+      pts = [...top, ...front, [tipF[0], tipF[1], 0.6], ...tip, [tipR[0], tipY, 0.6], ...rear, [0.006, -0.01], [-0.016, 0.06], [-0.012, 0.13]];
+      // 9 strand lines (s-curves) + short tip flicks + highlights
+      for (let i = 0; i < 9; i++) {
+        const u = (i + 0.5) / 9, x0 = lerp(0.03, 0.165, u), sway = (i % 2 ? 1 : -1) * 0.007, end = 0.55 + 0.4 * r();
+        const xe = lerp(rx(end), fx(end), 0.15 + 0.7 * u);
+        strands.push({ pts: [[x0, 0.07 - u * 0.05], [lerp(x0, xe, 0.35) + sway, yAt(end * 0.35)], [lerp(x0, xe, 0.7) - sway, yAt(end * 0.7)], [xe, yAt(end)]], w: 0.0026 + 0.0012 * r(), a: 0.55 + 0.3 * r() });
       }
-      strands.push({ pts: [[0.16, 0.0], [0.165, -0.02 - L * 0.3], [0.14, -0.02 - L * 0.7]], w: 0.003, a: 0.6, col: hi });
-      void wB;
+      for (let i = 0; i < 5; i++) { const u = 0.2 + i * 0.15, x = lerp(rx(0.85), fx(0.85), u); strands.push({ pts: [[x, yAt(0.8)], [x + 0.004, yAt(0.88)], [x - 0.002, yAt(0.96)]], w: 0.0024, a: 0.6 }); }
+      strands.push({ pts: [[0.165, 0.0], [0.17, yAt(0.3)], [0.15, yAt(0.62)], [0.13, yAt(0.82)]], w: 0.003, a: light ? 0.8 : 0.55, col: hi });
+      strands.push({ pts: [[0.12, 0.02], [0.125, yAt(0.25)], [0.11, yAt(0.5)]], w: 0.0026, a: light ? 0.7 : 0.45, col: hi });
+      // soft inner shade: along the throat side, under the moustache, toward the tip
+      shadeEl.push(F(smooth([[0.0, 0.14], [0.03, 0.05], [0.045, yAt(0.3)], [0.05, yAt(0.65)], [0.04, yAt(0.95)], [0.012, yAt(0.9)], [0.01, yAt(0.4)], [-0.014, 0.06]], true), sh, { a: 0.6, blur: 0.016 }));
+      shadeEl.push(F(ellipse(0.14, 0.035, 0.045, 0.022), sh, { a: 0.55, blur: 0.012 }));
+      shadeEl.push(F(ellipse(0.08, yAt(0.92), 0.06, L0 * 0.12), sh, { a: 0.35, blur: 0.03 }));
     }
     strands.push({ pts: [[0.02, 0.15], [0.05, 0.08], [0.06, 0.0]], w: 0.003, a: 0.7 }, { pts: [[0.07, 0.11], [0.1, 0.05], [0.11, -0.01]], w: 0.003, a: 0.7 });
   } else if (view === 'threeQuarter') {
-    const top = [[-0.135, 0.15], [-0.1, 0.08], [-0.04, 0.03], [0.04, 0.02], [0.1, 0.05], [0.138, 0.085], [0.146, 0.11], [0.15, 0.06]];
-    if (st === 'short') pts = [[-0.14, 0.19], [-0.128, 0.12], [-0.09, 0.03], [-0.02, -0.04], [0.06, -0.045], [0.12, 0.0], [0.15, 0.07], [0.14, 0.1], [0.1, 0.075], [0.04, 0.07], [-0.02, 0.09], [-0.08, 0.12], [-0.115, 0.18]];
-    else {
-      const L = -tipY;
-      pts = [[-0.14, 0.19], [-0.135, 0.1], [-0.12, -0.02 - L * 0.15], [-0.09, -0.02 - L * 0.45], [-0.03, -0.02 - L * 0.82], ...wavy(-0.03, tipY + 0.02, 0.07, tipY + 0.02, 4, 0.02, seed + 13), [0.07, tipY + 0.02], [0.12, -0.02 - L * 0.55], [0.15, -0.02 - L * 0.2], [0.155, 0.04], [0.146, 0.1], [0.1, 0.075], [0.04, 0.07], [-0.02, 0.09], [-0.08, 0.12], [-0.115, 0.18]];
-      for (let i = 0; i < 5; i++) { const x0 = -0.09 + i * 0.045; strands.push({ pts: [[x0, 0.04], [x0 + 0.01, -0.02 - L * 0.35], [x0 * 0.6 + 0.02, -0.02 - L * 0.7], [0.02 + i * 0.01, tipY + 0.05]], w: 0.0034, a: 0.8 }); }
+    if (st === 'short') {
+      pts = [[-0.14, 0.19], [-0.128, 0.12], [-0.09, 0.03], [-0.04, -0.03], [0.0, -0.05, 0.8], [0.06, -0.045], [0.12, 0.0], [0.15, 0.07], [0.14, 0.1], [0.1, 0.075], [0.04, 0.07], [-0.02, 0.09], [-0.08, 0.12], [-0.115, 0.18]];
+      for (let i = 0; i < 5; i++) { const x = -0.08 + i * 0.045; strands.push({ pts: [[x, 0.06], [x + 0.006, 0.01], [x + 0.004, -0.03]], w: 0.003, a: 0.7 }); }
+      shadeEl.push(F(smooth([[-0.14, 0.18], [-0.11, 0.05], [-0.05, -0.02], [-0.08, 0.05], [-0.11, 0.14]], true), sh, { a: 0.5, blur: 0.012 }));
+    } else {
+      const yAt = (t) => -0.02 - L0 * t;
+      const tp = st === 'knee' ? 0.6 : 0.42, lx = (t) => -0.135 + 0.29 * tp * 0.55 * Math.pow(t, 0.9), rxx = (t) => 0.155 - 0.29 * tp * 0.45 * Math.pow(t, 0.9);
+      pts = [[-0.14, 0.19], ...lockEdge([-0.135, 0.1], [lx(0.85), yAt(0.85)], 6, 0.006, seed + 31, -1), ...wavy(lx(0.88), yAt(0.9), rxx(0.88), yAt(0.9), 5, 0.02, seed + 13), ...lockEdge([rxx(0.85), yAt(0.85)], [0.155, 0.04], 6, 0.006, seed + 33, -1), [0.146, 0.1], [0.1, 0.075], [0.04, 0.07], [-0.02, 0.09], [-0.08, 0.12], [-0.115, 0.18]];
+      for (let i = 0; i < 9; i++) {
+        const u = (i + 0.5) / 9, x0 = lerp(-0.11, 0.13, u), end = 0.6 + 0.35 * r(), xe = lerp(lx(end), rxx(end), 0.1 + 0.8 * u), sway = (i % 2 ? 1 : -1) * 0.008;
+        strands.push({ pts: [[x0, 0.05], [lerp(x0, xe, 0.4) + sway, yAt(end * 0.4)], [lerp(x0, xe, 0.75) - sway, yAt(end * 0.75)], [xe, yAt(end)]], w: 0.0026 + 0.0012 * r(), a: 0.55 + 0.3 * r() });
+      }
+      strands.push({ pts: [[0.1, 0.03], [0.1, yAt(0.3)], [0.07, yAt(0.6)]], w: 0.003, a: light ? 0.75 : 0.5, col: hi });
+      shadeEl.push(F(smooth([[-0.14, 0.18], [-0.12, 0.0], [-0.1, yAt(0.4)], [-0.06, yAt(0.85)], [-0.08, yAt(0.4)], [-0.1, 0.05]], true), sh, { a: 0.6, blur: 0.016 }));
+      shadeEl.push(F(ellipse(0.09, 0.04, 0.06, 0.022), sh, { a: 0.5, blur: 0.012 }));
+      shadeEl.push(F(ellipse(0.0, yAt(0.9), 0.07, L0 * 0.12), sh, { a: 0.3, blur: 0.03 }));
     }
-    void top;
   }
   const shape = smooth(pts.map((p) => [p[0] - piv[0], p[1] - piv[1], p[2] ?? 1]), true);
-  const draw = [F(shape, c)];
+  const shiftEl = (e) => ({ ...e, d: shiftPath(e.d, -piv[0], -piv[1]) });
+  const draw = [F(shape, c), ...shadeEl.map(shiftEl)];
   for (const s of strands) draw.push(L(smooth(s.pts.map(([x, y]) => [x - piv[0], y - piv[1]]), false), s.col || ln, s.w, { a: s.a }));
   const long = st !== 'short';
   out.push({ id: 'beard', pivot: 'beard', layer: 32, density: long && st !== 'medium' ? 'beard' : 'face', bulge: 0.7, prof: 1.4, shape, draw, shadow: true, ...(long ? { strip: { bend: 'beard', cols: 5, w0: 0.16 } } : {}) });
-  // moustache (on the head)
+  // moustache (on the head): droops from under the nose down into the beard
   let mp;
-  if (view === 'side') mp = D.age > 0.6 ? [[0.19, 0.112], [0.196, 0.098], [0.186, 0.078], [0.168, 0.056], [0.15, 0.04], [0.135, 0.045], [0.142, 0.07], [0.15, 0.09], [0.168, 0.105]] : [[0.188, 0.112], [0.193, 0.1], [0.18, 0.08], [0.155, 0.066], [0.128, 0.068], [0.12, 0.08], [0.14, 0.092], [0.165, 0.106]];
-  else mp = [[0.152, 0.118], [0.155, 0.098], [0.13, 0.075], [0.095, 0.07, 0.6], [0.06, 0.068, 0.6], [0.035, 0.08], [0.06, 0.096], [0.1, 0.104], [0.13, 0.112]];
+  if (view === 'side') {
+    mp = D.age > 0.6
+      ? [[0.166, 0.116], [0.178, 0.108], [0.182, 0.09], [0.178, 0.068], [0.168, 0.046, 0.8], [0.156, 0.03, 0.5], [0.148, 0.046], [0.138, 0.068], [0.128, 0.088], [0.146, 0.106]]
+      : [[0.166, 0.116], [0.178, 0.106], [0.181, 0.09], [0.174, 0.072, 0.8], [0.16, 0.06, 0.5], [0.146, 0.068], [0.132, 0.086], [0.148, 0.106]];
+  } else mp = [[0.152, 0.118], [0.157, 0.098], [0.142, 0.07, 0.8], [0.12, 0.052, 0.5], [0.098, 0.064], [0.07, 0.066, 0.6], [0.042, 0.06, 0.5], [0.03, 0.076], [0.06, 0.094], [0.1, 0.104], [0.13, 0.112]];
   const ms = smooth(mp, true);
-  out.push({ id: 'moustache', pivot: 'head', layer: 34, density: 'face', bulge: 0.6, shape: ms, draw: [F(ms, c), L(smooth(mp.slice(1, 5), false), ln, 0.003, { a: 0.7 }), L(smooth(mp.slice(2, 5).map(([x, y]) => [x, y + 0.008]), false), hi, 0.0025, { a: 0.5 })] });
+  const mDraw = [F(ms, c), F(ellipse(view === 'side' ? 0.16 : 0.09, 0.07, 0.03, 0.014), sh, { a: 0.45, blur: 0.01 })];
+  if (view === 'side') mDraw.push(L(smooth([[0.17, 0.106], [0.174, 0.084], [0.166, 0.056]], false), ln, 0.0028, { a: 0.75 }), L(smooth([[0.156, 0.1], [0.16, 0.078], [0.154, 0.05]], false), ln, 0.0026, { a: 0.65 }), L(smooth([[0.142, 0.09], [0.144, 0.072]], false), ln, 0.0024, { a: 0.55 }), L(smooth([[0.176, 0.1], [0.178, 0.084]], false), hi, 0.0024, { a: 0.6 }));
+  else mDraw.push(L(smooth([[0.145, 0.104], [0.13, 0.082], [0.11, 0.066]], false), ln, 0.0028, { a: 0.75 }), L(smooth([[0.1, 0.094], [0.085, 0.076], [0.07, 0.07]], false), ln, 0.0026, { a: 0.65 }), L(smooth([[0.13, 0.11], [0.12, 0.096]], false), hi, 0.0024, { a: 0.6 }));
+  out.push({ id: 'moustache', pivot: 'head', layer: 34, density: 'face', bulge: 0.6, shape: ms, draw: mDraw });
   return out;
 }

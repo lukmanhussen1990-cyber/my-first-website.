@@ -3,6 +3,7 @@
 //   fog.density / fog.height / fog.base / fog.sun / fog.max / fog.hcolor  -> exponential height fog (post)
 //   sky.clouds / sky.storm / sky.crack                                    -> sky.js cloud layer, storm decks, lightning
 //   post.ao, post.godrays{}, post.tonemap 'aces'|'agx', post.gLift/gGamma/gGain, post.split*, post.aa, post.supersample
+//   rain{} / wet / wetSheen                                               -> rain.js streaks, sheets, splashes, wet materials
 // MOODS holds per-scene presets (merge them: mood(t) { return merge(MOODS.nightLamp, { ... }) }).
 import { DEFAULT_POST } from './post.js';
 import * as THREE from 'three';
@@ -19,6 +20,11 @@ export const BASE = {
   fog: { color: '#e6d6b0', near: 60, far: 420, density: 0, height: 8, base: 0, sun: 0.35, max: 0.92 },
   char: '#ffffff', ao: 0.18,
   point: null, spot: null, shadow: { size: null }, wind: 1,
+  // rain.js (engine-level): k 0 = off .. 1 = sheets (use rainRamp); wind [x,z] m/s slant; sheets 0..1 far curtains;
+  // splash 0..1 ground crowns (near shots); groundY set-local ground height for streaks/splashes (or give the set heightAt(x,z))
+  rain: { k: 0, wind: [1.2, 0.3], speed: 9, len: 0.5, width: 0.009, alpha: 0.3, color: '#c4ccd6', far: 70, sheets: 0, sheetColor: null, splash: 1, groundY: 0 },
+  // wet ground: 0..1 darkens + sheen on materials patched with rain.js wetten(); wetSheen defaults to sky.horizon
+  wet: 0, wetSheen: null,
   post: { ...DEFAULT_POST },
 };
 

@@ -159,7 +159,10 @@ void main(){
 #endif
 #ifdef CA
   vec2 dq = (vUv - 0.5) * ca * dot(vUv - 0.5, vUv - 0.5) * 4.0;
-  vec3 sharp = vec3(texture2D(tScene, vUv + dq).r, SCENE_C.g, texture2D(tScene, vUv - dq).b);
+  vec3 sharp;
+  vec2 dqp = dq * vec2(1080.0, 1920.0);
+  if (dot(dqp, dqp) < 0.09) sharp = SCENE_C.rgb;              // < 0.3 px shift: skip the two extra taps
+  else sharp = vec3(texture2D(tScene, vUv + dq).r, SCENE_C.g, texture2D(tScene, vUv - dq).b);
 #else
   vec3 sharp = SCENE_C.rgb;
 #endif

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { Post } from './post.js';
 import { makeSky } from './fx.js';
 import { makeSkyFx } from './sky.js';
+import { makeRainFx, WET } from './rain.js';
 import { U } from './materials.js';
 import { resolve, merge } from './moods.js';
 import { cameraShot, layersAt, SHOT_SET, SETS, blockingOf } from '../lib/director.js';
@@ -22,6 +23,7 @@ export class World {
     this.camera = new THREE.PerspectiveCamera(24, W / H, 0.1, 1600);
     this.sky = makeSky(); scene.add(this.sky);
     this.skyFx = makeSkyFx(); scene.add(this.skyFx.group);
+    this.rainFx = makeRainFx(); scene.add(this.rainFx.group);
     const sun = this.sun = new THREE.DirectionalLight('#ffffff', 2.5);
     sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 220;
@@ -65,6 +67,11 @@ export class World {
       u.top.value.lerp(this._c.set(C.skyColor ?? '#c9d2e0'), Math.min(1, E.flash * 0.6));
       u.horizon.value.lerp(this._c.set(C.skyColor ?? '#c9d2e0'), Math.min(1, E.flash * 0.35));
     }
+    // rain (streaks / far sheets / splashes) + wet ground (mood.rain, mood.wet); splashes follow set.heightAt(x, z) if the set has one
+    WET.uWet.value = M.wet ?? 0; WET.uWetSheen.value.set(M.wetSheen ?? S.horizon);
+    const cs = this._curSet;
+    const hf = cs && cs.heightAt ? (x, z) => cs.heightAt(x - o[0], z - o[2]) + o[1] : null;
+    this.rainFx.set(U.uTime.value, M.rain, this.camera, c, o, hf, E.flash);
     // sun + shadow box centred on what the camera looks at
     const look = this._v.set(...c.look); look.y = M.shadow.y ?? 0;
     const dir = new THREE.Vector3(...M.sunDir).normalize();
@@ -99,6 +106,7 @@ export class World {
   renderShot(shot, t, target, frame, camOverride = null) {
     const set = this.sets[SHOT_SET[shot.id]];
     for (const s of Object.values(this.sets)) s.group.visible = s === set;
+    this._curSet = set;
     if (!set) { this.gl.setRenderTarget(target); this.gl.clear(); return; }
     const c0 = camOverride ? { ...cameraShot(this.plan, shot, t), ...camOverride, mblur: 0 } : cameraShot(this.plan, shot, t);
     const n = c0.mblur > 1 ? c0.mblur : 1;
@@ -137,7 +145,7 @@ export class World {
     const post = this.post, o = SETS[set.name];
     const draw = () => { this.setCamera(c); U.uTime.value = t; const M = resolve(set.mood(t, shot, c)); this.applyMood(M, c, o); set.update(t, this.camera, shot, c, M); return M; };
     const res = new Map(); const rec = (k, v) => { if (!res.has(k)) res.set(k, []); res.get(k).push(v); };
-    const sceneCfgs = B.scene || [{ name: 'msaa4' }, { name: 'msaa0', msaa: 0 }, { name: 'noShadow', noShadow: 1 }, { name: 'noSky', noSky: 1 }, { name: 'ss1.5', ss: 1.5 }];
+    const sceneCfgs = B.scene || [{ name: 'msaa4' }, { name: 'msaa2', msaa: 2 }, { name: 'msaa0', msaa: 0 }, { name: 'noShadow', noShadow: 1 }, { name: 'noSky', noSky: 1 }, { name: 'ss1.5', ss: 1.5 }];
     const postCfgs = B.post || [{ name: 'default', post: {} }];
     for (let r = 0; r < (B.reps || 3); r++) {
       for (const S of sceneCfgs) {
@@ -155,7 +163,8 @@ export class World {
       }
     }
     post.prof = null;
-    console.log(`[bench] f${frame} reps ${B.reps || 3} (min ms):\n` + [...res].map(([k, v]) => `  ${k.padEnd(28)} ${Math.min(...v).toFixed(1)}`).join('\n'));
+    console.log(`[bench] f${frame} ${shot.id} reps ${B.reps || 3} (min ms)`);
+    for (const [k, v] of res) console.log(`[bench]   ${k.padEnd(26)} ${Math.min(...v).toFixed(1)}`);
   }
 
   render(frame, camOverride = null) {

@@ -81,14 +81,16 @@ function buildAll(ctx, root) {
     },
   };
 }
+const NO = ['AO', 'RAYS', 'FOG'];   // features measured separately
 const LAB_BENCH = {
   reps: 3,
   post: [
-    { name: 'bare', post: { aa: 'none', strip: ALL } }, { name: 'none', post: { aa: 'none' } }, { name: 'none-noCA', post: { aa: 'none', ca: 0 } },
-    { name: 'fxaa', post: { aa: 'fxaa' } }, { name: 'smaaLow', post: { aa: 'smaa', smaaPreset: 'low' } }, { name: 'smaa', post: { aa: 'smaa' } },
-    { name: 'ao', post: { aa: 'none', ao: 0.6 } }, { name: 'rays', post: { aa: 'none', godrays: { strength: 0.8, pos: [0, 8, -60] } } },
-    { name: 'fog', post: { aa: 'none' }, fog: { density: 0.02, height: 6 } }, { name: 'agx', post: { aa: 'none', tonemap: 'agx' } },
-    { name: 'dof', post: { aa: 'none', dof: 0.5, focus: 9 } },
+    { name: 'bare', post: { aa: 'none', strip: [...ALL, ...NO] } }, { name: 'none', post: { aa: 'none', strip: NO } }, { name: 'none-noCA', post: { aa: 'none', ca: 0, strip: NO } },
+    { name: 'fxaa', post: { aa: 'fxaa', strip: NO } }, { name: 'smaaLow', post: { aa: 'smaa', smaaPreset: 'low', strip: NO } }, { name: 'smaa', post: { aa: 'smaa', strip: NO } },
+    { name: 'smaaHigh', post: { aa: 'smaa', smaaPreset: 'high', strip: NO } },
+    { name: 'ao', post: { aa: 'none', ao: 0.6, strip: ['RAYS', 'FOG'] } }, { name: 'rays', post: { aa: 'none', godrays: { strength: 0.8, pos: [0, 8, -60] }, strip: ['AO', 'FOG'] } },
+    { name: 'fog', post: { aa: 'none', strip: ['AO', 'RAYS'] }, fog: { density: 0.02, height: 6 } }, { name: 'agx', post: { aa: 'none', tonemap: 'agx', strip: NO } },
+    { name: 'dof', post: { aa: 'none', dof: 0.5, focus: 9, strip: NO } },
   ],
 };
 

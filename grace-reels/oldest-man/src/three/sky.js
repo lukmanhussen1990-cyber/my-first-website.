@@ -61,7 +61,7 @@ export function makeCloudLayer({ n = 48, variants = 6, seed = 11 } = {}) {
       uFlashCol: { value: new THREE.Color(0, 0, 0) }, uFlashPos: { value: new THREE.Vector3() }, uFlash: { value: 0 } },
   });
   const g = new THREE.Group(); const list = [];
-  for (let i = 0; i < n; i++) { const m = new THREE.Mesh(geos[i % variants], mat); m.frustumCulled = false; m.renderOrder = -5; g.add(m); list.push(m); }
+  for (let i = 0; i < n; i++) { const m = new THREE.Mesh(geos[i % variants], mat); m.frustumCulled = false; m.renderOrder = 995; g.add(m); list.push(m); }  // after the world (early-z), before the dome
   // order in which clouds appear as coverage grows
   const order = list.map((_, i) => i).sort((a, b) => hash01(a, seed + 5) - hash01(b, seed + 5));
   const rank = new Array(n); order.forEach((i, r) => { rank[i] = r; });
@@ -125,7 +125,7 @@ export function makeStormDecks({ layers = 3, size = 1800, seg = 64, seed = 4 } =
         uDark: { value: new THREE.Color('#2b3038') }, uLit: { value: new THREE.Color('#5d6670') }, uHorizon: { value: new THREE.Color('#6b6f74') }, uCam: { value: new THREE.Vector3() },
         uOpen: { value: 0 }, uFar: { value: 700 }, uFlashCol: { value: new THREE.Color(0, 0, 0) }, uFlashPos: { value: new THREE.Vector3() }, uFlash: { value: 0 } },
     });
-    const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; m.renderOrder = -6 + i; g.add(m); decks.push(m);
+    const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; m.renderOrder = 990 + i; g.add(m); decks.push(m);
   }
   return {
     group: g,

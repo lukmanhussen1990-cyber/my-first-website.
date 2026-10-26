@@ -17,7 +17,7 @@ const DEFAULTS = {
   brows: 'normal', browColor: null, eyeColor: null, nose: 1, noseDroop: 0, jaw: 1, chin: 1, crown: 1, browRidge: 0, headSize: 1,
   shawl: null, patches: null, patchColors: null, worn: false, headband: null, bracelet: null, satchel: null, strap: null, apron: null, tool: false,
   feet: null, jeans: false, longSleeve: false, sleeveStyle: 'fitted', hunch: 0, belly: 0, lashes: false, stubble: null, hairUnder: null,
-  quality: 'main', kind: 'person', beardLen: null, glove: null, shoeAccent: null, soleStripe: null, handK: 1, neckW: null,
+  quality: 'main', kind: 'person', beardLen: null, gaunt: 0, glove: null, shoeAccent: null, soleStripe: null, handK: 1, neckW: null,
 };
 
 export function normalize(o0 = {}) {
@@ -46,7 +46,9 @@ function dims(o) {
   return d;
 }
 
-const deepKey = (o) => JSON.stringify(Object.keys(o).sort().filter((k) => !['height', 'silhouette', 'noShadow', 'prop', 'props'].includes(k)).map((k) => [k, o[k]]));
+// options that do not change the drawing (so every view / instance of a design shares one atlas)
+const NON_VISUAL = ['height', 'silhouette', 'noShadow', 'prop', 'props', 'view', 'name', 'layerBase', 'outlinePx', 'blobOpacity', 'noBlob'];
+const deepKey = (o) => JSON.stringify(Object.keys(o).sort().filter((k) => !NON_VISUAL.includes(k)).map((k) => [k, o[k]]));
 
 // part classes -> concrete layer/pivot defaults, per view
 function limbSet(D, view, L) {
@@ -116,10 +118,10 @@ export function makeDesign(opts) {
     const P = {};
     const eye = view === 'side' ? EYE.side : EYE.near;
     if (view === 'side') {
-      Object.assign(P, { 'legB.hip': [-0.045 * b, D.hipY], 'legF.hip': [0.035 * b, D.hipY], 'armB.sh': [-0.03 * b, sy - 0.03], 'armF.sh': [0.02 * b, sy - 0.03], neck: [0.008 + hunchFwd, D.neckY], cradle: [0.21 * b, 0.27], satchel: [0, 0] });
+      Object.assign(P, { 'legB.hip': [-0.045 * b, D.hipY], 'legF.hip': [0.035 * b, D.hipY], 'armB.sh': [-0.03 * b, sy - 0.03], 'armF.sh': [0.02 * b, sy - 0.03], neck: [0.008 + hunchFwd, D.neckY], cradle: [0.2 * b, 0.335], satchel: [0, 0] });
       P.mouth = [0.152 * hs, 0.069 * hs]; P.browN = [eye.E[0] * hs, (eye.E[1] + 0.046) * hs];
     } else if (view === 'threeQuarter') {
-      Object.assign(P, { 'legB.hip': [0.06 * b, D.hipY], 'legF.hip': [-0.055 * b, D.hipY], 'armB.sh': [0.155 * b, sy - 0.035], 'armF.sh': [-0.175 * b, sy - 0.035], neck: [0.0 + hunchFwd * 0.6, D.neckY], cradle: [0.12 * b, 0.27] });
+      Object.assign(P, { 'legB.hip': [0.06 * b, D.hipY], 'legF.hip': [-0.055 * b, D.hipY], 'armB.sh': [0.155 * b, sy - 0.035], 'armF.sh': [-0.175 * b, sy - 0.035], neck: [0.0 + hunchFwd * 0.6, D.neckY], cradle: [0.1 * b, 0.335] });
       P.mouth = [0.1 * hs, 0.068 * hs]; P.browN = [EYE.near.E[0] * hs, (EYE.near.E[1] + 0.044) * hs]; P.browF = [EYE.far.E[0] * hs, (EYE.far.E[1] + 0.042) * hs];
       P.eyeF = [EYE.far.E[0] * hs, EYE.far.E[1] * hs];
     } else {

@@ -41,7 +41,9 @@ export function makeSky() {
         gl_FragColor = vec4(c, 1.0); }`,
   });
   const m = new THREE.Mesh(new THREE.SphereGeometry(900, 48, 24), mat);
-  m.renderOrder = -10; m.frustumCulled = false;
+  // drawn LAST among opaque objects (depth-tested, never writes depth): early-z skips every pixel the world
+  // already covers, so the gradient/stars shader only runs where the sky is actually visible (~130 ms -> a fraction)
+  m.renderOrder = 1000; m.frustumCulled = false;
   return m;
 }
 

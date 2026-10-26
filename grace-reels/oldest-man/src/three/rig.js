@@ -304,7 +304,7 @@ export class Person {
     if (this.held && this.held !== other) this.release();
     if (!other) return null;
     this.held = other; other.holder = this;
-    other.root.position.set(0, 0, 0); other.root.scale.setScalar(1 / this.scale);
+    other.root.position.set(0, 0, 0); other.root.scale.set(-1 / this.scale, 1 / this.scale, 1 / this.scale);
     other.bb.rotation.set(0, 0, 0);
     other.uni.uLayerBase.value = (this.kind === 'baby' ? 0 : 23);
     if (other.blob) other.blob.visible = false;
@@ -457,7 +457,8 @@ export class Person {
     this._toggle(R, 'handB', P.handB || (P.propHand === 'B' ? grip : 'open'));
     J.cradle.rotation.z = P.cradleRot || 0;
     // hanging parts: gravity compensation (they hang from a leaning torso / tilted head) + follow-through
-    const tilt = -(P.lean || 0) + ht + (P.headRot || 0) + (P.neckRot || 0);
+    const vk = v === 'back' ? 0 : v === 'threeQuarter' ? 0.85 : 1;
+    const tilt = (-(P.lean || 0) + ht + (P.headRot || 0) + (P.neckRot || 0)) * vk;
     const wind = P.wind ?? 0.4, ph = P.swayPh ?? 0;
     for (const s of R.strips) {
       if (s.bend === 'beard') {
@@ -468,9 +469,9 @@ export class Person {
         bend(s.geo, clamp(-tilt * 0.35 + (P.hairRot || 0) * 0.6, -1, 1), 0, 0.015 * wind, ph * 1.1 + 1.3, 0, 0, 4);
       } else if (s.bend === 'robe') {
         const hr = clamp(P.hemRot || 0, -0.4, 0.4);
-        bend(s.geo, clamp((P.lean || 0) * 0.55 + hr * 0.7, -0.6, 0.6), 0, 0.006 * wind, ph + 2.1, Math.abs(hr) * 0.35 + (P.hemFlare || 0), 0, 5);
+        bend(s.geo, clamp((P.lean || 0) * 0.55 * vk + hr * 0.7, -0.6, 0.6), 0, 0.006 * wind, ph + 2.1, Math.abs(hr) * 0.35 + (P.hemFlare || 0), 0, 5);
       } else if (s.bend === 'shawl') {
-        bend(s.geo, clamp((P.lean || 0) * 0.4 + (P.hemRot || 0) * 0.5 + (P.shawlRot || 0), -0.6, 0.6), 0, 0.01 * wind, ph + 0.7, 0, 0, 5);
+        bend(s.geo, clamp((P.lean || 0) * 0.4 * vk + (P.hemRot || 0) * 0.5 + (P.shawlRot || 0), -0.6, 0.6), 0, 0.01 * wind, ph + 0.7, 0, 0, 5);
       } else if (s.bend === 'tail') {
         J.hairBack.rotation.z = clamp(-tilt * 0.5 + clamp((P.tailRot || 0) - 0.08, -0.9, 0.6), -1.2, 1.2);
         bend(s.geo, clamp((P.tailRot || 0) * 0.6, -1, 1), 0, 0.04 * wind, ph * 1.6, 0, 0, 5);
@@ -481,20 +482,23 @@ export class Person {
       if ((P.propHand === 'B') !== (this.prop.parent === J['armB.hand'])) this._mountProp();
       const A = P.propHand === 'B' ? aB : aF;
       const k = v === 'back' ? 0 : v === 'threeQuarter' ? 0.85 : 1;
-      if (P.propUp != null) this.prop.rotation.z = P.propUp - (-(P.lean || 0) + (A[0] + A[1]) * k + (A[2] || 0));
+      const upright = this.propKind === 'cane' || this.propKind === 'staff';
+      const up = P.propUp ?? (upright && P.propRot == null ? 0.05 + 0.12 * A[0] : null);
+      if (up != null) this.prop.rotation.z = up - (-(P.lean || 0) + (A[0] + A[1]) * k + (A[2] || 0));
       else this.prop.rotation.z = P.propRot ?? 0;
       const inner = this.prop.userData.inner;
       inner.scale.y = 1;
-      if (P.plant && this.prop.userData.meta.tip) {
+      const plant = P.plant ?? (upright ? 'clamp' : false);
+      if (plant && this.prop.userData.meta.tip) {
         this.root.updateMatrixWorld(true);
         const tipL = this.prop.userData.meta.tip;
         const top = inner.localToWorld(_v1.set(0, 0, 0)), tip = inner.localToWorld(_v2.set(tipL[0], tipL[1], 0));
         const gy = this.root.getWorldPosition(_v3).y;
         const len = top.y - tip.y;
-        if (len > 1e-3) inner.scale.y = clamp((top.y - gy) / len, 0.6, 1.5);
+        if (len > 1e-3) inner.scale.y = plant === 'clamp' ? clamp((top.y - gy) / len, 0.3, 1) : clamp((top.y - gy) / len, 0.6, 1.5);
       }
     }
-    if (this.held) this.held.pose(P.baby || Poses.baby(P.t ?? 0, this.held.seed, P.babyAwake));
+    if (this.held) { this.held.root.visible = v !== 'back'; this.held.pose(P.baby || Poses.baby(P.t ?? 0, this.held.seed, P.babyAwake)); }
   }
   _toggle(R, grp, val) {
     const t = R.toggles[grp]; if (!t) return;
@@ -741,7 +745,7 @@ export const Poses = {
   holdBaby(t, s = 1, rockK = 1) {
     const P = Poses.idle(t, s); const ph = hash01(s, 6) * TAU;
     const rock = Math.sin(TAU * t * 0.42 + ph) * rockK;
-    P.aF = [0.62 + 0.04 * rock, 1.72 - 0.03 * rock, 0.12]; P.aB = [0.5 + 0.03 * rock, 1.85, 0.1];
+    P.aF = [0.5 + 0.04 * rock, 1.25 - 0.03 * rock, 0.25]; P.aB = [0.42 + 0.03 * rock, 1.45, 0.2];
     P.handF = 'open'; P.handB = 'open';
     P.lean = 0.05 + 0.025 * rock; P.dx = 0.01 * rock;
     P.cradleRot = 0.07 * rock;
@@ -760,7 +764,7 @@ export const Poses = {
     else if (u < 0.6) { const k = (u - 0.5) / 0.1; const e = k * k; arm = lerp(2.55, 0.6, e); el = lerp(1.35, 0.15, e); lean = lerp(-0.05, 0.2, e); hand = lerp(0.6, -0.35, e); }
     else if (u < 0.68) { const k = (u - 0.6) / 0.08; arm = 0.6 + 0.12 * Math.sin(Math.PI * k); el = 0.15 + 0.1 * Math.sin(Math.PI * k); lean = 0.2; hand = -0.35 + 0.15 * Math.sin(Math.PI * k); }
     else { const k = smooth((u - 0.68) / 0.32); arm = lerp(0.6, 0.85, k); el = lerp(0.15, 0.75, k); lean = lerp(0.2, 0.12, k); hand = lerp(-0.35, 0.1, k); }
-    P.aF = [arm, el, hand]; P.aB = [0.75, 1.0, 0.0]; P.handB = 'grip';
+    P.aF = [arm, el, hand]; P.aB = [0.5, 1.15, 0.0]; P.handB = 'grip';
     P.lean = lean; P.bob = u > 0.58 && u < 0.7 ? -0.012 * Math.sin(Math.PI * (u - 0.58) / 0.12) : 0;
     P.lF = [0.25, -0.12]; P.lB = [-0.22, -0.04];
     P.headTilt = -0.12; P.lookY = -0.6;
