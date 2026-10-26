@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cover image 1080x1920: a clean 3D still of the frozen face in the ice + big title text.
 
-  node tools/render.js --stills 54.0 --names cover_bg --noov --out frames/cover   (render the background first)
+  node tools/render.js --stills 53.8 --names cover_bg --noov --out frames/cover --scale 1   (render the background first)
   python3 tools/cover.py                                                          -> final/cover.png
 """
 import os
@@ -37,27 +37,27 @@ def text_layer(size, lines):
 
 def main():
     bg = Image.open(BG).convert('RGBA').resize((1080, 1920), Image.LANCZOS)
-    # darken the top and bottom so the title reads
+    # darken the forehead and the beard so the title reads; the eyes (y ~600-820) stay clear
     grad = Image.new('L', (1, 1920))
     for y in range(1920):
         v = 0
-        if y < 700:
-            v = int(170 * (1 - y / 700) ** 1.4)
-        if y > 1500:
-            v = int(150 * ((y - 1500) / 420) ** 1.5)
+        if y < 640:
+            v = int(185 * (1 - y / 640) ** 1.1)
+        if y > 1150:
+            v = int(200 * min(1, (y - 1150) / 420) ** 1.3)
         grad.putpixel((0, y), v)
     shade = Image.new('RGBA', (1080, 1920), (0, 4, 12, 255))
     shade.putalpha(grad.resize((1080, 1920)))
     img = Image.alpha_composite(bg, shade)
     title = text_layer((1080, 1920), [
-        ("HE WASN'T", 108, (255, 255, 255), 400),
-        ('ALONE', 196, RED, 545),
-        ('DOWN THERE', 108, (255, 255, 255), 690),
+        ("HE WASN'T", 104, (255, 255, 255), 330),
+        ('ALONE', 190, RED, 470),
+        ('DOWN THERE', 104, (255, 255, 255), 1350),
     ])
     img = Image.alpha_composite(img, title)
     d = ImageDraw.Draw(img)
     f = ImageFont.truetype(XB, 30)
-    d.text((60, 1385), '@garden_reels', font=f, fill=(255, 255, 255, 170), anchor='lm')
+    d.text((60, 1440), '@garden_reels', font=f, fill=(255, 255, 255, 170), anchor='lm')
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     img.convert('RGB').save(OUT, quality=95)
     print('->', os.path.relpath(OUT, ROOT))
