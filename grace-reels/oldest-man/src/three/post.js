@@ -104,6 +104,9 @@ void main(){ vec2 delta = (lp - vUv) * len / ${RAY_N}.0; vec2 uv = vUv; float w 
   gl_FragColor = vec4(vec3(acc / ws), 1.0); }`;
 
 // ---------- composite (HDR -> display) ----------
+// Compiled per feature set (#defines), so a shot only pays for the features its mood uses; full-res 1:1 reads
+// use texelFetch (no filtering) when the scene is not supersampled. Defines: SS1 CA BLUR DOF AO FOG RAYS BLOOM
+// TM (0 ACES, 1 AgX, 2 soft roll-off mixed with ACES) HAZE LGG SPLIT FLASH VIG FADE GRAIN.
 const COMPOSITE = `
 uniform sampler2D tScene; uniform sampler2D tBlur; uniform sampler2D tBlur2; uniform sampler2D tBloom; uniform sampler2D tDepth;
 uniform sampler2D tAO; uniform sampler2D tRays;
@@ -112,13 +115,11 @@ uniform float tiltTop; uniform float tiltBottom; uniform float tilt;
 uniform float bloom; uniform vec3 hazeColor; uniform float haze;
 uniform vec3 tint; uniform vec3 lift; uniform float sat; uniform float contrast; uniform float exposure;
 uniform float vignette; uniform float grain; uniform float seed; uniform float flash; uniform float ca;
-uniform vec3 fadeColor; uniform float fade; uniform float aces;
-uniform int tmode; uniform float agxLook;
+uniform vec3 fadeColor; uniform float fade; uniform float aces; uniform float agxLook;
 uniform float aoK; uniform float aoPow; uniform vec3 raysColor; uniform float raysK;
 uniform float fogD; uniform float fogH; uniform float fogBase; uniform float fogSun; uniform float fogMax; uniform float fogSky;
 uniform vec3 fogCol; uniform vec3 sunCol; uniform vec3 sunDirW; uniform vec3 camPos; uniform mat4 invProj; uniform mat4 camWorld;
 uniform vec3 gLift; uniform vec3 gGamma; uniform vec3 gGain; uniform vec3 splitShadow; uniform vec3 splitHigh; uniform float split; uniform float splitBalance;
-uniform float grainOn; uniform float lggOn;
 varying vec2 vUv;
 ${GLSL_HASH}
 float lin(float d){ float z = d * 2.0 - 1.0; return 2.0 * near * far / (far + near - z * (far - near)); }
@@ -129,6 +130,7 @@ vec3 acesFilmic(vec3 c){
   const mat3 OUT = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276), vec3(-0.07367, -0.00605, 1.07602));
   c = IN * (c / 0.6); c = RRTAndODTFit(c); c = OUT * c; return clamp(c, 0.0, 1.0);
 }
+#if TM == 1
 vec3 agxContrast(vec3 x){ vec3 x2 = x * x; vec3 x4 = x2 * x2; return 15.5 * x4 * x2 - 40.14 * x4 * x + 31.96 * x4 - 6.868 * x2 * x + 0.4298 * x2 + 0.1191 * x - 0.00232; }
 vec3 agx(vec3 color){
   const mat3 R2020_TO_SRGB = mat3(vec3(1.6605, -0.1246, -0.0182), vec3(-0.5876, 1.1329, -0.1006), vec3(-0.0728, -0.0083, 1.1187));
@@ -138,36 +140,52 @@ vec3 agx(vec3 color){
   color = INSET * (SRGB_TO_R2020 * color);
   color = clamp((log2(max(color, 1e-10)) + 12.47393) / 16.499999, 0.0, 1.0);
   color = agxContrast(color);
-  // AgX 'punchy' look, mixed in by agxLook
-  vec3 pv = pow(max(color, 0.0), vec3(1.35)); float pl = dot(pv, vec3(0.2126, 0.7152, 0.0722));
+  vec3 pv = pow(max(color, 0.0), vec3(1.35)); float pl = dot(pv, vec3(0.2126, 0.7152, 0.0722));   // 'punchy' look (agxLook)
   color = mix(color, pl + 1.4 * (pv - pl), agxLook);
   color = OUTSET * color;
   color = pow(max(color, 0.0), vec3(2.2));
   return clamp(R2020_TO_SRGB * color, 0.0, 1.0);
 }
+#endif
 vec3 softLight(vec3 a, vec3 b){ return mix(2.0 * a * b + a * a * (1.0 - 2.0 * b), 2.0 * a * (1.0 - b) + sqrt(max(a, 0.0)) * (2.0 * b - 1.0), step(0.5, b)); }
 void main(){
-  // texture fetches dominate on the software rasteriser, so every tap is skipped where it cannot matter
+#ifdef SS1
+  ivec2 ip = ivec2(gl_FragCoord.xy);
+  #define SCENE_C texelFetch(tScene, ip, 0)
+  #define DEPTH_C texelFetch(tDepth, ip, 0).x
+#else
+  #define SCENE_C texture2D(tScene, vUv)
+  #define DEPTH_C texture2D(tDepth, vUv).x
+#endif
+#ifdef CA
   vec2 dq = (vUv - 0.5) * ca * dot(vUv - 0.5, vUv - 0.5) * 4.0;
-  vec3 sharp;
-  if (dot(dq, dq) > 1.0e-8) sharp = vec3(texture2D(tScene, vUv + dq).r, texture2D(tScene, vUv).g, texture2D(tScene, vUv - dq).b);
-  else sharp = texture2D(tScene, vUv).rgb;
-  float dRaw = (dof > 0.0 || fogD > 0.0) ? texture2D(tDepth, vUv).x : 1.0;
-  float cocD = dof > 0.0 ? smoothstep(focusRange, focusRange * 3.0, abs(lin(dRaw) - focus)) * dof : 0.0;
-  float cocT = (smoothstep(tiltTop, 1.0, vUv.y) + smoothstep(tiltBottom, 0.0, vUv.y)) * tilt;
-  float coc = clamp(max(cocD, cocT), 0.0, 1.0);
+  vec3 sharp = vec3(texture2D(tScene, vUv + dq).r, SCENE_C.g, texture2D(tScene, vUv - dq).b);
+#else
+  vec3 sharp = SCENE_C.rgb;
+#endif
+#if defined(DOF) || defined(FOG)
+  float dRaw = DEPTH_C;
+#endif
   vec3 c = sharp;
+#ifdef BLUR
+  float coc = (smoothstep(tiltTop, 1.0, vUv.y) + smoothstep(tiltBottom, 0.0, vUv.y)) * tilt;
+  #ifdef DOF
+  coc = max(coc, smoothstep(focusRange, focusRange * 3.0, abs(lin(dRaw) - focus)) * dof);
+  #endif
+  coc = clamp(coc, 0.0, 1.0);
   if (coc > 0.002) {
     vec4 B1 = texture2D(tBlur, vUv); vec3 b1 = B1.a > 1e-4 ? B1.rgb / B1.a : sharp;
     c = mix(sharp, b1, smoothstep(0.0, 0.5, coc));
     if (coc > 0.5) { vec4 B2 = texture2D(tBlur2, vUv); c = mix(c, B2.a > 1e-4 ? B2.rgb / B2.a : b1, smoothstep(0.5, 1.0, coc)); }
   }
-  if (aoK > 0.0) {
-    float ao = pow(clamp(texture2D(tAO, vUv).r, 0.0, 1.0), aoPow);
-    float lum0 = max(c.r, max(c.g, c.b));
-    c *= mix(1.0, ao, aoK * (1.0 - smoothstep(1.2, 4.0, lum0)));
-  }
-  if (fogD > 0.0) {
+#endif
+#ifdef AO
+  float ao = pow(clamp(texture2D(tAO, vUv).r, 0.0, 1.0), aoPow);
+  float lum0 = max(c.r, max(c.g, c.b));
+  c *= mix(1.0, ao, aoK * (1.0 - smoothstep(1.2, 4.0, lum0)));
+#endif
+#ifdef FOG
+  {
     vec4 vp = invProj * vec4(vUv * 2.0 - 1.0, dRaw * 2.0 - 1.0, 1.0); vp /= vp.w;
     vec3 wp = (camWorld * vec4(vp.xyz, 1.0)).xyz;
     vec3 rd = wp - camPos; float dist = length(rd); rd /= max(dist, 1e-4);
@@ -180,34 +198,55 @@ void main(){
     vec3 fc = fogCol + sunCol * fogSun * pow(max(dot(rd, sunDirW), 0.0), 6.0);
     c = mix(c, fc, f);
   }
-  if (raysK > 0.0) c += raysColor * raysK * texture2D(tRays, vUv).r;
-  if (bloom > 0.0) c += texture2D(tBloom, vUv).rgb * bloom;
+#endif
+#ifdef RAYS
+  c += raysColor * raysK * texture2D(tRays, vUv).r;
+#endif
+#ifdef BLOOM
+  c += texture2D(tBloom, vUv).rgb * bloom;
+#endif
   c *= exposure;
-  if (tmode == 1) { c = toSRGB(agx(c)); }
-  else if (aces >= 0.999) { c = toSRGB(acesFilmic(c)); }
-  else {
-    vec3 k = vec3(0.62);
-    vec3 roll = mix(c, k + (1.0 - k) * (1.0 - exp(-(c - k) / (1.0 - k))), step(k, c));
-    c = aces <= 0.001 ? toSRGB(roll) : mix(toSRGB(roll), toSRGB(acesFilmic(c)), aces);
-  }
+#if TM == 1
+  c = toSRGB(agx(c));
+#elif TM == 0
+  c = toSRGB(acesFilmic(c));
+#else
+  vec3 kk = vec3(0.62);
+  vec3 roll = mix(c, kk + (1.0 - kk) * (1.0 - exp(-(c - kk) / (1.0 - kk))), step(kk, c));
+  c = mix(toSRGB(roll), toSRGB(acesFilmic(c)), aces);
+#endif
+#ifdef HAZE
   c = mix(c, hazeColor, haze * smoothstep(0.45, 1.0, vUv.y));
+#endif
   c = c * tint + lift;
   float l = dot(c, vec3(0.299, 0.587, 0.114));
   c = mix(vec3(l), c, sat);
   c = (c - 0.5) * contrast + 0.5;
-  if (lggOn > 0.5) c = pow(max(gGain * (c + gLift * (1.0 - c)), 0.0), 1.0 / max(gGamma, vec3(0.05)));
-  if (split > 0.0) {
+#ifdef LGG
+  c = pow(max(gGain * (c + gLift * (1.0 - c)), 0.0), 1.0 / max(gGamma, vec3(0.05)));
+#endif
+#ifdef SPLIT
+  {
     float L = dot(clamp(c, 0.0, 1.0), vec3(0.299, 0.587, 0.114));
     vec3 tone = mix(splitShadow, splitHigh, smoothstep(0.0, 1.0, clamp(L + splitBalance, 0.0, 1.0)));
     c = mix(c, softLight(clamp(c, 0.0, 1.0), tone), split);
   }
+#endif
+#ifdef FLASH
   c += flash * vec3(1.0, 0.92, 0.78);
+#endif
+#ifdef VIG
   vec2 q = (vUv - 0.5) * vec2(1.0, 0.82);
   c *= mix(1.0, smoothstep(0.85, 0.2, length(q) * 1.12), vignette);
+#endif
+#ifdef FADE
   c = mix(c, fadeColor, fade);
+#endif
+#ifdef GRAIN
   float n = hash(vUv * vec2(1080.0, 1920.0) + seed * 17.13) - 0.5;
-  l = dot(clamp(c, 0.0, 1.0), vec3(0.299, 0.587, 0.114));
-  c += n * grain * (0.55 + 0.45 * (1.0 - l)) * grainOn;
+  float lg = dot(clamp(c, 0.0, 1.0), vec3(0.299, 0.587, 0.114));
+  c += n * grain * (0.55 + 0.45 * (1.0 - lg));
+#endif
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
 
@@ -442,20 +481,27 @@ export class Post {
       focus: { value: 20 }, focusRange: { value: 6 }, dof: { value: 0 }, tiltTop: { value: 0.7 }, tiltBottom: { value: 0.12 }, tilt: { value: 0.55 },
       bloom: { value: 0.5 }, hazeColor: { value: new THREE.Color() }, haze: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) }, lift: { value: new THREE.Color(0, 0, 0) },
       sat: { value: 1 }, contrast: { value: 1 }, exposure: { value: 1 }, vignette: { value: 0.5 }, grain: { value: 0.03 }, flash: { value: 0 }, ca: { value: 0 },
-      fadeColor: { value: new THREE.Color() }, fade: { value: 0 }, aces: { value: 1 }, tmode: { value: 0 }, agxLook: { value: 0.6 },
+      fadeColor: { value: new THREE.Color() }, fade: { value: 0 }, aces: { value: 1 }, agxLook: { value: 0.6 },
       aoK: { value: 0 }, aoPow: { value: 1 }, raysColor: { value: new THREE.Color() }, raysK: { value: 0 },
       fogD: { value: 0 }, fogH: { value: 8 }, fogBase: { value: 0 }, fogSun: { value: 0 }, fogMax: { value: 1 }, fogSky: { value: 600 },
       fogCol: { value: new THREE.Color() }, sunCol: { value: new THREE.Color() }, sunDirW: { value: new THREE.Vector3(0, 1, 0) }, camPos: { value: new THREE.Vector3() },
       invProj: { value: new THREE.Matrix4() }, camWorld: { value: new THREE.Matrix4() },
       gLift: { value: new THREE.Vector3() }, gGamma: { value: new THREE.Vector3(1, 1, 1) }, gGain: { value: new THREE.Vector3(1, 1, 1) },
       splitShadow: { value: new THREE.Color(0.5, 0.5, 0.5) }, splitHigh: { value: new THREE.Color(0.5, 0.5, 0.5) }, split: { value: 0 }, splitBalance: { value: 0 },
-      grainOn: { value: 1 }, lggOn: { value: 0 },
     };
-    this.mComp = mk(COMPOSITE, u);
+    this.cu = u; this._comp = new Map();   // composite variants share one uniforms object
     this.mMix = mk(MIX, { tA: { value: null }, tB: { value: null }, k: { value: 0 }, mode: { value: 0 }, color: { value: new THREE.Color() }, seed: { value: 0 } });
     // lazily created passes (only shots that ask for them pay)
     this._ao = null; this._rays = null; this._smaa = null; this._fxaa = null;
     this.prof = null;
+  }
+
+  // composite material for a feature set (compiled once per combination)
+  compMat(defs) {
+    const key = Object.entries(defs).map(([k, v]) => k + '=' + v).join(',');
+    let m = this._comp.get(key);
+    if (!m) { m = this.mk(COMPOSITE, this.cu, { defines: { ...defs } }); this._comp.set(key, m); }
+    return m;
   }
 
   // scene render targets for a supersample factor (1 or 1.5), created on first use
@@ -568,34 +614,36 @@ export class Post {
   compose(P0, camera, target, frame, X = null) {
     const P = { ...DEFAULT_POST, ...P0 };
     const W = this.W, H = this.H, src = this.src;
-    const u = this.mComp.uniforms;
+    const u = this.cu;
+    const strip = new Set(P.strip || []);          // debug/bench: force features off
+    const on = (k, v) => v && !strip.has(k);
     // AO + god rays first (they read the scene's depth)
-    const aoOn = P.ao > 0.001;
+    const aoOn = on('AO', P.ao > 0.001);
     u.aoK.value = aoOn ? P.ao : 0; u.aoPow.value = P.aoPower;
     if (aoOn) { u.tAO.value = this.ao(P, camera); this.mark('ao'); }
     const G = { ...DEFAULT_POST.godrays, ...(P.godrays || {}) };
     u.raysK.value = 0;
-    if (G.strength > 0.001) {
+    if (on('RAYS', G.strength > 0.001)) {
       const o = X?.o || [0, 0, 0];
       const res = this.rays(G, camera, [G.pos[0] + o[0], G.pos[1] + o[1], G.pos[2] + o[2]], frame / 30);
       if (res) { u.tRays.value = res.tex; u.raysK.value = G.strength * res.k; u.raysColor.value.set(G.color); }
       this.mark('godrays');
     }
-    // DOF/tilt-shift blur chain (half-res copy -> quarter-res blur -> eighth-res blur) + bloom
-    const needBlur = P.dof > 0 || P.tilt > 0;
-    this.mCopy.uniforms.tIn.value = src; this.pass(this.mCopy, this.h1);
-    const cu = this.mCoc.uniforms; cu.tIn.value = this.h1.texture; cu.tDepth.value = this.rtScene.depthTexture; cu.near.value = camera.near; cu.far.value = camera.far;
-    for (const k of ['focus', 'focusRange', 'dof', 'tiltTop', 'tiltBottom', 'tilt']) cu[k].value = P[k];
-    this.pass(this.mCoc, this.q1);
-    let blurQ = this.q1.texture, blurE = this.q1.texture;
+    // DOF/tilt-shift blur chain (half-res copy -> quarter-res CoC-weighted blur -> eighth-res blur) + bloom
+    const needBlur = on('BLUR', P.dof > 0 || P.tilt > 0), bloomOn = on('BLOOM', P.bloom > 0);
+    let blurQ = null, blurE = null;
+    if (needBlur || bloomOn) { this.mCopy.uniforms.tIn.value = src; this.pass(this.mCopy, this.h1); }
     if (needBlur) {
+      const cu = this.mCoc.uniforms; cu.tIn.value = this.h1.texture; cu.tDepth.value = this.rtScene.depthTexture; cu.near.value = camera.near; cu.far.value = camera.far;
+      for (const k of ['focus', 'focusRange', 'dof', 'tiltTop', 'tiltBottom', 'tilt']) cu[k].value = P[k];
+      this.pass(this.mCoc, this.q1);
       blurQ = this.blur(this.q1.texture, this.q1, this.q2, W / 4, H / 4, 2, 1.25);
       this.mCopy.uniforms.tIn.value = blurQ; this.pass(this.mCopy, this.e1);
       blurE = this.blur(this.e1.texture, this.e1, this.e2, W / 8, H / 8, 2, 1.3);
+      this.mark('dofblur');
     }
-    this.mark('dofblur');
-    let bloomTex = this.q1.texture;
-    if (P.bloom > 0) {
+    let bloomTex = null;
+    if (bloomOn) {
       this.mBright.uniforms.tIn.value = this.h1.texture; this.mBright.uniforms.threshold.value = P.bloomThreshold;
       this.pass(this.mBright, this.bl1);
       const bloomQ = this.blur(this.bl1.texture, this.bl1, this.bl2, W / 4, H / 4, 2, 2.0);
@@ -603,57 +651,69 @@ export class Post {
       const bloomS = this.blur(this.bs1.texture, this.bs1, this.bs2, W / 16, H / 16, 3, 1.5);
       this.mBloomMerge.uniforms.tA.value = bloomQ; this.mBloomMerge.uniforms.tB.value = bloomS; this.pass(this.mBloomMerge, this.bl2);
       bloomTex = this.bl2.texture;
+      this.mark('bloom');
     }
-    this.mark('bloom');
-    // composite uniforms
-    u.tScene.value = src; u.tBlur.value = blurQ; u.tBlur2.value = blurE; u.tBloom.value = bloomTex; u.tDepth.value = this.rtScene.depthTexture;
-    if (!aoOn) u.tAO.value = blurE;
-    if (u.raysK.value === 0) u.tRays.value = blurE;   // bound but unused
+    // feature set -> shader variant
+    const F = X?.M?.fog;
+    const fogOn = on('FOG', !!(F && F.density > 0));
+    const aa = P.aa === 'fxaa' || P.aa === 'smaa' ? P.aa : 'none';
+    const lgg = [...P.gLift, ...P.gGamma.map((v) => v - 1), ...P.gGain.map((v) => v - 1)].some((v) => Math.abs(v) > 1e-4);
+    const defs = { TM: P.tonemap === 'agx' ? 1 : (P.aces >= 0.999 ? 0 : 2) };
+    const flag = (k, v) => { if (on(k, v)) defs[k] = 1; };
+    flag('SS1', this.sw === W && this.sh === H); flag('CA', P.ca > 0); flag('BLUR', needBlur); flag('DOF', needBlur && P.dof > 0);
+    flag('AO', aoOn); flag('FOG', fogOn); flag('RAYS', u.raysK.value > 0); flag('BLOOM', bloomOn);
+    flag('HAZE', P.haze > 0); flag('LGG', lgg); flag('SPLIT', P.split > 0); flag('FLASH', P.flash > 0);
+    flag('VIG', P.vignette > 0); flag('FADE', P.fade > 0); flag('GRAIN', aa === 'none' && P.grain > 0);
+    // composite uniforms (unused samplers stay bound to a valid texture)
+    const any = this.h1.texture;
+    u.tScene.value = src; u.tBlur.value = blurQ || any; u.tBlur2.value = blurE || any; u.tBloom.value = bloomTex || any; u.tDepth.value = this.rtScene.depthTexture;
+    if (!aoOn) u.tAO.value = any;
+    if (!defs.RAYS) u.tRays.value = any;
     u.near.value = camera.near; u.far.value = camera.far; u.seed.value = frame % 997;
     for (const k of ['focus', 'focusRange', 'dof', 'tiltTop', 'tiltBottom', 'tilt', 'bloom', 'haze', 'sat', 'contrast', 'exposure', 'vignette', 'grain', 'flash', 'ca', 'fade', 'aces', 'agxLook', 'split', 'splitBalance']) u[k].value = P[k];
     for (const k of ['hazeColor', 'tint', 'lift', 'fadeColor', 'splitShadow', 'splitHigh']) u[k].value.set(P[k]);
     for (const k of ['gLift', 'gGamma', 'gGain']) u[k].value.set(...P[k]);
-    u.lggOn.value = [...P.gLift, ...P.gGamma.map((v) => v - 1), ...P.gGain.map((v) => v - 1)].some((v) => Math.abs(v) > 1e-4) ? 1 : 0;
-    u.tmode.value = P.tonemap === 'agx' ? 1 : 0;
     // exponential height fog (mood keys fog.density / fog.height / fog.base / fog.sun / fog.max / fog.sky / fog.hcolor)
-    const F = X?.M?.fog;
-    u.fogD.value = F && F.density > 0 ? F.density : 0;
-    if (u.fogD.value > 0) {
+    u.fogD.value = fogOn ? F.density : 0;
+    if (fogOn) {
       u.fogH.value = F.height ?? 8; u.fogBase.value = (F.base ?? 0) + (X.o?.[1] || 0); u.fogSun.value = F.sun ?? 0.35; u.fogMax.value = F.max ?? 0.92; u.fogSky.value = F.sky ?? 600;
       u.fogCol.value.set(F.hcolor ?? F.color); u.sunCol.value.set(X.M.sun?.color ?? '#ffffff');
       u.sunDirW.value.set(...(X.M.sunDir || [0, 1, 0])).normalize();
       u.camPos.value.setFromMatrixPosition(camera.matrixWorld); u.invProj.value.copy(camera.projectionMatrixInverse); u.camWorld.value.copy(camera.matrixWorld);
     }
-    const aa = P.aa === 'fxaa' || P.aa === 'smaa' ? P.aa : 'none';
-    u.grainOn.value = aa === 'none' ? 1 : 0;
-    this.pass(this.mComp, aa === 'none' ? target : this.ldr);
+    this.pass(this.compMat(defs), aa === 'none' ? target : this.ldr);
     this.mark('composite');
     if (P.copytest) { this.mCopy.uniforms.tIn.value = this.ldr.texture; this.pass(this.mCopy, this.outB); this.mark('copytest'); }
-    if (aa === 'smaa') { this.smaa(P, target, frame); this.mark('smaa'); }
+    if (aa === 'smaa') this.smaa(P, target, frame);
     else if (aa === 'fxaa') { this.fxaa(P, target, frame); this.mark('fxaa'); }
   }
 
+  // SMAA 1x: edges (luma) -> blend weights (area/search LUTs) -> neighbourhood blend (+ grain).
+  // P.smaaPreset: 'low' (threshold 0.15, 4 search steps) | 'medium' (0.1, 8; default) | 'high' (0.1, 16)
   smaa(P, target, frame) {
+    const preset = P.smaaPreset || 'medium';
     if (!this._smaa) {
-      const W = this.W, H = this.H, T = smaaTextures();
-      const res = new THREE.Vector2(1 / W, 1 / H);
-      const sh = (S, u) => new THREE.ShaderMaterial({ defines: { ...S.defines }, uniforms: u, vertexShader: S.vertexShader, fragmentShader: S.fragmentShader, depthTest: false, depthWrite: false });
-      this._smaa = {
-        e: new THREE.WebGLRenderTarget(W, H, { depthBuffer: false }),
-        w: new THREE.WebGLRenderTarget(W, H, { depthBuffer: false, type: THREE.HalfFloatType }),
-        me: sh(SMAAEdgesShader, { tDiffuse: { value: this.ldr.texture }, resolution: { value: res } }),
-        mw: sh(SMAAWeightsShader, { tDiffuse: { value: null }, tArea: { value: T.area }, tSearch: { value: T.search }, resolution: { value: res } }),
-        mb: new THREE.ShaderMaterial({ vertexShader: SMAA_BLEND_VS, fragmentShader: SMAA_BLEND_FS, depthTest: false, depthWrite: false,
-          uniforms: { tDiffuse: { value: null }, tColor: { value: this.ldr.texture }, resolution: { value: res }, grain: { value: 0 }, seed: { value: 0 } } }),
-      };
-      this._smaa.mw.uniforms.tDiffuse.value = this._smaa.e.texture; this._smaa.mb.uniforms.tDiffuse.value = this._smaa.w.texture;
+      const W = this.W, H = this.H;
+      this._smaa = { e: new THREE.WebGLRenderTarget(W, H, { depthBuffer: false }), w: new THREE.WebGLRenderTarget(W, H, { depthBuffer: false }), res: new THREE.Vector2(1 / W, 1 / H), mats: {} };
     }
     const S = this._smaa, r = this.r;
+    if (!S.mats[preset]) {
+      const T = smaaTextures(), res = S.res;
+      const PR = { low: ['0.15', '4'], medium: ['0.1', '8'], high: ['0.1', '16'] }[preset] || ['0.1', '8'];
+      const sh = (Sh, u, defs) => new THREE.ShaderMaterial({ defines: { ...Sh.defines, ...defs }, uniforms: u, vertexShader: Sh.vertexShader, fragmentShader: Sh.fragmentShader, depthTest: false, depthWrite: false });
+      S.mats[preset] = {
+        me: sh(SMAAEdgesShader, { tDiffuse: { value: this.ldr.texture }, resolution: { value: res } }, { SMAA_THRESHOLD: PR[0] }),
+        mw: sh(SMAAWeightsShader, { tDiffuse: { value: S.e.texture }, tArea: { value: T.area }, tSearch: { value: T.search }, resolution: { value: res } }, { SMAA_MAX_SEARCH_STEPS: PR[1] }),
+        mb: new THREE.ShaderMaterial({ vertexShader: SMAA_BLEND_VS, fragmentShader: SMAA_BLEND_FS, depthTest: false, depthWrite: false,
+          uniforms: { tDiffuse: { value: S.w.texture }, tColor: { value: this.ldr.texture }, resolution: { value: res }, grain: { value: 0 }, seed: { value: 0 } } }),
+      };
+    }
+    const Mt = S.mats[preset];
     r.setRenderTarget(S.e); r.setClearColor(0x000000, 0); r.clear(); r.setClearColor(0x000000, 1);
-    this.pass(S.me, S.e);
-    this.pass(S.mw, S.w);
-    S.mb.uniforms.grain.value = P.grain; S.mb.uniforms.seed.value = frame % 997;
-    this.pass(S.mb, target);
+    this.pass(Mt.me, S.e); this.mark('smaa-edges');
+    this.pass(Mt.mw, S.w); this.mark('smaa-weights');
+    Mt.mb.uniforms.grain.value = P.grain; Mt.mb.uniforms.seed.value = frame % 997;
+    this.pass(Mt.mb, target); this.mark('smaa-blend');
   }
 
   fxaa(P, target, frame) {

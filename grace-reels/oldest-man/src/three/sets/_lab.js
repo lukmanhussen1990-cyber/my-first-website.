@@ -10,11 +10,13 @@ import { buildArk } from '../arkmodel.js';
 import { fbm, clamp, smooth, invLerp } from '../../lib/util.js';
 
 // bench configs by whole second of local time (pass timing comparisons)
+const ALL = ['CA', 'BLUR', 'BLOOM', 'HAZE', 'VIG', 'GRAIN', 'SPLIT', 'FLASH', 'FADE', 'LGG'];
 const BENCH = [
-  { aa: 'none' }, { aa: 'none', copytest: 1 }, { aa: 'fxaa' }, { aa: 'smaa' }, { aa: 'smaa', supersample: 1.5 }, { aa: 'none', ao: 0.8 },
-  { aa: 'none', godrays: { strength: 1, pos: [0, 30, -40] } }, { aa: 'none', tonemap: 'agx' }, { aa: 'none', fogD: 1 }, { aa: 'none', tilt: 0, dof: 0 },
-  { aa: 'none', noSky: 1 }, { aa: 'none', noShadow: 1 }, { aa: 'none', noGround: 1 }, { aa: 'none', msaa: 0 }, { aa: 'none', noSky: 1, noGround: 1 },
+  { aa: 'none' }, { aa: 'none', strip: ALL }, { aa: 'none', strip: [...ALL, 'SS1'] }, { aa: 'fxaa' }, { aa: 'smaa' },
+  { aa: 'none', ao: 0.8 }, { aa: 'none', godrays: { strength: 1, pos: [3200, 8, -60] } }, { aa: 'none', fogD: 1 }, { aa: 'none', tonemap: 'agx' },
+  { aa: 'none', msaa: 0 }, { aa: 'none', noShadow: 1 }, { aa: 'none', noSky: 1 }, { aa: 'smaa', supersample: 1.5 },
 ];
+const BENCH_REP = 3; // frames per config (take the min)
 const X = { night: 0, beam: 400, rain: 800, storm: 1200, gold: 1600, drop: 2000, wide: 2400, face: 2800, bench: 3200 };
 
 function person(o) { try { return new Person(o); } catch (e) { console.log('[lab] Person failed', e.message); return null; } }
@@ -52,11 +54,11 @@ function stationBench(root, ctx) {
   return {
     g,
     update(t, cam, shot) {
-      const B = BENCH[Math.floor(t - shot.t0) % BENCH.length];
+      const B = BENCH[Math.floor((t - shot.t0) / BENCH_REP) % BENCH.length];
       ctx.world.sky.visible = !B.noSky; ctx.world.sun.castShadow = !B.noShadow; ground.visible = !B.noGround;
     },
     mood(t, shot) {
-      const B = { ...BENCH[Math.floor(t - shot.t0) % BENCH.length] };
+      const B = { ...BENCH[Math.floor((t - shot.t0) / BENCH_REP) % BENCH.length] };
       const fog = B.fogD ? { density: 0.02, height: 6 } : {}; for (const k of ['fogD', 'noSky', 'noShadow', 'noGround']) delete B[k];
       return { fog, post: { profile: true, ...B } };
     },
@@ -72,9 +74,23 @@ function buildAll(ctx, root) {
       for (const s of Object.values(S)) s.g.visible = s === pick(shot);
       pick(shot).update(t, cam, shot, c, M);
     },
-    mood(t, shot, c) { return pick(shot).mood(t, shot, c); },
+    mood(t, shot, c) {
+      const m = pick(shot).mood(t, shot, c);
+      // lt >= 50 on any station: in-frame timing bench of that station's scene (see World.bench)
+      return t - shot.t0 >= 50 ? merge(m, { post: { profile: false, bench: LAB_BENCH } }) : m;
+    },
   };
 }
+const LAB_BENCH = {
+  reps: 3,
+  post: [
+    { name: 'bare', post: { aa: 'none', strip: ALL } }, { name: 'none', post: { aa: 'none' } }, { name: 'none-noCA', post: { aa: 'none', ca: 0 } },
+    { name: 'fxaa', post: { aa: 'fxaa' } }, { name: 'smaaLow', post: { aa: 'smaa', smaaPreset: 'low' } }, { name: 'smaa', post: { aa: 'smaa' } },
+    { name: 'ao', post: { aa: 'none', ao: 0.6 } }, { name: 'rays', post: { aa: 'none', godrays: { strength: 0.8, pos: [0, 8, -60] } } },
+    { name: 'fog', post: { aa: 'none' }, fog: { density: 0.02, height: 6 } }, { name: 'agx', post: { aa: 'none', tonemap: 'agx' } },
+    { name: 'dof', post: { aa: 'none', dof: 0.5, focus: 9 } },
+  ],
+};
 
 export function build(ctx) {
   const g = new THREE.Group(); let B = null;

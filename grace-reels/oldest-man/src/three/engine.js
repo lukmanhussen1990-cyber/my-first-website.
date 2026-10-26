@@ -7,7 +7,7 @@ import { Post } from './post.js';
 import { makeSky } from './fx.js';
 import { makeSkyFx } from './sky.js';
 import { U } from './materials.js';
-import { resolve } from './moods.js';
+import { resolve, merge } from './moods.js';
 import { cameraShot, layersAt, SHOT_SET, SETS, blockingOf } from '../lib/director.js';
 import { BUILDERS } from './sets/index.js';
 
@@ -104,6 +104,7 @@ export class World {
     const n = c0.mblur > 1 ? c0.mblur : 1;
     // the mood decides render-target choices (supersample) and profiling before the scene is drawn
     const M0 = resolve(set.mood(t, shot, c0));
+    if (M0.post.bench && !camOverride) this.bench(set, shot, t, c0, M0.post.bench, frame);
     const prof = !!M0.post.profile;
     this.post.profStart(prof);
     const shutter = 0.5 / 30;                       // 180-degree shutter
@@ -126,6 +127,35 @@ export class World {
       console.log(`[prof] f${frame} ${shot.id} total ${tot.toFixed(0)}ms ` + L.map(([k, v]) => `${k} ${v}`).join(' | '));
       this.post.prof = null;
     }
+  }
+
+  // Timing bench (lab only: mood.post.bench = { reps, scene: [...], post: [...] }). Every config is measured
+  // `reps` times inside ONE frame, interleaved, and the minimum is logged, so load from other processes
+  // (shared CPUs) mostly cancels out. Scene configs: { name, msaa, ss, noShadow, noSky }; post configs:
+  // { name, post: {...overrides}, fog: {...} }.
+  bench(set, shot, t, c, B, frame) {
+    const post = this.post, o = SETS[set.name];
+    const draw = () => { this.setCamera(c); U.uTime.value = t; const M = resolve(set.mood(t, shot, c)); this.applyMood(M, c, o); set.update(t, this.camera, shot, c, M); return M; };
+    const res = new Map(); const rec = (k, v) => { if (!res.has(k)) res.set(k, []); res.get(k).push(v); };
+    const sceneCfgs = B.scene || [{ name: 'msaa4' }, { name: 'msaa0', msaa: 0 }, { name: 'noShadow', noShadow: 1 }, { name: 'noSky', noSky: 1 }, { name: 'ss1.5', ss: 1.5 }];
+    const postCfgs = B.post || [{ name: 'default', post: {} }];
+    for (let r = 0; r < (B.reps || 3); r++) {
+      for (const S of sceneCfgs) {
+        draw(); this.sun.castShadow = !S.noShadow; this.sky.visible = !S.noSky;
+        post.profStart(true); post.scene(this.scene, 1, () => this.camera, S.ss || 1, S.msaa ?? 4);
+        rec('scene ' + S.name, post.prof.list.find((x) => x[0] === 'scene')[1]);
+        this.sun.castShadow = true; this.sky.visible = true;
+      }
+      const M = draw(); post.profStart(false); post.scene(this.scene, 1, () => this.camera, 1, 4);
+      for (const pc of postCfgs) {
+        post.profStart(true);
+        post.compose({ ...M.post, ...(pc.post || {}) }, this.camera, post.outA, frame, { o, M: pc.fog ? merge(M, { fog: pc.fog }) : M });
+        let tot = 0; for (const [k, v] of post.prof.list) { rec(pc.name + ' ' + k, v); tot += v; }
+        rec(pc.name + ' TOTAL', tot);
+      }
+    }
+    post.prof = null;
+    console.log(`[bench] f${frame} reps ${B.reps || 3} (min ms):\n` + [...res].map(([k, v]) => `  ${k.padEnd(28)} ${Math.min(...v).toFixed(1)}`).join('\n'));
   }
 
   render(frame, camOverride = null) {
