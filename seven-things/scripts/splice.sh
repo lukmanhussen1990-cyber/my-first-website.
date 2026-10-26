@@ -12,7 +12,7 @@ nseg=$#
 filt="[0:v]split=$((nseg + 1))$(for i in $(seq 0 $nseg); do printf '[s%d]' $i; done);"
 for seg in "$@"; do
   IFS=: read -r dir a b <<< "$seg"
-  inputs+=(-framerate 30 -start_number "$a" -i "build/$dir/element-%04d.jpeg")
+  inputs+=(-framerate 30 -start_number "$a" -i "build/$dir/element-%d.jpeg")
   if [ "$a" -gt "$prev" ]; then filt+="[s$((k-1))]trim=start_frame=$prev:end_frame=$a,setpts=PTS-STARTPTS,format=yuvj420p,setsar=1[p$n];"; parts+="[p$n]"; n=$((n+1)); else filt+="[s$((k-1))]nullsink;"; fi
   filt+="[$k:v]setpts=PTS-STARTPTS,format=yuvj420p,setsar=1[p$n];"; parts+="[p$n]"; n=$((n+1))
   prev=$((b + 1)); k=$((k + 1))

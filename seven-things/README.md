@@ -9,10 +9,17 @@ The reel then turns to grace with Romans 5:8 and 1 John 1:9, and ends on hope.
 ## Deliverables (`out/`)
 | File | What |
 |------|------|
-| `final_reel.mp4` | The reel: H.264 CRF 18, yuv420p, AAC 192 kbps stereo, `+faststart` |
+| `final_reel.mp4` | The reel: 84.93 s, H.264 (x264 slow, CRF 18, capped at 11 Mb/s), yuv420p TV range, BT.709, AAC 192 kbps stereo, `+faststart`. Audio is −14 LUFS, −1.2 dBTP |
 | `cover.jpg` | Cover: the cracked stone 7 in the desert, with "GOD HATES 7 THINGS" and "#7 SURPRISES EVERYONE" |
 | `caption.txt` | Instagram caption and hashtags |
+| `characters.png` | The paper-cut cast |
+| `storyboard.jpg` | One frame per shot, taken from the final render |
+| `preview_6s.mp4` | The first 6 s (the hook) |
+| `qc_contact.jpg` | QC contact sheet, one frame every 2 s |
 | `ideas_used.md` | Idea log (Q.01 used; next is Q.02) |
+
+The end-card logo is a placeholder (`public/logo.svg`) because the real logo file was never attached.
+To use your own logo, replace that file (or point `EndCard` in `src/overlay/cards.jsx` at a PNG in `public/`) and re-render frames 2454–2547 with `scripts/splice.sh`.
 
 ## How it is built
 ```
@@ -66,6 +73,9 @@ npm run voice          # python3 voice/tts.py   -> voice/voice.wav + timeline.js
 npm run audio          # node audio/synth.mjs   -> audio/final_mix.wav (+ public/)
 node render.mjs stills 0,150,600   # check frames -> build/stills/
 node render.mjs cover 150          # -> out/cover.jpg
-node render.mjs full               # -> out/final_reel.mp4
+node render.mjs full build/final_reel_raw.mp4      # whole reel (about 61 min on 4 CPU cores, no GPU)
+node render.mjs frames 336-540 build/seg1          # re-render just a changed section as frames...
+scripts/splice.sh build/final_reel_raw.mp4 out/final_reel.mp4 seg1:336:540   # ...splice it in + delivery encode
+scripts/qc.sh out/final_reel.mp4                   # contact sheet, streams, loudness
 ```
 Rendering uses the preinstalled headless Chromium with SwiftShader WebGL (`gl: 'swangle'`), so it runs on a CPU-only machine.
