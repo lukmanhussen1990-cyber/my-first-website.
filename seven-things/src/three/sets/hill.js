@@ -26,7 +26,7 @@ export function buildHill(ctx) {
 
   // the cross: plain wood, weathered
   const cross = new THREE.Group(); const top = height(0, 0); cross.position.set(0, top - 0.15, 0); g.add(cross);
-  const wm = texMat('#5a3e28', woodTex());
+  const wm = texMat('#3e2a1a', woodTex());
   const post = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.5, 0.24), wm); post.position.y = 1.75; post.castShadow = true; cross.add(post);
   const bar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.22, 0.22), wm); bar.position.y = 2.55; bar.castShadow = true; cross.add(bar);
   // light: a soft vertical beam from the sky, a glow behind the cross, god rays, motes
@@ -36,7 +36,7 @@ export function buildHill(ctx) {
     vertexShader: 'varying vec3 vN; varying vec3 vV; varying float vY; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - wp.xyz); vY = uv.y; gl_Position = projectionMatrix * viewMatrix * wp; }',
     fragmentShader: 'uniform vec3 color; uniform float k; varying vec3 vN; varying vec3 vV; varying float vY; void main(){ float f = pow(abs(dot(normalize(vN), normalize(vV))), 2.0); float v = smoothstep(0.0, 0.1, vY) * (1.0 - smoothstep(0.6, 1.0, vY) * 0.6); gl_FragColor = vec4(color * f * v * k * 0.85, 1.0); }',
   });
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3.6, 70, 40, 1, true), beamMat); beam.position.set(0, top + 33, 0); g.add(beam);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3.6, 70, 40, 1, true), beamMat); beam.position.set(0, top + 33, -4.5); g.add(beam); // behind the cross, so it backlights it
   const beam2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.5, 70, 32, 1, true), beamMat.clone()); beam2.position.copy(beam.position); g.add(beam2);
   const glow = makeSprites(4, { additive: true, fog: false, order: 2 }); g.add(glow.group);
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: radialTex(), color: new THREE.Color(1.0, 0.82, 0.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
@@ -54,7 +54,7 @@ export function buildHill(ctx) {
       const w = warmAt(t);
       beamMat.uniforms.k.value = 0.25 + 0.75 * w; beam2.material.uniforms.k.value = 0.3 + 0.9 * w;
       const p = cross.position;
-      glow.begin(); glow.add(p.x, p.y + 2.4, p.z - 0.3, 5.5 + 0.3 * Math.sin(t * 0.8), 1.4 * w, 1.05 * w, 0.6 * w, 0.75); glow.add(p.x, p.y + 2.55, p.z - 0.2, 1.6, 2.0 * w, 1.7 * w, 1.1 * w, 0.8); glow.end();
+      glow.begin(); glow.add(p.x, p.y + 2.4, p.z - 3.0, 9.5 + 0.3 * Math.sin(t * 0.8), 1.5 * w, 1.15 * w, 0.62 * w, 0.9); glow.add(p.x, p.y + 2.55, p.z - 2.5, 3.6, 2.0 * w, 1.7 * w, 1.05 * w, 0.9); glow.end();
       pool.material.opacity = 0.5 * w;
       rays.set(t, cam, [0.12, -1, 0.35], [
         { p: [0, top, 0], w: 3.2, len: 60, a: 0.16 }, { p: [-3.5, top - 1.5, 2], w: 2.2, len: 60, a: 0.1 }, { p: [3.8, top - 1.2, 1.5], w: 2.4, len: 60, a: 0.11 },
@@ -74,13 +74,13 @@ export function buildHill(ctx) {
         sky: { top: '#5f6874', horizon: '#a9aeb4', bottom: '#7a7c7a', sunGlow: '#8a8e96' },
         sunDir: [0.12, 1, 0.35], sun: { color: '#c8d0dc', intensity: 1.4 }, hemi: { sky: '#b8c2ce', ground: '#5a5a50', intensity: 1.0 },
         fog: { color: '#9aa0a6', near: 40, far: 220 }, char: '#d8dce2',
-        post: { exposure: 0.95, bloom: 0.4, bloomThreshold: 0.9, haze: 0.15, hazeColor: '#b8bcc2', tint: '#eef2f6', sat: 0.55, contrast: 1.02, vignette: 0.6, tilt: 0.3, grain: 0.034 },
+        post: { exposure: 0.95, bloom: 0.4, bloomThreshold: 0.9, haze: 0.15, hazeColor: '#b8bcc2', tint: '#eef2f6', sat: 0.55, contrast: 1.04, vignette: 0.6, tilt: 0, grain: 0.034 },
       });
       const gold = resolve({
         sky: { top: '#6a7ea8', horizon: '#ffd79a', bottom: '#c8a070', band: '#ffb86a', sunGlow: '#ffd08a', sunDisk: '#000000' },
         sunDir: [0.12, 1, 0.35], sun: { color: '#ffe0a8', intensity: 3.0 }, hemi: { sky: '#ffe6c0', ground: '#7a6a3a', intensity: 1.2 },
-        fog: { color: '#f2d4a0', near: 40, far: 240 }, char: '#fff0dc', wind: 0.7,
-        post: { exposure: 1.02, bloom: 0.85, bloomThreshold: 0.78, haze: 0.22, hazeColor: '#ffe0b0', tint: '#fff2de', lift: '#080402', sat: 1.08, contrast: 1.04, vignette: 0.5, tilt: 0.3, grain: 0.03 },
+        fog: { color: '#f2d4a0', near: 60, far: 420 }, char: '#fff0dc', wind: 0.7,
+        post: { exposure: 0.96, bloom: 0.85, bloomThreshold: 0.78, haze: 0.06, hazeColor: '#ffe0b0', tint: '#fff2de', lift: '#080402', sat: 1.08, contrast: 1.1, vignette: 0.55, tilt: 0, grain: 0.03 },
       });
       return blend(grey, gold, warmAt(t));
     },

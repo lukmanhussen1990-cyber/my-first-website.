@@ -131,15 +131,18 @@ export const EndCard = ({ t, frame }) => {
   if (out >= 1) return null;
   const p = clamp((t - a) / 0.5) * 140 - 20; // flare wipe
   const k1 = ease.back((t - S16.t0 - 0.1) / 0.5, 1.4), k2 = ease.out((t - S16.t0 - 0.35) / 0.45), k3 = ease.out((t - S16.t0 - 0.55) / 0.45);
-  const shimmer = ((t - S16.t0) * 60) % 260 - 60;
+  const shimmer = ((t - S16.t0 - 0.5) * 75) % 220 - 20; // % across the title, repeats
   return (
     <div style={{ position: 'absolute', inset: 0, opacity: 1 - out, WebkitMaskImage: `linear-gradient(90deg, black ${p}%, transparent ${p + 6}%)`, maskImage: `linear-gradient(90deg, black ${p}%, transparent ${p + 6}%)` }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 46%, #3a2414 0%, #1a100a 60%, #0a0605 100%)' }} />
       <Bokeh t={t} seed={17} />
       <div style={{ position: 'absolute', left: 0, right: 0, top: 500, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ width: 380, height: 380, transform: `scale(${k1})`, filter: 'drop-shadow(0 0 50px rgba(255,190,90,0.5))' }}><Img src={staticFile('logo.svg')} style={{ width: 380, height: 380 }} /></div>
-        <div style={{ marginTop: 56, font: `700 100px ${SERIF}`, letterSpacing: '0.1em', opacity: k2, transform: `translateY(${(1 - k2) * 24}px)`,
-          background: `linear-gradient(100deg, #f4e2bf ${shimmer - 30}%, #fffbea ${shimmer}%, #f4e2bf ${shimmer + 30}%)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>GRACE IN MOTION</div>
+        <div style={{ position: 'relative', marginTop: 56, opacity: k2, transform: `translateY(${(1 - k2) * 24}px)` }}>
+          <div style={{ font: `700 100px ${SERIF}`, letterSpacing: '0.1em', color: '#f4e2bf', textShadow: '0 0 30px rgba(240,190,90,0.35), 0 4px 14px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>GRACE IN MOTION</div>
+          {/* gold shimmer: a brighter copy revealed through a moving clip band (no background-clip:text) */}
+          <div style={{ position: 'absolute', inset: 0, font: `700 100px ${SERIF}`, letterSpacing: '0.1em', color: '#fffbea', textShadow: '0 0 20px rgba(255,226,160,0.95)', whiteSpace: 'nowrap', clipPath: `inset(0 ${clamp(100 - shimmer - 8, 0, 100)}% 0 ${clamp(shimmer, 0, 100)}%)` }}>GRACE IN MOTION</div>
+        </div>
         <div style={{ marginTop: 18, height: 2, width: 360 * k3, background: 'linear-gradient(90deg, rgba(240,191,90,0), #f0bf5a, rgba(240,191,90,0))' }} />
         <div style={{ marginTop: 22, font: `600 48px ${SANS}`, letterSpacing: '0.05em', color: C.gold, opacity: k3 }}>@grace_in_motion616</div>
       </div>

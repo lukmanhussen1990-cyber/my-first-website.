@@ -28,6 +28,16 @@ if (mode === 'stills') {
   files.forEach((f, i) => fs.renameSync(path.join(tmp, f), path.join(outDir, `f${String(frames[i]).padStart(4, '0')}.jpg`)));
   fs.rmSync(tmp, { recursive: true, force: true });
   console.log(`rendered ${frames.length} stills in ${((Date.now() - t1) / 1000).toFixed(1)}s -> ${outDir}`);
+} else if (mode === 'frames') {
+  // node render.mjs frames 336-540 build/seg1  -> JPEG frames of the reel (for splicing re-rendered sections)
+  const [a, b] = process.argv[3].split('-').map(Number);
+  const outDir = path.resolve(process.argv[4]); fs.rmSync(outDir, { recursive: true, force: true }); fs.mkdirSync(outDir, { recursive: true });
+  const inputProps = { frames: null, audio: false, overlay: true, debug: false };
+  const composition = await selectComposition({ serveUrl, id: 'SevenThings', inputProps, browserExecutable, chromiumOptions });
+  const t1 = Date.now();
+  await renderFrames({ composition, serveUrl, inputProps, outputDir: outDir, imageFormat: 'jpeg', jpegQuality: 96, frameRange: [a, b], browserExecutable, chromiumOptions, timeoutInMilliseconds, concurrency,
+    onStart: () => {}, onFrameUpdate: () => {}, onBrowserLog: (l) => { if (l.type === 'error') console.log('[browser]', l.text.slice(0, 300)); } });
+  console.log(`frames ${a}-${b} -> ${outDir} in ${((Date.now() - t1) / 60000).toFixed(1)} min`);
 } else if (mode === 'cast') {
   const out = path.resolve(process.argv[3] || 'out/characters.png');
   const composition = await selectComposition({ serveUrl, id: 'CastSheet', browserExecutable, chromiumOptions });
