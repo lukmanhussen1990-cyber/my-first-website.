@@ -35,8 +35,10 @@ function spans(prog, tEnd, voicing = (c) => CH[c]) {
 const chordAt = (prog, t) => { let c = prog[0][1]; for (const [t0, n] of prog) if (t >= t0 - 1e-6) c = n; return c; };
 
 export function renderMusic(ctx) {
-  const { N, E, W, SC, G, cue, dur } = ctx;
-  const music = D.stereo(N), strings = D.stereo(N), choir = D.stereo(N), hall = D.f32(N);
+  // buses run 4 s past the end: synth.mjs wraps that overflow onto the start, so whatever rings at the end
+  // of the reel (the open-fifth D-A, its glow and bass) continues seamlessly into frame 0 of the loop
+  const { NB, E, W, SC, G, cue, dur } = ctx;
+  const music = D.stereo(NB), strings = D.stereo(NB), choir = D.stereo(NB), hall = D.f32(NB);
   const MS = (amt) => [[hall, amt]];
   const notes = { pad: 0, strings: 0, choir: 0, piano: 0, pulse: 0, timp: 0, bass: 0 };
 
@@ -84,7 +86,7 @@ export function renderMusic(ctx) {
       notes.pulse++;
     }
   };
-  const timp = (t, n, vel, g = 1, dur = 3) => { D.place(music, D.scale(I.timpani(D.mtof(nm(n)), { dur, vel, seed: 'timp' + t.toFixed(2) }), 0.32 * g), t, 1, 0, MS(0.35)); notes.timp++; };
+  const timp = (t, n, vel, g = 1, dur = 3) => { D.place(music, D.scale(I.timpani(D.mtof(nm(n)), { dur, vel, seed: 'timp' + t.toFixed(2) }), 0.23 * g), t, 1, 0, MS(0.35)); notes.timp++; };
 
   // ================================================================ A) night, Enoch, timeline, the math (D minor)
   const t0A = E.hookHit + 0.18;
@@ -113,15 +115,15 @@ export function renderMusic(ctx) {
   ];
   const endA = E.lampOut + 0.2;
   const cutA = ramp([[0, 950], [SC.S2.t0, 1050], [SC.S3.t0, 2000], [SC.S4.t0 - 0.3, 1900], [SC.S4.t0 + 1, 1500], [SC.S5.t0, 1150], [E.n182, 1350], [E.n600, 1600], [SC.S8.t0, 1800], [E.equals, 2200], [E.slam, 2700], [E.slam + 2.5, 1600], [E.lampOut, 1100]]);
-  const ampA = ramp([[0, 0.72], [SC.S2.t0, 0.8], [SC.S3.t0, 0.85], [SC.S5.t0, 0.75], [E.n187, 0.85], [E.n600, 0.95], [SC.S8.t0, 1.0], [E.sum600, 1.1], [E.slam, 1.25]]);
+  const ampA = ramp([[0, 0.85], [SC.S2.t0, 0.9], [SC.S3.t0, 0.85], [SC.S5.t0, 0.75], [E.n187, 0.85], [E.n600, 0.95], [SC.S8.t0, 0.95], [E.sum600, 1.0], [E.slam, 1.05]]);
   pad(progA, endA, { att: 1.6, att0: 2.4, rel: 1.4, amp: 0.13, ampAt: ampA, cutoff: cutA, seed: 'padA' });
   for (const [t, n] of progA) cue(t, `chord ${n}`);
   // low drone: open fifth D2 + A2 (soft triangle) under the night and under the whole math (pedal)
-  for (const [a, b, g] of [[E.hookHit + 0.1, SC.S3.t0 + 0.6, 1], [SC.S5.t0 - 0.4, E.lampOut + 0.1, 1.15]]) {
+  for (const [a, b, g] of [[E.hookHit + 0.1, SC.S3.t0 + 0.6, 1], [SC.S5.t0 - 0.4, E.lampOut + 0.1, 1.0]]) {
     for (const m of [38, 45]) I.padNote(music, { midi: m, t0: a, t1: b, att: 2.6, rel: 1.2, amp: (m === 38 ? 0.06 : 0.035) * g, cutoff: () => 420, wave: 'tri', voices: 1, detune: 0, spread: 0, sends: MS(0.15), seed: 'drone', bloom: 0.2, lfo: 0.1, drift: 0.8 });
   }
   // bass: the timeline walks, the math is anchored
-  bass(progA.filter(([t]) => t >= SC.S4.t0 - 1e-6), endA, { amp: 0.07, att: 0.5, att0: 1.2, rel: 1.1, seed: 'bassA', ampAt: ramp([[SC.S4.t0, 0.8], [SC.S5.t0, 0.9], [SC.S8.t0, 1.1], [E.slam, 1.3]]) });
+  bass(progA.filter(([t]) => t >= SC.S4.t0 - 1e-6), endA, { amp: 0.07, att: 0.5, att0: 1.2, rel: 1.1, seed: 'bassA', ampAt: ramp([[SC.S4.t0, 0.8], [SC.S5.t0, 0.9], [SC.S8.t0, 0.8], [E.slam, 0.85]]) });
 
   // high, light strings in the golden morning (upper two chord tones, an octave up)
   str(progA.filter(([t]) => t >= SC.S3.t0 - 1e-6 && t < SC.S4.t0 + 1e-6), SC.S4.t0 + 0.3, { voicing: (c) => CH[c].slice(-2).map((m) => m + 12), att: 1.8, rel: 2.2, amp: 0.032, cutoff: 3200, seed: 'strMorning', send: 0.7 });
@@ -138,10 +140,10 @@ export function renderMusic(ctx) {
   for (const m of [50, 57]) { I.stringNote(strings, { midi: m, t0: E.n182 - 0.2, t1: SC.S8.t0 + 0.2, att: 1.6, rel: 1.0, amp: 0.05, cutoff: 1500, seed: 'cello', ampAt: ramp([[E.n182, 0.8], [E.n600, 1.1]]) }); notes.strings++; }
   const line9 = progA.filter(([t]) => t >= SC.S8.t0 - 1e-6);
   str(line9, endA - 0.3, { voicing: (c) => [CH[c][0] - 12, ...CH[c]], att: 0.7, rel: 1.4, amp: 0.05, cutoff: ramp([[SC.S8.t0, 1700], [E.equals, 3200], [E.slam, 4200], [E.slam + 2.5, 2200]]), seed: 'strLine9', send: 0.55,
-    ampAt: ramp([[SC.S8.t0, 0.7], [E.sum600, 1.05], [E.equals, 1.3], [E.slam, 1.45], [E.slam + 1.5, 1.0], [E.lampOut, 0.55]]) });
+    ampAt: ramp([[SC.S8.t0, 0.65], [E.sum600, 0.9], [E.equals, 1.05], [E.slam, 1.15], [E.slam + 1.5, 0.8], [E.lampOut, 0.45]]) });
   cue(SC.S8.t0, 'full strings: Gm - Bb - Asus - A - Dm (crescendo into the slam)');
   // the slam: choir "ah" on D minor (plus a low D under it), sustains and thins out until the lamp dies
-  cho([[E.slam, 'Dm']], E.lampOut - 0.15, { voicing: () => [50, 57, 62, 65, 69, 74], att: 0.09, rel: 1.0, amp: 0.085, seed: 'choirSlam', ampAt: ramp([[E.slam, 1], [E.slam + 1.2, 0.8], [E.lampOut, 0.45]]) });
+  cho([[E.slam, 'Dm']], E.lampOut - 0.15, { voicing: () => [50, 57, 62, 65, 69, 74], att: 0.09, rel: 1.0, amp: 0.065, seed: 'choirSlam', ampAt: ramp([[E.slam, 1], [E.slam + 1.2, 0.8], [E.lampOut, 0.45]]) });
   cue(E.slam, 'choir "ah" D minor on the slam');
 
   // pulse: 80 BPM eighths from the tracker on, re-anchored on every number, resting in each anticipation dip
@@ -149,7 +151,7 @@ export function renderMusic(ctx) {
   const anchors = [E.tracker, E.n187, E.n182, E.n600, E.sum187, E.sum182, E.sum600];
   anchors.forEach((a, k) => {
     const b = k + 1 < anchors.length ? anchors[k + 1] - 0.3 : E.equals - 0.02;
-    pulse(a, b, EIGHTH, progA, { seed: 'pulseMath', oct: k >= 3, cutoffAt: ramp([[E.tracker, 380], [E.n187, 440], [E.n600, 560], [E.sum187, 650], [E.sum600, 800]]), velAt: ramp([[E.tracker, 0.65], [E.n187, 0.85], [E.n600, 0.95], [E.sum187, 1.0], [E.sum600, 1.08]]) });
+    pulse(a, b, EIGHTH, progA, { seed: 'pulseMath', oct: k >= 3, cutoffAt: ramp([[E.tracker, 380], [E.n187, 440], [E.n600, 560], [E.sum187, 650], [E.sum600, 800]]), velAt: ramp([[E.tracker, 0.65], [E.n187, 0.85], [E.n600, 0.92], [E.sum187, 0.88], [E.sum600, 0.92]]) });
   });
   cue(E.tracker, 'pulse 80 BPM (re-anchored on each number, rests in each dip)');
   // tension in line 9: a soft muted 16th ostinato (A4 / D5) between the sums
@@ -159,9 +161,9 @@ export function renderMusic(ctx) {
     notes.pulse++;
   }
   // timpani under the sums, a roll into the equals, the slam
-  timp(E.sum187, 'D2', 0.45, 0.8); timp(E.sum182, 'Bb1', 0.5, 0.85); timp(E.sum600, 'A1', 0.55, 0.9);
-  for (let j = 0, t = E.equals - 0.3; t < E.slam - 0.03; j++, t += 0.055) timp(t, 'A1', 0.18 + 0.4 * (t - E.equals + 0.3) / 0.65, 0.35 + 0.5 * (t - E.equals + 0.3) / 0.65, 0.8);
-  timp(E.slam, 'D2', 0.95, 1.6, 4);
+  timp(E.sum187, 'D2', 0.45, 0.6); timp(E.sum182, 'Bb1', 0.5, 0.62); timp(E.sum600, 'A1', 0.55, 0.65);
+  for (let j = 0, t = E.equals - 0.3; t < E.slam - 0.03; j++, t += 0.055) timp(t, 'A1', 0.18 + 0.4 * (t - E.equals + 0.3) / 0.65, 0.25 + 0.35 * (t - E.equals + 0.3) / 0.65, 0.8);
+  timp(E.slam, 'D2', 0.95, 1.0, 4);
   cue(E.equals - 0.3, 'timpani roll into the slam');
 
   // felt piano: sparse, in the gaps where possible
@@ -172,7 +174,7 @@ export function renderMusic(ctx) {
     [13.5, 'D5', 0.2], [13.92, 'G5', 0.2, 2.6], [E.enochGone + 0.02, 'A5', 0.2, 3.5], [E.enochGone + 0.3, 'C6', 0.17, 3.5],
     [16.0, 'D4', 0.2], [16.6, 'A4', 0.2], [17.2, 'F4', 0.19], [18.6, 'E4', 0.17], [19.0, 'D5', 0.2], [19.6, 'Bb4', 0.18],   // S4 walking
     [20.6, 'A4', 0.17], [21.1, 'C5', 0.2], [21.6, 'F5', 0.19], [22.2, 'E5', 0.2], [22.55, 'C#5', 0.18],
-    [E.slam, 'D2', 0.26, 3.2], [E.slam + 0.01, 'A2', 0.25, 3.2], [E.slam + 0.02, 'D3', 0.27, 3.2],                          // weight under the slam
+    [E.slam, 'D2', 0.2, 3.2], [E.slam + 0.01, 'A2', 0.22, 3.2], [E.slam + 0.02, 'D3', 0.27, 3.2],                          // weight under the slam
     [42.05, 'A4', 0.17, 2], [42.95, 'F4', 0.16, 2], [E.lampOut, 'D4', 0.17, 2],                                           // "...died."
   ], 'feltA');
 
@@ -201,18 +203,18 @@ export function renderMusic(ctx) {
   ];
   const endB = dur + 0.3;
   const cutB = ramp([[t10, 750], [bars[0], 1000], [bars[2], 1500], [bars[4], 1800], [E.floodCrack, 1000], [E.city, 950], [E.warmLight, 1000], [E.warmLight + 3.6, 2600], [E.cta, 2400], [E.endCard, 2200], [dur, 2100]]);
-  const ampB = ramp([[t10, 0.6], [bars[0], 0.72], [bars[2], 0.9], [bars[4], 1.0], [E.floodCrack, 0.85], [E.city, 0.7], [E.warmLight, 1.05], [E.cta, 0.95], [E.endCard, 0.85]]);
+  const ampB = ramp([[t10, 0.7], [bars[0], 0.72], [bars[2], 0.9], [bars[4], 1.0], [E.floodCrack, 0.75], [E.city, 0.7], [E.warmLight, 1.05], [E.cta, 0.95], [E.endCard, 0.85]]);
   pad(progB, endB, { att: 1.5, att0: 1.8, rel: 2.0, amp: 0.13, ampAt: ampB, cutoff: cutB, seed: 'padB', bloom: 0.35 });
   for (const [t, n] of progB) cue(t, `chord ${n}`);
   // drone back under the cold rain and the flood
-  for (const [a, b, g] of [[t10, bars[0] + 1.2, 0.9], [E.floodCrack - 0.2, E.city + 1.5, 1.2]]) {
+  for (const [a, b, g] of [[t10, bars[0] + 1.2, 0.9], [E.floodCrack - 0.2, E.city + 1.5, 0.9]]) {
     for (const m of [38, 45]) I.padNote(music, { midi: m, t0: a, t1: b, att: 2.0, rel: 1.5, amp: (m === 38 ? 0.06 : 0.032) * g, cutoff: () => 400, wave: 'tri', voices: 1, detune: 0, spread: 0, sends: MS(0.15), seed: 'droneB', bloom: 0.2, lfo: 0.1, drift: 0.8 });
   }
   // thin glassy A6 (cold air) over the first rain
   I.padNote(music, { midi: 93, t0: t10 + 0.8, t1: bars[0], att: 2.2, rel: 1.5, amp: 0.016, cutoff: () => 5000, wave: 'sine', voices: 2, detune: 5, spread: 0.6, sends: MS(0.8), seed: 'glass', lfo: 0 });
   // bass: time-lapse, flood pedal, city, major
   bass(progB.filter(([t]) => t >= bars[0] - 1e-6), endB, { amp: 0.075, att: 0.35, att0: 1.0, rel: 1.2, seed: 'bassB', root: { ...ROOT, GmD: 38, BbL: 38 },
-    ampAt: ramp([[bars[0], 0.7], [bars[2], 0.95], [E.floodCrack, 1.25], [E.city, 0.75], [E.warmLight, 1.05], [E.endCard, 0.9]]) });
+    ampAt: ramp([[bars[0], 0.7], [bars[2], 0.95], [E.floodCrack, 0.95], [E.city, 0.75], [E.warmLight, 1.05], [E.endCard, 0.9]]) });
 
   // time-lapse: pulse on the 92 BPM grid (eighths), growing bar by bar, stops on the crack
   pulse(bars[0], E.floodCrack - 0.04, beat / 2, progB, { seed: 'pulseTL', oct: true, cutoffAt: ramp([[bars[0], 420], [bars[2], 600], [bars[4], 780]]), velAt: ramp([[bars[0], 0.55], [bars[1], 0.75], [bars[3], 0.95], [bars[4], 1.05]]) });
@@ -221,19 +223,19 @@ export function renderMusic(ctx) {
   str(progB.filter(([t]) => t >= bars[1] - 1e-6 && t < E.floodCrack - 1e-6), E.floodCrack + 0.15, { voicing: (c) => [CH[c][0] - 12, ...CH[c].slice(1)], att: 1.4, rel: 0.9, amp: 0.045, cutoff: ramp([[bars[1], 1400], [bars[4], 2800], [E.floodCrack, 3400]]), seed: 'strTL',
     ampAt: ramp([[bars[1], 0.6], [bars[3], 0.9], [bars[4], 1.1], [E.floodCrack - 0.1, 1.3]]) });
   // choir "oo" for the card (God waited), into the flood
-  cho(progB.filter(([t]) => t >= bars[3] - 1e-6 && t < E.city - 1e-6), E.city + 0.4, { voicing: (c) => CH[c].slice(0, 3), att: 1.4, rel: 1.6, amp: 0.05, seed: 'choirTL', ampAt: ramp([[bars[3], 0.7], [E.floodCrack, 1.0], [E.city, 0.6]]) });
+  cho(progB.filter(([t]) => t >= bars[3] - 1e-6 && t < E.city - 1e-6), E.city + 0.4, { voicing: (c) => CH[c].slice(0, 3), att: 1.4, rel: 1.6, amp: 0.05, seed: 'choirTL', ampAt: ramp([[bars[3], 0.7], [E.floodCrack, 0.85], [E.city, 0.6]]) });
   // timpani: a soft roll through the last bar into the crack, the crack itself, the ark lifting
   for (let t = bars[4] + 2 * beat; t < E.floodCrack - 0.03; t += 0.06) { const u = (t - bars[4] - 2 * beat) / (2 * beat); timp(t, 'A1', 0.15 + 0.35 * u, 0.25 + 0.45 * u, 0.8); }
-  timp(E.floodCrack, 'D2', 0.8, 1.2, 4); timp(E.arkLift, 'Bb1', 0.5, 0.7, 3);
+  timp(E.floodCrack, 'D2', 0.8, 0.75, 4); timp(E.arkLift, 'Bb1', 0.5, 0.55, 3);
   // flood: low string tremolo on the dark chords (storm), not loud
-  str([[E.floodCrack, 'GmD'], [E.arkLift, 'BbL']], E.city + 0.6, { voicing: (c) => CH[c].map((m) => m - 12).slice(0, 3), att: 0.4, rel: 1.4, amp: 0.05, cutoff: 1100, seed: 'tremolo',
+  str([[E.floodCrack, 'GmD'], [E.arkLift, 'BbL']], E.city + 0.6, { voicing: (c) => CH[c].map((m) => m - 12).slice(0, 3), att: 0.4, rel: 1.4, amp: 0.035, cutoff: 1100, seed: 'tremolo',
     ampAt: (t) => (0.65 + 0.35 * Math.sin(2 * Math.PI * 9 * t)) * (t < E.city ? 1 : Math.max(0, 1 - (t - E.city) / 0.6)) });
   cue(E.floodCrack, 'flood: low string tremolo, choir "oo", timpani (dark, not loud)');
 
   // city at night: high soft strings, then the warm light: strings + choir swell into D major
   str([[E.city + 0.5, 'Dm'], [W('B14', 'Not'), 'Bb'], [W('B14', 'you', 0), 'Asus'], [E.warmLight - 0.4, 'A']], E.warmLight + 0.1, { voicing: (c) => CH[c].slice(-2).map((m) => m + 12), att: 2.0, rel: 1.2, amp: 0.022, cutoff: 3000, seed: 'strCity', send: 0.8 });
   const major = progB.filter(([t]) => t >= E.warmLight - 1e-6);
-  str(major.filter(([t]) => t < E.loopBack - 1e-6), E.loopBack + 0.4, { voicing: (c) => [CH[c][0] - 12, ...CH[c].slice(1)], att: 1.6, rel: 2.0, amp: 0.045, cutoff: ramp([[E.warmLight, 1400], [E.warmLight + 3, 2800], [E.cta, 2400], [E.endCard, 2000]]), seed: 'strMajor',
+  str(major.filter(([t]) => t < E.loopBack - 1e-6), E.loopBack - 0.2, { voicing: (c) => [CH[c][0] - 12, ...CH[c].slice(1)], att: 1.6, rel: 2.0, amp: 0.045, cutoff: ramp([[E.warmLight, 1400], [E.warmLight + 3, 2800], [E.cta, 2400], [E.endCard, 2000]]), seed: 'strMajor',
     ampAt: ramp([[E.warmLight, 0.8], [E.warmLight + 3, 1.1], [E.cta, 0.8], [E.endCard, 0.65], [E.loopBack, 0.5]]) });
   cho(major.filter(([t]) => t < E.cta - 1e-6), E.cta + 0.5, { voicing: (c) => CH[c].slice(1).map((m) => m + 0), att: 1.8, rel: 2.2, amp: 0.06, seed: 'choirWarm', ampAt: ramp([[E.warmLight, 0.8], [E.warmLight + 2.5, 1.1], [W('B15', 'repentance'), 0.9], [E.cta, 0.5]]) });
   cue(E.warmLight, 'D MAJOR: warm pad bloom + choir "oo -> ah" + strings ("for you")');
@@ -246,16 +248,6 @@ export function renderMusic(ctx) {
   // a light pulse returns for the question (80 BPM), and leaves for the end card
   pulse(E.cta + 0.2, E.endCard - 0.2, EIGHTH, progB, { seed: 'pulseCTA', cutoff: 400, decay: 0.15, velAt: ramp([[E.cta, 0.4], [E.cta + 1.5, 0.62], [E.endCard - 0.6, 0.45]]) });
 
-  // loop pre-roll: the reel opens on the open fifth the end dissolves into (same voicing, level, filter and
-  // glow), releasing under the hook hit while the hook's D minor enters, so the restart is continuous
-  {
-    const endAmp = 0.13 * ampB(dur), endCut = cutB(dur);
-    for (const m of CH.D5) I.padNote(music, { midi: m, t0: 0, t1: E.hookHit + 0.1, att: 0.004, rel: 1.8, amp: endAmp, cutoff: () => endCut, seed: 'preroll', bloom: 0, sends: MS(0.45) });
-    for (const m of CH.D5.slice(-2)) I.padNote(music, { midi: m + 12, t0: 0, t1: E.hookHit + 0.1, att: 0.004, rel: 1.6, amp: 0.02, cutoff: () => 6000, wave: 'tri', voices: 2, detune: 6, spread: 0.9, sends: MS(0.9), seed: 'prerollGlow', lfo: 0, bloom: 0 });
-    I.bassNote(music, { midi: 38, t0: 0, t1: E.hookHit + 0.1, amp: 0.075 * 0.9, att: 0.004, rel: 1.0, sends: MS(0.06), seed: 'prerollBass' });
-    cue(0, 'loop pre-roll: open fifth D-A (continues the end) releasing under the hook hit');
-  }
-
   piano([
     [46.35, 'A5', 0.15, 3], [47.05, 'F5', 0.15, 3], [47.75, 'D5', 0.17, 3], [48.3, 'D5', 0.15], [49.08, 'F5', 0.15], [50.15, 'Bb4', 0.16, 2.6], [50.45, 'G4', 0.15, 2.6],  // S10 cold
     [bars[2], 'A4', 0.2], [bars[2] + beat, 'C5', 0.2], [bars[2] + 2 * beat, 'F5', 0.22, 2.6], [bars[2] + 3.5 * beat, 'E5', 0.2],                                        // time-lapse
@@ -264,7 +256,7 @@ export function renderMusic(ctx) {
     [E.warmLight + 0.02, 'D5', 0.23, 3.5], [E.warmLight + 0.06, 'F#5', 0.24, 3.5], [E.warmLight + 0.1, 'A5', 0.22, 3.5],                                            // FOR you
     [71.32, 'B4', 0.2], [71.36, 'D5', 0.2, 2.6], [72.82, 'F#5', 0.21, 2.6], [73.96, 'G5', 0.2, 2.6], [75.1, 'E5', 0.2], [75.95, 'C#5', 0.21], [76.45, 'D5', 0.22, 3], [76.5, 'A5', 0.2, 3],
     [77.5, 'F#5', 0.2, 2.6], [78.7, 'B4', 0.2], [78.74, 'D5', 0.2, 2.4], [E.hourglass + 0.02, 'F#4', 0.2, 3], [E.hourglass + 0.04, 'D5', 0.2, 3], [80.1, 'C#5', 0.19], [80.14, 'E5', 0.18, 2.4],
-    [E.endCard + 0.05, 'D4', 0.2, 3.5], [E.endCard + 0.45, 'A4', 0.2, 3.5], [E.endCard + 0.85, 'E5', 0.19, 3], [E.endCard + 1.25, 'F#5', 0.2, 3], [E.loopBack - 0.15, 'A4', 0.16, 2.5], [E.loopBack + 0.1, 'D5', 0.15, 2.5],
+    [E.endCard + 0.05, 'D4', 0.2, 3.5], [E.endCard + 0.45, 'A4', 0.2, 3.5], [E.endCard + 0.85, 'E5', 0.19, 3], [E.endCard + 1.25, 'F#5', 0.2, 3], [E.loopBack - 0.6, 'A4', 0.15, 2.5],
   ], 'feltB');
 
   // ================================================================ string ensemble chorus, choir formants, buses
@@ -276,8 +268,9 @@ export function renderMusic(ctx) {
     if (t < E.cta) { const u = tw(E.warmLight + 0.3, E.warmLight + 2.8, t); return { oo: 1 - u, ah: u * 0.6, oh: u * 0.4 }; }
     return { oh: 1 };
   });
-  for (const [bus, g, send] of [[strings, 1, 0.5], [choir, 1, 0.65]]) {
-    for (let i = 0; i < N; i++) { const l = bus.L[i] * g, r = bus.R[i] * g; music.L[i] += l; music.R[i] += r; hall[i] += (l + r) * 0.5 * send; }
+  const dry = process.env.AUDIO_DEBUG ? { L: Float32Array.from(music.L), R: Float32Array.from(music.R) } : null;  // pads, piano, pulse, bass, timpani
+  for (const [bus, g, send] of [[strings, 2.5, 0.5], [choir, 3.5, 0.65]]) {
+    for (let i = 0; i < NB; i++) { const l = bus.L[i] * g, r = bus.R[i] * g; music.L[i] += l; music.R[i] += r; hall[i] += (l + r) * 0.5 * send; }
   }
-  return { music, hall, notes };
+  return { music, hall, notes, layers: dry ? { 'pads+piano+pulse+bass+timp': dry, strings, choir } : null };
 }

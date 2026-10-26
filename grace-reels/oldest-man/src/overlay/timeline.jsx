@@ -105,7 +105,8 @@ function Bar({ t, at, dur, y, y0, y1, fill, name, born, end, who, hero, arrow, g
         {glow.map(([g0, g1, ga], i) => {
           const gk = ease.out((t - ga) / 0.45); if (gk <= 0) return null;
           const pulse = 0.85 + 0.15 * Math.sin((t - ga) * 5);
-          return <div key={i} style={{ position: 'absolute', left: X(g0) - x0 - 2, width: (X(g1) - X(g0)) * gk, top: 0, bottom: 0, background: 'linear-gradient(180deg, #ffe7a8, #f2b84a 55%, #d18f2a)', opacity: pulse }} />;
+          return <div key={i} style={{ position: 'absolute', left: X(g0) - x0 - 2, width: (X(g1) - X(g0)) * gk, top: 0, bottom: 0, opacity: pulse,
+            background: 'repeating-linear-gradient(-55deg, rgba(255,226,140,0.95) 0 7px, rgba(255,210,110,0.18) 7px 13px), linear-gradient(180deg, rgba(255,240,200,0.35), rgba(255,200,90,0.1))' }} />;
         })}
       </div>
       {glow.map(([g0, g1, ga], i) => {

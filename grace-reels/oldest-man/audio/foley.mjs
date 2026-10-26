@@ -24,9 +24,9 @@ export function renderSfx(ctx) {
     const c = shape(X.crickets({ dur: d, count: 3, seed: seed + 'c' }), a, (t) => crkAt(t));
     const l = shape(X.lampFlame({ dur: d, gutter: (tt) => (typeof gutter === 'function' ? gutter(a + tt) : gutter), seed: seed + 'l' }), a, (t) => lampAt(t));
     for (const s of [w, c, l]) fadeSt(s, fi, fo);
-    place(sfx, w, a, dB(-25), 0, null);
-    place(sfx, c, a, dB(-34), 0, SS(0.1));
-    place(sfx, l, a, dB(-24), 0.08, SS(0.18));
+    place(sfx, w, a, dB(-23), 0, null);
+    place(sfx, c, a, dB(-31), 0, SS(0.1));
+    place(sfx, l, a, dB(-22), 0.08, SS(0.18));
   };
   const S2 = SC.S2, S1end = SC.S3.t0 + 0.35;
   night(0, S1end, { seed: 'night1', lampAt: (t) => (t < S2.t0 ? 0.85 : 1.25), crkAt: (t) => (t < S2.t0 ? 1 : 0.8), fo: 0.6 });
@@ -62,7 +62,7 @@ export function renderSfx(ctx) {
     const r = D.makeRng('enochSteps'), t0 = SC.S3.t0 + 0.25, tLast = E.enochGone - 0.32; let k = 0, t = t0;
     for (; t <= tLast; t += 0.56 + r.uni(-0.02, 0.02), k++) {
       const u = (t - t0) / (tLast - t0);
-      place(sfx, X.stepSand({ weight: k % 2 ? 0.85 : 1, seed: 'st' + k }), q(t), dB(lerp(-27, -32, u)) * r.uni(0.85, 1), lerp(-0.25, 0.1, u) + (k % 2 ? 0.06 : -0.06), SS(0.12, 0.05));
+      place(sfx, X.stepSand({ weight: k % 2 ? 0.85 : 1, seed: 'st' + k }), q(t), dB(lerp(-24, -29, u)) * r.uni(0.85, 1), lerp(-0.25, 0.1, u) + (k % 2 ? 0.06 : -0.06), SS(0.12, 0.05));
     }
     cue(t0, `Enoch's footsteps on sand (${k}, last at ${(t - 0.56).toFixed(2)} s: they stop before "took")`);
     const tc = q(E.card524); place(sfx, X.shimmer({ notes: ['F6', 'A6', 'C7'], spacing: 0.05, dur: 1.5, bright: 0.25, air: 0.15, seed: 'card524' }), tc, dB(-32), 0.25, SS(0, 0.45)); cue(tc, 'card shimmer (Genesis 5:24)');
@@ -112,13 +112,13 @@ export function renderSfx(ctx) {
     const tf = q(E.dropFall), tsp = q(E.dropSplash);
     place(sfx, X.dropFall({ dur: tsp - tf, seed: 'dropFall' }), tf, dB(-32), 0, SS(0, 0.2, 0.2)); cue(tf, 'slow-motion drop falls');
     place(sfx, X.bigDrop({ seed: 'bigDrop' }), tsp, dB(-9), 0, SS(0.1, 0.3, 0.55)); cue(tsp, 'DROP SPLASH: huge amplified "plip"');
-    const tt = q(E.thunderFar); place(sfx, X.thunder({ dur: 6, far: 1, rolls: [0, 0.8, 2.0], seed: 'farThunder' }), tt, dB(-15), -0.2, SS(0, 0.2, 0.15)); cue(tt, 'far thunder');
+    const tt = q(E.thunderFar); place(sfx, X.thunder({ dur: 6, far: 1, rolls: [0, 0.8, 2.0], seed: 'farThunder' }), tt, dB(-16), -0.2, SS(0, 0.2, 0.15)); cue(tt, 'far thunder');
   }
   // ================================================================ S10 first soft rain, low wind
   {
     const a = q(E.dropSplash) + 0.25, b = SC.S11.t0 + 0.6;
     const I = ramp([[a, 0.03], [a + 1.0, 0.12], [W('B11', 'when'), 0.3], [b - 0.8, 0.42]]);
-    place(sfx, shape(X.rain({ dur: b - a, intensity: (t) => I(a + t), rate: 90, hiss: 0.8, seed: 'firstRain' }), a, win(a, b, 0.3, 0.6)), a, dB(-8), 0, SS(0.08));
+    place(sfx, shape(X.rain({ dur: b - a, intensity: (t) => I(a + t), rate: 90, hiss: 0.35, seed: 'firstRain' }), a, win(a, b, 0.3, 0.6)), a, dB(-11), 0, SS(0.08));
     place(sfx, fadeSt(X.wind({ dur: b - a + 0.4, lo: 110, hi: 600, gust: 0.5, rate: 0.1, seed: 'lowWind' }), 1.0, 0.6), a, dB(-29), 0, null);
     cue(a, 'first soft rain (sparse drops thickening) + low wind');
   }
@@ -126,9 +126,9 @@ export function renderSfx(ctx) {
   {
     const { bars, beat } = G, e8 = beat / 2, tStop = SC.S11.shots.find((s) => s.id === 'S11c')?.t0 ?? bars[3];
     const hammers = [
-      { f: 760, pan: -0.15, g: -29, rs: 0.1, hs: 0.15, pat: [[0, 4], [0, 3, 4], [0, 2, 4, 6, 7]] },
-      { f: 980, pan: 0.55, g: -34, rs: 0.15, hs: 0.3, pat: [[2, 6], [2, 5, 6], [1, 2, 5, 6]] },
-      { f: 610, pan: -0.6, g: -36, rs: 0.15, hs: 0.35, pat: [[], [3, 7], [3, 7]] },
+      { f: 760, pan: -0.15, g: -22, rs: 0.1, hs: 0.15, pat: [[0, 4], [0, 3, 4], [0, 2, 4, 6, 7]] },
+      { f: 980, pan: 0.55, g: -27, rs: 0.15, hs: 0.3, pat: [[2, 6], [2, 5, 6], [1, 2, 5, 6]] },
+      { f: 610, pan: -0.6, g: -29, rs: 0.15, hs: 0.35, pat: [[], [3, 7], [3, 7]] },
     ];
     const r = D.makeRng('hammers'); let nT = 0;
     hammers.forEach((h, j) => h.pat.forEach((p, bi) => p.forEach((k) => {
@@ -137,15 +137,15 @@ export function renderSfx(ctx) {
     })));
     cue(bars[0], `hammer taps on the 92 BPM grid (${nT}, until the ark is finished at ${tStop.toFixed(2)} s)`);
     const ma = bars[0] + 0.1, mb = tStop + 0.4;
-    place(sfx, fadeSt(X.murmur({ dur: mb - ma, talkers: 10, pitchLo: 110, pitchHi: 240, lp: 1100, seed: 'crowd' }), 0.8, 0.6), ma, dB(-31), 0.1, SS(0.2, 0.1));
-    [[51.8, 0.5, 190], [54.92, -0.45, 165], [56.7, 0.3, 210]].forEach(([t, p, f], k) => { if (t < mb - 0.3) place(sfx, X.laugh({ pitch: f, count: 4 + (k % 2), seed: 'laugh' + k }), t, dB(-36), p, SS(0.25, 0.2)); });
+    place(sfx, fadeSt(X.murmur({ dur: mb - ma, talkers: 10, pitchLo: 110, pitchHi: 240, lp: 1100, seed: 'crowd' }), 0.8, 0.6), ma, dB(-28), 0.1, SS(0.2, 0.1));
+    [[51.8, 0.5, 190], [54.92, -0.45, 165], [56.7, 0.3, 210]].forEach(([t, p, f], k) => { if (t < mb - 0.3) place(sfx, X.laugh({ pitch: f, count: 4 + (k % 2), seed: 'laugh' + k }), t, dB(-33), p, SS(0.25, 0.2)); });
     cue(ma, 'crowd murmur + distant laughs (no words)');
     // seasons: green (leaves) -> dry (dusty gusts) -> green
     const segs = [[bars[0] - 0.25, bars[1] + 0.3, 'green'], [bars[1] - 0.3, bars[3] + 0.3, 'dry'], [bars[3] - 0.3, E.floodCrack + 0.2, 'green']];
     segs.forEach(([a, b, kind], k) => {
       const w = kind === 'dry' ? X.wind({ dur: b - a, lo: 140, hi: 1000, gust: 0.75, rate: 0.28, move: 0.9, seed: 'dry' + k }) : X.wind({ dur: b - a, lo: 260, hi: 1800, gust: 0.45, rate: 0.16, seed: 'green' + k });
-      place(sfx, fadeSt(w, 0.5, 0.5), a, dB(kind === 'dry' ? -27 : -30), 0, null);
-      if (kind === 'green') place(sfx, fadeSt(X.rustle({ dur: b - a, rate: 0.35, density: 130, seed: 'leaves' + k }), 0.5, 0.5), a, dB(-33), 0, SS(0.05));
+      place(sfx, fadeSt(w, 0.5, 0.5), a, dB(kind === 'dry' ? -25 : -28), 0, null);
+      if (kind === 'green') place(sfx, fadeSt(X.rustle({ dur: b - a, rate: 0.35, density: 130, seed: 'leaves' + k }), 0.5, 0.5), a, dB(-31), 0, SS(0.05));
       cue(a, `seasonal wind: ${kind}`);
     });
     const tc = q(E.card320); place(sfx, X.shimmer({ notes: ['D6', 'G6', 'Bb6', 'D7'], spacing: 0.07, dur: 2.2, bright: 0.3, air: 0.2, seed: 'card320' }), tc, dB(-27), 0.2, SS(0, 0.5)); cue(tc, 'warm card shimmer (1 Peter 3:20)');
@@ -154,10 +154,10 @@ export function renderSfx(ctx) {
   {
     const tc = q(E.floodCrack);
     place(sfx, X.revSwell({ dur: 0.3, f0: 600, oct: 3, seed: 'preCrack' }), tc - 0.3, dB(-28), 0, SS(0, 0.1));
-    place(sfx, X.skyCrack({ seed: 'skyCrack' }), tc, dB(-11), 0, SS(0, 0.2, 0.25)); cue(tc, 'FLOOD CRACK: bright crack + deep rumble');
+    place(sfx, X.skyCrack({ seed: 'skyCrack' }), tc, dB(-13), 0, SS(0, 0.2, 0.25)); cue(tc, 'FLOOD CRACK: bright crack + deep rumble');
     const a = q(E.floodRain), b = E.city + 0.45;
     const I = ramp([[a, 0.1], [a + 0.6, 0.9], [E.arkLift, 1], [E.city, 0.95]]);
-    place(sfx, shape(X.rain({ dur: b - a, intensity: (t) => I(a + t), rate: 650, hiss: 1.7, gust: 0.55, gustRate: 0.5, seed: 'sheets' }), a, win(a, b, 0.25, 0.4)), a, dB(-12), 0, SS(0.06, 0.05));
+    place(sfx, shape(X.rain({ dur: b - a, intensity: (t) => I(a + t), rate: 650, hiss: 1.7, gust: 0.55, gustRate: 0.5, seed: 'sheets' }), a, win(a, b, 0.25, 0.4)), a, dB(-14.5), 0, SS(0.06, 0.05));
     cue(a, 'rain sheets');
     const tl = q(E.arkLift);
     place(sfx, X.waterSwell({ dur: 2.2, seed: 'lift' }), tl - 0.5, dB(-21), 0, SS(0, 0.15));
@@ -168,7 +168,7 @@ export function renderSfx(ctx) {
   {
     const a = E.city - 0.25, b = SC.S14.t0 + 0.35;
     const I = ramp([[a, 0.62], [E.warmLight, 0.55], [E.warmLight + 2.2, 0.28], [b, 0.24]]);
-    place(sfx, shape(X.rain({ dur: b - a, intensity: (t) => I(a + t), surface: 'street', rate: 190, hiss: 1.1, gust: 0.2, seed: 'cityRain' }), a, win(a, b, 0.45, 0.55)), a, dB(-9), 0, SS(0.1, 0.04));
+    place(sfx, shape(X.rain({ dur: b - a, intensity: (t) => I(a + t), surface: 'street', rate: 190, hiss: 1.1, gust: 0.2, seed: 'cityRain' }), a, win(a, b, 0.45, 0.55)), a, dB(-15), 0, SS(0.1, 0.04));
     place(sfx, fadeSt(X.trickle({ dur: b - a, seed: 'gutter' }), 0.8, 0.55), a, dB(-36), 0.3, SS(0.1));
     cue(a, 'soft rain on the streets (match cut), slowing after the warm light');
     const tw = q(E.warmLight);

@@ -14,7 +14,7 @@ export const C = {
 };
 // Instagram safe zone: text inside x 60–1000, y 220–1560; the right ~120 px between y 1100–1700 is under the IG buttons
 export const SAFE = { x0: 60, x1: 1000, y0: 220, y1: 1560, igX: 950, igY0: 1100, igY1: 1700 };
-export const L = { headerY: 150, capTop: 250, capBottom: 600, capX: 72, capW: 936, trackY: 640, trackH: 120 };
+export const L = { headerY: 150, capTop: 250, capBottom: 600, capX: 72, capW: 916, trackY: 640, trackH: 120 };
 
 // ------------------------------------------------------------------ tiny pure animation helpers
 export const ease = {
@@ -58,17 +58,26 @@ export function measure(font, text) {
   if (ok) _mcache.set(key, w);
   return w;
 }
-// items: [{ text, font, gap? }] -> { items:[{x,y,w,line}], lines, lineW:[], width, height }
+// items: [{ text, font, extra?, glue? }] -> { items:[{x,y,w,line}], lines, lineW:[], width, height }
+// glue: keep this item on the same line as the previous one (a gold run never splits across lines)
 export function layoutWords(items, { maxW, lineH, align = 'left', space }) {
   const out = []; const lineW = []; let line = 0, x = 0;
-  items.forEach((it, i) => {
+  const spOf = (it) => (space ?? measure(it.font, ' '));
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
     const w = measure(it.font, it.text) + (it.extra || 0);
-    const sp = i === 0 ? 0 : (space ?? measure(it.font, ' '));
-    if (i > 0 && x + sp + w > maxW && x > 0) { lineW[line] = x; line++; x = 0; }
-    const xx = x === 0 ? 0 : x + sp;
+    if (x > 0 && x + spOf(it) + w > maxW) {
+      let rs = i; while (rs > 0 && items[rs].glue && out[rs - 1].line === line) rs--;
+      if (rs < i && out[rs].x > 0) {               // carry the glued run to the next line
+        lineW[line] = out[rs - 1].x + out[rs - 1].w; line++; x = 0;
+        for (let j = rs; j < i; j++) { const o = out[j]; o.x = x === 0 ? 0 : x + spOf(o); o.line = line; o.y = line * lineH; x = o.x + o.w; }
+        if (x + spOf(it) + w > maxW) { lineW[line] = x; line++; x = 0; }
+      } else { lineW[line] = x; line++; x = 0; }
+    }
+    const xx = x === 0 ? 0 : x + spOf(it);
     out.push({ ...it, x: xx, y: line * lineH, w, line });
     x = xx + w;
-  });
+  }
   lineW[line] = x;
   if (align !== 'left') out.forEach((o) => { const free = maxW - lineW[o.line]; o.x += align === 'center' ? free / 2 : free; });
   return { items: out, lines: line + 1, lineW, width: Math.max(...lineW), height: (line + 1) * lineH };

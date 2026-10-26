@@ -1,9 +1,11 @@
 // The 3D engine: one scene holding every set (only the active one is visible), one camera driven by
-// the director, a sun with soft PCF shadows (2048), hemisphere fill, a fire point light, a spot,
-// a sky dome, and the post chain. render(frame) is a pure function of the frame number.
+// the director, a sun with soft PCF shadows (2048), hemisphere fill, a fire/lamp point light, a spot,
+// a sky dome + mood-driven sky fx (clouds, storm decks, lightning crack), and the post chain
+// (SSAO, god rays, height fog, DOF, bloom, tone mapping, grade, SMAA). render(frame) is a pure function of the frame.
 import * as THREE from 'three';
 import { Post } from './post.js';
 import { makeSky } from './fx.js';
+import { makeSkyFx } from './sky.js';
 import { U } from './materials.js';
 import { resolve } from './moods.js';
 import { cameraShot, layersAt, SHOT_SET, SETS, blockingOf } from '../lib/director.js';
@@ -19,6 +21,7 @@ export class World {
     const scene = this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(24, W / H, 0.1, 1600);
     this.sky = makeSky(); scene.add(this.sky);
+    this.skyFx = makeSkyFx(); scene.add(this.skyFx.group);
     const sun = this.sun = new THREE.DirectionalLight('#ffffff', 2.5);
     sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 220;
@@ -37,6 +40,7 @@ export class World {
       this.sets[name] = s;
     }
     this._v = new THREE.Vector3(); this._c = new THREE.Color();
+    this.crackE = null;
   }
 
   setCamera(c) {
@@ -52,6 +56,15 @@ export class World {
     u.sunGlow.value.set(S.sunGlow); u.sunDisk.value.set(S.sunDisk); u.stars.value = S.stars; u.moon.value = S.moon;
     u.moonDir.value.set(...S.moonDir).normalize(); u.sunDir.value.set(...M.sunDir).normalize(); u.time.value = U.uTime.value;
     this.sky.position.copy(this.camera.position);
+    // clouds / storm decks / lightning crack (its flash lifts the sky, the fill light and the frame)
+    const E = this.crackE = this.skyFx.set(U.uTime.value, M, this.camera, c, o);
+    if (E.flash > 0.001 || E.glow > 0.001) {
+      const C = S.crack || {};
+      const f = E.flash * (C.flash ?? 0.35);
+      M.post = { ...M.post, flash: (M.post.flash || 0) + f };
+      u.top.value.lerp(this._c.set(C.skyColor ?? '#c9d2e0'), Math.min(1, E.flash * 0.6));
+      u.horizon.value.lerp(this._c.set(C.skyColor ?? '#c9d2e0'), Math.min(1, E.flash * 0.35));
+    }
     // sun + shadow box centred on what the camera looks at
     const look = this._v.set(...c.look); look.y = M.shadow.y ?? 0;
     const dir = new THREE.Vector3(...M.sunDir).normalize();
@@ -62,7 +75,7 @@ export class World {
     const sc = this.sun.shadow.camera;
     if (sc.right !== half) { sc.left = -half; sc.right = half; sc.top = half; sc.bottom = -half; sc.updateProjectionMatrix(); }
     this.sun.target.updateMatrixWorld(); this.sun.updateMatrixWorld();
-    this.hemi.color.set(M.hemi.sky); this.hemi.groundColor.set(M.hemi.ground); this.hemi.intensity = M.hemi.intensity;
+    this.hemi.color.set(M.hemi.sky); this.hemi.groundColor.set(M.hemi.ground); this.hemi.intensity = M.hemi.intensity + (E.flash > 0 ? E.flash * ((S.crack && S.crack.hemiK) ?? 1.6) : 0);
     this.scene.fog.color.set(M.fog.color); this.scene.fog.near = M.fog.near; this.scene.fog.far = M.fog.far;
     U.uCharLight.value.set(M.char); U.uAO.value = M.ao; U.uWind.value = M.wind; U.uGroundY.value = M.groundY ?? 0;
     // key light for the cel-shaded characters (direction TOWARD the sun, world space) + its colour/strength
@@ -70,6 +83,7 @@ export class World {
     if (M.point) {
       const P = M.point;
       this.point.position.set(P.pos[0] + o[0], P.pos[1] + o[1], P.pos[2] + o[2]); this.point.color.set(P.color); this.point.intensity = P.intensity; this.point.distance = P.distance ?? 14;
+      this.point.decay = P.decay ?? 1.6;
       U.uPointPos.value.copy(this.point.position); U.uPointColor.value.set(P.charColor ?? P.color).multiplyScalar(P.charK ?? 0.5); U.uPointRange.value = P.charRange ?? 5;
     } else { this.point.intensity = 0; U.uPointColor.value.setRGB(0, 0, 0); U.uPointPos.value.set(0, -9999, 0); }
     if (M.spot) {
@@ -88,6 +102,10 @@ export class World {
     if (!set) { this.gl.setRenderTarget(target); this.gl.clear(); return; }
     const c0 = camOverride ? { ...cameraShot(this.plan, shot, t), ...camOverride, mblur: 0 } : cameraShot(this.plan, shot, t);
     const n = c0.mblur > 1 ? c0.mblur : 1;
+    // the mood decides render-target choices (supersample) and profiling before the scene is drawn
+    const M0 = resolve(set.mood(t, shot, c0));
+    const prof = !!M0.post.profile;
+    this.post.profStart(prof);
     const shutter = 0.5 / 30;                       // 180-degree shutter
     const offs = n === 1 ? [0] : Array.from({ length: n - 1 }, (_, i) => (i / (n - 2) - 0.5) * shutter).concat([0]);
     let M = null, c = c0;
@@ -100,9 +118,14 @@ export class World {
       this.applyMood(M, c, SETS[set.name]);
       set.update(tt, this.camera, shot, c, M);
       return this.camera;
-    });
+    }, M0.post.supersample || 1, M0.post.msaa ?? 4);
     const P = { ...M.post, focus: c.focus ?? M.post.focus };
-    this.post.compose(P, cam, target, frame);
+    this.post.compose(P, cam, target, frame, { o: SETS[set.name], M });
+    if (prof && this.post.prof) {
+      const L = this.post.prof.list, tot = L.reduce((a, b) => a + b[1], 0);
+      console.log(`[prof] f${frame} ${shot.id} total ${tot.toFixed(0)}ms ` + L.map(([k, v]) => `${k} ${v}`).join(' | '));
+      this.post.prof = null;
+    }
   }
 
   render(frame, camOverride = null) {

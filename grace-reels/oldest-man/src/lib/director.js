@@ -15,6 +15,7 @@ import * as family from '../cams/family.js';
 import * as ark from '../cams/ark.js';
 import * as city from '../cams/city.js';
 import * as cta from '../cams/cta.js';
+import * as _lab from '../cams/_lab.js'; // LAB-TEMP
 
 export const SETS = { hill: [0, 0, 0], enoch: [1000, 0, 0], family: [2000, 0, 0], ark: [3000, 0, 0], city: [4000, 0, 0], cta: [5000, 0, 0] };
 // which 3D set each shot shows (shots not listed are HTML-only: S4 timeline, S15 end card)
@@ -23,6 +24,7 @@ export const SHOT_SET = {
   S11a: 'ark', S11b: 'ark', S11c: 'ark', S12: 'ark', S13a: 'city', S13b: 'city', S14: 'cta', LOOP: 'hill',
 };
 export const CAMS = { hill, enoch, family, ark, city, cta };
+SETS._lab = [9000, 0, 0]; Object.assign(SHOT_SET, _lab.LAB_SHOT_SET); CAMS._lab = _lab; // LAB-TEMP
 
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const at = (set, p) => add(SETS[set], p);
@@ -70,6 +72,7 @@ export function anchorAt(plan, set, name, t) {
 
 // which shots are on screen at time t, and how they are joined (shared by the engine and the overlay)
 export function layersAt(plan, t) {
+  if (t >= _lab.LAB_T0) { const s = _lab.labShot(t); return { shot: s, A: s, B: null, k: 0, mode: null, a3d: true, b3d: false }; } // LAB-TEMP
   const { i, shot } = shotAt(plan, t);
   const prev = plan.shots[i - 1], next = plan.shots[i + 1];
   const Wd = (s) => (s.trans === 'whip' ? 0.2 : s.tdur || 0);

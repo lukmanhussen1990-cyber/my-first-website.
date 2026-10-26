@@ -25,7 +25,7 @@ function prepare(card) {
     toks.push({ text: g ? disp.toUpperCase() : disp, gold: g, key: clean(disp) });
   }
   // the verse is a quotation: typographic quotes around it
-  toks[0].text = '“' + toks[0].text; toks[toks.length - 1].text += '”';
+  toks[0].text = '“' + toks[0].text; toks[toks.length - 1].close = '”';   // closing quote stays ink even after gold
   const W = plan.words.filter((w) => w.beat === card.beat);
   const n = toks.length, m = W.length;
   const D = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
@@ -57,11 +57,11 @@ function Card({ c, t }) {
   const o = clamp((t - c.t0) / 0.22) * (1 - ease.in(outU));
   if (o <= 0.001) return null;
   const inK = ease.back(inU, 1.25), inE = ease.out(inU);
-  const lay = layoutWords(c.toks.map((w) => ({ text: w.text, font: w.gold ? `700 ${Math.round(FS * GS)}px ${SERIF}` : `italic 600 ${FS}px ${SERIF}`, extra: w.gold ? w.text.length * FS * GS * 0.035 : 0 })),
+  const lay = layoutWords(c.toks.map((w, i) => ({ glue: w.gold && i > 0 && c.toks[i - 1].gold, text: w.text + (w.close || ''), font: w.gold ? `700 ${Math.round(FS * GS)}px ${SERIF}` : `italic 600 ${FS}px ${SERIF}`, extra: w.gold ? w.text.length * FS * GS * 0.035 : 0 })),
     { maxW: CW - 2 * PADX, lineH: LH, align: 'center', space: FS * 0.25 });
-  const textTop = 40 + 26 + 22, h = textTop + lay.height + 28 + 24 + 44;
-  const floatY = 5 * Math.sin(t * 1.15 + c.seed), rz = -0.4 + 0.35 * Math.sin(t * 0.62 + c.seed);
-  const rx = lerp(18, 2.2, inE) - 10 * ease.in(outU) + 0.7 * Math.sin(t * 0.9), ry = -2 + 1.1 * Math.sin(t * 0.5 + 1);
+  const textTop = 40 + 26 + 22, h = textTop + lay.height + 40 + 24 + 46;
+  const floatY = 5 * Math.sin(t * 1.15 + c.seed), rz = -0.15 + 0.25 * Math.sin(t * 0.62 + c.seed);
+  const rx = lerp(18, 2.2, inE) - 10 * ease.in(outU) + 0.7 * Math.sin(t * 0.9), ry = -0.6 + 0.5 * Math.sin(t * 0.5 + 1);
   const y = (1 - inK) * 80 - 34 * ease.in(outU) + floatY;
   const glint = (t - c.t0 - 0.5) / 0.9;
   // gold runs -> underline paths
@@ -89,10 +89,8 @@ function Card({ c, t }) {
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 35% 0%, rgba(255,252,240,0.55) 0%, rgba(255,252,240,0) 70%)' }} />
             <div style={{ position: 'absolute', inset: 0, borderRadius: 16, boxShadow: 'inset 0 0 40px rgba(170,115,45,0.22), inset 0 0 3px rgba(120,80,30,0.45), inset 0 1.5px 0 rgba(255,255,255,0.8)' }} />
             {/* gold-foil hairline frame + corner flourishes */}
-            <div style={{ position: 'absolute', inset: 15, borderRadius: 9, border: '1.3px solid rgba(178,124,38,0.55)' }} />
+            <div style={{ position: 'absolute', inset: 15, borderRadius: 9, border: '1px solid rgba(178,124,38,0.42)' }} />
             <Corners w={CW} h={h} />
-            {/* big faint opening quote */}
-            <div style={{ position: 'absolute', left: 34, top: -34, font: `700 230px/1 ${SERIF}`, color: 'rgba(178,124,38,0.11)' }}>{'“'}</div>
             <Ornament y={40} w={CW} k={ease.out((t - c.t0 - 0.15) / 0.5)} />
             {/* verse */}
             <div style={{ position: 'absolute', left: PADX, top: textTop, width: CW - 2 * PADX, height: lay.height }}>
@@ -109,13 +107,14 @@ function Card({ c, t }) {
                     letterSpacing: w.gold ? '0.035em' : 0, transform: `scale(${1 + kp})`, transformOrigin: '50% 60%',
                     textShadow: w.gold && k > 0 ? `0 1px 0 rgba(255,250,235,${0.7 * k}), 0 0 ${14 * k}px rgba(225,150,40,${0.32 * k})` : 'none' }}>
                     {cur && !w.gold ? <span style={{ position: 'absolute', left: -6, right: -6, top: LH * 0.24, bottom: LH * 0.12, borderRadius: 8, background: 'rgba(238,186,96,0.24)' }} /> : null}
-                    <span style={{ position: 'relative' }}>{it.text}</span>
+                    <span style={{ position: 'relative' }}>{w.close ? it.text.slice(0, -1) : it.text}</span>
+                    {w.close ? <span style={{ position: 'relative', color: mixHex(GHOST, INK, k), textShadow: 'none' }}>{w.close}</span> : null}
                   </span>
                 );
               })}
             </div>
             {/* reference line */}
-            <div style={{ position: 'absolute', left: 0, right: 0, top: textTop + lay.height + 28, textAlign: 'center', font: `700 21px ${SANS}`, letterSpacing: '0.32em', color: '#7a4a12',
+            <div style={{ position: 'absolute', left: 0, right: 0, top: textTop + lay.height + 40, textAlign: 'center', font: `700 21px ${SANS}`, letterSpacing: '0.32em', color: '#7a4a12',
               opacity: ease.out((t - c.t0 - 0.3) / 0.5) }}>{c.ref}</div>
             {/* glint */}
             {glint > 0 && glint < 1 ? <div style={{ position: 'absolute', top: '-50%', left: `${lerp(-50, 140, ease.inOut(glint))}%`, width: '24%', height: '200%', transform: 'rotate(22deg)',
@@ -147,7 +146,7 @@ const Corners = ({ w, h }) => {
   const pos = [[22, 22, 0], [w - 22, 22, 90], [w - 22, h - 22, 180], [22, h - 22, 270]];
   return (
     <svg width={w} height={h} style={{ position: 'absolute', left: 0, top: 0 }}>
-      {pos.map(([x, y, r], i) => <path key={i} d={d} transform={`translate(${x} ${y}) rotate(${r})`} fill="none" stroke="rgba(170,112,30,0.75)" strokeWidth="1.6" strokeLinecap="round" />)}
+      {pos.map(([x, y, r], i) => <path key={i} d={d} transform={`translate(${x} ${y}) rotate(${r})`} fill="none" stroke="rgba(170,112,30,0.55)" strokeWidth="1.4" strokeLinecap="round" />)}
     </svg>
   );
 };

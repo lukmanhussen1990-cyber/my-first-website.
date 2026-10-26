@@ -85,16 +85,16 @@ for k, w in enumerate(words):
     pre.append((w["start"], gdb[max(0, i - int(0.12 * SR))], gdb[i], gdb[min(N - 1, i + int(0.1 * SR))]))
 pre = np.array(pre)
 print(f"  {len(pre)} phrase onsets: gain 120 ms before = {np.median(pre[:,1]):.1f} dB (median), at the word = {np.median(pre[:,2]):.1f} dB, +100 ms = {np.median(pre[:,3]):.1f} dB")
-# where does the dip start? for phrases after a gap >= 0.8 s: last moment before the onset at which the
+# where does the dip start? for phrases after a gap >= 0.6 s: last moment before the onset at which the
 # music gain was still within 0.5 dB of its level in the gap
 leads = []
 for k, w in enumerate(words):
-    if not k or w["start"] - words[k - 1]["end"] < 0.8: continue
-    i = int(w["start"] * SR); g0 = gdb[int(words[k - 1]["end"] * SR) + int(0.6 * SR):i].max(); j = i
+    if not k or w["start"] - words[k - 1]["end"] < 0.6: continue
+    i = int(w["start"] * SR); g0 = gdb[int(words[k - 1]["end"] * SR) + int(0.5 * SR):i].max(); j = i
     while j > 0 and gdb[j] < g0 - 0.5: j -= 1
     leads.append((i - j) / SR)
-print(f"  {len(leads)} phrases after gaps >= 0.8 s: the dip starts {np.median(leads)*1000:.0f} ms before the word (median; min {min(leads)*1000:.0f}, max {max(leads)*1000:.0f}) and reaches "
-      f"{np.median([gdb[int(w['start']*SR)] for k, w in enumerate(words) if k and w['start'] - words[k-1]['end'] >= 0.8]):.1f} dB at the word onset")
+print(f"  {len(leads)} phrases after gaps >= 0.6 s: the dip starts {np.median(leads)*1000:.0f} ms before the word (median; min {min(leads)*1000:.0f}, max {max(leads)*1000:.0f}) and reaches "
+      f"{np.median([gdb[int(w['start']*SR)] for k, w in enumerate(words) if k and w['start'] - words[k-1]['end'] >= 0.6]):.1f} dB at the word onset")
 
 # ---------------------------------------------------------------- near silence + loop seam
 def rms_db(x, a, b): i0, i1 = int(a * SR), int(b * SR); return 10 * np.log10((x[i0:i1].astype(np.float64) ** 2).mean() + 1e-30)
@@ -102,10 +102,13 @@ ref = rms_db(music, ev["lampOut"] - 3, ev["lampOut"])
 print(f"\nnear silence {ev['silence']:.2f}-{ev['dropSplash']:.2f}: music {rms_db(music, ev['silence'], ev['dropSplash']) - ref:.1f} dB re the 3 s before lampOut; "
       f"music {rms_db(music, ev['silence'], ev['dropSplash']) - rms_db(music, 0, dur):.1f} dB re its whole-reel RMS; "
       f"sfx {rms_db(sfx, ev['silence'], ev['dropFall']):.1f} dBFS in {ev['silence']:.2f}-{ev['dropFall']:.2f}; mix {rms_db(mix, ev['silence'], ev['dropFall']):.1f} dBFS")
-seamA, seamB = rms_db(mix, dur - 0.3, dur - 0.03), rms_db(mix, 0.008, 0.11)
-print(f"loop seam: mix RMS last 0.27 s = {seamA:.1f} dBFS, first 0.1 s = {seamB:.1f} dBFS (diff {seamB - seamA:+.1f} dB)")
+seamA, seamB = rms_db(mix, dur - 0.12, dur - 0.015), rms_db(mix, 0.005, 0.11)
+print(f"loop seam: mix RMS last 0.1 s = {seamA:.1f} dBFS, first 0.1 s = {seamB:.1f} dBFS (diff {seamB - seamA:+.1f} dB)")
 for nm_, st in (("music", music), ("sfx", sfx)):
-    print(f"  {nm_}: end {rms_db(st, dur - 0.3, dur - 0.03):.1f} / start {rms_db(st, 0.008, 0.11):.1f} dBFS")
+    print(f"  {nm_}: end {rms_db(st, dur - 0.12, dur - 0.015):.1f} / start {rms_db(st, 0.005, 0.11):.1f} dBFS")
+pre_ = music / np.maximum(duck, 1e-6)[:, None]
+print(f"  music before ducking: end {rms_db(pre_, dur - 0.12, dur - 0.015):.1f} / start {rms_db(pre_, 0.005, 0.11):.1f} dBFS "
+      f"(duck gain {gdb[int((dur - 0.06) * SR)]:.1f} dB at the end, {gdb[int(0.06 * SR)]:.1f} dB at 0.06 s: it dips for \"The\" at {words[0]['start']:.2f} s)")
 
 # ---------------------------------------------------------------- spectrograms
 def spec_img(x, w=2400, h=420, fmin=30, fmax=16000, floor=-100, top=None):

@@ -23,9 +23,18 @@ export function makeSky() {
         float s = max(dot(d, normalize(sunDir)), 0.0);
         c += sunGlow * (pow(s, 24.0) * 1.2 + pow(s, 4.0) * 0.25) + sunDisk * smoothstep(0.99935, 0.9997, s);
         if (stars > 0.0) {
-          vec3 p = d * 260.0; vec3 cell = floor(p); float h = h3(cell); vec3 f = fract(p) - 0.5;
-          float st = step(0.972, h) * smoothstep(0.16, 0.0, length(f.xy + f.z * 0.3)) * (0.55 + 0.45 * sin(time * (1.5 + h * 3.0) + h * 60.0));
-          c += vec3(0.85, 0.9, 1.0) * st * stars * smoothstep(0.02, 0.3, y) * (0.5 + 1.5 * fract(h * 13.7));
+          float hz = smoothstep(0.0, 0.22, y);
+          // dense faint field
+          vec3 p = d * 300.0; vec3 cell = floor(p); float h = h3(cell); vec3 f = fract(p) - 0.5 - (vec3(h3(cell + 3.1), h3(cell + 7.7), h3(cell + 1.3)) - 0.5) * 0.5;
+          float st = step(0.955, h) * smoothstep(0.2, 0.0, length(f)) * (0.6 + 0.4 * sin(time * (1.5 + h * 3.0) + h * 60.0));
+          c += mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.9, 0.75), fract(h * 7.3)) * st * stars * hz * (0.6 + 1.6 * fract(h * 13.7));
+          // fewer bright stars (HDR, a touch of bloom)
+          vec3 p2 = d * 110.0; vec3 c2 = floor(p2); float h2 = h3(c2 + 11.0); vec3 f2 = fract(p2) - 0.5 - (vec3(h3(c2 + 5.1), h3(c2 + 2.7), h3(c2 + 9.3)) - 0.5) * 0.6;
+          float st2 = step(0.93, h2) * (smoothstep(0.09, 0.0, length(f2)) * 3.5 + smoothstep(0.22, 0.0, length(f2)) * 0.35) * (0.7 + 0.3 * sin(time * (2.0 + h2 * 4.0) + h2 * 40.0));
+          c += mix(vec3(0.8, 0.88, 1.0), vec3(1.0, 0.92, 0.8), fract(h2 * 5.1)) * st2 * stars * hz;
+          // faint milky band
+          float mb = exp(-pow(dot(d, normalize(vec3(0.35, 0.25, 0.9))) / 0.18, 2.0));
+          c += vec3(0.05, 0.06, 0.09) * mb * stars * hz * (0.6 + 0.8 * h3(floor(d * 60.0)));
         }
         if (moon > 0.0) { float m = dot(d, normalize(moonDir));
           c += moon * (smoothstep(0.99965, 0.99978, m) * vec3(2.2, 2.15, 2.0) + pow(max(m, 0.0), 900.0) * vec3(0.35, 0.42, 0.6) + pow(max(m, 0.0), 40.0) * vec3(0.04, 0.05, 0.08)); }

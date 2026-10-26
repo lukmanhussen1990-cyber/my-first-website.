@@ -32,6 +32,7 @@ const SCRIPT = JSON.parse(fs.readFileSync(P('script.json'), 'utf8'));
 const plan = buildPlan(T);
 const E = plan.ev;
 const dur = plan.dur, N = Math.round(dur * SR);
+const NB = N + Math.round(4 * SR);                     // music renders 4 s past the end (wrapped onto the start: the reel loops)
 const q = (t) => D.frameQ(t, plan.fps);                 // SFX land on the nearest video frame
 // scene spans (first shot start .. last shot end) so the score survives shots being split or renamed
 const SPANS = {};
@@ -53,7 +54,7 @@ const G = (() => {
 derived.timelapseBars = G.bars.map((t) => +t.toFixed(3)); derived.timelapseBPM = +(60 / G.beat).toFixed(2);
 const cues = [];
 const cue = (t, what) => { cues.push({ t: +t.toFixed(3), what }); return t; };
-const ctx = { N, E, W, SC, G, plan, cue, q, dur };
+const ctx = { N, NB, E, W, SC, G, plan, cue, q, dur };
 
 // voice (untouched): mono 48 kHz, padded/trimmed to the reel duration
 const vw = D.readWav(P('voice', 'voice.wav'));
@@ -64,6 +65,9 @@ log(`plan: ${dur.toFixed(3)} s (${N} samples, ${plan.frames} frames), voice ${(v
 // ================================================================== render
 const M = renderMusic(ctx);
 log(`music: ${Object.entries(M.notes).map(([k, v]) => `${v} ${k}`).join(', ')}`);
+if (M.layers) {                                         // AUDIO_DEBUG=1: dry loudness of each music layer per scene
+  for (const [sc, sp] of Object.entries(SPANS)) console.log(`  ${sc.padEnd(4)} ` + Object.entries(M.layers).map(([k, b]) => `${k} ${D.loudness([b.L.subarray(smp(sp.t0), smp(sp.t1)), b.R.subarray(smp(sp.t0), smp(sp.t1))]).toFixed(1)}`).join(' | '));
+}
 const S = renderSfx(ctx);
 log(`sfx: ${cues.length} cues placed`);
 
@@ -71,12 +75,19 @@ log(`sfx: ${cues.length} cues placed`);
 const hallIR = D.makeIR({ seconds: 3.6, rt60: 3.2, pre: 0.025, fadeIn: 0.08, damp0: 9500, damp1: 1300, hp: 150, seed: 'hall' });
 const roomIR = D.makeIR({ seconds: 1.5, rt60: 1.0, pre: 0.012, fadeIn: 0.02, damp0: 8000, damp1: 2600, hp: 180, seed: 'room' });
 const bigIR = D.makeIR({ seconds: 6.0, rt60: 5.2, pre: 0.04, fadeIn: 0.12, damp0: 8500, damp1: 900, hp: 120, seed: 'cathedral' });
-const addWet = (bus, send, ir, g = 1) => { const w = D.convolveMonoToStereo(send, ir, N); for (let i = 0; i < N; i++) { bus.L[i] += w.L[i] * g; bus.R[i] += w.R[i] * g; } };
+// the reel loops, so every reverb tail that rings past the end wraps around onto the start
+const addWet = (bus, send, ir) => {
+  const n = bus.L.length, w = D.convolveMonoToStereo(send, ir, send.length + ir.L.length);
+  for (let i = 0; i < w.L.length; i++) { const j = i < n ? i : n === N ? i - N : -1; if (j >= 0 && j < n) { bus.L[j] += w.L[i]; bus.R[j] += w.R[i]; } }
+};
 const music = M.music, sfx = S.sfx;
-addWet(music, M.hall, hallIR, 1.0);
-addWet(sfx, S.room, roomIR, 1.0);
-addWet(sfx, S.hall, hallIR, 1.0);
-addWet(sfx, S.big, bigIR, 1.0);
+addWet(music, M.hall, hallIR);
+addWet(sfx, S.room, roomIR);
+addWet(sfx, S.hall, hallIR);
+addWet(sfx, S.big, bigIR);
+// loop wrap of the music (dry + wet): the 4 s rendered past the end continue at 0 s
+for (const ch of ['L', 'R']) { const x = music[ch]; for (let i = N; i < NB; i++) x[i - N] += x[i]; music[ch] = x.subarray(0, N); }
+cue(0, 'loop: the end (open fifth D-A, glow, bass, reverb tails) wraps onto the start under the hook');
 for (const b of [music, sfx]) { D.dcBlock(b.L, 22); D.dcBlock(b.R, 22); }
 log('reverbs done');
 
@@ -93,13 +104,16 @@ for (let i = smp(E.lampOut - 0.1); i < smp(E.dropSplash + 0.7); i++) {
 cue(E.lampOut, 'music fades to -50 dB (near silence until the drop splash)');
 
 // ================================================================== ducking + mix
-// calibrate the music bed against the voice: un-ducked music sits 5.5 LU under the narration
+// calibrate the music bed against the voice: un-ducked music sits 4 LU under the narration (integrated)
 const Lvoice = D.loudness([voice, voice]);
 const Lmusic0 = D.loudness([music.L, music.R]);
-const musicGain = dB(Lvoice - 5.5 - Lmusic0);
-// ducking from an envelope follower on the voice (80 ms attack, 500 ms release, smooth S-curve, 120 ms
-// look-ahead: the dip is already in place as a word starts); music -8 dB, SFX -3 dB
-const act = D.voiceActivity(voice, { att: 0.08, rel: 0.5, look: 0.12 });
+const musicGain = dB(Lvoice - 4.0 - Lmusic0);
+// ducking from an envelope follower on the voice (70 ms attack, 500 ms release, smooth S-curve, 200 ms
+// look-ahead: the dip starts ~120-130 ms before a word and is ~-7 dB on it); music -8 dB, SFX -3 dB
+// (the detector sees the voice wrapped around the loop seam, so the end of the reel already dips for the
+// first word after the restart, "The" at 0.12 s, and the level is continuous across the seam)
+const vLoop = new Float32Array(N + SR); vLoop.set(voice); vLoop.set(voice.subarray(0, SR), N);
+const act = D.voiceActivity(vLoop, { att: 0.07, rel: 0.5, look: 0.2 }).subarray(0, N);
 // plus a gentle speech-band dip (-4 dB, broad, ~1 kHz) on the music while the narrator speaks
 for (const x of [music.L, music.R]) D.dynEQ(x, 'peak', 1000, 0.6, (i) => -4 * act[i]);
 const musicStem = D.stereo(N), sfxStem = D.stereo(N), mixL = new Float32Array(N), mixR = new Float32Array(N), duckG = new Float32Array(N);
@@ -110,8 +124,8 @@ for (let i = 0; i < N; i++) {
   sfxStem.L[i] = sfx.L[i] * gs; sfxStem.R[i] = sfx.R[i] * gs;
   mixL[i] = voice[i] + musicStem.L[i] + sfxStem.L[i]; mixR[i] = voice[i] + musicStem.R[i] + sfxStem.R[i];
 }
-// loop seam: 8 ms fade-in at t=0, 30 ms fade-out at the end (no click; the bed is level-matched across it)
-for (const x of [mixL, mixR, musicStem.L, musicStem.R, sfxStem.L, sfxStem.R]) D.fades(x, 0.008, 0.03);
+// loop seam: the music is continuous across it (wrap); 5 ms fade-in / 15 ms fade-out only guard the SFX beds
+for (const x of [mixL, mixR, musicStem.L, musicStem.R, sfxStem.L, sfxStem.R]) D.fades(x, 0.005, 0.015);
 log(`levels: voice ${Lvoice.toFixed(1)} LUFS, music (raw) ${Lmusic0.toFixed(1)} -> gain ${D.lin2db(musicGain).toFixed(1)} dB, sfx ${D.loudness([sfx.L, sfx.R]).toFixed(1)} LUFS`);
 
 fs.mkdirSync(P('audio', 'stems'), { recursive: true });

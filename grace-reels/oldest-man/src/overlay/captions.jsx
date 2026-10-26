@@ -117,11 +117,15 @@ export const Captions = ({ t }) => {
   // which word is next (ghosted)
   const nextI = bl.words.findIndex((w) => t < w.start - 0.03);
   const band = light
-    ? `linear-gradient(180deg, rgba(246,236,214,0) 0%, rgba(246,236,214,0.84) 30%, rgba(246,236,214,0.84) 70%, rgba(246,236,214,0) 100%)`
+    ? `linear-gradient(180deg, rgba(246,236,214,0) 0%, rgba(246,236,214,0.8) 32%, rgba(246,236,214,0.8) 68%, rgba(246,236,214,0) 100%)`
     : `linear-gradient(180deg, rgba(8,6,5,0) 0%, rgba(8,6,5,0.52) 28%, rgba(8,6,5,0.52) 72%, rgba(8,6,5,0) 100%)`;
+  // band is strongest behind the (left-aligned) text and eases off to the right
+  const right = Math.min(1, (L.capX + lay.width + 60) / 1080) * 100;
+  const hmask = `linear-gradient(90deg, #000 0%, #000 ${right.toFixed(0)}%, rgba(0,0,0,${light ? 0.25 : 0.55}) 100%)`;
   return (
     <>
-      <div style={{ position: 'absolute', left: 0, width: 1080, top: top - 78, height: h + 150, background: band, opacity: o * (1 - 0.8 * timelineCover(t)) }} />
+      <div style={{ position: 'absolute', left: 0, width: 1080, top: top - 78, height: h + 150, background: band, opacity: o * (1 - 0.8 * timelineCover(t)),
+        WebkitMaskImage: hmask, maskImage: hmask }} />
       <div style={{ position: 'absolute', left: L.capX, top, width: L.capW, height: h, opacity: o, transform: `translateY(${(1 - fin) * 14}px)`, fontVariantNumeric: 'lining-nums' }}>
         {lay.items.map((it, i) => {
           const w = bl.words[i];

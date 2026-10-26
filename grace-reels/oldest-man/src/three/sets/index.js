@@ -5,5 +5,7 @@ import { build as family } from './family.js';
 import { build as ark } from './ark.js';
 import { build as city } from './city.js';
 import { build as cta } from './cta.js';
+import { build as _lab } from './_lab.js'; // LAB-TEMP
 
 export const BUILDERS = { hill, enoch, family, ark, city, cta };
+BUILDERS._lab = _lab; // LAB-TEMP

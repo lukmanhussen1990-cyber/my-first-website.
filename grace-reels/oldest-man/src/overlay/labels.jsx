@@ -16,7 +16,7 @@ const S = Object.fromEntries(plan.shots.map((s) => [s.id, s]));
 // kind: 'pill' (NAME · REF on one line), 'name' (big serif name + small gold line), 'quote' (gold ref + quote line)
 export const LABELS = [
   { id: 'name', shots: ['S2'], set: 'hill', anchor: 'methuselahHead', from: E.nameLabel + 0.1, to: S.S2.t1 - 0.12, kind: 'name',
-    a: 'METHUSELAH', b: '969 YEARS · GENESIS 5:27', dx: 170, dy: -210, fallback: [540, 980] },
+    a: 'METHUSELAH', b: '969 YEARS · GENESIS 5:27', dx: 170, dy: -210, fallback: [540, 980], yMax: 1230 },   // stays above the life-ribbon
   { id: 'g525', shots: ['S5'], set: 'family', anchor: 'methuselah', from: beat('B06').start + 0.15, to: S.S5.t1 - 0.1, kind: 'pill',
     a: 'METHUSELAH', b: 'GENESIS 5:25', dx: 150, dy: -190, fallback: [540, 1180] },
   { id: 'g528', shots: ['S6'], set: 'family', anchor: 'lamech', from: beat('B07').start + 0.12, to: S.S6.t1 - 0.1, kind: 'pill',
@@ -60,7 +60,7 @@ function Label({ Lb, t, cur }) {
   // anchors inside the captions band / tracker zone get no dot or leader (never draw over them)
   const useA = A && A.on && A.y > yMin - 10 && A.y < 1560;
   let cx = useA ? A.x + Lb.dx : Lb.fallback[0], cy = useA ? A.y + Lb.dy : Lb.fallback[1];
-  cy = clamp(cy, yMin + h / 2, 1480 - h / 2);
+  cy = clamp(cy, yMin + h / 2, (Lb.yMax ?? 1480) - h / 2);
   const inIG = cy + h / 2 > SAFE.igY0;
   cx = clamp(cx, SAFE.x0 + 10 + w / 2, (inIG ? SAFE.igX : SAFE.x1 - 10) - w / 2);
   const bx = cx - w / 2, by = cy - h / 2;

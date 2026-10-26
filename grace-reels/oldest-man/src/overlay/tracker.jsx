@@ -54,7 +54,7 @@ export const Tracker = ({ t, frame }) => {
     <div style={{ position: 'absolute', left: PX, top: PY, width: PW, height: PH, opacity: o * (1 - 0.15 * outK),
       transform: `translate(${sx}px, ${sy - 10 * outK}px) scaleX(${lerp(0.55, 1, inK)}) scale(${1 + pop(t, E.slam, 0.04, 18, 8)})`, transformOrigin: '50% 50%' }}>
       {/* panel */}
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 24, background: 'linear-gradient(180deg, rgba(24,17,11,0.78), rgba(12,9,6,0.78))',
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 24, background: 'linear-gradient(180deg, rgba(24,17,11,0.84), rgba(12,9,6,0.84))',
         border: `1.5px solid rgba(244,199,102,${0.42 + 0.4 * flash})`, boxShadow: `0 16px 44px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,232,180,0.16), 0 0 ${40 * flash}px rgba(255,190,80,${0.6 * flash})` }} />
       <div style={{ position: 'absolute', left: 30, right: 30, top: 0, height: 1.5, background: 'linear-gradient(90deg, rgba(255,226,160,0), rgba(255,226,160,0.5), rgba(255,226,160,0))' }} />
       <div style={{ opacity: inK }}>
@@ -102,7 +102,7 @@ const Op = ({ ch, x, lit, glow, dim, pulse = 0 }) => (
 );
 
 function Total({ t, v, speed, locked, flash, focus }) {
-  const bw = 214, bh = 82, cell = 52;
+  const bw = 196, bh = 82, cell = 44;
   const started = t >= E.n187;
   const settle = [E.n187 + 0.85, E.n182 + 0.85, E.n600 + 1.0].map((a) => pop(t, a, 0.05, 16, 9)).reduce((a, b) => a + b, 0);
   const pulseIn = TERMS.map((T) => pop(t, T.sum + 0.55, 0.06, 15, 8)).reduce((a, b) => a + b, 0);
