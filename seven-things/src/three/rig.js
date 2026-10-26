@@ -90,16 +90,18 @@ export class Person {
     this._build();
     const blob = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: radialTex(), color: '#1a120a', transparent: true, opacity: 0.4, depthWrite: false, fog: true }));
     blob.rotation.x = -Math.PI / 2; blob.position.y = 0.012; blob.scale.set(0.6 * this.scale * o.build, 0.28 * this.scale, 1); blob.renderOrder = -1;
-    this.blob = blob; this.root.add(blob);
+    this.blob = blob; if (!o.silhouette) this.root.add(blob);
     this.pose(basePose());
   }
 
   _part(parent, pts, color, z, opts = {}) {
     const g = partGeo(pts);
-    const fill = new THREE.Mesh(g, opts.mat || flat(color)); fill.position.z = z; parent.add(fill);
-    fill.castShadow = !!opts.shadow;
+    const sil = this.o.silhouette;
+    const fill = new THREE.Mesh(g, sil || opts.mat || flat(color)); fill.position.z = z; parent.add(fill);
+    fill.castShadow = !sil && !this.o.noShadow && !!opts.shadow;
+    if (sil) fill.renderOrder = 2;
     let line = null;
-    if (opts.outline !== false) { line = new THREE.Mesh(g, this.lineMat); line.position.z = z - 0.004; parent.add(line); }
+    if (opts.outline !== false && !sil) { line = new THREE.Mesh(g, this.lineMat); line.position.z = z - 0.004; parent.add(line); }
     return { fill, line };
   }
   _pivot(parent, x, y, z = 0) { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; }

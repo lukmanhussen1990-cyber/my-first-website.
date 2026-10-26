@@ -9,6 +9,12 @@ export const U = {
   uCharLight: { value: new THREE.Color(1, 1, 1) },
   uTime: { value: 0 },
   uWind: { value: 1 },
+  // a single warm point light (camp fire) that also lights the flat characters, + soft foot AO
+  uPointPos: { value: new THREE.Vector3(0, -999, 0) },
+  uPointColor: { value: new THREE.Color(0, 0, 0) },
+  uPointRange: { value: 1 },
+  uAO: { value: 0.18 },
+  uGroundY: { value: 0 },
 };
 
 const matteCache = new Map();
@@ -21,15 +27,20 @@ export function matte(hex, opts = {}) {
   return m;
 }
 
-// Unlit colour that still follows the scene mood (and fog)
-function patchCharLight(m) {
+// Unlit colour that still follows the scene mood (and fog), the fire light and a soft foot AO
+const CHAR_UNI = 'uniform vec3 uCharLight; uniform vec3 uPointPos; uniform vec3 uPointColor; uniform float uPointRange; uniform float uAO; uniform float uGroundY;\nvarying vec3 vWP;\n';
+function patchCharLight(m, lineMix = 1) {
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uCharLight = U.uCharLight;
-    sh.fragmentShader = 'uniform vec3 uCharLight;\n' + sh.fragmentShader.replace(
+    for (const k of ['uCharLight', 'uPointPos', 'uPointColor', 'uPointRange', 'uAO', 'uGroundY']) sh.uniforms[k] = U[k];
+    sh.vertexShader = 'varying vec3 vWP;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = CHAR_UNI + sh.fragmentShader.replace(
       '#include <opaque_fragment>',
-      'outgoingLight *= uCharLight;\n#include <opaque_fragment>');
+      `float ao = mix(1.0 - uAO, 1.0, smoothstep(0.0, 1.1, vWP.y - uGroundY));
+       vec3 pl = uPointColor * pow(1.0 - smoothstep(0.0, uPointRange, distance(vWP, uPointPos)), 1.6);
+       outgoingLight *= mix(vec3(1.0), uCharLight * ao + pl, ${lineMix.toFixed(2)});
+       #include <opaque_fragment>`);
   };
-  m.customProgramCacheKey = () => 'charLight';
+  m.customProgramCacheKey = () => 'charLight' + lineMix;
   return m;
 }
 
@@ -47,16 +58,28 @@ export function outlineMaterial(width = 0.014, hex = OUTLINE) {
   m.userData.uOutline = { value: width };
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uOutline = m.userData.uOutline;
-    sh.uniforms.uCharLight = U.uCharLight;
-    sh.vertexShader = 'attribute vec2 miter;\nuniform float uOutline;\n' + sh.vertexShader.replace(
+    for (const k of ['uCharLight', 'uPointPos', 'uPointColor', 'uPointRange', 'uAO', 'uGroundY']) sh.uniforms[k] = U[k];
+    sh.vertexShader = 'attribute vec2 miter;\nuniform float uOutline;\nvarying vec3 vWP;\n' + sh.vertexShader.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\ntransformed.xy += miter * uOutline;');
-    sh.fragmentShader = 'uniform vec3 uCharLight;\n' + sh.fragmentShader.replace(
+      '#include <begin_vertex>\ntransformed.xy += miter * uOutline;').replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = CHAR_UNI + sh.fragmentShader.replace(
       '#include <opaque_fragment>',
-      'outgoingLight *= mix(vec3(1.0), uCharLight, 0.6);\n#include <opaque_fragment>');
+      `vec3 pl = uPointColor * pow(1.0 - smoothstep(0.0, uPointRange, distance(vWP, uPointPos)), 1.6);
+       outgoingLight *= mix(vec3(1.0), uCharLight + pl * 0.5, 0.6);
+       #include <opaque_fragment>`);
   };
   m.customProgramCacheKey = () => 'outline2d';
   return m;
+}
+
+// Silhouette for paper "shadow puppets": drawn once per pixel (stencil), so overlapping parts
+// don't stack darker. One material per puppet so the opacity can animate.
+export function silhouetteMat(hex = '#1d1218', opacity = 0.5) {
+  return new THREE.MeshBasicMaterial({
+    color: hex, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, fog: true,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
+    stencilWrite: true, stencilRef: 0, stencilFunc: THREE.EqualStencilFunc, stencilZPass: THREE.IncrementStencilOp, stencilFail: THREE.KeepStencilOp, stencilZFail: THREE.KeepStencilOp,
+  });
 }
 
 // Inverted-hull outline for low-poly 3D animals/props (BackSide, scaled copy)

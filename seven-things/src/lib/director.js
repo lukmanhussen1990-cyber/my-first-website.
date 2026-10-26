@@ -19,18 +19,22 @@ export function blocking(plan) {
   const sh = Object.fromEntries(plan.shots.map((s) => [s.id, s]));
   const B = {};
   // S1: the falling stone (t = seconds; negative t = the pre-roll at the end of the reel)
+  B.stoneH = 9.0;
   B.stoneY = (t) => {
-    if (t < 0) { const u = clamp((t + 0.8) / 0.8); return 14 + 0.9 * Math.sin(Math.PI * u) * (1 - u * 0.3); } // anticipation hover
-    if (t < E.impact) { const u = t / E.impact; return 14 * (1 - u * u); }
+    const H0 = B.stoneH, ta = 0.12;
+    if (t < 0) { const u = clamp((t + 0.8) / 0.8); return H0 - 0.7 * (1 - easeOut(u)); }   // loop pre-roll: drifts up into the hang
+    if (t < ta) return H0 + 0.4 * easeOut(t / ta);                                       // anticipation: lifts a touch
+    if (t < E.impact) { const u = (t - ta) / (E.impact - ta); return (H0 + 0.4) * (1 - u * u); }
     return 0;
   };
   // S3: the proud rich man walks past the beggar
   const s3 = sh.S3;
-  B.richX = (t) => -3.4 + 0.82 * (t - s3.t0);
+  // walks at 0.82 m/s, then slows to a stop just past the beggar and stands there, chin high
+  B.richX = (t) => { const d = 0.82 * Math.max(0, t - s3.t0); if (d < 2.4) return -3.4 + d; const u = Math.min(1, (d - 2.4) / 0.82); return -1.0 + 0.41 * (1 - (1 - u) * (1 - u)) + 0.0; };
   B.rich = (t) => at('street', [B.richX(t), 0, 0.25]);
-  B.beggar = () => at('street', [1.15, 0, -1.85]);
-  B.richShadow = (t) => lerp(1.25, 3.6, smooth(invLerp(s3.t0 + 0.4, s3.t1, t)));
-  B.beggarShadow = (t) => lerp(1.05, 0.38, smooth(invLerp(s3.t0 + 1.0, s3.t1, t)));
+  B.beggar = () => at('street', [-2.0, 0, -1.85]);
+  B.richShadow = (t) => lerp(1.15, 3.55, smooth(invLerp(s3.t0 + 0.6, s3.t1 - 0.4, t)));
+  B.beggarShadow = (t) => lerp(1.05, 0.42, smooth(invLerp(s3.t0 + 1.0, s3.t1 - 0.4, t)));
   // S4: market
   B.seller = () => at('market', [-0.35, 0, -1.45]);
   B.buyer = () => at('market', [1.25, 0, 0.55]);
@@ -38,7 +42,7 @@ export function blocking(plan) {
   B.rackT = W('B06', 'tongue');                       // focus pulls from the seller to his shadow
   B.swapT = [W('B06', 'Yes'), W('B06', 'small')];
   // S5: field at dusk
-  B.brotherA = (t) => at('field', [lerp(-0.2, -3.2, smooth(invLerp(sh.S5.t0 + 0.4, sh.S5.t1, t))), 0, lerp(0, -0.6, smooth(invLerp(sh.S5.t0 + 0.4, sh.S5.t1, t)))]);
+  B.brotherA = (t) => { const k = invLerp(sh.S5a.t0 + 0.35, sh.S5b.t1, t); return at('field', [-0.2 - 3.4 * k, 0, -0.75 * k]); };
   B.brotherB = () => at('field', [0.75, 0, 0.15]);
   B.flower = () => at('field', [0.75, 0, 0.42]);
   B.wiltT = W('B07', 'innocent');
@@ -93,55 +97,72 @@ export function blocking(plan) {
 }
 
 // ------------------------------------------------------------------ camera (pure)
-export function cameraAt(plan, t) {
-  const B = plan._B || (plan._B = blocking(plan));
-  const { shot, lt } = shotAt(plan, t);
+export const SHOT_SET = { S1: 'desert', LOOP: 'desert', S2: 'scroll', S3: 'street', S4: 'market', S5a: 'field', S5b: 'field', S6a: 'bench', S6b: 'mind', S7: 'road', S8: 'gate', S9: 'village', S10: 'village', S14b: 'village', S13: 'hill', S14a: 'hill' };
+export const blockingOf = (plan) => plan._B || (plan._B = blocking(plan));
+
+export function cameraAt(plan, t) { return cameraShot(plan, shotAt(plan, t).shot, t); }
+
+export function cameraShot(plan, shot, t) {
+  const B = blockingOf(plan);
+  const lt = t - shot.t0;
   const d = shot.t1 - shot.t0, u = clamp(lt / d);
   let pos, look, fov = 24, roll = 0, focus = null, mblur = 0;
   const E = plan.ev;
   switch (shot.id) {
     case 'S1': case 'LOOP': {
-      const tt = shot.id === 'LOOP' ? 0 : t;
-      const target = at('desert', [0, lerp(2.6, 3.1, smooth(invLerp(2.0, 5.2, tt))), 0]);
-      const push = easeOut(invLerp(0, 1.9, tt));
+      const tt = shot.id === 'LOOP' ? 0 : Math.max(0, t);
+      // look up at the hanging 7 against the sky, tilt down after it as it drops (lagging a touch),
+      // slam + shake, then push in and crane around the cracked 7 while the dust settles
+      const tilt = smooth(invLerp(0.04, 0.56, tt));
       const crane = easeInOut(invLerp(1.9, 5.3, tt));
-      const yaw = lerp(0.22, 0.52, crane), pitch = lerp(0.47, 0.3, crane), dist = lerp(lerp(46, 37, push), 31, crane);
+      const ty = lerp(9.6, 3.7, tilt) + lerp(0, 0.4, crane);
+      const target = at('desert', [0, ty, 0]);
+      const push = easeOut(invLerp(E.impact, 1.9, tt));
+      const yaw = lerp(0.24, 0.62, crane), pitch = lerp(lerp(0.05, 0.135, tilt), 0.075, crane);
+      const dist = lerp(lerp(42, 36, push), 29.5, crane);
       pos = sph(target, yaw, pitch, dist); look = target; fov = 24;
-      // impact shake: 7 frames, decaying
       const s = t - E.impact;
-      if (shot.id === 'S1' && s > 0 && s < 0.3) {
-        const k = (1 - s / 0.3) ** 2 * 0.55, f = Math.round(t * 30);
+      if (shot.id === 'S1' && s > 0 && s < 0.3) {                 // impact shake: ~7 frames, decaying
+        const k = (1 - s / 0.3) ** 2 * 0.6, f = Math.round(t * 30);
         pos = add(pos, [(hash01(f, 1) - 0.5) * k, (hash01(f, 2) - 0.5) * k, (hash01(f, 3) - 0.5) * k * 0.5]);
+        look = add(look, [(hash01(f, 4) - 0.5) * k * 0.6, (hash01(f, 5) - 0.5) * k * 0.6, 0]);
       }
       focus = dist;
       break;
     }
     case 'S2': {
-      const target = at('scroll', [0, 1.02, lerp(-1.05, -0.35, easeInOut(u))]);
-      pos = sph(target, lerp(-0.08, 0.06, u), 0.98, lerp(9.3, 8.6, u)); look = target; fov = 22; focus = 8.9;
+      const target = at('scroll', [0, 1.02, lerp(-1.45, -1.15, easeInOut(u))]);
+      pos = sph(target, lerp(-0.08, 0.06, u), 0.98, lerp(9.3, 8.6, u)); look = target; fov = 22; focus = lerp(9.3, 8.6, u);
       break;
     }
-    case 'S3': {
+    case 'S3': { // track the proud man; then crane up the wall where his shadow towers over the beggar
       const p = B.rich(t);
       const crane = easeInOut(invLerp(plan.beats.B05.start - 0.6, shot.t1, t));
-      const target = mixv([p[0] + 0.55, 1.15, p[2] - 0.35], [p[0] - 0.4, 0.2, p[2] - 2.3], crane);
-      pos = sph(target, lerp(0.16, 0.05, crane), lerp(0.36, 0.98, crane), lerp(13.5, 16.5, crane)); look = target; fov = 24; focus = lerp(13.5, 16.5, crane);
+      const target = mixv([p[0] + 0.55, 1.15, p[2] - 0.35], [p[0] + 0.3, 3.3, -2.0], crane);
+      const dist = lerp(13.5, 16.2, crane);
+      pos = sph(target, lerp(0.16, 0.09, crane), lerp(0.28, -0.05, crane), dist); look = target; fov = 24; focus = dist;
       break;
     }
     case 'S4': {
-      const target = at('market', [0.25, 1.35, -1.55]);
-      pos = sph(target, lerp(-0.2, -0.1, u), lerp(0.16, 0.12, u), lerp(9.2, 8.4, u)); look = target; fov = 24;
+      const target = at('market', [0.45, 1.3, -1.7]);
+      pos = sph(target, lerp(-0.16, -0.08, u), lerp(0.15, 0.11, u), lerp(10.6, 9.8, u)); look = target; fov = 24;
       const rk = smooth(invLerp(B.rackT - 0.2, B.rackT + 0.6, t));
-      focus = lerp(8.6, 9.9, rk);
+      focus = lerp(10.0, 11.0, rk);
       break;
     }
-    case 'S5': {
-      const target = mixv(at('field', [0.2, 0.5, 0.1]), at('field', [0.75, 0.25, 0.42]), smooth(invLerp(0.45, 1, u)));
-      pos = sph(target, 0.12, lerp(0.66, 0.52, u), lerp(42, 15, easeInOut(u))); look = target; fov = 22; focus = lerp(42, 15, easeInOut(u));
+    case 'S5a': { // very wide, high and nearly still: two brothers in a vast dusk field
+      const target = at('field', [-0.6, 0.4, 0.0]);
+      pos = sph(target, lerp(0.1, 0.14, u), lerp(0.5, 0.47, u), lerp(38, 35, u)); look = target; fov = 22; focus = 36;
+      break;
+    }
+    case 'S5b': { // low, close on the flower; brother B behind it, brother A small in the distance
+      const f = B.flower();
+      const target = add(f, [-0.15, 0.42, 0]);
+      pos = sph(target, lerp(0.42, 0.36, u), lerp(0.1, 0.13, u), lerp(4.6, 3.9, u)); look = target; fov = 22; focus = lerp(4.6, 3.9, u);
       break;
     }
     case 'S6a': {
-      const head = add(B.benchMan(), [0.1, 1.42, 0]);
+      const head = add(B.benchMan(), [0.09, 1.3, 0]);
       const k = easeIn(u);
       const target = mixv(add(B.benchMan(), [0, 1.0, 0]), head, k);
       pos = sph(target, lerp(0.28, 0.08, k), lerp(0.16, 0.05, k), lerp(9.5, 0.55, k)); look = target; fov = 24; focus = lerp(9.5, 0.55, k);
@@ -154,10 +175,12 @@ export function cameraAt(plan, t) {
       pos = sph(c, lerp(0.0, 0.1, u), lerp(0.02, 0.08, u), lerp(1.2, 9.6, k) + lerp(0, 0.8, u)); look = c; fov = 26; focus = 9;
       break;
     }
-    case 'S7': {
+    case 'S7': { // low, fast tracking alongside, angled ahead so the road leads to the crowd
       const rx = B.runX(t);
-      const target = at('road', [rx + 1.3, 1.0, 0.2]);
-      pos = add(target, [-1.8 + Math.sin(t * 1.3) * 0.15, 1.2 + noise2(t * 2, 3, 7) * 0.08, 11.5]); look = target; fov = 24; focus = 11.5;
+      const runner = at('road', [rx, 0, 0.4]);
+      pos = add(runner, [-4.6 + Math.sin(t * 1.3) * 0.12, 1.15 + noise2(t * 2.2, 3, 7) * 0.06 + 0.04 * Math.abs(Math.sin(t * 10.5)), 8.6]);
+      look = add(runner, [3.6, 1.05, -1.2]); fov = 26;
+      focus = Math.hypot(runner[0] - pos[0], runner[2] - pos[2]);
       mblur = 4;
       break;
     }
@@ -177,10 +200,10 @@ export function cameraAt(plan, t) {
       break;
     }
     case 'S10': case 'S14b': {
-      const target = at('village', [0, 0.85, 0]);
+      const target = at('village', [0, 1.9, -0.3]);
       const orbit = shot.id === 'S10' ? lerp(-0.45, 0.25, easeInOut(u)) : lerp(0.35, -0.2, easeInOut(u));
       const dist = shot.id === 'S10' ? lerp(19.5, 17, u) : lerp(21, 18, u);
-      pos = sph(target, orbit, shot.id === 'S10' ? 0.52 : 0.46, dist); look = target; fov = 26; focus = dist;
+      pos = sph(target, orbit, shot.id === 'S10' ? 0.5 : 0.44, dist); look = target; fov = 26; focus = dist;
       const s = t - E.reveal;
       if (shot.id === 'S10' && s >= 0 && s < 0.32) {
         const kk = (1 - s / 0.32) ** 2 * 0.4, f = Math.round(t * 30);
@@ -188,10 +211,10 @@ export function cameraAt(plan, t) {
       }
       break;
     }
-    case 'S13': case 'S14a': {
+    case 'S13': case 'S14a': { // low angle so the cross stands against the sky; a gentle crane up
       const tt = t - plan.shots.find((s) => s.id === 'S13').t0;
-      const target = at('hill', [0, lerp(3.2, 4.6, smooth(invLerp(0, 12, tt))), 0]);
-      pos = sph(target, lerp(0.18, -0.12, smooth(invLerp(0, 14, tt))), lerp(0.1, 0.22, smooth(invLerp(0, 12, tt))), lerp(36, 27, smooth(invLerp(0, 14, tt)))); look = target; fov = 24; focus = 30;
+      const target = at('hill', [0, lerp(4.6, 6.0, smooth(invLerp(0, 12, tt))), 0]);
+      pos = sph(target, lerp(0.16, -0.1, smooth(invLerp(0, 14, tt))), lerp(-0.02, 0.07, smooth(invLerp(0, 12, tt))), lerp(34, 26, smooth(invLerp(0, 14, tt)))); look = target; fov = 24; focus = 30;
       break;
     }
     default: { // HTML-only scenes keep a neutral camera
@@ -202,7 +225,7 @@ export function cameraAt(plan, t) {
   const hh = [noise2(t * 0.33, 1.3, 11) * 0.06, noise2(t * 0.29, 7.7, 13) * 0.045, noise2(t * 0.27, 3.1, 17) * 0.06];
   pos = add(pos, hh);
   // whip pans: the outgoing shot whips away, the incoming one arrives from the other side
-  const { next, prev } = shotAt(plan, t);
+  const si = plan.shots.indexOf(shot), next = plan.shots[si + 1];
   let whip = 0;
   if (next && next.trans === 'whip' && t > next.t0 - 0.2) whip = easeIn(invLerp(next.t0 - 0.2, next.t0, t));
   if (shot.trans === 'whip' && lt < 0.2) whip = -easeOut(1 - lt / 0.2) * 1.0 + 0;
@@ -214,4 +237,18 @@ export function cameraAt(plan, t) {
     mblur = Math.max(mblur, 5);
   }
   return { pos, look, fov, roll, focus, mblur, shot: shot.id, lt, u };
+}
+
+// which shots are on screen at time t, and how they are joined (shared by the engine and the overlay)
+export function layersAt(plan, t) {
+  const { i, shot } = shotAt(plan, t);
+  const prev = plan.shots[i - 1], next = plan.shots[i + 1];
+  const W = (s) => (s.trans === 'whip' ? 0.2 : s.tdur || 0);
+  let A = shot, B = null, k = 0, mode = null;
+  if (next && next.trans !== 'cut' && W(next) > 0 && t >= next.t0 - W(next) / 2) { B = next; k = (t - (next.t0 - W(next) / 2)) / W(next); mode = next.trans; }
+  else if (prev && shot.trans !== 'cut' && W(shot) > 0 && t < shot.t0 + W(shot) / 2) { A = prev; B = shot; k = (t - (shot.t0 - W(shot) / 2)) / W(shot); mode = shot.trans; }
+  const in3d = (s) => !!SHOT_SET[s.id];
+  const out = { shot, A, B, k: clamp(k), mode, a3d: in3d(A), b3d: B ? in3d(B) : false };
+  if (B && mode === 'match') { out.A = t < B.t0 ? A : B; out.B = null; out.a3d = in3d(out.A); }
+  return out;
 }
