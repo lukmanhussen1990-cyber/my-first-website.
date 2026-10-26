@@ -145,19 +145,20 @@ export function build(ctx) {
         // the flame dies: the warm key fades and a cold, dim night takes over; the drop falls in near silence
         const k = smooth(invLerp(E.lampOut, E.lampOut + 1.4, t));
         const cold = merge(MOODS.coldBlue, {
-          sky: { top: '#0e1420', horizon: '#2a3446', bottom: '#0b0f16', clouds: 0.5, storm: 0.6 }, sun: { intensity: 0.45, color: '#9fb0c8' },
-          hemi: { sky: '#3e4a60', ground: '#1a1a1c', intensity: 0.42 }, fog: { color: '#1e2633', density: 0.015 },
-          char: '#7d889c', point: L, post: { exposure: 1.18, dof: 0.6, focusRange: 0.3, tilt: 0, vignette: 0.62, bloom: 0.6 },
+          sky: { top: '#141c2c', horizon: '#3a4a64', bottom: '#0f141c', clouds: 0.5, storm: 0.6 }, sun: { intensity: 1.1, color: '#a9bcd8' }, sunDir: [-0.35, 0.55, -0.75],
+          hemi: { sky: '#5a6a88', ground: '#22242a', intensity: 0.85 }, fog: { color: '#1e2633', density: 0.006 },
+          char: '#7d889c', point: L, post: { exposure: 1.45, dof: 0.5, focusRange: 0.4, tilt: 0, vignette: 0.6, bloom: 0.6 },
         });
-        return blend(resolve(merge(night, { post: { dof: 0.6, focusRange: 0.3, tilt: 0 } })), resolve(cold), k);
+        return blend(resolve(merge(night, { post: { dof: 0.45, focusRange: 0.5, tilt: 0, exposure: 0.72, bloom: 0.55, bloomThreshold: 1.0 } })), resolve(cold), k);
       }
       if (isShot(shot, 'S10')) {
         const lt = t - shot.t0;
         return merge(MOODS.coldBlue, {
-          sky: { storm: 0.75, clouds: 0.3 }, point: null,
+          sky: { storm: 0.75, clouds: 0.3, top: '#1c2433', horizon: '#46546a', bottom: '#151a22' }, point: null,
+          sun: { intensity: 0.75 }, hemi: { intensity: 0.6 }, fog: { density: 0.005, color: '#3a4656' },
           rain: { k: rainRamp(lt, -0.2, 2.5, { drizzle: 0.3, peak: 0.42 }), sheets: 0.25, splash: 0.8, wind: [1.2, 0.3] },
           wet: smooth(invLerp(-0.3, 4.5, lt)) * 0.85,
-          post: { dof: 0.3, focusRange: 2.5, ao: 0.5, tilt: 0.15 },
+          post: { dof: 0.3, focusRange: 2.5, ao: 0.5, tilt: 0.15, exposure: 1.35, sat: 0.8 },
         });
       }
       return night;   // S1, LOOP

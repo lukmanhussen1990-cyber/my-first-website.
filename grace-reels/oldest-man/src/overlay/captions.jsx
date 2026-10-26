@@ -2,6 +2,7 @@
 // Captions: Cormorant Garamond Italic, laid out by us word by word (so words can pop without reflow);
 // the next word is pre-shown ghosted, keywords land as gold serif caps with a pop + sheen.
 import React from 'react';
+import { Img, staticFile } from 'remotion';
 import { plan } from '../lib/planInstance.js';
 import { C, L, SAFE, SOMESAY, SERIF, SANS, ease, pop, shake, clamp, lerp, layoutWords, popFit, measure, pretty, mixHex } from './theme.js';
 import { timelineCover } from './timeline.jsx';
@@ -52,6 +53,22 @@ function layoutBlock(bl) {
   }
   return null;
 }
+
+// ------------------------------------------------------------------ channel watermark (top left): logo + GRACE IN MOTION
+// on every frame except the end card (which shows the big logo); same timing as the header
+export const Brand = ({ t, ink = 0 }) => {
+  const o = 1 - clamp((t - (E.endCard - 0.25)) / 0.25) + clamp((t - (DUR - 0.5)) / 0.42);
+  if (o <= 0.001) return null;
+  const cream = mixHex('#fbf1dc', '#3a2616', ink), gold = mixHex(C.gold, C.goldInk, ink);
+  return (
+    <div style={{ position: 'absolute', left: 72, top: L.headerY - 21, height: 42, display: 'flex', alignItems: 'center', gap: 12, opacity: clamp(o) * 0.95 }}>
+      <Img src={staticFile('logo.svg')} style={{ width: 42, height: 42, borderRadius: 21, boxShadow: `0 0 0 1.5px ${gold}, 0 2px 10px rgba(0,0,0,0.5)` }} />
+      <div style={{ font: `700 21px ${SANS}`, letterSpacing: '0.22em', color: cream, whiteSpace: 'nowrap', textShadow: ink > 0.5 ? 'none' : '0 1px 8px rgba(0,0,0,0.6)' }}>
+        GRACE <span style={{ color: gold }}>IN</span> MOTION
+      </div>
+    </div>
+  );
+};
 
 // ------------------------------------------------------------------ header (top right)
 export const Header = ({ t, ink = 0 }) => {

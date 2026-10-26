@@ -4,16 +4,16 @@
 // World coords via H.at('family', [x,y,z]). FAMILY holds the shared layout.
 
 export const FAMILY = {
-  A: { person: [0, 0, 0], number: [1.25, 0, -0.55], lamp: [-0.95, 0, 0.35], house: [-0.4, -2.6], houseRot: 0.05 },
-  B: { person: [14, 0, 0], number: [15.25, 0, -0.55], lamp: [12.95, 0, 0.35], house: [13.6, -2.6], houseRot: -0.06 },
-  numSize: 0.62,
+  A: { person: [0, 0, 0], number: [1.15, 0, -0.3], lamp: [0.45, 0, 0.8], house: [-0.4, -2.6], houseRot: 0.05 },
+  B: { person: [14, 0, 0], number: [15.15, 0, -0.3], lamp: [14.45, 0, 0.8], house: [13.6, -2.6], houseRot: -0.06 },
+  numSize: 0.72,
 };
 
 export function blocking(plan, H) { return {}; }
 
 function frame(H, spot, lt, len) {
   const k = H.easeInOut(H.clamp(lt / len));
-  const look = H.at('family', [spot.person[0] + 0.6, 1.62 + 0.04 * k, spot.person[2] - 0.25]);
+  const look = H.at('family', [spot.person[0] + 0.72, 1.62 + 0.04 * k, spot.person[2] - 0.25]);
   const dist = 9.6 - 1.0 * k;
   return { look, dist, k };
 }

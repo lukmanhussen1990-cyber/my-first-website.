@@ -5,7 +5,7 @@
 export const ENOCH = {
   path: [[-16, 11], [-9, 6.5], [-4, 3], [-0.5, 0.5], [2.4, -2.2], [4.5, -4.5]],
   beam: [2.8, -3.2],
-  house: { pos: [-7, -3.2], rotY: 0.35 },
+  house: { pos: [-6.2, -3.4], rotY: 0.35 },
   speed: 0.95,                      // m/s, a calm unhurried walk
 };
 
@@ -41,9 +41,9 @@ export function camera(plan, B, shot, t, H) {
   const E = plan.ev, lt = t - shot.t0;
   // high, long-lens diorama view (tilt-shift); a slow push and a slight pan that follows him to the light
   const k = H.easeInOut(H.clamp(lt / (shot.t1 - shot.t0)));
-  const look = H.at('enoch', [H.lerp(-1.7, -0.5, k), 1.4, H.lerp(-1.0, -2.0, k)]);
-  const dist = 48 - 6 * k;
-  return { pos: H.sph(look, -0.24 + 0.06 * k, 0.3 - 0.02 * k, dist), look, fov: 22, focus: dist };
+  const look = H.at('enoch', [H.lerp(-1.6, -0.2, k), 1.5, H.lerp(-0.6, -1.8, k)]);
+  const dist = 30 - 4 * k;
+  return { pos: H.sph(look, -0.3 + 0.08 * k, 0.26 - 0.02 * k, dist), look, fov: 24, focus: dist };
 }
 
 // overlay label anchors (world points)

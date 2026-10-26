@@ -6,7 +6,7 @@ import { AbsoluteFill, delayRender, continueRender } from 'remotion';
 import { plan } from '../lib/planInstance.js';
 import { shotAt } from '../plan.js';
 import { fontsReady } from '../lib/fonts.js';
-import { Header, HookTitle, Captions } from './captions.jsx';
+import { Header, Brand, HookTitle, Captions } from './captions.jsx';
 import { Tracker } from './tracker.jsx';
 import { Labels, SomeSay, LifeRibbon } from './labels.jsx';
 import { VerseCards } from './cards.jsx';
@@ -37,6 +37,7 @@ export const Overlay = ({ frame, debug }) => {
       <Captions t={t} />
       <HookTitle t={t} frame={frame} />
       <Header t={t} ink={timelineCover(t)} />
+      <Brand t={t} ink={timelineCover(t)} />
       {debug ? <div style={{ position: 'absolute', left: 24, bottom: 24, color: '#fff', font: '600 30px monospace', textShadow: '0 2px 4px #000' }}>{`f${frame} ${t.toFixed(2)}s ${shot.id}`}</div> : null}
     </AbsoluteFill>
   );

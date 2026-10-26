@@ -24,12 +24,12 @@ export function camera(plan, B, shot, t, H) {
     // street level, looking down the wet street; slow push toward the lone figure
     const look = H.at('city', [P[0] - 0.5, 2.2, P[2] + 0.3]);
     const dist = 12.5 - 1.6 * k;
-    return { pos: H.sph(look, 1.05 + 0.04 * k, 0.04, dist), look, fov: 30, focus: dist * 0.92 };
+    return { pos: H.sph(look, 1.36 + 0.03 * k, 0.05, dist), look, fov: 30, focus: dist * 0.92 };
   }
   // S13b: closer; the warm light falls; a slow rise of the camera with them as they look up
   const look = H.at('city', [P[0] - 0.2, 2.0 + 0.15 * k, P[2]]);
   const dist = 11 - 1.2 * k;
-  return { pos: H.sph(look, 0.92 + 0.06 * k, 0.02 + 0.03 * k, dist), look, fov: 30, focus: dist * 0.95 };
+  return { pos: H.sph(look, 1.25 + 0.05 * k, 0.03 + 0.03 * k, dist), look, fov: 30, focus: dist * 0.95 };
 }
 
 export const anchors = {

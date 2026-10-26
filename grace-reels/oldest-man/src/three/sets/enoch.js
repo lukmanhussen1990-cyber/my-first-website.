@@ -56,7 +56,7 @@ export function build(ctx) {
 
   // footprints along the whole path: shown up to where Enoch is; they stop in the light
   const prints = makeFootprints(path, { height: H, color: '#9a7650' }); g.add(prints);
-  const beam = makeBeam(); beam.group.position.set(ENOCH.beam[0], H(...ENOCH.beam), ENOCH.beam[1]); g.add(beam.group);
+  const beam = makeBeam({ r0: 0.95, r1: 1.7, h: 30 }); beam.group.position.set(ENOCH.beam[0], H(...ENOCH.beam), ENOCH.beam[1]); g.add(beam.group);
 
   const enoch = new Person({ ...ENOCH_LOOK }); g.add(enoch.root);
   const young = new Person({ ...METHUSELAH_YOUNG }); g.add(young.root);
@@ -84,11 +84,11 @@ export function build(ctx) {
       const Py = Poses.idle(t, 22); expr(Py, w > 0.5 ? 'wonder' : 'kind', w > 0.5 ? w : 0.6); Py.lookY = 0.2 * w; young.pose(Py);
       for (const p of [enoch, young]) if (p.root.visible) { p.billboard(cam, 0.3); p.autoOutline(cam); }
       // the light swells as it takes him
-      beam.set(t, 1 + 0.9 * Math.sin(Math.PI * clamp(invLerp(E.enochGone - 0.6, E.enochGone + 0.9, t))));
+      beam.set(t, 0.75 + 0.7 * Math.sin(Math.PI * clamp(invLerp(E.enochGone - 0.6, E.enochGone + 0.9, t))));
     },
     mood(t) {
       const swell = Math.sin(Math.PI * clamp(invLerp(E.enochGone - 0.6, E.enochGone + 0.9, t)));
-      return merge(MOODS.morningGold, { post: { ao: 0.5, bloom: 0.7 + 0.4 * swell,
+      return merge(MOODS.morningGold, { fog: { density: 0.003 }, post: { ao: 0.5, haze: 0.08, exposure: 0.86, bloom: 0.6 + 0.4 * swell,
         godrays: { strength: 0.75 + 0.35 * swell, pos: [ENOCH.beam[0], 24, ENOCH.beam[1]], radius: 0.12, decay: 0.972, density: 0.95, streaks: 0.65 } } });
     },
   };

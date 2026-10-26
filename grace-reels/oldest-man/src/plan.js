@@ -65,14 +65,14 @@ export function buildPlan(T) {
   ev.city = B.B14.start - lead;
   ev.warmLight = word('B14', 'for', 0).start;        // "Not to punish you… but FOR you" → light + D major
   ev.card39 = B.B15.start - 0.25;
-  ev.card39Out = B.B15.end + 0.3;
+  ev.card39Out = B.B15.end + 0.15;
   // --- S14 call to action
   ev.cta = B.B16.start - lead;
   ev.dice = word('B16', 'Coincidence…').start;
   ev.hourglass = word('B16', 'timing').start;
   ev.typeStart = ev.hourglass + 0.35;               // the comment types "TIMING 🙏" while the question lands
   ev.typeEnd = ev.typeStart + 0.9;
-  ev.hearts = Array.from({ length: 6 }, (_, i) => ev.typeEnd + 0.1 + i * 0.22);
+  ev.hearts = Array.from({ length: 6 }, (_, i) => ev.typeEnd + 0.1 + i * 0.13);
   // --- S15 end card + loop back to the lit lamp of S1
   ev.endCard = T.voice_end + 0.75;
   ev.loopBack = dur - 0.7;

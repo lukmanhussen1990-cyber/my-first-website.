@@ -5,9 +5,10 @@
 
 export const ARKSET = {
   rotY: 0.3,
-  noah: [6.5, 0, 8.6],             // S7 / S11 (works by the hull)
-  number: [7.9, 0, 8.3],           // the gold 600
-  mound: [-11.5, 13.5], moundH: 1.1,   // Methuselah's little hill (he watches every year)
+  noah: [6.5, 0, 8.6],             // S7 (by the finished hull)
+  noahWork: [-3.6, 0, 6.6],        // S11 (hammering at the hull side)
+  number: [7.5, 0, 9.3],           // the gold 600 (in front of the crate)
+  mound: [-11.5, 12.5], moundH: 1.2,   // Methuselah's little hill (he watches every year)
   crowdZ: 12.5,
 };
 
@@ -34,27 +35,27 @@ export function camera(plan, B, shot, t, H) {
   switch (shot.id) {
     case 'S7': {
       // Noah (600) at the finished hull; the gold 600 rises on his right
-      const look = at([ARKSET.noah[0] + 0.7, 1.6, ARKSET.noah[2] - 0.2]);
-      const dist = 10 - 0.8 * k;
-      return { pos: H.sph(look, 0.1 + 0.08 * k, 0.07, dist), look, fov: 28, focus: dist };
+      const look = at([ARKSET.noah[0] + 0.55, 1.95, ARKSET.noah[2] - 0.2]);
+      const dist = 11.5 - 0.8 * k;
+      return { pos: H.sph(look, 0.12 + 0.06 * k, 0.1, dist), look, fov: 30, focus: dist };
     }
     case 'S11a': {
       // wide, high diorama: the hull site, the crowd road, Methuselah's hill; a slow time-lapse dolly
-      const look = at([-2, 2.0, 4]);
-      const dist = 62 - 5 * k;
-      return { pos: H.sph(look, -0.42 + 0.12 * k, 0.34, dist), look, fov: 22, focus: dist };
+      const look = at([-6.5, 2.0, 6.5]);
+      const dist = 64 - 5 * k;
+      return { pos: H.sph(look, -0.2 + 0.1 * k, 0.34, dist), look, fov: 22, focus: dist };
     }
     case 'S11b': {
       // closer: old Methuselah on his hill in the foreground (left), Noah hammering at the hull, mockers passing
-      const look = at([-3.5, 2.2, 8.5]);
-      const dist = 25 - 3 * k;
-      return { pos: H.sph(look, -0.62 + 0.1 * k, 0.16, dist), look, fov: 24, focus: dist * 0.75 };
+      const look = at([-4.0 + 0.6 * k, 3.0, 3.6]);
+      const pos = at([-19.5 + 1.2 * k, 3.4 + 0.2 * k, 19.0 - 0.8 * k]);
+      return { pos, look, fov: 30, focus: 9 };
     }
     case 'S11c': {
       // the finished ark low in frame (the 1 Peter 3:20 card sits in the upper middle)
-      const look = at([0, 9.5 - 0.5 * k, 0]);
-      const dist = 52 - 4 * k;
-      return { pos: H.sph(look, 0.18 - 0.08 * k, 0.1, dist), look, fov: 24, focus: dist };
+      const look = at([-2, 7.0 - 0.4 * k, 0]);
+      const dist = 68 - 5 * k;
+      return { pos: H.sph(look, 0.85 - 0.1 * k, 0.07, dist), look, fov: 24, focus: dist };
     }
     case 'S12': {
       // the windows of heaven open: the camera cranes up as the water spreads and the ark lifts
@@ -70,6 +71,7 @@ export function camera(plan, B, shot, t, H) {
 export const anchors = {
   noah: (plan, B, t, H) => H.at('ark', [ARKSET.noah[0], 2.0, ARKSET.noah[2]]),
   ark: (plan, B, t, H) => H.at('ark', [0, 8, 0]),
-  sky: (plan, B, t, H) => H.at('ark', [-8, 22, -40]),
+  // a point in the sky straight above where the S12 camera looks (keeps the Genesis 7:11 label centred as it cranes)
+  sky: (plan, B, t, H) => { const s = plan.shots.find((x) => x.id === 'S12'); const c = camera(plan, B, s, t, H); return [c.look[0], c.look[1] + 7, c.look[2]]; },
   number: (plan, B, t, H) => H.at('ark', [ARKSET.number[0], 0.9, ARKSET.number[2]]),
 };

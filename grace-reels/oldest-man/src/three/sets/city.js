@@ -28,12 +28,12 @@ function makeBuilding(w, h, d, seed, faceZ) {
   for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
     const x = -w / 2 + (k + 0.5) * (w / cols), y = 2.0 + r * 2.2;
     m4.compose(new THREE.Vector3(x, y, faceZ * (d / 2 + 0.02)), q, new THREE.Vector3(1, 1, 1)); im.setMatrixAt(n, m4);
-    const v = R(); if (v < 0.42) c.setRGB(0.05, 0.055, 0.07); else if (v < 0.82) c.setRGB(2.1, 1.35, 0.6); else c.setRGB(0.9, 1.25, 1.9);
+    const v = R(); if (v < 0.42) c.setRGB(0.05, 0.055, 0.07); else if (v < 0.82) c.setRGB(1.15, 0.72, 0.32); else c.setRGB(0.45, 0.65, 1.0);
     im.setColorAt(n, c.multiplyScalar(0.55 + 0.45 * R())); n++;
   }
   im.instanceColor.needsUpdate = true; g.add(im);
   // a shop front on the ground floor (glowing)
-  if (R() < 0.6) { const s = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.6, 1.6), new THREE.MeshBasicMaterial({ color: new THREE.Color(...(R() < 0.5 ? [1.6, 1.0, 0.5] : [0.6, 0.9, 1.4])) })); s.position.set(0, 1.1, faceZ * (d / 2 + 0.03)); if (faceZ < 0) s.rotation.y = Math.PI; g.add(s); }
+  if (R() < 0.6) { const s = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.6, 1.6), new THREE.MeshBasicMaterial({ color: new THREE.Color(...(R() < 0.5 ? [0.9, 0.55, 0.25] : [0.3, 0.5, 0.8])) })); s.position.set(0, 1.1, faceZ * (d / 2 + 0.03)); if (faceZ < 0) s.rotation.y = Math.PI; g.add(s); }
   return g;
 }
 
@@ -106,7 +106,7 @@ export function build(ctx) {
       if (w < 0.02) { P = Poses.idle(t, 2026); expr(P, 'sadness', 1); P.lookY = -0.85; P.headTilt = -0.2; }
       else { P = Poses.lookUp(t, 2026, w); }
       person.pose(P); person.billboard(cam, 0.3); person.autoOutline(cam);
-      beam.group.visible = w > 0.001; beam.set(t, w * 1.1);
+      beam.group.visible = w > 0.001; beam.set(t, w * 0.5);
       puddles.set(t, { k: lerp(0.9, 0.35, w), sky: '#3a4a64' });
     },
     mood(t) {
@@ -121,9 +121,9 @@ export function build(ctx) {
       if (w <= 0.001) return night;
       const warm = merge(MOODS.cityWarm, {
         spot: night.spot,
-        point: { pos: [CITY.person[0], 3.2, CITY.person[2] + 0.4], color: '#ffc27a', intensity: 14 * w, distance: 9, charColor: '#ffcf8f', charK: 0.9, charRange: 3.2 },
+        point: { pos: [CITY.person[0], 3.2, CITY.person[2] + 0.4], color: '#ffc27a', intensity: 8 * w, distance: 9, charColor: '#ffcf8f', charK: 0.9, charRange: 3.2 },
         rain: night.rain, wet: 1, wetSheen: '#a08870',
-        post: { ao: 0.5, dof: 0.35, focusRange: 3, tilt: 0, godrays: { strength: 0.7 * w, pos: [CITY.person[0], 26, CITY.person[2]], color: '#ffd9a0', radius: 0.12, decay: 0.97, density: 0.95, streaks: 0.5 } },
+        post: { ao: 0.5, dof: 0.35, focusRange: 3, tilt: 0, exposure: 0.85, bloom: 0.7, godrays: { strength: 0.4 * w, pos: [CITY.person[0], 26, CITY.person[2]], color: '#ffd9a0', radius: 0.12, decay: 0.97, density: 0.95, streaks: 0.5 } },
       });
       return blend(resolve(night), resolve(warm), w);
     },

@@ -105,11 +105,11 @@ export function build(ctx) {
       // Noah: S7 standing with his hammer by the hull; S11 hammering (looks up in S11c); inside the ark in S12
       noah.root.visible = !s12 && id !== 'S11a' ? true : id === 'S11a';
       if (s12) noah.root.visible = false;
-      noah.setFacing(id === 'S7' ? 1 : -1);
+      noah.setFacing(1);
       if (id === 'S7') { const P = Poses.idle(t, 600); expr(P, 'kind', 0.8); P.look = 0.6 * smooth(invLerp(E.n600 + 0.2, E.n600 + 0.7, t)); noah.pose(P); }
       else if (id === 'S11c') { const P = Poses.lookUp(t, 600, 0.6); expr(P, 'peace', 1); noah.pose(P); }
       else noah.pose(Poses.hammer(t, 600, 0.9));
-      noah.root.position.set(ARKSET.noah[0] + (s11 ? -1.2 : 0), 0, ARKSET.noah[2] + (s11 ? -2.9 : 0));
+      const NP = s11 ? ARKSET.noahWork : ARKSET.noah; noah.root.position.set(NP[0], H(NP[0], NP[2]), NP[2]);
       // Methuselah on his hill, every year (S11)
       meth.root.visible = s11; meth.setFacing(1); meth.pose(Poses.oldStand(t, 969, 0.15));
       // the crowd (S11a, S11b)
@@ -131,9 +131,9 @@ export function build(ctx) {
       const id = shot.id;
       if (id === 'S7') {
         return merge(MOODS.mathDark, {
-          sky: { top: '#0b0a14', horizon: '#3a2a2a', bottom: '#0a0705', stars: 0.6 },
-          sunDir: [-0.55, 0.32, -0.6], sun: { color: '#ff9a5a', intensity: 0.9 },
-          hemi: { sky: '#3a3046', ground: '#1a120c', intensity: 0.5 },
+          sky: { top: '#1a1630', horizon: '#c0684a', bottom: '#2a1a12', band: '#6a2e24', sunGlow: '#ff8a4a', stars: 0.4 },
+          sunDir: [0.75, 0.16, 0.55], sun: { color: '#ff9a5a', intensity: 1.6 },
+          hemi: { sky: '#5a4a6a', ground: '#2a1a10', intensity: 0.65 }, fog: { color: '#3a2620', density: 0.004 },
           char: '#b0a2a8',
           point: lamp.light(t, 0.9),
           post: { dof: 0.3, focusRange: 2.2, ao: 0.5, tilt: 0.15 },
@@ -141,19 +141,19 @@ export function build(ctx) {
       }
       if (isS11(id)) {
         const a = B.sunAngle(t);
-        const M = seasonMood(B.season(t));
+        const M = merge(seasonMood(B.season(t)), { sky: { top: '#6f9cc0', horizon: '#ecd9ae', bottom: '#b9a578' } });
         return merge(M, {
           sunDir: [Math.cos(a) * 0.8, 0.5 + 0.22 * Math.abs(Math.sin(a * 0.5)), Math.sin(a) * 0.55 - 0.35],
-          sky: { cloudSpeed: 14, clouds: 0.45 }, wind: 1.6, char: '#fff4e4',
-          post: { exposure: 0.95, tilt: id === 'S11b' ? 0.3 : 0.45, tiltBottom: 0.1, ao: 0.45, vignette: 0.36, grain: 0.024, bloom: 0.35 },
+          sky: { cloudSpeed: 14, clouds: 0.45 }, wind: 1.6, char: '#fff4e4', fog: { density: 0.0035, color: '#c3d0da', max: 0.3 },
+          post: { haze: 0.07, exposure: 0.92, tilt: id === 'S11b' ? 0.3 : 0.45, tiltBottom: 0.1, ao: 0.45, vignette: 0.36, grain: 0.024, bloom: 0.35 },
         });
       }
       if (id === 'S12') {
-        const age = t - E.floodCrack, Ek = crackEnv(age), cpos = [-20, 120, -380];
+        const age = t - E.floodCrack, Ek = crackEnv(age), cpos = [-30, 62, -380];
         return merge(MOODS.storm, {
-          sky: { crack: { age, pos: cpos, size: 300 } },
+          sky: { crack: { age, pos: cpos, size: 300 }, top: '#3a4250', horizon: '#7a828c', bottom: '#2c3036', stormLit: '#6a7480' }, fog: { density: 0.006, color: '#5a626c' }, sun: { intensity: 1.2 }, hemi: { intensity: 1.1 },
           rain: { k: rainRamp(t, E.floodRain, E.floodRain + 1.2, { drizzle: 0.3 }), sheets: 1, splash: 0.5, wind: [3.0, 0.6], color: '#b9c2cc', far: 120 }, wet: smooth(invLerp(E.floodRain, E.floodRain + 1.5, t)),
-          post: { godrays: { pos: cpos, strength: 0.9 * Ek.glow, color: '#fff1d0', radius: 0.22, decay: 0.975, density: 0.95, streaks: 0.85 }, tilt: 0.2, ao: 0.4 },
+          post: { exposure: 1.55, godrays: { pos: cpos, strength: 0.9 * Ek.glow, color: '#fff1d0', radius: 0.22, decay: 0.975, density: 0.95, streaks: 0.85 }, tilt: 0.2, ao: 0.4 },
         });
       }
       return MOODS.dayWarm;

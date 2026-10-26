@@ -41,8 +41,8 @@ export function build(ctx) {
     const stool = makeStone(0.2, { seed: 60 + i, color: '#6e5a46', sink: 0.1 }); stool.position.set(S.lamp[0], 0.02, S.lamp[2]); stool.scale.set(1.2, 1.4, 1.2); g.add(stool);
     const lamp = makeOilLamp({ scale: 1.6, seed: 5 + i }); lamp.group.position.set(S.lamp[0], 0.27, S.lamp[2]); lamp.group.rotation.y = -0.6; g.add(lamp.group); lamps.push(lamp);
     const rug = makeRug(1.5, 0.95, { colors: i ? ['#2f4a6a', '#d9b46a', '#7a2e3a'] : ['#7a2e3a', '#d9b46a', '#2f4a6a'], seed: 3 + i }); rug.position.set(S.person[0] - 0.1, 0.02, S.person[2] - 0.15); g.add(rug);
-    g.add(scatterPots(4, { points: [[S.house[0] - 1.9, S.house[1] + 1.95], [S.house[0] - 1.55, S.house[1] + 2.1], [S.house[0] + 1.9, S.house[1] + 2.0], [S.house[0] + 2.3, S.house[1] + 1.9]], height: H }));
-    g.add(scatterBaskets(2, { points: [[S.house[0] + 1.5, S.house[1] + 2.25], [S.person[0] - 1.6, S.person[2] - 0.6]], height: H }));
+    g.add(scatterPots(4, { points: [[S.house[0] - 1.9, S.house[1] + 1.95], [S.house[0] - 1.55, S.house[1] + 2.1], [S.house[0] + 2.6, S.house[1] + 1.9], [S.house[0] + 3.0, S.house[1] + 1.8]], height: H }));
+    g.add(scatterBaskets(2, { points: [[S.house[0] + 2.4, S.house[1] + 2.25], [S.person[0] - 1.6, S.person[2] - 0.6]], height: H }));
     g.add(scatterFirewood(1, { points: [[S.house[0] - 2.3, S.house[1] + 1.4]], height: H }));
     const palm = makePalm(1.1, 9 + i); palm.position.set(S.house[0] + 3.2, 0, S.house[1] - 3.5); g.add(palm);
   });

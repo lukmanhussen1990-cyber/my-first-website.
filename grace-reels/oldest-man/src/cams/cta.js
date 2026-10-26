@@ -12,7 +12,7 @@ export function blocking(plan, H) { return {}; }
 
 export function camera(plan, B, shot, t, H) {
   const lt = t - shot.t0, k = H.easeInOut(H.clamp(lt / (shot.t1 - shot.t0)));
-  const look = H.at('cta', [0, 0.98 - 0.05 * k, 0]);
+  const look = H.at('cta', [0, 0.78 - 0.04 * k, 0]);
   const dist = 7.4 - 1.0 * k;
   return { pos: H.sph(look, 0.08 - 0.1 * k, 0.12, dist), look, fov: 26, focus: dist };
 }

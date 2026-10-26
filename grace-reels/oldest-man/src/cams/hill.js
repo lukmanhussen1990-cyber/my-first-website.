@@ -11,7 +11,7 @@ export const HILL = {
   flame: [1.03, 0.2, 0.31],        // flame tip (lamp + rotated spout)
   drop: [0.66, 0.024, 0.78],       // where the giant raindrop lands (dry cracked ground in front of the lamp)
   n969: [0.95, 0.5, -0.9],         // the slammed 969 hangs here, over the lamp (baseline centre)
-  slots: { n187: [0.25, 0, -2.6], n182: [1.65, 0, -2.6], n600: [0.95, 0, -3.8] },
+  slots: { n187: [0.42, 0, -3.0], n182: [1.5, 0, -3.0], n600: [0.95, 0, -4.1] },
   ark: [-40, -7.6, -150], arkRot: 0.62,
 };
 
@@ -56,8 +56,8 @@ export function camera(plan, B, shot, t, H) {
       const f = flameW(H), d = at(HILL.drop);
       const k = H.easeInOut(H.clamp(H.invLerp(E.lampOut + 0.4, E.dropFall + 0.2, t)));
       const look = H.mixv([f[0] - 0.02, f[1] + 0.02, f[2]], [d[0], d[1] + 0.06, d[2]], k);
-      const dist = H.lerp(1.05 - 0.05 * Math.min(lt, 2), 0.95, k);
-      return { pos: H.sph(look, 0.34 - 0.04 * k, H.lerp(0.16, 0.3, k), dist), look, fov: 30, focus: dist, locked: true };
+      const dist = H.lerp(2.3 - 0.15 * Math.min(lt, 2), 1.3, k);
+      return { pos: H.sph(look, 0.34 - 0.04 * k, H.lerp(0.14, 0.32, k), dist), look, fov: 30, focus: dist, locked: true };
     }
     case 'S10': {
       // the empty seat: the cold lamp, the cane against the rock; first rain; the far ark under the storm
