@@ -75,6 +75,7 @@ export function outlineMaterial(width = 0.014, hex = OUTLINE) {
       '#include <opaque_fragment>',
       `vec3 pl = uPointColor * pow(1.0 - smoothstep(0.0, uPointRange, distance(vWP, uPointPos)), 1.6);
        outgoingLight *= mix(vec3(1.0), uCharLight + pl * 0.5, 0.6);
+       outgoingLight = mix(outgoingLight, vec3(1.7, 1.42, 1.0), uGlow);
        #include <opaque_fragment>`);
   };
   m.customProgramCacheKey = () => 'outline2d';
@@ -99,6 +100,7 @@ export function charFillMaterial(atlas, uni) {
   m.onBeforeCompile = (sh) => {
     for (const k of ['uCharLight', 'uPointPos', 'uPointColor', 'uPointRange', 'uAO', 'uGroundY', 'uSunDir', 'uSunColor', 'uShadeTone', 'uCelWrap', 'uRimPx', 'uRimK', 'uPointShade']) sh.uniforms[k] = U[k];
     for (const k of ['uLayerStep', 'uLayerBase', 'uLayerScale', 'uOutline']) sh.uniforms[k] = uni[k];
+    sh.uniforms.uGlow = uni.uGlow || { value: 0 };
     sh.uniforms.shapeMap = { value: atlas.shapeTex };
     sh.uniforms.shapeSize = { value: new THREE.Vector2(atlas.SW, atlas.SH) };
     sh.vertexShader = VS_HEAD + sh.vertexShader
@@ -106,7 +108,7 @@ export function charFillMaterial(atlas, uni) {
       .replace('#include <project_vertex>', LAYER_VS('layer'));
     sh.fragmentShader = `uniform vec3 uCharLight; uniform vec3 uPointPos; uniform vec3 uPointColor; uniform float uPointRange; uniform float uAO; uniform float uGroundY;
 uniform vec3 uSunDir; uniform vec3 uSunColor; uniform vec3 uShadeTone; uniform float uCelWrap; uniform float uRimPx; uniform float uRimK; uniform float uPointShade;
-uniform sampler2D shapeMap; uniform vec2 shapeSize;
+uniform sampler2D shapeMap; uniform vec2 shapeSize; uniform float uGlow;
 varying vec3 vWP; varying vec3 vTx; varying vec3 vBy; varying float vTint;
 ` + sh.fragmentShader.replace('#include <opaque_fragment>', `
   {
@@ -132,7 +134,7 @@ varying vec3 vWP; varying vec3 vTx; varying vec3 vBy; varying float vTint;
     float rimP = edge * smoothstep(0.2, 0.65, dot(gd, Lp2 / max(length(Lp2), 1e-4))) * smoothstep(0.08, 0.4, length(Lp2));
     vec3 warm = vec3(1.0, 0.8, 0.55);
     col += (rimS * uSunColor * uCharLight * 0.6 + rimP * pl * 1.2) * warm * (0.3 + base) * uRimK;
-    outgoingLight = col;
+    outgoingLight = mix(col, vec3(1.7, 1.42, 1.0), uGlow);   // taken into the light
   }
   #include <opaque_fragment>`);
   };
@@ -146,10 +148,11 @@ export function charOutlineMaterial(uni, hex = OUTLINE_CHAR) {
   m.onBeforeCompile = (sh) => {
     for (const k of ['uCharLight', 'uPointPos', 'uPointColor', 'uPointRange']) sh.uniforms[k] = U[k];
     for (const k of ['uLayerStep', 'uLayerBase', 'uLayerScale', 'uOutline']) sh.uniforms[k] = uni[k];
+    sh.uniforms.uGlow = uni.uGlow || { value: 0 };
     sh.vertexShader = VS_HEAD + sh.vertexShader
       .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.xy += miter * uOutline;\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;')
       .replace('#include <project_vertex>', LAYER_VS('olayer'));
-    sh.fragmentShader = 'uniform vec3 uCharLight; uniform vec3 uPointPos; uniform vec3 uPointColor; uniform float uPointRange;\nvarying vec3 vWP;\n' + sh.fragmentShader.replace(
+    sh.fragmentShader = 'uniform vec3 uCharLight; uniform vec3 uPointPos; uniform vec3 uPointColor; uniform float uPointRange; uniform float uGlow;\nvarying vec3 vWP;\n' + sh.fragmentShader.replace(
       '#include <opaque_fragment>',
       `vec3 pl = uPointColor * pow(1.0 - smoothstep(0.0, uPointRange, distance(vWP, uPointPos)), 1.6);
        outgoingLight *= mix(vec3(1.0), uCharLight + pl * 0.5, 0.6);

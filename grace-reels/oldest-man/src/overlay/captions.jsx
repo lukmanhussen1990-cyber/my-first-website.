@@ -74,7 +74,7 @@ export const Header = ({ t, ink = 0 }) => {
 // On screen from frame 0, punched at hookHit, flies into the caption spot (left-aligned, where the first
 // caption appears) at hookOut and hands over to that caption; the last 0.5 s of the reel brings it back
 // exactly as frame 0 (seamless loop).
-const HOOK = { cy: 830, n: 400, years: 116, flood: 98 };
+const HOOK = { cy: 770, n: 400, years: 116, flood: 98 };
 export const HookTitle = ({ t, frame }) => {
   const back = ease.sine(clamp((t - (DUR - 0.5)) / 0.45));
   let tt = t, extraO = 1, extraS = 0;
@@ -90,11 +90,12 @@ export const HookTitle = ({ t, frame }) => {
   const punch = 1 + (s0 >= 0 ? pop(tt, E.hookHit, 0.075, 19, 8) : 0);
   const flash = s0 >= 0 ? Math.exp(-5 * s0) : 0;
   const drift = 1 + 0.014 * Math.min(tt, E.hookOut);
-  const sc = (fit * punch * drift + extraS) * lerp(1, 0.3, fly);
-  // the shrunken title lands with its left edge on the caption column
-  const cx = lerp(0, L.capX + (M * fit * drift * 0.3) / 2 - 540, fly);
-  const cy = lerp(HOOK.cy, L.capTop + 60, fly);
-  const dis = clamp((fly - 0.45) / 0.45);                        // dissolves into the caption band
+  // subtitles run from the very first word (in the caption band above the title), so the title does not fly into
+  // the caption spot any more: it settles back a little and dissolves in place
+  const sc = (fit * punch * drift + extraS) * lerp(1, 0.86, fly);
+  const cx = 0;
+  const cy = lerp(HOOK.cy, HOOK.cy + 40, fly);
+  const dis = clamp((fly - 0.05) / 0.85);
   const o = extraO * (1 - ease.sine(dis));
   const shadow = '0 10px 40px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.55)';
   return (
@@ -114,14 +115,12 @@ export const HookTitle = ({ t, frame }) => {
 };
 
 // ------------------------------------------------------------------ captions
-const CAP_IN = E.hookOut + 0.22;                                 // first caption crossfades with the dissolving hook title (no blank frame)
 export const Captions = ({ t }) => {
   const bl = captionAt(t);
   if (!bl) return null;
-  if (t < CAP_IN) return null;                                   // the hook title is the first caption until it lands
   const lay = layoutBlock(bl); if (!lay) return null;
   const light = (plan.theme[bl.scene] || 'dark') === 'light';
-  const t0 = bl.id === 'B01#0' ? CAP_IN : bl.t0;
+  const t0 = bl.t0;
   const fin = ease.out((t - t0) / 0.24), fout = clamp((bl.t1 - t) / 0.22);
   const o = fin * fout;
   const size = lay.size, lineH = size * LINE;

@@ -126,7 +126,7 @@ export class Person {
     this.root = new THREE.Group(); this.bb = new THREE.Group(); this.body = new THREE.Group();
     this.root.add(this.bb); this.bb.add(this.body); this.bb.rotation.order = 'YXZ';
     this.root.name = o.name || 'person';
-    this.uni = { uLayerStep: { value: 0.0015 }, uLayerBase: { value: o.layerBase ?? 0 }, uLayerScale: { value: 1 }, uOutline: { value: 0.006 } };
+    this.uni = { uLayerStep: { value: 0.0015 }, uLayerBase: { value: o.layerBase ?? 0 }, uLayerScale: { value: 1 }, uOutline: { value: 0.006 }, uGlow: { value: 0 } };
     this.sil = o.silhouette || null;
     if (!this.sil) {
       this.atlas = buildAtlas(this.design.key, allParts(this.design), this.design.quality);
