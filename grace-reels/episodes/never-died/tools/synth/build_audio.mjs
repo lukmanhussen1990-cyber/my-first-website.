@@ -307,7 +307,8 @@ function main() {
   const sceneRows = tl.scenes.map((sc) => {
     const i0 = Math.round(sc.start * SR), i1 = Math.round(sc.end * SR), g = gPre;
     const part = (x) => { const o = x.subarray(i0, i1).map((y) => y * g); return integratedLufs([o, o]); };
-    return `| ${sc.id} ${sc.name} | ${sc.start.toFixed(2)}–${sc.end.toFixed(2)} | ${part(voice).toFixed(1)} | ${part(musicMix).toFixed(1)} | ${part(sfxMix).toFixed(1)} |`;
+    const f = (x) => (Number.isFinite(x) ? x.toFixed(1) : '—');
+    return `| ${sc.id} ${sc.name} | ${sc.start.toFixed(2)}–${sc.end.toFixed(2)} | ${f(part(voice))} | ${f(part(musicMix))} | ${f(part(sfxMix))} |`;
   });
 
   const ok = Math.abs(I - TARGET_I) <= 0.3 && TP <= TARGET_TP + 1e-9 && st.duration_ts === N && peak < 1 && keyOk && Math.abs(dcL) < 1e-3 && Math.abs(dcR) < 1e-3;

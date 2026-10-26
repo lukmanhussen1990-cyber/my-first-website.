@@ -557,8 +557,8 @@ export function renderMusic(b, tl) {
     [burst - 0.08, 0.95], [burst + 0.1, 1.0], [frz - 0.005, 0.95], [frz + 0.03, 0.32], [b.redX, 0.36], [b.rewind - 0.02, 0.6],
     [b.s6 + 0.25, 0.48], [b.stormGather, 0.5], [b.heaven, 1.0], [b.s7 + 0.1, 0.72], [b.s7 + 1.2, 0.42], [b.cloakFloat - 0.3, 0.38],
     [b.cloakFloat + 0.3, 0.16], [b.cloakLand, 0.18], [tl.cues.notTheEnd, 0.35], [b.s8, 0.88], [b.s8 + 1.0, 0.72], [kc - 0.1, 0.72],
-    [kc + 0.4, 0.9], [b.neverDie, 0.86], [63.4, 1.0], [b.s10 + 0.3, 0.6], [b.s11 - 0.1, 0.6], [b.s11 + 0.4, 0.78],
-    [b.loopOut - 0.2, 0.62], [T, 0.8],
+    [kc + 0.4, 0.9], [b.neverDie, 0.86], [63.4, 1.0], [b.s10 + 0.3, 0.6], [b.s11 - 0.1, 0.55], [b.s11 + 0.4, 0.52],
+    [b.loopOut - 0.2, 0.45], [T, 0.8],
   ]);
   for (let i = 0; i < out.n; i++) {
     const g = intensity(i / SR - pre);

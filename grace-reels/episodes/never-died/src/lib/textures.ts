@@ -3,10 +3,10 @@
 import {useEffect, useState} from 'react';
 import {continueRender, delayRender, staticFile} from 'remotion';
 import * as THREE from 'three';
-import spritesJson from '../../public/sprites/sprites.json';
+import indexJson from '../../public/sprites/index.json';
 
-export type SpriteMeta = {file: string; w: number; h: number; foot: [number, number]; top: number};
-export const SPRITES = spritesJson as Record<string, SpriteMeta>;
+export type SpriteMeta = {file: string; w: number; h: number; bbox: [number, number, number, number]; foot: [number, number]};
+export const SPRITES = indexJson as unknown as Record<string, SpriteMeta>;
 
 const cache = new Map<string, THREE.Texture>();
 
@@ -16,7 +16,11 @@ export const tex = (name: string): THREE.Texture => {
 	return t;
 };
 
-export const hasTex = (name: string) => cache.has(name);
+export const meta = (name: string): SpriteMeta => {
+	const m = SPRITES[name];
+	if (!m) throw new Error(`Unknown sprite: ${name}`);
+	return m;
+};
 
 const loadImage = async (src: string) => {
 	const img = new Image();
@@ -25,28 +29,12 @@ const loadImage = async (src: string) => {
 	return img;
 };
 
-export const registerTexture = (name: string, t: THREE.Texture) => {
-	cache.set(name, t);
-};
-
-// Extra (non-sprite) images, e.g. derived characters made by tools/derive_characters.py.
-export const EXTRA_IMAGES: Record<string, string> = {};
-
-export const usePreloadTextures = (): boolean => {
-	const [ready, setReady] = useState(cache.size > 0);
-	const [handle] = useState(() => (cache.size > 0 ? null : delayRender('Loading sprite textures')));
-	useEffect(() => {
-		if (ready) {
-			if (handle !== null) continueRender(handle);
-			return;
-		}
-		const entries: [string, string][] = [
-			...Object.entries(SPRITES).map(([k, m]) => [k, m.file] as [string, string]),
-			...Object.entries(EXTRA_IMAGES),
-		];
-		Promise.all(
-			entries.map(async ([name, file]) => {
-				const img = await loadImage(staticFile(file));
+let loading: Promise<void> | null = null;
+const loadAll = () => {
+	if (!loading) {
+		loading = Promise.all(
+			Object.entries(SPRITES).map(async ([name, m]) => {
+				const img = await loadImage(staticFile(m.file));
 				const t = new THREE.Texture(img);
 				t.colorSpace = THREE.SRGBColorSpace;
 				t.anisotropy = 8;
@@ -56,12 +44,25 @@ export const usePreloadTextures = (): boolean => {
 				t.needsUpdate = true;
 				cache.set(name, t);
 			}),
-		).then(() => setReady(true));
+		).then(() => undefined);
+	}
+	return loading;
+};
+
+export const usePreloadTextures = (): boolean => {
+	const [ready, setReady] = useState(cache.size >= Object.keys(SPRITES).length);
+	const [handle] = useState(() => (ready ? null : delayRender('Loading sprite textures')));
+	useEffect(() => {
+		if (ready) {
+			if (handle !== null) continueRender(handle);
+			return;
+		}
+		loadAll().then(() => setReady(true));
 	}, [ready, handle]);
 	return ready;
 };
 
-// Small procedural textures made once on a canvas (soft dots, gradients).
+// Small procedural textures made once on a canvas (soft dots, gradients, footprints).
 export const canvasTexture = (name: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void) => {
 	const hit = cache.get(name);
 	if (hit) return hit;
@@ -79,19 +80,32 @@ export const softDot = () =>
 	canvasTexture('softDot', 64, 64, (ctx) => {
 		const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
 		g.addColorStop(0, 'rgba(255,255,255,1)');
-		g.addColorStop(0.35, 'rgba(255,255,255,0.55)');
+		g.addColorStop(0.3, 'rgba(255,255,255,0.6)');
 		g.addColorStop(1, 'rgba(255,255,255,0)');
 		ctx.fillStyle = g;
 		ctx.fillRect(0, 0, 64, 64);
 	});
 
 export const blobShadow = () =>
-	canvasTexture('blobShadow', 128, 64, (ctx) => {
-		const g = ctx.createRadialGradient(64, 32, 0, 64, 32, 64);
-		g.addColorStop(0, 'rgba(40,25,10,0.75)');
-		g.addColorStop(0.5, 'rgba(40,25,10,0.35)');
-		g.addColorStop(1, 'rgba(40,25,10,0)');
-		ctx.setTransform(1, 0, 0, 0.5, 0, 16);
+	canvasTexture('blobShadow', 128, 128, (ctx) => {
+		const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+		g.addColorStop(0, 'rgba(0,0,0,1)');
+		g.addColorStop(0.45, 'rgba(0,0,0,0.55)');
+		g.addColorStop(1, 'rgba(0,0,0,0)');
 		ctx.fillStyle = g;
 		ctx.fillRect(0, 0, 128, 128);
+	});
+
+// Sandal print seen from above (toe to the right), drawn soft so it reads as a dent in sand.
+export const footprintTexture = () =>
+	canvasTexture('footprint', 128, 64, (ctx) => {
+		ctx.filter = 'blur(2px)';
+		ctx.fillStyle = 'rgba(0,0,0,1)';
+		ctx.beginPath();
+		ctx.ellipse(70, 32, 46, 17, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = 'rgba(0,0,0,0.6)';
+		ctx.beginPath();
+		ctx.ellipse(26, 32, 18, 13, 0, 0, Math.PI * 2);
+		ctx.fill();
 	});
