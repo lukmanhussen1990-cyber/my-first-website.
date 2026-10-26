@@ -1118,15 +1118,15 @@ export class Shots {
       const pos = V(-1 + k * 2, 3 - k * 2, 70 - k * 10).add(this.drift(t, 0.05));
       this.cam(pos, V(0, -14, 0), 32, 0, 0.5);
     } else {
-      // from behind (no face close-up): Max wrapped in foil, looking into the sunrise
+      // three-quarter back view (no face close-up): Max centred, wrapped in foil, the sunrise glow off to the side
       const k = ep(lt, L[4].s, sc.T, ease.inOutSine);
       const hp = this.headWorld(m);
-      const fwd = V(-0.6, 0, -0.8);
-      const pos = hp.clone().addScaledVector(fwd, -(2.6 - k * 0.5)).add(V(0.35, 0.45 - k * 0.1, 0)).add(this.drift(t, 0.01));
-      this.cam(pos, hp.clone().addScaledVector(fwd, 3.0).add(V(0.6, 0.0, 0)), 34, 0, 0.1);
-      P.maxBlur = 0.35; P.focus = pos.distanceTo(hp); P.focusRange = 1.6;
+      const fwd = V(-0.6, 0, -0.8), right = V(0.8, 0, -0.6);
+      const pos = hp.clone().addScaledVector(fwd, -(1.0 - k * 0.15)).addScaledVector(right, -(1.6 - k * 0.25)).add(V(0, 0.18, 0)).add(this.drift(t, 0.008));
+      this.cam(pos, hp.clone().add(V(0, 0.08, 0)), 34, 0, 0.1);
+      P.maxBlur = 0.35; P.focus = pos.distanceTo(hp); P.focusRange = 1.0;
       ra.root.visible = false; w.props.book.visible = false;
-      w.sky.uniforms.uBright.value = 0.42; P.bloom = 0.35; P.exposure = 0.82;
+      w.sky.uniforms.uBright.value = 0.6; P.bloom = 0.4; P.exposure = 0.88;
       const tt = lt - t32;
       let a = 0;
       if (tt >= 0) {
