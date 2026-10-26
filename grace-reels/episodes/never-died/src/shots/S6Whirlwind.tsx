@@ -95,9 +95,9 @@ const groundDust = (count: number, x: number, z: number): ParticleSpec[] =>
 		};
 	});
 
-const Content: React.FC<{t: number; lite: boolean}> = ({t, lite}) => {
+const Content: React.FC<{t: number; lite: boolean; cam?: CamState}> = ({t, lite, cam}) => {
 	const τ = s6Tau(t);
-	const c = camera6(t);
+	const c = cam ?? camera6(t);
 	const a = camAngles(c);
 	const st = stormAmt(t);
 	const mood = mixMood(AFTERNOON, STORM, st);
@@ -176,3 +176,17 @@ export const S6: ShotDef = {
 	anchors: (t) => jordanAnchors(s6Tau(t)),
 };
 
+
+// The cover: the same moment framed closer, looking up at Elijah in the whirlwind with Elisha reaching
+// from below (kept inside Instagram's 4:5 grid crop). Never active in the reel timeline.
+const T_COVER = 39.1;
+const coverCam = (): CamState => orbit([EX() - 0.85, 2.15, EL_Z + 0.2], 7.6, -12, 10, 46, {drift: 0});
+export const COVER: ShotDef = {
+	id: 'COVER',
+	start: -10,
+	end: -9,
+	Content: ({lite}) => <Content t={T_COVER} lite={lite} cam={coverCam()} />,
+	camera: coverCam,
+	fog: S6.fog ? () => S6.fog!(T_COVER) : undefined,
+	grade: () => ({...S6.grade!(T_COVER), vignette: 0.5}),
+};

@@ -9,14 +9,14 @@ import type {Inset, ShotDef, Transition} from './render/types';
 import {S34} from './shots/Jordan';
 import {LOOP, S1, VOID} from './shots/S1Hook';
 import {MYTH, mythRect, S5} from './shots/S5Myth';
-import {S6} from './shots/S6Whirlwind';
+import {COVER, S6} from './shots/S6Whirlwind';
 import {S7} from './shots/S7Cloak';
 import {S8} from './shots/S8Mountain';
 import {S9} from './shots/S9Promise';
 import {S2} from './shots/S2Enoch';
 import {B, SCENE} from './lib/timeline';
 
-export const SHOTS: ShotDef[] = [S1, S2, S34, S5, S6, S7, S8, S9, VOID, LOOP, MYTH];
+export const SHOTS: ShotDef[] = [S1, S2, S34, S5, S6, S7, S8, S9, VOID, LOOP, MYTH, COVER];
 export const INSETS: Inset[] = [{shot: 'MYTH', rect: mythRect}];
 export const TRANSITIONS: Transition[] = [
 	{from: 'S1', to: 'S2', at: B.cloakWipe + 0.17, dur: 0.42, kind: 'cloak'},
