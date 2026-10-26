@@ -1,0 +1,475 @@
+{
+ "episode": "Q.03",
+ "title": "SON OF THE FATHER",
+ "header": "Q.03 · SON OF THE FATHER",
+ "hook_title": "ONLY ONE WALKS FREE",
+ "cover": {
+  "text": "HIS NAME WILL SHOCK YOU",
+  "scene": "Jesus (calm, rim-lit) and Barabbas (in chains) side by side before the crowd, 'BARABBAS = ???' glowing above"
+ },
+ "voice": {
+  "engine": "edge-tts",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "backup": "en-US-ChristopherNeural",
+  "rate": "-5%",
+  "pitch": "-3Hz",
+  "note": "same voice as Q.01 and Q.02"
+ },
+ "pauses": {
+  "between_sentences": 0.3,
+  "after_barabbas_shout": 0.8,
+  "bar_son_to_abba_father": 0.5,
+  "before_heres_the_truth": 0.7
+ },
+ "name_fact": "In Aramaic, 'bar' means 'son' and 'abba' means 'father', so 'Barabbas' means 'son of the father'.",
+ "kjv": {
+  "John 18:39": "But ye have a custom, that I should release unto you one at the passover…",
+  "Matthew 27:2": "And when they had bound him, they led him away, and delivered him to Pontius Pilate the governor.",
+  "Matthew 27:17": "…Whom will ye that I release unto you? Barabbas, or Jesus which is called Christ?",
+  "Mark 15:7": "And there was one named Barabbas, which lay bound with them that had made insurrection with him, who had committed murder in the insurrection.",
+  "Mark 15:11": "But the chief priests moved the people, that he should rather release Barabbas unto them.",
+  "Matthew 27:21": "…Whether of the twain will ye that I release unto you? They said, Barabbas.",
+  "Matthew 27:26": "Then released he Barabbas unto them…",
+  "1 Peter 3:18": "For Christ also hath once suffered for sins, the just for the unjust, that he might bring us to God…"
+ },
+ "rules": [
+  "family-safe: no blood, no wounds, no whipping, no crucifixion close-ups; Jesus carrying the cross is seen from far away only; riots shown as shadows and running, no violence",
+  "God the Father is never shown as a person, only as light; Jesus is a simple figure, no halo, no realistic face",
+  "never blame any group of people for Jesus' death; keep it personal: we all needed Him to take our place",
+  "kind and non-denominational; never mock anyone"
+ ],
+ "beats": [
+  {
+   "id": "B01",
+   "scene": "S1",
+   "mood": "dawn_pavement",
+   "text": "This is *Jesus*. In a moment, a crowd will choose a *murderer* over Him.",
+   "tts": "This is Jesus. | In a moment, a crowd will choose a murderer over Him.",
+   "camera": "frame 1: low-angle close hero shot of Jesus, calm and still on the stone pavement at dawn, sun rising behind Him (gold rim light), wind in robe and hair, glowing dust; a huge roaring crowd out of focus behind with fists raised; FAST orbit that speed-ramps into slow motion and ends on His calm face as He lifts His eyes",
+   "labels": [
+    {
+     "text": "JESUS",
+     "anchor": "jesus head",
+     "style": "soft gold leader line"
+    }
+   ],
+   "card": null,
+   "namecard": null,
+   "sfx": [
+    "layered crowd roar with chant-like pulses (no words)",
+    "deep hit on the hook title",
+    "roar drops into an underwater slow-motion feel: wind, one deep held note, a heartbeat"
+   ],
+   "keywords": [
+    "Jesus",
+    "murderer"
+   ]
+  },
+  {
+   "id": "B02",
+   "scene": "S2",
+   "mood": "dawn_pavement",
+   "text": "And that murderer's name… will *shock* you.",
+   "tts": "And that murderer's name… will shock you.",
+   "camera": "whip pan reveals a second man beside Jesus in heavy iron chains: Barabbas glares at the crowd; chains swing",
+   "labels": [
+    {
+     "text": "BARABBAS",
+     "anchor": "barabbas head"
+    }
+   ],
+   "card": null,
+   "namecard": {
+    "state": "locked",
+    "text": "BARABBAS = ???",
+    "note": "appears under the captions with a soft glow and a tiny lock; stays until line 9"
+   },
+   "sfx": [
+    "heavy chain clank",
+    "low brass-like hit"
+   ],
+   "keywords": [
+    "shock"
+   ]
+  },
+  {
+   "id": "B03",
+   "scene": "S3",
+   "mood": "passover_city",
+   "text": "Every Passover, the governor set one prisoner *free*.",
+   "tts": "Every Passover, the governor set one prisoner free.",
+   "camera": "big crane-up from the courtyard to a wide view of Jerusalem at Passover: crowds in the streets, banners, smoke rising from the temple in the haze",
+   "labels": [
+    {
+     "text": "PASSOVER CUSTOM · JOHN 18:39",
+     "anchor": "city"
+    }
+   ],
+   "card": null,
+   "namecard": {
+    "state": "locked"
+   },
+   "sfx": [
+    "city bustle",
+    "distant synth-horn trumpets"
+   ],
+   "keywords": [
+    "free"
+   ]
+  },
+  {
+   "id": "B04",
+   "scene": "S4",
+   "mood": "pilate_court",
+   "text": "Pilate brought out *two* men.",
+   "tts": "Pilate brought out two men.",
+   "camera": "low angle on Pilate on the raised stone judgment seat, uneasy; soldiers lead the two men forward side by side: Jesus in warm light (wrists bound with a simple rope), Barabbas in hard shadow",
+   "labels": [
+    {
+     "text": "PONTIUS PILATE · MATTHEW 27:2",
+     "anchor": "pilate head"
+    }
+   ],
+   "card": null,
+   "namecard": {
+    "state": "locked"
+   },
+   "sfx": [
+    "cool marble echo",
+    "soldiers' steps",
+    "chain drag"
+   ],
+   "keywords": [
+    "two"
+   ]
+  },
+  {
+   "id": "B05",
+   "scene": "S5",
+   "mood": "memories",
+   "text": "Jesus… who healed the sick and raised the *dead*.",
+   "tts": "Jesus… who healed the sick and raised the dead.",
+   "camera": "over Jesus' shoulder, glowing 'memory' vignettes appear and fade like light paintings (~0.7 s each): a blind man's eyes opening, a child lifted up, Lazarus walking out of a tomb in white cloth",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "locked"
+   },
+   "sfx": [
+    "soft shimmer for each vignette"
+   ],
+   "keywords": [
+    "dead"
+   ]
+  },
+  {
+   "id": "B06",
+   "scene": "S6",
+   "mood": "riot_night",
+   "text": "And Barabbas. A rebel who had \"committed *murder* in the insurrection.\"",
+   "tts": "And Barabbas. | A rebel who had committed murder in the insurrection.",
+   "camera": "hard cut to a quick shadowy night flashback: a street riot with torches, an overturned cart, people running as shadows (no violence, no blood)",
+   "labels": [
+    {
+     "text": "MARK 15:7",
+     "anchor": "riot"
+    }
+   ],
+   "card": null,
+   "namecard": {
+    "state": "locked"
+   },
+   "sfx": [
+    "muffled torch roar",
+    "running feet"
+   ],
+   "keywords": [
+    "murder"
+   ]
+  },
+  {
+   "id": "B07",
+   "scene": "S7",
+   "mood": "pilate_court",
+   "text": "Pilate asked: \"Whether of the twain will ye that I *release* unto you?\"",
+   "tts": "Pilate asked: Whether of the twain will ye that I release unto you?",
+   "camera": "Pilate stands and raises one hand toward each man; the crowd goes quiet; the chief priests move through the crowd whispering into ears",
+   "labels": [
+    {
+     "text": "MARK 15:11",
+     "anchor": "chief priests"
+    }
+   ],
+   "card": {
+    "style": "floating cream card",
+    "ref": "MATTHEW 27:21 · KJV",
+    "text": "…Whether of the twain will ye that I *release* unto you?",
+    "gold": [
+     "RELEASE"
+    ]
+   },
+   "namecard": {
+    "state": "locked"
+   },
+   "sfx": [
+    "crowd hush",
+    "whisper textures",
+    "tense low strings"
+   ],
+   "keywords": [
+    "release"
+   ]
+  },
+  {
+   "id": "B08",
+   "scene": "S8",
+   "mood": "the_shout",
+   "extra_hold": 0.8,
+   "text": "And the crowd shouted: \"*Barabbas*.\"",
+   "tts": "And the crowd shouted: Barabbas.",
+   "camera": "the crowd explodes, fists in the air, dust, camera shake; the word BARABBAS slams onto the screen in huge shaking letters; Jesus stays perfectly still in the middle of it all",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "locked"
+   },
+   "sfx": [
+    "massive crowd hit + camera-shake boom",
+    "then 0.8 s of near silence"
+   ],
+   "keywords": [
+    "Barabbas"
+   ]
+  },
+  {
+   "id": "B09",
+   "scene": "S9",
+   "mood": "name_reveal",
+   "gaps": [
+    0.3,
+    0.5
+   ],
+   "text": "But notice his name. In Aramaic, \"Bar\" means *son*. \"Abba\" means *father*.",
+   "tts": "But notice his name. | In Aramaic, Bar means son. | Abba means father.",
+   "camera": "freeze frame, the world drains to dark with a soft spotlight; the locked name card flies to the centre and grows; the lock breaks; the letters split into BAR and ABBA with tags SON and FATHER",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "unlock_split",
+    "parts": [
+     {
+      "text": "BAR",
+      "tag": "SON",
+      "on_word": "son"
+     },
+     {
+      "text": "ABBA",
+      "tag": "FATHER",
+      "on_word": "father"
+     }
+    ]
+   },
+   "sfx": [
+    "lock-break crack",
+    "deep sub boom"
+   ],
+   "keywords": [
+    "son",
+    "father"
+   ]
+  },
+  {
+   "id": "B10",
+   "scene": "S9",
+   "mood": "name_reveal",
+   "text": "Barabbas means \"son of the *father*.\"",
+   "tts": "Barabbas means son of the father.",
+   "camera": "BAR | ABBA re-form into SON OF THE FATHER in glowing gold; big hit",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "son_of_the_father",
+    "text": "SON OF THE FATHER",
+    "on_word": "father"
+   },
+   "sfx": [
+    "bright golden chime chord",
+    "big hit"
+   ],
+   "keywords": [
+    "father"
+   ]
+  },
+  {
+   "id": "B11",
+   "scene": "S10",
+   "mood": "the_swap",
+   "text": "So that day, a guilty son of the father walked *free*…",
+   "tts": "So that day, a guilty son of the father walked free…",
+   "camera": "slow motion: a guard unlocks Barabbas's shackles and they fall to the stone with a heavy clank; he walks toward the city gate into warm light",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "small_gold"
+   },
+   "sfx": [
+    "shackles hit the stone (heavy clank)",
+    "wind",
+    "footsteps"
+   ],
+   "keywords": [
+    "free"
+   ]
+  },
+  {
+   "id": "B12",
+   "scene": "S10",
+   "mood": "the_swap",
+   "text": "…and the true Son of the *Father* died in his place.",
+   "tts": "and the true Son of the Father died in his place.",
+   "camera": "in the same shot Jesus is led the other way with His bound hands, toward the hill outside the wall under a darkening sky (split composition, warm vs grey)",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "small_gold"
+   },
+   "sfx": [
+    "music lifts into D major"
+   ],
+   "keywords": [
+    "Father"
+   ]
+  },
+  {
+   "id": "B13",
+   "scene": "S11",
+   "mood": "card_cream",
+   "text": "\"Then released he *Barabbas* unto them.\"",
+   "tts": "Then released he Barabbas unto them.",
+   "camera": "full-screen cream card",
+   "labels": [],
+   "card": {
+    "style": "full-screen cream card",
+    "ref": "MATTHEW 27:26 · KJV",
+    "text": "Then released he *Barabbas* unto them…",
+    "gold": [
+     "BARABBAS"
+    ]
+   },
+   "namecard": null,
+   "sfx": [
+    "paper slide",
+    "soft chime"
+   ],
+   "keywords": [
+    "Barabbas"
+   ]
+  },
+  {
+   "id": "B14",
+   "scene": "S12",
+   "mood": "the_hill",
+   "text": "Barabbas didn't *earn* it. He didn't even *ask* for it.",
+   "tts": "Barabbas didn't earn it. | He didn't even ask for it.",
+   "camera": "at the city gate Barabbas stops and turns around; far away through the crowd he sees Jesus carrying the wooden cross beam up the hill (from far away only)",
+   "labels": [],
+   "card": null,
+   "namecard": null,
+   "sfx": [
+    "distant thunder over the hill",
+    "wind"
+   ],
+   "keywords": [
+    "earn",
+    "ask"
+   ]
+  },
+  {
+   "id": "B15",
+   "scene": "S12",
+   "mood": "the_hill",
+   "text": "He walked out… because Jesus walked *in*.",
+   "tts": "He walked out… because Jesus walked in.",
+   "camera": "his hard face slowly softens; rack focus from Barabbas to the distant hill",
+   "labels": [],
+   "card": null,
+   "namecard": null,
+   "sfx": [
+    "distant thunder",
+    "warm low swell begins"
+   ],
+   "keywords": [
+    "in"
+   ]
+  },
+  {
+   "id": "B16",
+   "scene": "S13",
+   "mood": "light_breaks",
+   "text": "\"For Christ also hath once suffered for sins, the *just* for the *unjust*, that he might bring us to God.\"",
+   "tts": "For Christ also hath once suffered for sins, the just for the unjust, that he might bring us to God.",
+   "camera": "warm light breaking through the clouds above the hill (God shown only as light)",
+   "labels": [],
+   "card": {
+    "style": "floating cream card",
+    "ref": "1 PETER 3:18 · KJV",
+    "text": "For Christ also hath once suffered for sins, the *just* for the *unjust*, that he might bring us to God…",
+    "gold": [
+     "JUST",
+     "UNJUST"
+    ]
+   },
+   "namecard": null,
+   "sfx": [
+    "warm swelling pad"
+   ],
+   "keywords": [
+    "just",
+    "unjust"
+   ]
+  },
+  {
+   "id": "B17",
+   "scene": "S14",
+   "mood": "modern_street",
+   "pause_before": 0.7,
+   "text": "And here's the truth: *you* are Barabbas. So am I.",
+   "tts": "And here's the truth: you are Barabbas. | So am I.",
+   "camera": "push-in on Barabbas's face, then a match cut on the same pose and silhouette to a modern person (hoodie, jeans) on a modern street at night in the same art style; they look up as warm light falls on them",
+   "labels": [],
+   "card": null,
+   "namecard": null,
+   "sfx": [
+    "soft city night ambience",
+    "warm light shimmer",
+    "music warmest here"
+   ],
+   "keywords": [
+    "you"
+   ]
+  },
+  {
+   "id": "B18",
+   "scene": "S15",
+   "mood": "cta_dark",
+   "text": "If you were Barabbas, what would you say to Jesus? *One line*.",
+   "tts": "If you were Barabbas, what would you say to Jesus? | One line.",
+   "camera": "dark warm background; the name card glows SON OF THE FATHER; a comment box types 'Thank You for taking my place 🙏' with floating hearts",
+   "labels": [],
+   "card": null,
+   "namecard": {
+    "state": "cta_glow",
+    "text": "SON OF THE FATHER"
+   },
+   "comment": "Thank You for taking my place 🙏",
+   "sfx": [
+    "typing ticks",
+    "heart pops",
+    "end chime"
+   ],
+   "keywords": [
+    "One line"
+   ]
+  }
+ ]
+}

@@ -385,3 +385,34 @@ The quality loop checks these numbers on `quality/compare_N.png`. Every value is
   - The gift and chain poll icons, and the cream pill comment bubble with a red avatar dot.
 
     Our S14 (dice against an hourglass, a typed comment, hearts) must look different: 3D icons, a dark glass comment box with a gold border, our own avatar and hearts in our gold.
+
+---
+
+## Addendum for Q.03 "SON OF THE FATHER" (re-checked against wides_sheet.jpg and closeups_sheet.jpg)
+
+What this story needs that the reference never shows, and how we stay in the same style while beating it:
+
+- **Crowds.** The reference never shows more than about 18–20 figures in a frame (wide_1, wide_3): each is a flat, distinct
+  paper-cut person (red, white, green, blue, yellow robes), scattered on sloped ground and seen from high up. Each figure is
+  about 9 % of the frame height at the 720 scale.
+  → Ours: 200+ people. About 10–14 hero rigs at the front (full v3 rigs with views, blinks and acting), plus an instanced
+  paper-card crowd behind them (InstancedMesh billboards drawn from the same SVG part library, with seeded colours, heights
+  and arm poses). Fists rise in waves and bodies bob with seeded offsets. The figures and palettes stay as varied as the
+  reference's, with the same outline and soft ground shadow.
+- **Architecture.** The reference has pyramid-roof huts, striped tents and simple box houses with dark door holes (close_4,
+  wide_1). It has no stone city.
+  → Ours: the same faceted low-poly treatment with bevelled edges and per-face colour variation, in warm limestone (#c9b28a /
+  #b39a74 / #9c8564): a stone pavement courtyard (Gabbatha), Roman columns, a raised judgment seat, the palace, city walls,
+  rooftops, the temple in the haze, and a hill outside the wall.
+- **Close-ups.** The reference's closest shots are full figures at a medium distance (close_1–3), with no face close-ups.
+  → Ours: a low-angle close hero shot of Jesus (hero 4096² atlas, razor-sharp edges, 5 px outline). Dignity comes from
+  posture, stillness and light: no halo, no realistic face.
+- **Light.** The reference uses a single soft sun with long, soft shadows and no rim light; haze sits in the top band.
+  → Ours: a dawn backlight with a gold cel rim on the sun side, a cool hemisphere fill, god rays through the dust, and a
+  per-mood grade (dawn gold, cool marble court, red-torch night flashback, harsh shout light, dark-gold reveal, warm/grey
+  split for the swap, stormy hill, cool → warm modern street).
+- **Text.** It works as in Q.02: italic serif captions with gold keywords (theirs are coral red; we never use their colour),
+  black label pills with letter-spaced caps and a thin leader line, and cream verse cards. New for this episode: the locked
+  parchment name card "BARABBAS = ???" under the captions (our own device, not in the reference).
+- **Do not copy.** Never use their brand name, logo or series title, their coral-red keyword colour, their script lines or
+  their exact shots (for example the crowd walking a glowing path to a lit door in wide_6).
