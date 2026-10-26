@@ -115,6 +115,7 @@ const Content: React.FC<{t: number; lite: boolean}> = ({t, lite}) => {
 					shadowOrder={8}
 				>
 					<Rig
+						blinkTime={t}
 						name={RIG}
 						pose={pose}
 						renderOrder={100}

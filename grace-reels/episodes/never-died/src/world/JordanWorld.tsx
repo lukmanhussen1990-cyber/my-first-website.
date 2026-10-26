@@ -101,7 +101,7 @@ const build = (pal: JordanPalette) => {
 	for (let i = 0; i < 10; i++) {
 		const a = -1.2 + (i / 9) * 2.4;
 		const r = 330 + hash(111, i) * 140;
-		clouds.push({geo: cloud(1000 + i), pos: [Math.sin(a) * r, 50 + hash(112, i) * 60, -Math.cos(a) * r], rot: hash(113, i), scale: 7 + hash(114, i) * 6});
+		clouds.push({geo: cloud(1000 + i), pos: [Math.sin(a) * r, 55 + hash(112, i) * 60, -Math.cos(a) * r], rot: hash(113, i), scale: 3.4 + hash(114, i) * 3});
 	}
 	const curve = new THREE.CatmullRomCurve3(Array.from({length: 41}, (_, i) => new THREE.Vector3(-160 + i * 8, WATER_Y, riverZ(-160 + i * 8))));
 	return {ground, trees: mergePlaced(trees), small: mergePlaced(small), clouds: mergePlaced(clouds), curve};

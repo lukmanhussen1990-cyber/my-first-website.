@@ -26,7 +26,9 @@ export const mountainHeight = (x: number, z: number) => {
 					peak(x, z, 10, -340, 100, 80),
 				)
 			: 0;
-	const base = top + drop + lumps;
+	// a low rock ledge where Jesus, Moses and Elijah stand, above the disciples
+	const ledge = 0.75 / (1 + Math.exp(((Math.hypot(x / 2.9, (z + 0.6) / 1.5) - 1) * 9)));
+	const base = top + drop + lumps + ledge;
 	return z < -60 ? Math.max(base, -120 + far) : base;
 };
 
@@ -74,7 +76,7 @@ const build = () => {
 	const high: Parameters<typeof mergePlaced>[0] = [];
 	for (let i = 0; i < 10; i++) {
 		const a = -1.1 + (i / 9) * 2.2;
-		high.push({geo: cloud(1300 + i, '#ffffff', '#efe2d2'), pos: [Math.sin(a) * 300, 70 + hash(86, i) * 50, -Math.cos(a) * 300], rot: hash(87, i), scale: 8 + hash(88, i) * 6});
+		high.push({geo: cloud(1300 + i, '#fff6ea', '#efd6bc'), pos: [Math.sin(a) * 300, 80 + hash(86, i) * 60, -Math.cos(a) * 300], rot: hash(87, i), scale: 3.5 + hash(88, i) * 3});
 	}
 	return {ground, stones: mergePlaced(stones), sea: mergePlaced(sea), high: mergePlaced(high)};
 };
@@ -83,7 +85,7 @@ const mats = () =>
 	cached('mountainMats', () => ({
 		lambert: new THREE.MeshLambertMaterial({vertexColors: true, flatShading: true}),
 		cloud: new THREE.MeshLambertMaterial({vertexColors: true, flatShading: true, emissive: new THREE.Color('#5a5048')}),
-		sky: new THREE.MeshBasicMaterial({vertexColors: true, fog: false, transparent: true, opacity: 0.9}),
+		sky: new THREE.MeshBasicMaterial({vertexColors: true, fog: false, transparent: true, opacity: 0.85}),
 	}));
 
 export const MountainWorld: React.FC<{t: number; mood: Mood; lite: boolean}> = ({t, mood, lite}) => {
@@ -91,7 +93,7 @@ export const MountainWorld: React.FC<{t: number; mood: Mood; lite: boolean}> = (
 	const m = mats();
 	return (
 		<>
-			<Sky {...skyFromMood(mood, t, [0.0, 0.8, -0.6])} />
+			<Sky {...skyFromMood(mood, t, [0.0, 0.8, -0.6])} curve={1.3} />
 			<MoodLights mood={mood} center={[0, 0, -1]} span={16} lite={lite} />
 			<mesh geometry={g.ground} material={m.lambert} receiveShadow />
 			<mesh geometry={g.stones} material={m.lambert} castShadow receiveShadow />

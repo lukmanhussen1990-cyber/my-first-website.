@@ -26,7 +26,10 @@ export const activeShots = (shots: ShotDef[], transitions: Transition[], t: numb
 			return {a: shots.find((s) => s.id === tr.from)!, b: shots.find((s) => s.id === tr.to)!, mix: (t - a) / tr.dur, kind: tr.kind};
 		}
 	}
-	const s = shots.find((x) => t >= x.start && t < x.end) ?? shots[shots.length - 1];
+	const s =
+		shots.find((x) => t >= x.start && t < x.end) ??
+		// outside every shot: hold the nearest real shot (insets have start < 0 and are never picked)
+		[...shots].filter((x) => x.start >= 0).sort((p, q) => Math.min(Math.abs(t - p.start), Math.abs(t - p.end)) - Math.min(Math.abs(t - q.start), Math.abs(t - q.end)))[0];
 	return {a: s, b: null as ShotDef | null, mix: 0, kind: 'cut' as const};
 };
 
@@ -104,9 +107,9 @@ export const Director: React.FC<{
 						c = mix(aa, bb, smoothstep(0.15, 0.85, m)) + vec3(1.0, 0.86, 0.62) * bl * 0.28;
 					}
 					else if (uKind < 3.5) {
-						float n = vn(vUv * vec2(5., 9.)) * 0.35 + vn(vUv * vec2(17., 31.)) * 0.15;
+						float n = vn(vUv * vec2(3., 5.)) * 0.3 + vn(vUv * vec2(7., 12.)) * 0.08;
 						float r = length((vUv - 0.5) * vec2(1., 1.6)) * 0.55;
-						float mask = smoothstep(m * 1.35 - 0.2, m * 1.35 - 0.05, r + n);
+						float mask = smoothstep(m * 1.4 - 0.3, m * 1.4 - 0.02, r + n);
 						c = mix(b, a * (1. - smoothstep(0., 0.5, m) * 0.85), mask);
 					}
 					else if (uKind < 4.5) {

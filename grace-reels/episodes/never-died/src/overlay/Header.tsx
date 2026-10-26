@@ -18,7 +18,7 @@ export const Header: React.FC<{opacity: number}> = ({opacity}) => {
 	if (opacity <= 0.001) return null;
 	return (
 		<>
-			<div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 300, opacity: opacity * 0.9, background: 'linear-gradient(to bottom, rgba(14,9,5,0.38), rgba(14,9,5,0))'}} />
+			<div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 260, opacity, background: 'linear-gradient(to bottom, rgba(40,22,8,0.22), rgba(40,22,8,0))'}} />
 			<div style={{position: 'absolute', left: SAFE.left, top: 150, transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: 14, opacity}}>
 				<Logo size={34} style={{filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.4))'}} />
 				<span style={text}>Grace in Motion</span>

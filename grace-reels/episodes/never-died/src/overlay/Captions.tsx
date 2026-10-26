@@ -128,7 +128,7 @@ export const Captions: React.FC<{t: number}> = ({t}) => {
 				fontSize: 66,
 				lineHeight: 1.15,
 				color: C.cream,
-				textShadow: '0 2px 12px rgba(10,6,3,0.55), 0 0 2px rgba(10,6,3,0.35)',
+				textShadow: '0 2px 14px rgba(30,15,4,0.6), 0 0 3px rgba(30,15,4,0.45), 0 1px 1px rgba(30,15,4,0.35)',
 				opacity: Math.min(fadeIn, fadeOut),
 			}}
 		>
@@ -156,7 +156,7 @@ export const CaptionScrim: React.FC<{t: number; strength?: number}> = ({t, stren
 				height: 560,
 				opacity: a,
 				background:
-					'linear-gradient(to bottom, rgba(28,17,8,0) 0%, rgba(28,17,8,0.26) 24%, rgba(28,17,8,0.3) 55%, rgba(28,17,8,0.16) 80%, rgba(28,17,8,0) 100%)',
+					'radial-gradient(ellipse 72% 50% at 40% 46%, rgba(52,26,6,0.26) 0%, rgba(52,26,6,0.16) 50%, rgba(52,26,6,0) 100%)',
 			}}
 		/>
 	);

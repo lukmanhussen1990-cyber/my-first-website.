@@ -88,13 +88,13 @@ export const JordanAction: React.FC<JordanState> = ({τ, t, lite, mood, camYaw, 
 		<>
 			<JordanWorld t={t} mood={mood} lite={lite} lightCenter={[(xe + xs) / 2, 0, -2]} holeDir={holeDir} />
 			{!hideElijah && <CharacterRoot position={[xe, jordanHeight(xe, EL_Z), EL_Z]} pxPerM={elPx()} facing={elijahFacing(τ)} yaw={camYaw} lean={camPitch} shadow={{w: 1.0, d: 0.38, opacity: 0.32, offset: [0.12, 0.05]}} shadowOrder={8}>
-				<Rig name="elijah" pose={poseE} renderOrder={100} look={{tint: mood.tint, ...fireLook}} />
+				<Rig blinkTime={t} name="elijah" pose={poseE} renderOrder={100} look={{tint: mood.tint, ...fireLook}} />
 			</CharacterRoot>}
 			<CharacterRoot position={[xs, jordanHeight(xs, zs), zs]} pxPerM={elishaPose ? STANDING_PX['elisha/poses'] / RIGS.elisha.heightM : esPx()} yaw={camYaw} lean={camPitch} shadow={{w: 0.9, d: 0.34, opacity: 0.32, offset: [0.12, 0.05]}} shadowOrder={9}>
 				{elishaPose ? (
 					<PoseSprite sprite={elishaPose} renderOrder={300} look={{tint: mood.tint}} warp={{breath: 0.006 * Math.sin(t * 2.2)}} />
 				) : (
-					<Rig name="elisha" pose={poseS} renderOrder={300} look={{tint: mood.tint, ...fireLook}} />
+					<Rig blinkTime={t} name="elisha" pose={poseS} renderOrder={300} look={{tint: mood.tint, ...fireLook}} />
 				)}
 			</CharacterRoot>
 			{team.active && (

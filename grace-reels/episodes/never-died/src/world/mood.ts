@@ -4,6 +4,7 @@ import type {SkyParams} from './atmosphere';
 
 export type Mood = {
 	skyTop: string;
+	skyMid?: string;
 	skyHorizon: string;
 	skyBottom: string;
 	sunDir: [number, number, number];
@@ -33,22 +34,27 @@ const cb = new THREE.Color();
 const mixHex = (a: string, b: string, m: number) => '#' + ca.set(a).lerp(cb.set(b), m).getHexString();
 const mixN = (a: number, b: number, m: number) => a + (b - a) * m;
 
+const midOf = (m: Mood) => m.skyMid ?? mixHex(m.skyHorizon, m.skyTop, 0.3);
+
 export const mixMood = (a: Mood, b: Mood, m: number): Mood => {
 	if (m <= 0) return a;
 	if (m >= 1) return b;
 	const out = {} as Record<string, unknown>;
 	for (const k of Object.keys(a) as (keyof Mood)[]) {
+		if (k === 'skyMid') continue;
 		const va = a[k];
 		const vb = b[k];
 		if (typeof va === 'number') out[k] = mixN(va, vb as number, m);
 		else if (typeof va === 'string') out[k] = mixHex(va, vb as string, m);
 		else out[k] = (va as number[]).map((x, i) => mixN(x, (vb as number[])[i], m));
 	}
+	if (a.skyMid || b.skyMid) out.skyMid = mixHex(midOf(a), midOf(b), m);
 	return out as Mood;
 };
 
 export const skyFromMood = (m: Mood, t: number, holeDir: [number, number, number] = [0, 1, 0]): SkyParams => ({
 	top: m.skyTop,
+	mid: m.skyMid,
 	horizon: m.skyHorizon,
 	bottom: m.skyBottom,
 	sunDir: m.sunDir,
@@ -195,26 +201,27 @@ export const DUSK: Mood = {
 
 // The bright mountain top (high key, cream-gold).
 export const GLORY: Mood = {
-	skyTop: '#d9d4e6',
-	skyHorizon: '#fff4dc',
-	skyBottom: '#f6e2c0',
+	skyTop: '#b07a52',
+	skyMid: '#ebbb8c',
+	skyHorizon: '#fff0d8',
+	skyBottom: '#f0d6b0',
 	sunDir: [0.0, 0.55, -0.83],
-	sunColor: '#fff6dc',
-	sunGlow: 1.2,
-	sunSize: 6,
-	light: '#fff4dc',
-	lightI: 2.1,
-	hemiSky: '#fff6e6',
-	hemiGround: '#b89a7c',
-	hemiI: 1.35,
-	fog: '#fbeedd',
-	fogNear: 30,
-	fogFar: 260,
+	sunColor: '#fff2d0',
+	sunGlow: 0.16,
+	sunSize: 4,
+	light: '#fff0d6',
+	lightI: 1.9,
+	hemiSky: '#f4ecdf',
+	hemiGround: '#a08468',
+	hemiI: 1.05,
+	fog: '#f3dfc0',
+	fogNear: 45,
+	fogFar: 300,
 	storm: 0,
 	stormA: '#3b3a52',
 	stormB: '#6b5a6e',
-	hole: 0.6,
-	holeColor: '#fff2c8',
+	hole: 0.5,
+	holeColor: '#fff0c4',
 	cloud: '#ffffff',
 	cloudShade: '#e8d9cc',
 	tint: '#fff8ee',

@@ -3,7 +3,7 @@ import {clamp, easeOutBack, seg, smooth} from '../lib/ease';
 import {B} from '../lib/timeline';
 import {C, SAFE, SANS, SERIF} from './theme';
 
-type CardDef = {from: number; to: number; text: string; ref: string; keyAt: number};
+type CardDef = {from: number; to: number; text: string; ref: string; keyAt: number; top: number};
 
 // **word** marks a keyword.
 export const CARDS: CardDef[] = [
@@ -13,6 +13,7 @@ export const CARDS: CardDef[] = [
 		text: '“By faith Enoch was **translated** that he should not see death…”',
 		ref: 'Hebrews 11:5 · KJV',
 		keyAt: B.badge1,
+		top: 770,
 	},
 	{
 		from: B.cardJohnIn,
@@ -20,10 +21,9 @@ export const CARDS: CardDef[] = [
 		text: '“And whosoever liveth and believeth in me shall **never die**. Believest thou this?”',
 		ref: 'John 11:26 · KJV',
 		keyAt: B.neverDie,
+		top: 880,
 	},
 ];
-
-const TOP = 770;
 
 export const ScriptureCard: React.FC<{t: number; card: CardDef}> = ({t, card}) => {
 	if (t < card.from || t > card.to) return null;
@@ -40,7 +40,7 @@ export const ScriptureCard: React.FC<{t: number; card: CardDef}> = ({t, card}) =
 			style={{
 				position: 'absolute',
 				left: SAFE.left,
-				top: TOP,
+				top: card.top,
 				width: SAFE.right - SAFE.left,
 				boxSizing: 'border-box',
 				padding: '46px 50px 38px 64px',

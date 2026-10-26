@@ -76,7 +76,7 @@ const Content: React.FC<{t: number; lite: boolean}> = ({t, lite}) => {
 				{pose ? (
 					<PoseSprite sprite={pose} renderOrder={300} look={{tint: mood.tint, light: 0.3 * glow, lightColor: '#ffe9c0'}} warp={{breath: 0.007 * Math.sin(t * 2.1) + sob}} />
 				) : (
-					<Rig name="elisha" pose={rig} renderOrder={300} look={{tint: mood.tint}} />
+					<Rig blinkTime={t} name="elisha" pose={rig} renderOrder={300} look={{tint: mood.tint}} />
 				)}
 			</CharacterRoot>
 			{cl.visible && (

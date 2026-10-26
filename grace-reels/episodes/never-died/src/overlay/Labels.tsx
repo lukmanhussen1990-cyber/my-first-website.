@@ -13,7 +13,7 @@ export const LABELS: LabelDef[] = [
 	{text: 'Elijah', from: B.elijahLabel, to: B.elijahLabel + 2.6, anchor: 'elijah', dx: 40, dy: -150},
 	{text: 'Elisha', from: B.elishaLabel, to: B.elishaLabel + 2.3, anchor: 'elisha', dx: -150, dy: -140},
 	{text: 'Parted them both asunder · 2 Kings 2:11', from: B.asunderLabel, to: B.between + 1.1, anchor: 'gap', dx: -320, dy: -190},
-	{text: 'Matthew 17:3', from: B.matthewLabel, to: B.matthewLabel + 3.0, anchor: 'summit', dx: -120, dy: -170},
+	{text: 'Matthew 17:3', from: B.matthewLabel, to: B.eliasLabel - 0.25, anchor: 'summit', dx: -110, dy: -150},
 	{text: 'Elias = Elijah', from: B.eliasLabel, to: B.jesusShine + 0.7, anchor: 'elijah8', dx: 30, dy: -160},
 ];
 

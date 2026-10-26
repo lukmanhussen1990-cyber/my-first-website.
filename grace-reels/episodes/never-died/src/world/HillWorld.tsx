@@ -95,7 +95,7 @@ const build = (pal: HillPalette) => {
 	for (let i = 0; i < 9; i++) {
 		const a = -1.1 + (i / 8) * 2.4;
 		const r = 320 + hash(51, i) * 120;
-		clouds.push({geo: cloud(400 + i), pos: [Math.sin(a) * r, 45 + hash(52, i) * 55, -Math.cos(a) * r], rot: hash(53, i), scale: 6 + hash(54, i) * 5});
+		clouds.push({geo: cloud(400 + i), pos: [Math.sin(a) * r, 60 + hash(52, i) * 60, -Math.cos(a) * r], rot: hash(53, i), scale: 2.8 + hash(54, i) * 2.4});
 	}
 	return {ground, trees: mergePlaced(trees), rocks: mergePlaced(rocks), clouds: mergePlaced(clouds)};
 };
@@ -106,20 +106,21 @@ const mats = () =>
 		cloud: new THREE.MeshBasicMaterial({vertexColors: true, fog: false, transparent: true, opacity: 0.95}),
 	}));
 
-export const HillWorld: React.FC<{t: number; mood: Mood; lite: boolean; lightCenter?: [number, number, number]; palette?: HillPalette; shadowSpan?: number}> = ({
+export const HillWorld: React.FC<{t: number; mood: Mood; lite: boolean; lightCenter?: [number, number, number]; palette?: HillPalette; shadowSpan?: number; skyCurve?: number}> = ({
 	t,
 	mood,
 	lite,
 	lightCenter = [0, 0, 0],
 	palette = HILL_GOLD,
 	shadowSpan = 30,
+	skyCurve,
 }) => {
 	const g = cached(`hillGeo:${palette.grass}`, () => build(palette));
 	const m = mats();
 	m.cloud.color.set(mood.cloud);
 	return (
 		<>
-			<Sky {...skyFromMood(mood, t)} />
+			<Sky {...skyFromMood(mood, t)} curve={skyCurve} />
 			<MoodLights mood={mood} center={lightCenter} span={shadowSpan} lite={lite} />
 			<mesh geometry={g.ground} material={m.lambert} receiveShadow />
 			<mesh geometry={g.trees} material={m.lambert} castShadow receiveShadow />

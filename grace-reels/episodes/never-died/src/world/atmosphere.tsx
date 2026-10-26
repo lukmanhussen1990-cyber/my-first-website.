@@ -13,6 +13,7 @@ float fbm(vec2 p){ float s=0., a=.5; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+
 
 export type SkyParams = {
 	top: THREE.ColorRepresentation;
+	mid?: THREE.ColorRepresentation; // optional colour between horizon and top (avoids a grey blend)
 	horizon: THREE.ColorRepresentation;
 	bottom: THREE.ColorRepresentation;
 	sunDir: [number, number, number];
@@ -25,6 +26,7 @@ export type SkyParams = {
 	hole?: number;
 	holeDir?: [number, number, number];
 	holeColor?: THREE.ColorRepresentation;
+	curve?: number; // gradient exponent: higher keeps the low sky warm longer
 	t: number;
 };
 
@@ -34,6 +36,8 @@ export const Sky: React.FC<SkyParams> = (p) => {
 			new THREE.ShaderMaterial({
 				uniforms: {
 					uTop: {value: new THREE.Color()},
+					uMid: {value: new THREE.Color()},
+					uHasMid: {value: 0},
 					uHorizon: {value: new THREE.Color()},
 					uBottom: {value: new THREE.Color()},
 					uSunDir: {value: new THREE.Vector3()},
@@ -47,16 +51,19 @@ export const Sky: React.FC<SkyParams> = (p) => {
 					uHoleDir: {value: new THREE.Vector3(0, 1, 0)},
 					uHoleColor: {value: new THREE.Color()},
 					uTime: {value: 0},
+					uCurve: {value: 0.55},
 				},
 				vertexShader: `varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
 				fragmentShader: `${NOISE}
-				uniform vec3 uTop,uHorizon,uBottom,uSunDir,uSunColor,uStormA,uStormB,uHoleDir,uHoleColor;
-				uniform float uSunSize,uSunGlow,uStorm,uHole,uTime;
+				uniform vec3 uTop,uMid,uHorizon,uBottom,uSunDir,uSunColor,uStormA,uStormB,uHoleDir,uHoleColor;
+				uniform float uSunSize,uSunGlow,uStorm,uHole,uTime,uCurve,uHasMid;
 				varying vec3 vDir;
 				void main(){
 					vec3 d = normalize(vDir);
 					float h = d.y;
-					vec3 col = h > 0. ? mix(uHorizon, uTop, pow(smoothstep(0., 1., h), 0.55)) : mix(uHorizon, uBottom, smoothstep(0., -0.25, h));
+					float g = pow(smoothstep(0., 1., h), uCurve);
+					vec3 up = uHasMid > 0.5 ? (g < 0.3 ? mix(uHorizon, uMid, g / 0.3) : mix(uMid, uTop, (g - 0.3) / 0.7)) : mix(uHorizon, uTop, g);
+					vec3 col = h > 0. ? up : mix(uHorizon, uBottom, smoothstep(0., -0.25, h));
 					float sd = max(0., dot(d, normalize(uSunDir)));
 					col += uSunColor * (smoothstep(1. - 0.0009 * uSunSize, 1. - 0.0006 * uSunSize, sd) * 1.6 + pow(sd, 10.) * uSunGlow + pow(sd, 3.) * uSunGlow * 0.25);
 					if (uStorm > 0.) {
@@ -82,6 +89,8 @@ export const Sky: React.FC<SkyParams> = (p) => {
 	);
 	const u = mat.uniforms;
 	u.uTop.value.set(p.top);
+	u.uHasMid.value = p.mid ? 1 : 0;
+	if (p.mid) u.uMid.value.set(p.mid);
 	u.uHorizon.value.set(p.horizon);
 	u.uBottom.value.set(p.bottom);
 	u.uSunDir.value.set(...p.sunDir);
@@ -95,6 +104,7 @@ export const Sky: React.FC<SkyParams> = (p) => {
 	u.uHoleDir.value.set(...(p.holeDir ?? [0, 1, 0]));
 	u.uHoleColor.value.set(p.holeColor ?? '#ffd27a');
 	u.uTime.value = p.t;
+	u.uCurve.value = p.curve ?? 0.55;
 	return (
 		<mesh material={mat} renderOrder={-1000} frustumCulled={false}>
 			<sphereGeometry args={[900, 48, 24]} />
