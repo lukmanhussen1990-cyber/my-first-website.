@@ -80,7 +80,7 @@ export function build(ctx) {
   // fireflies + gold numbers + the giant raindrop
   const flies = makeMotes(26, 41); g.add(flies.group);
   const renderer = ctx.world.gl;
-  const N = { n187: makeGoldNumber('187', { renderer, size: 0.36 }), n182: makeGoldNumber('182', { renderer, size: 0.36 }), n600: makeGoldNumber('600', { renderer, size: 0.36 }), n969: makeGoldNumber('969', { renderer, size: 0.45 }) };
+  const N = { n187: makeGoldNumber('187', { renderer, size: 0.28 }), n182: makeGoldNumber('182', { renderer, size: 0.28 }), n600: makeGoldNumber('600', { renderer, size: 0.28 }), n969: makeGoldNumber('969', { renderer, size: 0.45 }) };
   for (const n of Object.values(N)) g.add(n.group, n.fx);
   const drop = makeGiantDrop({ renderer, r: 0.045 }); g.add(drop.group);
   const _o = new THREE.Vector3();

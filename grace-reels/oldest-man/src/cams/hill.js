@@ -11,7 +11,7 @@ export const HILL = {
   flame: [1.03, 0.2, 0.31],        // flame tip (lamp + rotated spout)
   drop: [0.66, 0.024, 0.78],       // where the giant raindrop lands (dry cracked ground in front of the lamp)
   n969: [0.95, 0.5, -0.9],         // the slammed 969 hangs here, over the lamp (baseline centre)
-  slots: { n187: [0.42, 0, -3.0], n182: [1.5, 0, -3.0], n600: [0.95, 0, -4.1] },
+  slots: { n187: [0.28, 0, -3.0], n182: [1.62, 0, -3.0], n600: [0.95, 0, -3.5] },
   ark: [-40, -7.6, -150], arkRot: 0.62,
 };
 
