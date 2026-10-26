@@ -16,7 +16,7 @@ Tell me which line you want changed. Changes to text or sound are quick because 
 | No music at all | `final/man_in_the_ice_nomusic.mp4` is already made | |
 
 Text changes: `node tools/render.js --overlay`, then `python3 tools/finalize.py final 0.75`.
-Sound changes: `python3 tools/sfx.py && python3 tools/build_audio.py && python3 tools/finalize.py final 0.75`.
+Sound changes: `python3 tools/sfx.py && python3 tools/build_audio.py && python3 tools/finalize.py audio` (the video stream is copied, so this takes about a minute).
 
 ## Re-render needed (about 1 hour for everything, 10–20 min for one scene)
 
