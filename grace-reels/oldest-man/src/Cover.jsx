@@ -11,7 +11,7 @@ import { fontsReady, SANS, SERIF } from './lib/fonts.js';
 const COVER_CAM = { pos: [4.4, 1.35, 9.4], look: [-0.15, 1.72, -1.0], fov: 30, focus: 9.6 };
 
 export const Cover = ({ frame = 60 }) => {
-  const [h] = useState(() => delayRender('cover fonts', { timeoutInMilliseconds: 240000 }));
+  const [h] = useState(() => delayRender('cover fonts', { timeoutInMilliseconds: 600000 }));
   useEffect(() => { fontsReady().then(() => continueRender(h)); }, [h]);
   const shadow = '0 10px 40px rgba(0,0,0,0.6), 0 3px 10px rgba(0,0,0,0.6)';
   return (

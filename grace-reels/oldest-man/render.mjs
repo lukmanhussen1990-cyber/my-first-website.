@@ -8,7 +8,7 @@ import fs from 'fs';
 const mode = process.argv[2] || 'stills';
 const browserExecutable = process.env.REMOTION_BROWSER || '/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell';
 const chromiumOptions = { gl: 'swangle' };
-const timeoutInMilliseconds = 240000;
+const timeoutInMilliseconds = 600000;
 const concurrency = Number(process.env.CONC || 3);
 const t0 = Date.now();
 const serveUrl = await bundle({ entryPoint: path.resolve('src/index.jsx'), publicDir: path.resolve('public') });
