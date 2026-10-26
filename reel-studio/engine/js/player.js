@@ -6,6 +6,7 @@ import * as C from './components.js';
 import * as L from './lab.js';
 import * as PR from './props.js';
 import * as CE from './cells.js';
+import * as IN from './infection.js';
 import * as D from './draw.js';
 import * as U from './util.js';
 
@@ -37,7 +38,7 @@ export async function boot() {
     reel.geometry = (await getJSON(`${P}/geometry.json`, {})) || {};
     reel.manifest = manifest;
     const mod = await import(`${P}/scenes.js?v=${Date.now()}`);
-    mod.default(reel, { C, D, U, L, PR, CE, FPS, W, H });
+    mod.default(reel, { C, D, U, L, PR, CE, IN, FPS, W, H });
     reel.finalize();
     window.TIMELINE = reel.timelineJSON();
     window.renderFrame = (i) => { reel.renderFrame(ctx, i); return true; };

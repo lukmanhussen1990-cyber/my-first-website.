@@ -435,6 +435,50 @@ def s_scanner(v):
     return stereo(norm(y, 0.35), width=1)
 
 
+def s_buzz(v):
+    """A mosquito passing close by: thin wing-beat tone that swells and fades, with a
+    little pitch drift (Doppler) and a pan sweep. Short and soft, never a long whine."""
+    r = _rng(2900 + v); d = 0.95; t = _t(d); n = len(t)
+    f0 = 520 + r.random() * 90
+    f = f0 * (1 + 0.035 * np.tanh((t - d * 0.5) * 6) * (-1 if v % 2 else 1)) * (1 + 0.006 * np.sin(2 * np.pi * 7 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    y = sum(np.sin(k * ph) / k ** 1.3 for k in range(1, 7))
+    y = lp(y, 3200) + 0.04 * bp(r.standard_normal(n), 1500, 5000)
+    e = np.sin(np.pi * t / d) ** 2 * (0.85 + 0.15 * np.sin(2 * np.pi * 13 * t))
+    y = y * e
+    pan = np.linspace(-0.6, 0.6, n) * (1 if v % 2 == 0 else -1)
+    return np.stack([y * np.sqrt(0.5 * (1 - pan)), y * np.sqrt(0.5 * (1 + pan))], 1) / (np.max(np.abs(y)) + 1e-9) * 0.5
+
+
+def s_slap(v):
+    """A hand slap: sharp skin crack with a short low thump."""
+    r = _rng(3000 + v); d = 0.22; n = int(d * SR)
+    y = bp(r.standard_normal(n), 500, 5000) * env_exp(n, 0.012, 0.0004)
+    y += 0.8 * damped(150 + 20 * (v % 3), 0.03, d) * env_exp(n, 0.04, 0.001)
+    return stereo(norm(y, 0.8), pan=(r.random() - 0.5) * 0.3)
+
+
+def s_lock(v):
+    """A lock opening: a crisp metal click, then the latch clacks back."""
+    d = 0.28; n = int(d * SR); y = np.zeros(n)
+    for k, (off, f, g) in enumerate(((0.0, 3100, 1.0), (0.075, 1500, 0.8))):
+        i = int(off * SR); m = n - i
+        y[i:] += (hp(_rng(3100 + v + k).standard_normal(m), 2500) * env_exp(m, 0.0012)
+                  + 0.7 * damped(f, 0.012, m / SR) + 0.35 * damped(f * 0.47, 0.03, m / SR)) * g
+    return stereo(norm(y, 0.7))
+
+
+def s_alarm(v):
+    """Two soft alarm beeps (warning signs), rounded so they never sound harsh."""
+    d = 0.5; t = _t(d); y = np.zeros(len(t))
+    for k, off in enumerate((0.0, 0.24)):
+        m = (t >= off) & (t < off + 0.17)
+        tt = t[m] - off
+        tone = np.sign(np.sin(2 * np.pi * 1320 * tt)) * 0.6 + np.sin(2 * np.pi * 1320 * tt)
+        y[m] = tone * np.minimum(1, tt / 0.006) * np.minimum(1, (0.17 - tt) / 0.03)
+    return stereo(norm(lp(y, 3500), 0.45))
+
+
 SOUNDS = {
     "type": s_type, "pop": s_pop, "slide": s_slide, "whoosh": s_whoosh, "stamp": s_stamp, "rip": s_rip,
     "pen": s_pen, "tick": s_tick, "flip": s_flip, "heartbeat": s_heartbeat, "wings": s_wings, "peck": s_peck,
@@ -443,6 +487,7 @@ SOUNDS = {
     "drip": s_drip, "splash": s_splash, "bubbles": s_bubbles, "click": s_click, "scribble": s_scribble,
     "steam": s_steam, "pageturn": s_pageturn, "clock": s_clock, "flat": s_flat,
     "drawer": s_drawer, "scanner": s_scanner,
+    "buzz": s_buzz, "slap": s_slap, "lock": s_lock, "alarm": s_alarm,
 }
 # loudness of each sound relative to the others (applied on top of the cue gain)
 LEVEL = {
@@ -451,6 +496,7 @@ LEVEL = {
     "inflate": 0.45, "scan": 0.45, "hum": 0.35, "beep": 0.25, "switch": 0.5, "thud": 0.55,
     "drip": 0.42, "splash": 0.85, "bubbles": 0.38, "click": 0.4, "scribble": 0.26, "steam": 0.22,
     "pageturn": 0.5, "clock": 0.3, "flat": 0.28, "drawer": 0.5, "scanner": 0.3,
+    "buzz": 0.3, "slap": 0.7, "lock": 0.5, "alarm": 0.3,
 }
 
 _cache = {}

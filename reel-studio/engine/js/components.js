@@ -503,7 +503,7 @@ export class Checklist extends Actor {
       let textAlpha = 1;
       if (it.markAt !== undefined && t >= it.markAt) {
         const mp = prog(t, it.markAt, 0.24);
-        if (it.mark === 'check') checkMark(ctx, 62, y + 22, 50, mp, COLORS.ink, 7);
+        if (it.mark === 'check') checkMark(ctx, 62, y + 22, 50, mp, it.markColor || COLORS.ink, 7);
         else xMark(ctx, 62, y + 22, 40, mp, COLORS.redInk, 6);
       }
       if (it.strikeAt !== undefined && t >= it.strikeAt) textAlpha = lerp(1, 0.5, prog(t, it.strikeAt, 0.2));
@@ -624,6 +624,7 @@ export class Magnifier extends Actor {
   }
   center(t) {
     const o = this.o;
+    if (o.path) return keyed(o.path, t, o.to); // [[t, x, y, ease?], ...] glide between spots
     const p = prog(t, this.at, o.dur ?? 0.55, ease.outCubic);
     const [x0, y0] = o.from || [W + 260, o.to[1] + 260];
     return [lerp(x0, o.to[0], p), lerp(y0, o.to[1], p)];

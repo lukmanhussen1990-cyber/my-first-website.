@@ -4,10 +4,11 @@ A reusable template for vertical (1080×1920, 30 fps) Hindi science reels in the
 
 The style uses aged paper, big Anton titles (dark line plus red line), typewriter labels, tags, rulers, stamps, checklists, a magnifier, counters, X-ray scenes with glowing parasites, page-roll and scan transitions, a procedural sound design and a fixed **@speciman.files** watermark.
 
-Three complete worked examples:
+Four complete worked examples:
 - `projects/snail-disco-eyes/` (FILE No. 01): THE SNAIL WITH DISCO EYES
 - `projects/brain-eating-amoeba/` (FILE No. 02): THE BRAIN-EATING AMOEBA, with a one-command rebuild in `build.sh`
 - `projects/no-cure-for-cancer/` (FILE No. 03): WHY IS THERE NO CURE FOR CANCER?, almost everything drawn in code (cells, DNA, posters, counters)
+- `projects/dengue-second-time/` (FILE No. 04): DENGUE: WHY THE SECOND TIME IS WORSE, with blood-stream X-ray scenes, antibodies, an immune cell with a padlocked door, eggs and larvae
 
 ## What you supply for a new reel
 1. **Script:** `vo_script.json` holds one line of Hindi voiceover per scene (`id`, `vo`, optional `"optional": true`).
@@ -70,8 +71,13 @@ To replace one word of a take (for example a re-recorded "सोचो"), splice
 | `drawCell(ctx, x, y, r, t, {type: 'normal' \| 'cancer' \| 'immune', look})` / `drawVirus()` | stained-plate cells on paper, glowing cells in X-ray (cancer red, immune cyan) |
 | `drawDNA(ctx, x0, x1, y, t, {copy, errors})` | a turning double helix; `copy` grows a copy below with red error rungs |
 | `s.odometer(text, {rollAt, rollDur})` / `drawBadge()` / `drawBootprint()` / `drawToolIcon(kind)` | rolling number counter, fake "DON'T ATTACK ME" badge, boot print, treatment icons (surgery, chemo, radiation, immuno, vaccine) |
+| `s.bloodStream({y, hh, n, speed, dir})` / `drawRBC()` | a vessel with red blood cells flowing through it (X-ray or paper) |
+| `drawDengueVirus(ctx, x, y, r, t, {type: 1-4})` / `drawAntibody(ctx, x, y, s, ang, {type})` / `antibodyPoints()` | the four dengue types (amber, blue, green, violet) and Y-shaped antibodies coloured by the type they fight |
+| `drawGateCell(ctx, x, y, r, t, {door, unlock, open, infected, copies})` / `doorPoint()` / `drawPadlock()` | an immune cell with a padlocked receptor door that clicks open and fills with virus copies |
+| `drawEgg()` / `drawLarva()` / `drawDayClock()` / `drawHouse()` / `drawCalendar()` / `drawPill()` / `drawSmiley()` / `drawShield()` / `drawSpecimenFrame()` / `drawPin()` | mosquito eggs and wrigglers, a 24-hour day clock, house, tear-off calendar, generic pills, shield, pinned specimen box |
+| `s.magnifier({path: [[t, x, y], ...]})` / checklist item `markColor` | the magnifier glides between spots; red ticks on a checklist |
 
-Sounds come from the components automatically (typing, pops, slides, stamps, pens, flips, drips, splashes, bubbles, steam, page turns…). The library is in `engine/tools/sfx.py`, all generated in code, so there are no licences to worry about.
+Sounds come from the components automatically (typing, pops, slides, stamps, pens, flips, drips, splashes, bubbles, steam, page turns…); `s.sfx(t, 'buzz' | 'slap' | 'lock' | 'alarm')` adds a passing mosquito, a hand slap, a lock clicking open or two soft alarm beeps. The library is in `engine/tools/sfx.py`, all generated in code, so there are no licences to worry about.
 
 ## Requirements
 Node 18+ with Playwright (Chromium), ffmpeg, Python 3 with `numpy scipy pillow soundfile pyloudnorm opencv-python-headless faster-whisper rembg[cpu] edge-tts`. The fonts are included in `engine/fonts` (open licences).
