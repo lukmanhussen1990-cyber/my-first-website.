@@ -1,4 +1,4 @@
-// Tiny pure-JS DSP toolkit for the SEVEN THINGS soundtrack (no dependencies).
+// Tiny pure-JS DSP toolkit for the Grace in Motion soundtracks (no dependencies). Q.02 THE OLDEST MAN.
 // Everything is deterministic: all randomness comes from seeded PRNGs (makeRng).
 import fs from 'node:fs';
 
@@ -183,6 +183,33 @@ export function svf(x, fcAt, q = 0.707, mode = 'lp', step = 16) {
     x[i] = m === 0 ? v2 : m === 1 ? v1 * k : m === 2 ? v0 - k * v1 - v2 : v0 - k * v1;
   }
   return x;
+}
+
+// piecewise-linear automation: keys = [[t, v], ...] (t ascending) -> f(t)
+export const ramp = (keys) => (t) => {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 0; i < keys.length - 1; i++) { const [a, va] = keys[i], [b, vb] = keys[i + 1]; if (t <= b) return b > a ? lerp(va, vb, (t - a) / (b - a)) : vb; }
+  return keys[keys.length - 1][1];
+};
+
+// stereo ensemble chorus (string-machine style): `voices` modulated delay taps per channel, each with a
+// slow and a fast LFO; wet taps are summed with the dry signal (in place)
+export function chorus(st, { voices = 3, base = 0.011, depth = 0.0035, slow = [0.31, 0.47, 0.63], fast = [5.1, 6.3, 7.4], fastDepth = 0.12, mix = 0.55, seed = 'chorus' } = {}) {
+  const r = makeRng(seed), n = st.L.length, maxD = Math.ceil((base + depth * 1.3) * SR) + 4;
+  for (const ch of ['L', 'R']) {
+    const x = st[ch], dry = Float32Array.from(x), wet = new Float32Array(n);
+    for (let v = 0; v < voices; v++) {
+      const ps = r.next() * TAU, pf = r.next() * TAU, fs = slow[v % slow.length] * r.uni(0.9, 1.1), ff = fast[v % fast.length] * r.uni(0.9, 1.1);
+      for (let i = maxD; i < n; i++) {
+        const t = i / SR, d = (base + depth * (Math.sin(TAU * fs * t + ps) + fastDepth * Math.sin(TAU * ff * t + pf))) * SR;
+        const p = i - d, k = p | 0, fr = p - k;
+        wet[i] += dry[k] + fr * (dry[k + 1] - dry[k]);
+      }
+    }
+    const g = mix / voices;
+    for (let i = 0; i < n; i++) x[i] = dry[i] * (1 - mix * 0.5) + wet[i] * g;
+  }
+  return st;
 }
 
 export const softClip = (x, drive = 1) => { const n = Math.tanh(drive); for (let i = 0; i < x.length; i++) x[i] = Math.tanh(x[i] * drive) / n; return x; };

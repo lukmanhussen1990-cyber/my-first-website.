@@ -1,6 +1,7 @@
-// Synth instruments: band-limited wavetable pad, felt piano, soft pluck, bells, sub bass.
+// Synth instruments: band-limited wavetable pad, string ensemble, formant choir, felt piano, soft pluck,
+// bells, timpani, sub bass.
 // Each note renders into a stereo dry bus plus optional mono reverb sends: sends = [[buf, amt], ...].
-import { SR, TAU, makeRng, clamp, mtof, smooth, cosRamp, relCurve, svf, filt, onePoleLP, f32, place, rmsOf } from './dsp.mjs';
+import { SR, TAU, makeRng, clamp, mtof, smooth, cosRamp, relCurve, svf, filt, onePoleLP, f32, place, rmsOf, white, pink, normRms } from './dsp.mjs';
 
 // ------------------------------------------------------------------ band-limited wavetables
 const WT = 4096;
@@ -28,15 +29,18 @@ function buildTables(kind) {
 const TABLES = { saw: buildTables('saw'), tri: buildTables('tri'), sine: buildTables('sine') };
 const pickTable = (kind, f) => { const b = TABLES[kind]; for (const x of b) if (x.fTop >= f) return x.tab; return b[b.length - 1].tab; };
 
-// render one oscillator voice (with slow random pitch drift) and add it into L/R with gains
-function osc(L, R, kind, f, n, gl, gr, r, driftCents = 1.8) {
+// render one oscillator voice (with slow random pitch drift, optional delayed vibrato
+// vib = {rate, cents, delay, att}) and add it into L/R with gains
+function osc(L, R, kind, f, n, gl, gr, r, driftCents = 1.8, vib = null) {
   const tab = pickTable(kind, f * 1.02);
   let ph = r.next() * WT; const inc0 = f * WT / SR;
   const dR1 = r.uni(0.05, 0.16), dR2 = r.uni(0.17, 0.4), p1 = r.next() * TAU, p2 = r.next() * TAU;
   const depth = driftCents / 1200 * Math.LN2;
+  const vR = vib ? vib.rate * r.uni(0.92, 1.08) : 0, vP = r.next() * TAU, vD = vib ? vib.cents / 1200 * Math.LN2 : 0;
   for (let b = 0; b < n; b += 64) {
     const t = b / SR;
-    const inc = inc0 * Math.exp(depth * (0.7 * Math.sin(TAU * dR1 * t + p1) + 0.3 * Math.sin(TAU * dR2 * t + p2)));
+    const vv = vib ? vD * smooth((t - vib.delay) / vib.att) * Math.sin(TAU * vR * t + vP) : 0;
+    const inc = inc0 * Math.exp(depth * (0.7 * Math.sin(TAU * dR1 * t + p1) + 0.3 * Math.sin(TAU * dR2 * t + p2)) + vv);
     const e = Math.min(n, b + 64);
     for (let i = b; i < e; i++) {
       const ip = ph | 0, s = tab[ip] + (ph - ip) * (tab[ip + 1] - tab[ip]);
@@ -188,4 +192,108 @@ export function bassNote(bus, o) {
   }
   filt(x, 'lp', 420, 0.7);
   place(bus, x, t0, 1, 0, sends);
+}
+
+// ------------------------------------------------------------------ string ensemble
+// Detuned saw section (string-machine style) with delayed vibrato, slow bowed attack, soft low-pass that
+// opens with the envelope, a gentle body bump and a little bow noise. ampAt(tAbs) shapes crescendos.
+// o: midi, t0, t1, att, rel, amp, cutoff (Hz or fn(tAbs)), voices, detune (cents), spread, vib, ampAt, sends, seed
+export function stringNote(bus, o) {
+  const { midi, t0, t1, att = 0.9, rel = 1.6, amp = 0.06, cutoff = 2600, voices = 5, detune = 10, spread = 0.75,
+    vib = { rate: 5.2, cents: 9, delay: 0.35, att: 0.9 }, ampAt = null, sends = null, seed = 'str', bow = 0.035, q = 0.6 } = o;
+  const r = makeRng(`${seed}:${midi}:${t0.toFixed(3)}`);
+  const f0 = mtof(midi), nHold = Math.max(1, Math.round((t1 - t0) * SR)), nRel = Math.round(rel * SR), n = nHold + nRel;
+  const L = f32(n), R = f32(n);
+  for (let v = 0; v < voices; v++) {
+    const u = voices === 1 ? 0 : (v / (voices - 1)) * 2 - 1;
+    const pan = voices === 1 ? 0 : (v % 2 ? 1 : -1) * spread * (0.4 + 0.6 * Math.abs(u)), a = (pan + 1) * Math.PI / 4;
+    osc(L, R, 'saw', f0 * Math.pow(2, (u * detune + r.uni(-1.5, 1.5)) / 1200), n, Math.cos(a), Math.sin(a), r, 2.2, vib);
+  }
+  // envelope (bowed: slow cosine attack, exponential-ish release), computed once
+  const nA = Math.max(1, att * SR), env = new Float32Array(n); let cur = 1;
+  for (let i = 0; i < n; i++) {
+    let e = i < nA ? Math.pow(cosRamp(i / nA), 1.3) : 1;
+    if (i >= nHold) e *= relCurve((i - nHold) / nRel, 3.0);
+    if (ampAt && (i & 63) === 0) cur = ampAt(t0 + i / SR);
+    env[i] = e * cur;
+  }
+  // bow noise: band-passed around the upper harmonics, follows the envelope
+  if (bow > 0) for (const x of [L, R]) {
+    const b = white(n, r); filt(b, 'bp', Math.min(9000, f0 * 6), 0.9); normRms(b, 1);
+    for (let i = 0; i < n; i++) x[i] += bow * b[i];
+  }
+  const fcOf = typeof cutoff === 'function' ? cutoff : () => cutoff;
+  const fcAt = (i) => fcOf(t0 + i / SR) * (0.45 + 0.55 * env[Math.min(n - 1, i)]) * (1 + 0.15 * (f0 / 440 - 1));
+  svf(L, fcAt, q, 'lp', 32); svf(R, fcAt, q, 'lp', 32);
+  filt(L, 'peak', 1250, 0.9, 2.5); filt(R, 'peak', 1250, 0.9, 2.5);  // body
+  filt(L, 'hp', 70, 0.7); filt(R, 'hp', 70, 0.7);
+  const g = amp / Math.sqrt(voices);
+  for (let i = 0; i < n; i++) { L[i] *= env[i] * g; R[i] *= env[i] * g; }
+  place(bus, { L, R }, t0, 1, 0, sends);
+}
+
+// ------------------------------------------------------------------ choir (source + formant bank)
+// choirNote renders a raw ensemble of saw "singers" (each with its own vibrato and drift, plus breath)
+// into a choir source bus; formantChoir() then filters the whole bus through a vowel formant bank once.
+export function choirNote(bus, o) {
+  const { midi, t0, t1, att = 0.7, rel = 1.8, amp = 0.05, voices = 6, detune = 13, spread = 0.85, ampAt = null,
+    vib = { rate: 5.4, cents: 16, delay: 0.25, att: 0.7 }, breath = 0.06, seed = 'choir' } = o;
+  const r = makeRng(`${seed}:${midi}:${t0.toFixed(3)}`);
+  const f0 = mtof(midi), nHold = Math.max(1, Math.round((t1 - t0) * SR)), nRel = Math.round(rel * SR), n = nHold + nRel;
+  const L = f32(n), R = f32(n);
+  for (let v = 0; v < voices; v++) {
+    const u = voices === 1 ? 0 : (v / (voices - 1)) * 2 - 1;
+    const pan = (v % 2 ? 1 : -1) * spread * (0.3 + 0.7 * Math.abs(u)), a = (pan + 1) * Math.PI / 4;
+    osc(L, R, 'saw', f0 * Math.pow(2, (u * detune + r.uni(-3, 3)) / 1200), n, Math.cos(a), Math.sin(a), r, 4, { ...vib, rate: vib.rate * r.uni(0.85, 1.15) });
+  }
+  if (breath > 0) for (const x of [L, R]) { const b = pink(n, r); normRms(b, 1); for (let i = 0; i < n; i++) x[i] += breath * b[i]; }
+  const nA = Math.max(1, att * SR), g = amp / Math.sqrt(voices); let cur = 1;
+  for (let i = 0; i < n; i++) {
+    let e = i < nA ? cosRamp(i / nA) : 1;
+    if (i >= nHold) e *= relCurve((i - nHold) / nRel, 3.0);
+    if (ampAt && (i & 63) === 0) cur = ampAt(t0 + i / SR);
+    L[i] *= e * g * cur; R[i] *= e * g * cur;
+  }
+  place(bus, { L, R }, t0, 1, 0, null);
+}
+// vowel formants (F, gain, Q): a soft mixed choir
+export const VOWELS = {
+  ah: [[700, 1, 7], [1150, 0.5, 9], [2650, 0.22, 14], [3200, 0.12, 16]],
+  oh: [[450, 1, 7], [800, 0.45, 9], [2600, 0.12, 14], [3200, 0.06, 16]],
+  oo: [[330, 1, 6], [700, 0.28, 9], [2500, 0.06, 14], [3100, 0.03, 16]],
+};
+// filter a stereo choir source bus in place; vowelAt(tAbs) -> {ah, oh, oo} weights (summing to ~1)
+export function formantChoir(st, vowelAt, { body = 0.12 } = {}) {
+  const n = st.L.length, keys = Object.keys(VOWELS), W = keys.map(() => new Float32Array(Math.ceil(n / 256) + 1));
+  for (let b = 0; b * 256 < n; b++) { const w = vowelAt(b * 256 / SR); keys.forEach((k, j) => { W[j][b] = w[k] || 0; }); }
+  for (const ch of ['L', 'R']) {
+    const src = st[ch], out = new Float32Array(n);
+    keys.forEach((k, j) => {
+      if (!W[j].some((v) => v > 1e-4)) return;
+      for (const [fc, g, q] of VOWELS[k]) {
+        const y = Float32Array.from(src); svf(y, fc, q, 'bp', 1 << 30);
+        for (let i = 0; i < n; i++) { const wb = W[j][i >> 8]; if (wb) out[i] += y[i] * g * wb; }
+      }
+    });
+    const lo = Float32Array.from(src); svf(lo, 900, 0.6, 'lp', 1 << 30);
+    for (let i = 0; i < n; i++) src[i] = out[i] * 2.2 + body * lo[i];
+  }
+  return st;
+}
+
+// ------------------------------------------------------------------ timpani (soft mallet), mono
+export function timpani(f, { dur = 3.0, vel = 0.6, seed = 'timp' } = {}) {
+  const r = makeRng(`${seed}:${f.toFixed(2)}`), n = Math.round(dur * SR), x = new Float64Array(n);
+  const modes = [[1, 1, 1], [1.504, 0.55, 0.7], [1.742, 0.35, 0.55], [2.0, 0.28, 0.5], [2.245, 0.18, 0.4], [2.494, 0.12, 0.33]];
+  for (const [k, a, dk] of modes) {
+    const fp = f * k * (1 + r.uni(-0.002, 0.002)), tau = 0.9 * dk * dur / 3, rr = Math.exp(-1 / (tau * SR)), w = TAU * fp / SR;
+    const cr = rr * Math.cos(w), sr = rr * Math.sin(w); let re = 1, im = 0;
+    const m = Math.min(n, Math.ceil(tau * SR * 9.3));
+    for (let i = 0; i < m; i++) { x[i] += a * im; const nr = re * cr - im * sr; im = re * sr + im * cr; re = nr; }
+  }
+  // pitch settles from a little sharp; mallet thump
+  const out = f32(n), b = white(Math.round(0.05 * SR), r); onePoleLP(b, 500); onePoleLP(b, 500);
+  for (let i = 0; i < n; i++) { const t = i / SR; out[i] = x[i] * (1 - Math.exp(-t / (0.004 + 0.006 * (1 - vel)))) + (i < b.length ? 4 * b[i] * Math.exp(-t / 0.01) : 0); if (i > n - 960) out[i] *= (n - i) / 960; }
+  filt(out, 'lp', 900 + 1600 * vel, 0.7);
+  return out;
 }
