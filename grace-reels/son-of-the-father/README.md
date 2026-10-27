@@ -12,13 +12,13 @@ father". That day a guilty son of the father walked free, and the true Son of th
 ## Deliverables (`out/`)
 | File | What |
 |------|------|
-| `final_reel.mp4` | The reel (H.264, yuv420p TV range, BT.709; AAC 192k; −14 LUFS, −1 dBTP), under 100 MB |
+| `final_reel.mp4` | The reel: 84.0 s, 1080×1920, 30 fps, 93.0 MB (H.264 CRF 19 capped at 9 Mb/s, yuv420p TV range, BT.709; AAC 192k; −14.0 LUFS, −1.1 dBTP) |
 | `cover.jpg` | Cover: Jesus in gold light and Barabbas in chains under a cold spotlight, "BARABBAS = ???" glowing above them, "HIS NAME WILL SHOCK YOU" |
 | `caption.txt` | Instagram caption + 15 hashtags (KJV quotes word for word) |
 | `subtitles.srt`, `subtitles.vtt` | Timed subtitles for every spoken word (the reel also has them burned in) |
 | `storyboard.jpg` | One frame per shot from the final render |
 | `preview_6s.mp4` | The hook |
-| `characters.png` | The paper-cut cast |
+| `characters.png` | The paper-cut cast (Jesus, Barabbas, Pilate, chief priests, soldiers, the blind man, Lazarus, the modern person, the crowd) |
 | `qc_contact.jpg` | QC contact sheet, one frame every 2 s |
 
 The logo mark (`public/logo.svg`, top-left watermark and end card) is a placeholder, because the real logo file was never
