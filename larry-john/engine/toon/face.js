@@ -416,8 +416,9 @@ export function applyFace(material, face, { extent = 1, center = [0, 0], glow = 
         ${ghost ? `
         float fres = pow(1.0 - abs(dot(normalize(vViewPosition), normalize(vNormal))), rimPower);
         totalEmissiveRadiance += rimColor * fres * rimStrength;
-        diffuseColor.a = max(diffuseColor.a, min(1.0, diffuseColor.a + fres * 0.45));
-        totalEmissiveRadiance *= (1.0 - gFace.a * (1.0 - dot(gFace.rgb, vec3(0.33))));` : ''}
+        diffuseColor.a = max(diffuseColor.a, min(1.0, diffuseColor.a + fres * 0.45));` : ''}
+        // dark face features never glow, even on self-lit materials (ghost, bedsheet)
+        totalEmissiveRadiance *= (1.0 - gFace.a * (1.0 - dot(gFace.rgb, vec3(0.33))));
         totalEmissiveRadiance += gFace.rgb * gFace.a * faceGlow;`);
   };
   material.customProgramCacheKey = () => (ghost ? 'faceGhost' : 'face');

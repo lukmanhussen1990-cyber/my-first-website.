@@ -1,7 +1,7 @@
 // Stateless particle effects: positions come from seeds + time, so any frame can render alone.
 import * as THREE from 'three';
 import { clay, glow } from '../../engine/toon/materials.js';
-import { mulberry32, clamp, smooth, easeOutCubic, lerp } from '../../engine/toon/anim.js';
+import { mulberry32, clamp, smooth, easeOutCubic, easeOutBack, lerp } from '../../engine/toon/anim.js';
 import { canvasTex } from './world/common.js';
 
 const _o = new THREE.Object3D();
@@ -63,6 +63,58 @@ export class Crumbs extends Burst {
       const v = new THREE.Vector3((rnd() - 0.5) * 0.9, 0.3 + rnd() * 0.8, 0.2 + rnd() * 0.6);
       _o.position.set(O.x + v.x * t, O.y + v.y * t - 4.9 * t * t, O.z + v.z * t);
       _o.rotation.set(t * 9, t * 7, 0); _o.scale.setScalar(0.6 + rnd());
+      _o.updateMatrix(); this.mesh.setMatrixAt(i, _o.matrix);
+    }
+    this.mesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+// chunks of plaster / roof shingles: burst out, tumble, fall and settle on the floor (floorY)
+export class Debris extends Burst {
+  constructor(scene, color = '#cdbfd8', seed = 13) {
+    super(scene, new THREE.DodecahedronGeometry(0.04, 0), clay(color, { roughness: 0.95 }), 28, { seed, shadow: true });
+  }
+  show(origin, t, { spread = 0.8, up = 0, size = 1, floorY = 0.02, life = 1.8 } = {}) {
+    if (t < 0 || t > life) return;
+    this.mesh.visible = true;
+    const O = new THREE.Vector3(...origin), rnd = mulberry32(this.seed);
+    for (let i = 0; i < this.n; i++) {
+      const v = new THREE.Vector3((rnd() - 0.5) * spread * 2, up * (0.4 + rnd() * 0.8) - rnd() * 0.6, (rnd() - 0.5) * spread * 2);
+      const s = (0.5 + rnd() * 1.5) * size;
+      const y = Math.max(floorY + 0.03 * s, O.y + v.y * t - 4.9 * t * t);
+      const landed = y <= floorY + 0.03 * s + 1e-4;
+      _o.position.set(O.x + v.x * t, y, O.z + v.z * t);
+      _o.rotation.set(landed ? i : t * 7 + i, landed ? i * 2 : t * 5, i); _o.scale.setScalar(s);
+      _o.updateMatrix(); this.mesh.setMatrixAt(i, _o.matrix);
+    }
+    this.mesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+// little glowing hearts that pop up and float away (making friends)
+export class Hearts {
+  constructor(scene, n = 5) {
+    const s = new THREE.Shape();
+    s.moveTo(0, -0.9); s.bezierCurveTo(-0.6, -0.4, -1.1, 0.0, -1.0, 0.45); s.bezierCurveTo(-0.9, 0.95, -0.25, 1.05, 0, 0.55);
+    s.bezierCurveTo(0.25, 1.05, 0.9, 0.95, 1.0, 0.45); s.bezierCurveTo(1.1, 0.0, 0.6, -0.4, 0, -0.9);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.35, bevelEnabled: true, bevelThickness: 0.18, bevelSize: 0.16, bevelSegments: 4, curveSegments: 16 });
+    geo.center(); geo.scale(0.06, 0.06, 0.06);
+    this.mesh = new THREE.InstancedMesh(geo, glow('#ff5c93', 1.6), n);
+    this.mesh.frustumCulled = false; this.mesh.userData.noAO = true; scene.add(this.mesh); this.mesh.visible = false; this.n = n;
+  }
+  reset() { this.mesh.visible = false; }
+  show(center, t, { count = 3, spread = 0.35, rise = 0.5, life = 1.1, size = 1, seed = 6 } = {}) {
+    if (t < 0 || t > life + 0.6) return;
+    this.mesh.visible = true;
+    const C = new THREE.Vector3(...center), rnd = mulberry32(seed);
+    this.mesh.count = count;
+    for (let i = 0; i < count; i++) {
+      const delay = i * 0.12 + rnd() * 0.05, tt = t - delay;
+      const pop = tt < 0 ? 0.0001 : easeOutBack(clamp(tt / 0.25), 2.2) * (1 - smooth(clamp((tt - life + 0.3) / 0.3)));
+      const x = (i - (count - 1) / 2) * spread + Math.sin(tt * 4 + i) * 0.04;
+      _o.position.set(C.x + x, C.y + Math.max(0, tt) * rise + (i % 2) * 0.08, C.z);
+      _o.rotation.set(0, Math.sin(tt * 3 + i) * 0.5, (i - 1) * -0.25);
+      _o.scale.setScalar(Math.max(0.0001, pop * size * (0.85 + 0.3 * rnd())));
       _o.updateMatrix(); this.mesh.setMatrixAt(i, _o.matrix);
     }
     this.mesh.instanceMatrix.needsUpdate = true;
@@ -248,6 +300,29 @@ export class Bats {
   }
 }
 
+Bats.prototype.swarm = function swarm(from, to, t, { spread = 3, size = 0.9, dur = 1.2, camPos = null, seed = 4, count = null, stagger = 0.5 } = {}) {
+  // a swarm flying from `from` to `to` (world points); each bat on its own wobbly lane, facing the camera.
+  // t = time since the swarm set off
+  const rnd = mulberry32(seed), A = new THREE.Vector3(...from), B = new THREE.Vector3(...to);
+  const n = count ?? this.bats.length;
+  const dir = B.clone().sub(A), side = dir.clone().cross(new THREE.Vector3(0, 1, 0)).normalize(), up = side.clone().cross(dir).normalize();
+  this.bats.forEach((b, i) => {
+    const r = [rnd(), rnd(), rnd(), rnd(), rnd()];
+    if (i >= n) return;
+    const u = (t - r[0] * stagger) / (dur * (0.8 + r[1] * 0.4));
+    if (u < 0 || u > 1) return;
+    b.visible = true;
+    b.position.copy(A).lerp(B, u)
+      .addScaledVector(side, (r[2] - 0.5) * spread + Math.sin(u * 6 + i) * spread * 0.08)
+      .addScaledVector(up, (r[3] - 0.5) * spread * 0.6 + Math.sin(u * 9 + i * 2) * spread * 0.06);
+    if (camPos) b.lookAt(...camPos);
+    b.rotateZ(Math.sin(t * 5 + i) * 0.35);
+    const flap = Math.sin(t * (16 + r[4] * 6) + i * 1.3);
+    const s = size * (0.7 + r[4] * 0.6);
+    b.scale.set(s * (0.75 + 0.25 * Math.abs(flap)), s * (0.6 + 0.4 * flap), s);
+  });
+};
+
 // a jagged lightning bolt + sky flash
 export class Lightning {
   constructor(scene) {
@@ -283,6 +358,9 @@ export function buildFX(W) {
   W.fx.fog = W.fog;
   W.fx.bats = new Bats(s, 16);
   W.fx.lightning = new Lightning(s);
-  W.extras.push(W.fx.confetti, W.fx.crumbs, W.fx.stars, W.fx.puffs, W.fx.dust, W.fog, W.fx.bats, W.fx.lightning);
+  W.fx.hearts = new Hearts(s);
+  W.fx.plaster = new Debris(s, '#cdbfd8', 13);
+  W.fx.shingles = new Debris(s, '#3a3150', 14);
+  W.extras.push(W.fx.confetti, W.fx.crumbs, W.fx.stars, W.fx.puffs, W.fx.dust, W.fog, W.fx.bats, W.fx.lightning, W.fx.plaster, W.fx.shingles, W.fx.hearts);
 }
 

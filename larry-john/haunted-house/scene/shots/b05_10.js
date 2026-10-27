@@ -130,8 +130,9 @@ export function shots05_10(T, W) {
     frame({ t }) {
       const R = inside(false);
       W.look('shedDark');
-      W.stage.fill.intensity = 1.0; W.stage.hemi.intensity = 1.1;
-      R.moonSpot.intensity = 7;
+      // dark shed, but John's tired face must read: a strong cool fill from the camera side
+      W.stage.fill.intensity = 2.0; W.stage.hemi.intensity = 1.6;
+      R.moonSpot.intensity = 9;
       place(J, IN(0.5, 0, 1.2), IN(0.2, 0, 0));
       facepalm(J, t, { start: 0.0 });
       W.cam.set(IN(0.25, 1.35, -0.1), IN(0.5, 1.2, 1.2), 44).shake(t, 0.4, 24).dof(IN(0.5, 1.22, 1.2), 0.004, 0.008);

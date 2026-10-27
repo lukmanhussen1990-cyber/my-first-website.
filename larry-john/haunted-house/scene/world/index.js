@@ -86,6 +86,16 @@ export function buildWorld(stage) {
     return g;
   })();
   scene.add(W.props.hammer);
+  // John's rolled-up blueprint (beat 11)
+  W.props.blueprint = (() => {
+    const g = new THREE.Group();
+    const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.42, 20), clay('#3f7fd8', { roughness: 0.7 })); g.add(roll);
+    for (const y of [-0.12, 0.12]) { const band = new THREE.Mesh(new THREE.CylinderGeometry(0.037, 0.037, 0.015, 20), clay('#f2f2f2')); band.position.y = y; g.add(band); }
+    const end = new THREE.Mesh(new THREE.CircleGeometry(0.034, 20), clay('#d9e8ff')); end.position.y = 0.211; end.rotation.x = -Math.PI / 2; g.add(end);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return g;
+  })();
+  scene.add(W.props.blueprint);
 
   W.registerProp = (name, obj) => { W.props[name] = obj; scene.add(obj); obj.visible = false; return obj; };
   W.registerSet = (name, obj) => { W.sets[name] = obj; scene.add(obj); obj.visible = false; return obj; };
@@ -96,6 +106,7 @@ export function buildWorld(stage) {
     W.sky.visible = false;
     for (const ch of W.characters) {
       ch.visible = false; ch.position.set(0, 0, 0); ch.rotation.set(0, 0, 0); ch.scale.set(1, 1, 1);
+      ch.joints.body.rotation.set(0, 0, 0);
       ch.applyPose(structuredClone(ZERO_POSE));
       ch.joints.spine.scale.set(1, 1, 1);
       ch.setHand('L'); ch.setHand('R');
@@ -114,7 +125,7 @@ export function buildWorld(stage) {
     C.chicken.visible = false; C.witch.broom.visible = false;
     if (C.witch.broom.parent !== scene) scene.add(C.witch.broom);
     for (const k in W.props) { W.props[k].visible = false; }
-    if (W.props.hammer.parent !== scene) scene.add(W.props.hammer);
+    for (const k of ['hammer', 'blueprint']) { const pr = W.props[k]; if (pr.parent !== scene) scene.add(pr); pr.scale.setScalar(1); }
     for (const f of W.extras) f.reset && f.reset();
     W.cam.reset();
     W.after = [];
@@ -138,9 +149,10 @@ export function buildWorld(stage) {
     W.stars.material.opacity = L.stars ?? 0;
     W.moon.visible = (L.moon ?? 0) > 0.01;
     W.moon.position.set(-150, 150, -520); W.moon.scale.setScalar(26);   // default spot; shots may move it
+    W.moon.userData.disc.material.color.setRGB(1.6, 1.55, 1.4);
     W.moon.userData.disc.material.opacity = L.moon ?? 0; W.moon.userData.halo.material.opacity = (L.moon ?? 0) * 0.9;
     W.nightGlass.emissiveIntensity = (L.windows ?? 0) * 1.4;
-    for (const p of W.sets.backyard.userData.pumpkins) if (p.userData.light) p.userData.light.intensity = (L.windows ?? 0) * 1.2;
+    for (const p of W.sets.backyard.userData.pumpkins) if (p.userData.light) p.userData.light.intensity = (L.windows ?? 0) * 1.6;
     W.lookNow = L;
     return L;
   };

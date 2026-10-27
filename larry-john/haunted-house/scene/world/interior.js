@@ -10,6 +10,7 @@ import { add, group, canvasTex } from './common.js';
 import { ghostShape } from './mansion.js';
 
 export const HALL = { origin: [400, 0, 0], W: 4.2, L: 16, H: 3.8 };
+export const TRAP_Z = -9.2;       // the trapdoor over the pit, in the middle of the hall
 
 function wallpaper() {
   return canvasTex(512, 512, (c, w, h) => {
@@ -144,9 +145,16 @@ export function buildInterior() {
   const wain = clay('#3a2234', { roughness: 0.7 }), trim = clay('#24152a');
   const floor = new THREE.MeshStandardMaterial({ map: woodFloor(), roughness: 0.75 });
   // main hall runs from z=+2 to z=-14, then turns right (+X) into a short side corridor
-  add(root, new THREE.BoxGeometry(W, 0.1, L), floor, [0, -0.05, 2 - L / 2], [0, 0, 0], 1, { shadow: false });
+  // the floor has a real opening for the trapdoor pit (1.25 m square at z = TRAP_Z)
+  const TZ = TRAP_Z, TH = 0.625, z0 = 2, z1 = 2 - L;
+  add(root, new THREE.BoxGeometry(W, 0.1, z0 - (TZ + TH)), floor, [0, -0.05, (z0 + TZ + TH) / 2], [0, 0, 0], 1, { shadow: false });
+  add(root, new THREE.BoxGeometry(W, 0.1, (TZ - TH) - z1), floor, [0, -0.05, (TZ - TH + z1) / 2], [0, 0, 0], 1, { shadow: false });
+  for (const s of [-1, 1]) add(root, new THREE.BoxGeometry(W / 2 - TH, 0.1, TH * 2), floor, [s * (W / 4 + TH / 2), -0.05, TZ], [0, 0, 0], 1, { shadow: false });
   add(root, new THREE.BoxGeometry(5.0, 0.1, 3.4), floor, [W / 2 + 2.5, -0.05, -12.2], [0, 0, 0], 1, { shadow: false });
-  add(root, new THREE.PlaneGeometry(1.3, L - 0.5), clay('#8a1f2c', { roughness: 0.95 }), [0, 0.006, 2 - L / 2], [-Math.PI / 2, 0, 0], 1, { shadow: false });
+  const carpet = clay('#8a1f2c', { roughness: 0.95 });
+  const cz0 = 2 - 0.25, cz1 = 2 - L + 0.25;
+  add(root, new THREE.PlaneGeometry(1.3, cz0 - (TZ + TH + 0.06)), carpet, [0, 0.006, (cz0 + TZ + TH + 0.06) / 2], [-Math.PI / 2, 0, 0], 1, { shadow: false });
+  add(root, new THREE.PlaneGeometry(1.3, (TZ - TH - 0.06) - cz1), carpet, [0, 0.006, (TZ - TH - 0.06 + cz1) / 2], [-Math.PI / 2, 0, 0], 1, { shadow: false });
   const walls = {};
   const wall = (name, w, pos, ry) => {
     const g = group(root, pos, [0, ry, 0], name);
@@ -200,27 +208,54 @@ export function buildInterior() {
   const clock = makeGrandfatherClock(); clock.position.set(-W / 2 + 0.35, 0, -0.9); clock.rotation.y = Math.PI / 2; root.add(clock);
   const mask = makeZombieMask(); mask.position.set(0.7, 0.03, -10.5); mask.rotation.y = 0.9; mask.scale.setScalar(1.35); root.add(mask);
   // trapdoor: a hinged panel over a dark pit
-  const td = group(root, [0, 0, -9.2], [0, 0, 0], 'trapdoor');
-  const pit = add(td, new THREE.BoxGeometry(1.25, 3, 1.25), new THREE.MeshBasicMaterial({ color: '#05030a', side: THREE.BackSide }), [0, -1.52, 0], [0, 0, 0], 1, { shadow: false });
+  const td = group(root, [0, 0, TRAP_Z], [0, 0, 0], 'trapdoor');
+  // the pit: dark stone walls that fade into black; a soft light inside shows whoever fell in
+  const pitTex = canvasTex(256, 512, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#4a3d5c'); g.addColorStop(0.55, '#2a2136'); g.addColorStop(1, '#120d1a');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(10,6,16,0.55)'; c.lineWidth = 6;
+    for (let r = 0; r < 10; r++) { const y = (r + 0.5) * h / 10; c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke();
+      for (let k = 0; k < 3; k++) { const x = ((k + (r % 2) * 0.5) * w) / 3; c.beginPath(); c.moveTo(x, y - h / 10); c.lineTo(x, y); c.stroke(); } }
+  });
+  const pitMat = new THREE.MeshStandardMaterial({ map: pitTex, roughness: 0.95, side: THREE.BackSide });
+  const pit = add(td, new THREE.BoxGeometry(1.6, 2.7, 1.6), pitMat, [0, -1.36, 0], [0, 0, 0], 1, { shadow: false });
+  pit.userData.noAO = true;
+  add(td, new THREE.CircleGeometry(0.5, 32), clay('#5b4a6e', { roughness: 1 }), [0, -2.69, 0], [-Math.PI / 2, 0, 0], [1.4, 1.1, 1], { shadow: false });   // a dusty old mattress
+  const pitLight = new THREE.PointLight('#ece6ff', 0, 4.5, 1.4); pitLight.position.set(0, -0.6, 0.2); td.add(pitLight);
   const hinge = group(td, [0, -0.005, -0.62], [0, 0, 0], 'hinge');
   add(hinge, roundedBox(1.22, 0.06, 1.22, 0.01), new THREE.MeshStandardMaterial({ map: woodFloor(), roughness: 0.75, color: '#c9b0a0' }), [0, -0.03, 0.62]);
   for (const x of [-0.4, 0.4]) add(hinge, roundedBox(0.16, 0.02, 0.08, 0.005), metal('#3a3a3a'), [x, 0.005, 0.05]);
   add(hinge, torus(0.06, 0.012, 6, 16), metal('#3a3a3a'), [0, 0.01, 1.05], [Math.PI / 2, 0, 0]);
-  add(td, roundedBox(1.36, 0.02, 1.36, 0.01), trim, [0, 0.0, 0], [0, 0, 0], 1, { shadow: false });
+  for (const [w, d, x, z] of [[1.4, 0.09, 0, 0.66], [1.4, 0.09, 0, -0.66], [0.09, 1.4, 0.66, 0], [0.09, 1.4, -0.66, 0]]) {
+    add(td, roundedBox(w, 0.025, d, 0.01), trim, [x, 0.0, z], [0, 0, 0], 1, { shadow: false });   // frame around the opening
+  }
   // ghost-shaped hole in the ceiling above the corner (after the ghost escapes)
-  const ceilHole = group(root, [1.9, H - 0.005, -12.2], [Math.PI / 2, 0, 0], 'ceilingHole');
-  add(ceilHole, new THREE.ShapeGeometry(ghostShape(), 24), new THREE.MeshBasicMaterial({ color: '#0a0712', side: THREE.DoubleSide }), [0, -0.75, 0.01], [0, 0, 0], 1.25, { shadow: false });
-  for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; add(ceilHole, roundedBox(0.22, 0.1, 0.06, 0.02), clay('#2a2036'), [Math.cos(a) * 0.95, Math.sin(a) * 0.95 - 0.1, 0.03], [0, 0, a]); }
+  // (local +y = the ghost's head points away from the hall entrance; local -z hangs below the ceiling)
+  const ceilHole = group(root, [1.9, H - 0.004, -12.2], [-Math.PI / 2, 0, 0], 'ceilingHole');
+  const nightSky = canvasTex(256, 256, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2b2468'); g.addColorStop(1, '#141038');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    const rnd = mulberry32(12);
+    for (let i = 0; i < 40; i++) { c.fillStyle = `rgba(255,250,230,${0.5 + rnd() * 0.5})`; c.beginPath(); c.arc(rnd() * w, rnd() * h, 1 + rnd() * 2.2, 0, 7); c.fill(); }
+  }, { repeat: [1, 1] });
+  const holeMat = new THREE.MeshBasicMaterial({ map: nightSky, side: THREE.DoubleSide, toneMapped: false, color: new THREE.Color(1.2, 1.2, 1.3) });
+  const hm = add(ceilHole, new THREE.ShapeGeometry(ghostShape(), 24), holeMat, [0, -0.75, -0.012], [0, 0, 0], 1.25, { shadow: false }); hm.userData.noAO = true;
+  // splintered plaster around the hole
+  const plaster = clay('#cdbfd8', { roughness: 0.95 });
+  for (let k = 0; k < 16; k++) {
+    const a = (k / 16) * Math.PI * 2, r = 0.92 + (k % 3) * 0.06;
+    add(ceilHole, roundedBox(0.2 + (k % 2) * 0.08, 0.09, 0.05, 0.02), plaster, [Math.cos(a) * r * 0.85, Math.sin(a) * r - 0.05, -0.03], [0.25 * ((k % 2) * 2 - 1), 0, a + 0.3]);
+  }
   ceilHole.visible = false;
-  root.userData = { walls, lights, flames, flameMat, winMat, portrait, shelf, clock, mask, ceilHole, trapdoor: { group: td, hinge, pit } };
+  root.userData = { walls, lights, flames, flameMat, winMat, portrait, shelf, clock, mask, ceilHole, trapdoor: { group: td, hinge, pit, light: pitLight } };
   root.userData.local = (x, y, z) => [origin[0] + x, origin[1] + y, origin[2] + z];
   root.userData.reset = () => {
     for (const k in walls) walls[k].visible = true;
     shelf.userData.pivot.rotation.y = 0; shelf.userData.glowL.intensity = 0;
-    hinge.rotation.x = 0; clock.userData.setTime(11.95); clock.userData.pendulum.rotation.z = 0;
+    hinge.rotation.x = 0; pitLight.intensity = 0; clock.userData.setTime(11.95); clock.userData.pendulum.rotation.z = 0;
     lights.forEach((l) => { l.intensity = l.distance > 6 ? 3.5 : 2.2; });
     flameMat.emissiveIntensity = 3.2; winMat.emissiveIntensity = 1.1;
-    portrait.userData.look(0, 0); mask.visible = true; ceilHole.visible = false;
+    portrait.userData.look(0, 0); mask.visible = false; ceilHole.visible = false;
   };
   return root;
 }

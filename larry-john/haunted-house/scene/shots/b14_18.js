@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { P, pose, place, walk, hop, popScale, smooth, clamp, lerp, track, easeOutBack, spring, wobble, mergePose, blendPose, facepalm } from '../acting.js';
 import { easeInOut, easeOutCubic, easeInCubic } from '../../../engine/toon/anim.js';
 import { Character } from '../../../engine/toon/rig.js';
+import { cloth, PAL } from '../../../engine/toon/materials.js';
 import { cutaway, hall } from './b11_13.js';
 
 export function shots14_18(T, W) {
@@ -16,6 +17,7 @@ export function shots14_18(T, W) {
   const estate = (look = 'night') => {
     W.show('backyard', 'estate');
     const e = E(); e.mansion.visible = true; e.graveyard.visible = true; e.gate.visible = true; e.showFence(true);
+    W.sets.backyard.userData.estateMode(true);
     W.look(look);
     W.moonAt([M[0] + 30, 75, M[2] - 260], 30);
     return e;
@@ -114,16 +116,27 @@ export function shots14_18(T, W) {
     const back = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.16), new THREE.MeshStandardMaterial({ color: '#c0392b' })); back.position.z = -0.0065; back.rotation.y = Math.PI; g.add(back);
     g.userData.screen = scr; return g;
   })());
-  const rt = new THREE.WebGLRenderTarget(320, 640, { samples: 4 });
-  const selfieCam = new THREE.PerspectiveCamera(52, 0.5, 0.05, 50);
+  const rt = new THREE.WebGLRenderTarget(540, 1080, { samples: 4 });
+  const selfieCam = new THREE.PerspectiveCamera(66, 0.5, 0.05, 50);
+  // the zombie's green mitten (phone close-up)
+  const zombieHand = W.registerProp('zombieHand', (() => {
+    const g = new THREE.Group(), skin = cloth('#9fd18b', { sheen: 0.0, roughness: 0.75 });
+    const fore = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.26, 6, 16), skin); fore.position.y = -0.17; g.add(fore);
+    const mit = new THREE.Mesh(new THREE.SphereGeometry(0.066, 24, 18), skin); mit.scale.set(0.92, 1.05, 0.72); mit.position.y = 0.04; g.add(mit);
+    const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 12), skin); thumb.position.set(-0.045, 0.03, 0.03); g.add(thumb);
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.085, 0.14, 7), cloth('#3f6fa8', { roughness: 0.9 })); cuff.position.y = -0.33; g.add(cuff);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return g;
+  })());
   const posePair = (abs) => {
-    // Larry and zombie #0 posing together in the hallway
+    // Larry and zombie #0 squeezed together for the selfie in the hallway
     const z = C.zombies[0];
-    place(L, H(-0.45, 0, -6.2), H(-0.1, 0, -3)); place(z, H(0.4, 0, -6.35), H(-0.1, 0, -3));
-    sheetLarry(abs, 'happy', { wingR: 0.7, wingY: 1.0 });
-    L.applyPose(P({ armR: { fwd: 150, out: 30, elbow: 10 }, armL: { fwd: 30, out: 25, elbow: 50 }, lean: 6 }));
-    z.applyPose(P({ armR: { fwd: 95, out: 40, elbow: 120, twist: 30 }, armL: { fwd: 30, out: 35, elbow: 40 }, head: { tilt: -12 }, lean: -6 }));
-    z.setHand('R', 'peace');
+    place(L, H(-0.26, 0, -6.2), H(-0.1, 0, -3)); place(z, H(0.33, 0, -6.3), H(-0.1, 0, -3));
+    sheetLarry(abs, 'happy', {});
+    L.chips.visible = false;
+    L.applyPose(P({ lean: -5 }));
+    // the zombie holds the phone up high (long zombie arms are great for selfies), other arm round Larry
+    z.applyPose(P({ armL: { fwd: 150, out: -45, elbow: 10 }, armR: { fwd: 20, out: 80, elbow: 45, twist: 20 }, head: { tilt: -8 } }));
     z.setFace('grin', { eyes: 'happy' });
     return z;
   };
@@ -134,14 +147,19 @@ export function shots14_18(T, W) {
       const tgt = H(0, 1.25, -6.3);
       inHall(tgt);
       posePair(abs);
-      if (abs < selfie - 0.4) { C.zombies[0].setFace('tongue'); C.zombies[0].setHand('R'); C.zombies[0].applyPose(P({ armL: { fwd: 85, out: 6, elbow: 8 }, armR: { fwd: 85, out: 6, elbow: 8 } })); }
-      L.updateMatrixWorld(true);
-      const hp = new THREE.Vector3(); L.hand('R').getWorldPosition(hp);
-      phone.visible = true; phone.position.copy(hp).add(new THREE.Vector3(0, 0.12, 0)); phone.lookAt(H(0, 1.0, -6.3)[0], 1.0, H(0, 1.0, -6.3)[2]); phone.rotateY(Math.PI);
+      const z = C.zombies[0];
+      // Larry asks, the zombie (arms out, zombie-style) gets pulled in and holds the phone up
+      const up = easeOutBack(clamp((abs - selfie + 0.55) / 0.3), 1.5);
+      if (up < 0.01) { z.setFace('tongue'); z.applyPose(P({ armL: { fwd: 85, out: 6, elbow: 8 }, armR: { fwd: 85, out: 6, elbow: 8 } })); L.sheet.face.set('happy', { pupil: [0.5, 0.2] }); }
+      else z.applyPose(blendPose(P({ armL: { fwd: 85, out: 6, elbow: 8 }, armR: { fwd: 85, out: 6, elbow: 8 } }), z.pose, Math.min(1, up)));
+      z.updateMatrixWorld(true);
+      const hp = new THREE.Vector3(); z.hand('L').getWorldPosition(hp);
+      phone.scale.setScalar(1.5);
+      phone.visible = up > 0.01; phone.position.copy(hp).add(new THREE.Vector3(0, 0.12, 0.02)); phone.lookAt(H(0, 1.2, -6.3)[0], 1.2, H(0, 1.2, -6.3)[2]);   // screen toward them, red back toward us
       const fl = abs - (selfie + 0.05);
       W.stage.grade.uniforms.flash.value = fl > 0 && fl < 0.09 ? 0.7 * (1 - fl / 0.09) : 0;
       W.stage.grade.uniforms.flashColor.value.set('#ffffff');
-      W.cam.set(H(-0.05, 1.3, -2.7), tgt, 54).push(t * 0.3).shake(t, 0.5, 55);
+      W.cam.set(H(-0.05, 1.3, -2.9), tgt, 52).push(t * 0.3).shake(t, 0.5, 55);
     },
   });
   S.push({
@@ -149,37 +167,45 @@ export function shots14_18(T, W) {
     sfx: [['phone_swoosh', t15b + 0.02, 0.4]],
     frame({ t, abs }) {
       inHall(H(0, 1.2, -6.3));
-      // render the selfie from the phone's point of view into a texture
+      // the selfie, rendered from the phone's point of view into the phone screen
       posePair(selfie);
       L.updateMatrixWorld(true);
-      selfieCam.position.set(...H(0.0, 1.55, -5.3)); selfieCam.lookAt(...H(0.0, 1.1, -6.3)); selfieCam.updateMatrixWorld(true);
+      selfieCam.position.set(...H(0.04, 1.85, -4.75)); selfieCam.lookAt(...H(0.03, 1.12, -6.25)); selfieCam.fov = 62; selfieCam.updateProjectionMatrix(); selfieCam.updateMatrixWorld(true);
       W.pre.push(() => {
+        // (the phone and the hand in front of our lens are hidden while the selfie itself is taken)
         const r = W.stage.renderer; const prev = r.getRenderTarget();
+        phone.visible = false; zombieHand.visible = false;
         r.setRenderTarget(rt); r.render(W.scene, selfieCam); r.setRenderTarget(prev);
+        phone.visible = true; zombieHand.visible = true;
         phone.userData.screen.material.map = rt.texture; phone.userData.screen.material.needsUpdate = true;
       });
-      // the phone fills the frame, held up by a mitten
+      // the phone fills the frame, held up by a sheet-covered hand; the hallway behind is out of focus
       const cp = new THREE.Vector3(...H(1.2, 1.3, -2.0));
-      phone.visible = true; phone.position.copy(cp).add(new THREE.Vector3(0, 0, -0.32)); phone.rotation.set(0.0, 0, 0.06);
-      const hand = W.props.larryHand; hand.visible = true;
-      hand.position.copy(phone.position).add(new THREE.Vector3(0.0, -0.165, -0.035)); hand.rotation.set(0.15, 0, 0.05);
-      W.cam.set(cp, phone.position.clone(), 40).push(t * 0.03).shake(t, 0.3, 56);
+      phone.scale.setScalar(1.5);
+      phone.visible = true; phone.position.copy(cp).add(new THREE.Vector3(0, -0.01, -0.62)); phone.rotation.set(0.04, -0.05, 0.06);
+      // the zombie's green mitten grips the phone's lower right edge from behind
+      zombieHand.visible = true;
+      zombieHand.position.copy(phone.position).add(new THREE.Vector3(0.1, -0.2, -0.04)); zombieHand.rotation.set(0.5, 0, 0.55);
+      W.cam.set(cp, phone.position.clone(), 34).push(t * 0.04).shake(t, 0.3, 56).dof(phone.position.toArray(), 0.007, 0.014);
     },
   });
   S.push({
     id: '15c', beat: 15, at: t15c, look: 'mansion',
-    sfx: [['high_five', t15c + 0.3, 0.9], ['zombie_giggle', t15c + 0.4, 0.6]],
+    sfx: [['heart_pop', t15c + 0.3, 0.8], ['zombie_giggle', t15c + 0.35, 0.6]],
     frame({ t, abs }) {
-      const tgt = H(0, 1.0, -6.3);
+      const tgt = H(0.02, 1.08, -6.25);
       inHall(tgt);
       const z = C.zombies[0];
-      place(L, H(-0.4, 0, -6.2), H(0.4, 0, -6.3)); place(z, H(0.45, 0, -6.3), H(-0.4, 0, -6.2));
-      const hf = easeOutBack(clamp((t - 0.15) / 0.18), 2);
-      sheetLarry(abs, 'happy', { wingL: 0.9 * hf, wingY: 1.05 });
-      L.applyPose(P({ armL: { fwd: 30, out: 40 + 110 * hf, elbow: 10 }, ...hop(t, 0.3, 0.12, 0.3) }));
-      z.applyPose(P({ armR: { fwd: 30, out: 40 + 110 * hf, elbow: 10 }, ...hop(t, 0.3, 0.1, 0.3) }));
-      z.setFace('laugh');
-      W.cam.set(H(-0.1, 1.2, -3.3), tgt, 56).shake(t, 0.6, 57);
+      // best friends now: the zombie throws an arm round Larry, both lean in and grin; hearts pop up
+      const lean = easeOutBack(clamp((t - 0.05) / 0.25), 1.6);
+      place(L, H(-0.28, 0, -6.2), H(-0.05, 0, -3)); place(z, H(0.36, 0, -6.28), H(-0.25, 0, -3));
+      L.chips.visible = false;
+      sheetLarry(abs, 'happy', { swing: -0.3 * lean });
+      L.applyPose(P({ lean: -6 * lean, ...hop(t, 0.35, 0.06, 0.3) }));
+      z.applyPose(P({ armR: { fwd: 20, out: 95 * lean, elbow: 55 * lean, twist: 20 }, armL: { fwd: 30, out: 20, elbow: 70 }, lean: 6 * lean, head: { tilt: -8 * lean } }));
+      z.setFace(t > 0.3 ? 'laugh' : 'grin');
+      W.fx.hearts.show(H(0.02, 1.62, -6.15), t - 0.3, { count: 3, spread: 0.3, rise: 0.45, life: 0.9, size: 1.1 });
+      W.cam.set(H(0.0, 1.2, -3.7), tgt, 50).push(t * 0.25).shake(t, 0.5, 57);
     },
   });
 
@@ -213,14 +239,15 @@ export function shots14_18(T, W) {
       e.mansion.userData.chickenDoor.rotation.y = -1.4 * open + wobble(abs - chicken - 0.32, 3, 5) * 0.2 * open;
       const ch = C.chicken; ch.visible = abs > chicken + 0.2;
       const pop = easeOutBack(clamp((abs - chicken - 0.25) / 0.25), 2);
-      const p0 = ceLocal(0, 0, 0.15), p1 = ceLocal(0.1, 0, 0.9);
+      const p0 = ceLocal(0, 0, 0.15), p1 = ceLocal(0.15, 0, 0.95);
       ch.position.lerpVectors(p0, p1, pop); ch.rotation.y = W.MANSION.rotY + 0.25;
-      ch.scale.setScalar(2.2);
+      ch.scale.setScalar(2.4);
       ch.bawk(abs, abs > chicken + 0.3 ? 1 : 0);
-      const tgt = ceLocal(0, 1.45, 0);
-      const cp = ceLocal(-1.2, 1.35, 4.2);
-      W.cam.set(cp, tgt, 50).push(t * 0.4).shake(t, 0.5, 59);
-      W.shadow(tgt.toArray(), 5);
+      // framed so the CHICKEN EXIT sign sits below the label and above the subtitles
+      const tgt = ceLocal(0, 1.42, 0.6);
+      const cp = ceLocal(-1.0, 0.95, 6.1);
+      W.cam.set(cp, tgt, 52).push(t * 0.12).shake(t, 0.5, 59);
+      W.shadow(ceLocal(0, 0, 1).toArray(), 6);
     },
   });
   S.push({
@@ -230,14 +257,17 @@ export function shots14_18(T, W) {
     frame({ t, abs }) {
       const e = estate('night');
       e.mansion.userData.chickenDoor.rotation.y = -1.4;
+      // a pumpkin kid bolts out of the chicken exit, straight past the camera, very relieved
       const k = C.pumpkinKid;
-      const a = ceLocal(0, 0, 0.3), b = ceLocal(1.8, 0, 5.5);
-      const p = walk(k, a.toArray(), b.toArray(), abs, t16c, t16c + 1.1, { run: true, stride: 0.25 });
+      const a = ceLocal(0, 0, 0.2), b = ceLocal(2.4, 0, 4.7);
+      const r0 = t16c + 0.05, r1 = t16c + 1.5;
+      const p = walk(k, a.toArray(), b.toArray(), abs, r0, r1, { run: true, stride: 0.25 });
+      p.armL = { fwd: 140, out: 35, elbow: 25 }; p.armR = { fwd: 150, out: 30, elbow: 20 };
       k.applyPose(p); k.setFace('happy', { eyes: 'squeeze' }, t);
-      W.fx.dust.trail((tt) => { const q = a.clone().lerp(b, clamp((tt - t16c) / 1.1)); return q; }, abs, { count: 8, spacing: 0.09 });
-      const ch = C.chicken; ch.visible = true; ch.position.copy(ceLocal(-0.8, 0, 0.8)); ch.rotation.y = W.MANSION.rotY + 0.6; ch.scale.setScalar(2.2); ch.bawk(abs, 0.3);
-      W.cam.set(ceLocal(-1.6, 1.1, 5.4), ceLocal(0.5, 0.9, 1.2), 54).shake(t, 0.6, 60);
-      W.shadow(ceLocal(0.5, 0, 2).toArray(), 6);
+      W.fx.dust.trail((tt) => a.clone().lerp(b, clamp((tt - r0) / (r1 - r0))), abs, { count: 8, spacing: 0.09 });
+      const ch = C.chicken; ch.visible = true; ch.position.copy(ceLocal(-0.7, 0, 0.9)); ch.rotation.y = W.MANSION.rotY + 0.6; ch.scale.setScalar(2.4); ch.bawk(abs, 0.3);
+      W.cam.set(ceLocal(1.5, 0.75, 4.5), ceLocal(0.7, 0.9, 1.2), 56).shake(t, 0.6, 60);
+      W.shadow(ceLocal(1, 0, 2).toArray(), 6);
     },
   });
 
@@ -264,12 +294,14 @@ export function shots14_18(T, W) {
     frame({ t, abs }) {
       const e = estate('night');
       e.mansion.userData.chickenDoor.rotation.y = -1.4 * clamp((abs - t17b) / 0.08);
-      const a = ceLocal(0, 0, -0.4), b = ceLocal(0.4, 0, 2.6);
-      const lp = walk(L, a.toArray(), b.toArray(), abs, t17b + 0.1, t17b + 1.1, { stride: 0.22 });
+      // two seconds later he strolls out of the CHICKEN EXIT, munching, very pleased with himself
+      const a = ceLocal(0, 0, -0.3), b = ceLocal(0.9, 0, 2.2);
+      const lp = walk(L, a.toArray(), b.toArray(), abs, t17b + 0.06, t17b + 0.95, { stride: 0.22 });
       lp.armL = { fwd: 40, out: 20, elbow: 60 };
       L.applyPose(lp); sheetLarry(abs, 'smug', { wingL: 0.4 });
-      const ch = C.chicken; ch.visible = true; ch.position.copy(ceLocal(-0.9, 0, 1.0)); ch.rotation.y = W.MANSION.rotY + 0.4; ch.scale.setScalar(2.2); ch.bawk(abs, abs > t17b + 0.15 && abs < t17b + 0.6 ? 1 : 0.2);
-      W.cam.set(ceLocal(-3.6, 1.4, 5.2), ceLocal(-1.6, 1.1, 0.8), 56).shake(t, 0.5, 62);
+      const ch = C.chicken; ch.visible = true; ch.position.copy(ceLocal(-0.75, 0, 1.1)); ch.rotation.y = W.MANSION.rotY + 0.5; ch.scale.setScalar(2.4); ch.bawk(abs, abs > t17b + 0.15 && abs < t17b + 0.6 ? 1 : 0.2);
+      // sign below the label, above the subtitles
+      W.cam.set(ceLocal(2.2, 0.95, 6.1), ceLocal(0.4, 1.42, 0.6), 52).shake(t, 0.5, 62);
       W.shadow(ceLocal(0.5, 0, 2).toArray(), 6);
     },
   });
@@ -283,9 +315,11 @@ export function shots14_18(T, W) {
     sfx: [['owl_hoot', t18 + 0.1, 0.5], ['wind_spooky', t18, 0.5]],
     frame({ t, abs, u }) {
       const e = estate('night');
-      W.fog.show({ center: [M[0], 0.3, -17.0], size: [20, 0.6, 6] }, abs, { density: 0.8, color: '#b9a8ff', opacity: 0.16, floor: 1, minS: 1.2, maxS: 2.4 });
-      W.cam.set([M[0] - 3.6, 1.1, -14.2], [M[0] - 1.0, 1.6, -21], 58).push(u * 1.0).shake(t, 0.4, 63);
-      W.shadow([M[0] - 2, 0, -17], 9);
+      // low among the tombstones, pumpkin lanterns along the path, fog, the glowing mansion behind
+      W.fog.show({ center: [M[0], 0.3, -17.0], size: [20, 0.6, 7] }, abs, { density: 0.45, color: '#b9a8ff', opacity: 0.13, floor: 1, minS: 1.2, maxS: 2.2 });
+      W.cam.between({ pos: [M[0] + 6.2, 9.0, -9.8], target: [M[0] + 4.4, 0, -17.6], fov: 54 },
+        { pos: [M[0] + 5.6, 6.2, -11.4], target: [M[0] + 4.0, 0.4, -18.6], fov: 54 }, u, easeOutCubic).shake(t, 0.4, 63);
+      W.shadow([M[0] - 1, 0, -17], 9);
     },
   });
   S.push({
@@ -293,11 +327,18 @@ export function shots14_18(T, W) {
     sfx: [['bats_flap', t18b + 0.02, 1.0], ['bat_squeak', t18b + 0.3, 0.5]],
     frame({ t, abs }) {
       estate('night');
-      const moon = [M[0] + 30, 75, M[2] - 260];
-      const cp = [M[0] - 4, 42, -6];
-      W.moonAt(moon, 30);
-      W.fx.bats.across(moon, abs, { spread: 70, size: 7, speed: 55, camPos: cp, seed: 5 });
-      W.cam.set(cp, moon, 30).shake(t, 0.4, 64);
+      // looking up from the graveyard: a giant full moon, a swarm of bats streaming across it
+      const cp = new THREE.Vector3(M[0] + 3.0, 1.0, -15.0);
+      const dir = new THREE.Vector3(-0.78, 0.64, -0.24).normalize();
+      const side = dir.clone().cross(new THREE.Vector3(0, 1, 0)).normalize(), up = side.clone().cross(dir).normalize();
+      W.moonAt(cp.clone().addScaledVector(dir, 300).addScaledVector(up, 18).toArray(), 46);
+      W.moon.userData.halo.material.opacity *= 0.45;
+      W.moon.userData.disc.material.color.setRGB(1.15, 1.12, 1.02);
+      const mid = cp.clone().addScaledVector(dir, 22).addScaledVector(up, 2.5);
+      W.fx.bats.swarm(mid.clone().addScaledVector(side, -14).addScaledVector(up, -3).toArray(), mid.clone().addScaledVector(side, 14).addScaledVector(up, 4).toArray(),
+        t + 0.3, { spread: 6, size: 2.0, dur: 1.0, camPos: cp.toArray(), seed: 5, count: 16, stagger: 0.4 });
+      W.cam.set(cp, cp.clone().addScaledVector(dir, 10), 62, 0.06).shake(t, 0.5, 64);
+      W.shadow([M[0], 0, -24], 16);
     },
   });
   S.push({
@@ -310,37 +351,68 @@ export function shots14_18(T, W) {
       W.shadow([M[0], 0, gateZ()], 5);
     },
   });
-  const snagShot = (id, at, { second = false } = {}) => ({
-    id, beat: 18, at, look: 'night',
-    sfx: second ? [['cloth_snag', at + 0.12, 0.9], ['larry_groan', at + 0.25, 0.6]]
-      : [['cloth_snag', at + 0.35, 0.9], ['tug_grunt', at + 0.6, 0.6], ['cloth_rip', at + 0.95, 1.0]],
+  // a torn scrap of bedsheet left hanging on the left gate door after the first rip
+  const scrap = W.registerProp('sheetScrap', (() => {
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(0.16, -0.05); sh.lineTo(0.1, -0.2); sh.lineTo(0.05, -0.12); sh.lineTo(-0.03, -0.22); sh.closePath();
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), cloth(PAL.sheet, { side: THREE.DoubleSide, sheen: 0.3, roughness: 0.9 }));
+    m.castShadow = true; const g = new THREE.Group(); g.add(m); return g;
+  })());
+  const doorEnd = (i) => {
+    // the free end of an open gate door (i = 0 left, 1 right), at snag height
+    const d = E().gate.userData.doors[i]; d.updateWorldMatrix(true, true);
+    return new THREE.Vector3((i ? -1 : 1) * 1.9, 0.72, 0).applyMatrix4(d.matrixWorld);
+  };
+  const snagSheet = (point, amount, extra = {}) => {
+    L.updateMatrixWorld(true);
+    const sp = L.sheet.worldToLocal(point.clone());
+    return { snag: amount > 0 ? { point: sp.toArray(), amount } : null, ...extra };
+  };
+  const openGate = (e) => e.gate.userData.doors.forEach((d, i) => { d.rotation.y = (i ? -1 : 1) * 0.75; });
+  S.push({
+    id: '18d', beat: 18, at: t18d, look: 'night',
+    sfx: [['cloth_snag', t18d + 0.5, 0.9], ['tug_grunt', t18d + 0.7, 0.6], ['cloth_rip', t18d + 1.05, 1.0]],
     frame({ t, abs }) {
-      const e = estate('night');
-      e.gate.userData.doors.forEach((d, i) => { d.rotation.y = (i ? -1 : 1) * 0.75; });
-      // Larry walks through the open gate; the side of his sheet snags on a spike of the left door
-      const g0 = new THREE.Vector3(M[0] - 0.55, 0, gateZ() + 1.8), g1 = new THREE.Vector3(M[0] - 0.4, 0, gateZ() - 1.2);
-      const snagAt = second ? 0.12 : 0.35;
-      const walkT = second ? 0.12 : 0.35;
-      let lp;
-      if (t < walkT) lp = walk(L, g0.toArray(), g0.clone().lerp(g1, 0.45).toArray(), t, 0, walkT, { stride: 0.2 });
-      else { place(L, g0.clone().lerp(g1, 0.45).toArray(), g1.toArray()); lp = P(); }
-      const tug = second ? clamp((t - 0.25) / 0.6) : clamp((t - 0.55) / 0.35);
-      const free = !second && t > 0.95;
-      lp.lean = -10 * Math.sin(tug * Math.PI * 3) * (free ? 0 : 1);
+      const e = estate('night'); openGate(e);
+      const pin = doorEnd(0);
+      // he strolls through the gate... the side of the sheet catches on the door... tug, tug... RIP
+      const g0 = [M[0] - 0.22, 0, gateZ() + 1.4], g1 = [M[0] - 0.18, 0, gateZ() - 1.75];
+      const lp = walk(L, g0, g1, Math.min(t, 0.62), 0, 0.62, { stride: 0.21 });
+      const caught = t > 0.5, ripped = t > 1.05;
+      const tug = clamp((t - 0.62) / 0.43);
+      // body tips forward as he tugs (and leans away from the snag); after the rip he stumbles on
+      let fwd = caught && !ripped ? 10 + 7 * Math.sin(tug * Math.PI * 4) : 0;
+      lp.lean = caught && !ripped ? 5 : 0;
+      if (ripped) { const st = easeOutCubic(clamp((t - 1.05) / 0.25)); L.position.z -= 0.35 * st; fwd = 16 * wobble(t - 1.05, 3, 6); }
       L.applyPose(lp);
-      const snagged = t > snagAt && !free;
-      sheetLarry(abs, snagged ? (second ? 'annoyed' : 'worried') : 'happy', {
-        snag: snagged ? { point: [-0.75, 0.45, -0.1], amount: Math.min(1, (t - snagAt) * 6) * (0.7 + 0.3 * Math.sin(tug * 20)) } : null,
-        swing: free ? wobble(t - 0.95, 3, 5) * 0.6 : 0,
-      });
-      if (free) L.position.addScaledVector(new THREE.Vector3(0, 0, -1), easeOutCubic(clamp((t - 0.95) / 0.2)) * 0.25);
-      const tgt = [M[0] - 0.6, 0.85, gateZ() + 0.2];
-      W.cam.set([M[0] - 2.2, 1.15, gateZ() + 2.4], tgt, 48).shake(t, snagged ? 0.9 : 0.4, second ? 67 : 66).dof(tgt, 0.004, 0.008);
-      W.shadow([M[0], 0, gateZ()], 4);
+      L.joints.body.rotation.x = fwd * Math.PI / 180;
+      const amt = ripped ? 0 : caught ? Math.min(1, (t - 0.5) * 6) * (0.85 + 0.15 * Math.sin(tug * 22)) : 0;
+      sheetLarry(abs, ripped ? 'shocked' : caught ? 'worried' : 'happy', snagSheet(pin, amt, { swing: ripped ? wobble(t - 1.05, 3, 5) * 0.8 : 0 }));
+      L.chips.visible = false;
+      if (ripped) { scrap.visible = true; scrap.position.copy(pin).add(new THREE.Vector3(0, 0.05, 0)); scrap.rotation.set(0, 0.6, 0.2 + 0.15 * wobble(t - 1.05, 4, 5)); }
+      const tgt = [M[0] - 0.3, 0.85, gateZ() - 1.6];
+      W.cam.set([M[0] - 0.9, 1.0, gateZ() - 4.6], tgt, 46).shake(t, caught && !ripped ? 0.9 : 0.4, 66).dof(tgt, 0.003, 0.006);
+      W.shadow([M[0], 0, gateZ() - 1], 4);
     },
   });
-  S.push(snagShot('18d', t18d));
-  S.push(snagShot('18e', t18e, { second: true }));
+  S.push({
+    id: '18e', beat: 18, at: t18e, look: 'night',
+    sfx: [['cloth_snag', t18e + 0.05, 0.9], ['larry_groan', t18e + 0.12, 0.6]],
+    frame({ t, abs }) {
+      const e = estate('night'); openGate(e);
+      // ...and stuck again, on the other door. He turns to us. Not amused.
+      const pin = doorEnd(1);
+      place(L, [M[0] + 0.3, 0, gateZ() - 1.95], [M[0] + 0.25, 0, gateZ() - 6]);
+      L.applyPose(P({ lean: -5 }));
+      L.joints.body.rotation.x = (9 + 4 * Math.sin(t * 30)) * Math.PI / 180;
+      L.rotation.y -= 0.45;   // half turned toward us
+      L.chips.visible = false;
+      sheetLarry(abs, 'annoyed', snagSheet(pin, 1, {}));
+      scrap.visible = true; scrap.position.copy(doorEnd(0)).add(new THREE.Vector3(0, 0.05, 0)); scrap.rotation.set(0, 0.6, 0.2);
+      const tgt = [M[0] + 0.3, 0.9, gateZ() - 1.9];
+      W.cam.set([M[0] + 1.45, 1.0, gateZ() - 3.6], tgt, 42).shake(t, 1.0, 67).dof(tgt, 0.003, 0.006);
+      W.shadow([M[0], 0, gateZ() - 1], 4);
+    },
+  });
   S.push({
     id: '18f', beat: 18, at: T.word(18, 'Twice').e - 0.05, look: 'night',
     sfx: [['facepalm_slap', T.word(18, 'Twice').e + 0.07, 0.8]],

@@ -107,7 +107,8 @@ export function makeMansion(lit, litGreen) {
   for (const y of [3.6, 7.1, 10.5]) add(main, roundedBox(14.4, 0.3, 10.4, 0.06), trim, [0, y, 0]);
   // mansard roof with dormers + iron cresting
   const mroof = group(main, [0, 10.5, 0]);
-  const mr = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 7.3, 4.2, 4, 1), roof); mr.rotation.y = Math.PI / 4; mr.scale.set(1.36, 1, 0.98); mr.position.y = 2.1; mr.castShadow = true; mr.receiveShadow = true; mroof.add(mr);
+  // (the 45° turn is baked into the geometry so the scale below stretches it into a true rectangle)
+  const mr = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 7.3, 4.2, 4, 1).rotateY(Math.PI / 4), roof); mr.scale.set(1.36, 1, 0.98); mr.position.y = 2.1; mr.castShadow = true; mr.receiveShadow = true; mroof.add(mr);
   for (let k = -2; k <= 2; k++) {
     if (k === 0) continue;
     const d = group(mroof, [k * 2.8, 1.6, 4.4], [0.0, 0, 0]);
@@ -118,11 +119,22 @@ export function makeMansion(lit, litGreen) {
   for (let k = 0; k < 28; k++) add(mroof, cone(0.06, 0.45, 6), metal('#1a1622'), [-6.4 + k * 0.47, 4.45, 0], [0, 0, 0]);
   add(mroof, roundedBox(13.2, 0.08, 0.08, 0.02), metal('#1a1622'), [0, 4.3, 0]);
   // ghost-shaped hole (shown at the end)
-  const hole = group(mroof, [2.2, 2.1, 4.25], [-0.5, 0, 0], 'ghostHole');
+  const hole = group(mroof, [0, 2.0, 4.3], [-0.33, 0, 0], 'ghostHole');
   const gs = ghostShape();
-  const holeMesh = add(hole, new THREE.ShapeGeometry(gs, 24), new THREE.MeshBasicMaterial({ color: '#0c0814' }), [0, 0, 0.12], [0, 0, 0], 2.1, { shadow: false });
-  const holeRim = add(hole, new THREE.ShapeGeometry(gs, 24), clay('#a88a6a', { roughness: 0.9 }), [0, -0.05, 0.1], [0, 0, 0], 2.35, { shadow: false });
-  for (let k = 0; k < 14; k++) { const a = (k / 14) * Math.PI * 2; add(hole, roundedBox(0.45, 0.16, 0.1, 0.02), roof, [Math.cos(a) * 1.6, 1.0 + Math.sin(a) * 1.55, 0.16], [0.3, 0.2, a]); }
+  // the hole glows with the warm light of the hall inside
+  const holeTex = canvasTex(256, 256, (c, w, h) => {
+    // warm light from inside: bright in the middle, deeper orange toward the torn edge, two broken rafters
+    const g = c.createRadialGradient(w * 0.5, h * 0.42, 4, w * 0.5, h * 0.48, w * 0.6);
+    g.addColorStop(0, '#fff1c2'); g.addColorStop(0.45, '#ffc76a'); g.addColorStop(1, '#b8582a');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(70,35,20,0.85)'; c.lineCap = 'round';
+    c.lineWidth = 14; c.beginPath(); c.moveTo(-10, h * 0.7); c.lineTo(w + 10, h * 0.52); c.stroke();
+  });
+  holeTex.repeat.set(1 / 1.5, 1 / 1.7); holeTex.offset.set(0.5, 0.4 / 1.7);
+  const holeMesh = add(hole, new THREE.ShapeGeometry(gs, 24), new THREE.MeshBasicMaterial({ map: holeTex, color: new THREE.Color(1.25, 1.15, 1.05), toneMapped: false }), [0, 0, 0.12], [0, 0, 0], 2.1, { shadow: false });
+  holeMesh.userData.noAO = true;
+  const holeRim = add(hole, new THREE.ShapeGeometry(gs, 24), clay('#2a1d16', { roughness: 0.9 }), [0, -0.06, 0.1], [0, 0, 0], 2.32, { shadow: false });
+  for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2 + 0.3; add(hole, roundedBox(0.34, 0.12, 0.08, 0.02), roof, [Math.cos(a) * 1.75, 1.0 + Math.sin(a) * 1.75, 0.16], [0.3, 0.2, a]); }
   hole.visible = false;
   g.userData.hole = hole;
   // windows on the main block (3 floors x 5) — crooked, glowing
@@ -153,7 +165,7 @@ export function makeMansion(lit, litGreen) {
   // wings
   for (const [s, h, wm] of [[-1, 8.5, wall2], [1, 9.4, wall2]]) {
     const wing = group(g, [s * 10.4, 0.6, -0.6]);
-    add(wing, roundedBox(6.8, h, 8.2, 0.08), wm, [0, h / 2, 0]);
+    add(wing, roundedBox(6.8, h + 0.6, 8.2, 0.08), wm, [0, (h - 0.6) / 2, 0]);          // reaches down to the ground
     add(wing, roundedBox(7.1, 0.25, 8.5, 0.05), trim, [0, h, 0]);
     pitchedRoof(wing, 6.8, 8.2, 3.6, roof, [0, h, 0], [0, 0, s * 0.03]);
     add(wing, gable(6.8, 3.6, 0.25), wm, [0, h, 4.05]);
@@ -164,7 +176,7 @@ export function makeMansion(lit, litGreen) {
     }
   }
   // CHICKEN EXIT: a small side door on the right wing's outer wall
-  const ce = group(g, [8.9, 0.6, 3.58], [0, 0, 0], 'chickenExit');
+  const ce = group(g, [8.9, 0, 3.58], [0, 0, 0], 'chickenExit');
   add(ce, roundedBox(1.1, 1.9, 0.12, 0.03), clay('#c9852f'), [0, 0.95, 0.02]);
   add(ce, roundedBox(1.3, 2.05, 0.08, 0.03), teal, [0, 1.0, -0.02]);
   const ceDoor = group(ce, [-0.5, 0, 0.09], [0, 0, 0], 'chickenDoor');
@@ -214,7 +226,8 @@ export function makeMansion(lit, litGreen) {
   // purple and green uplights washing the facade
   const ups = [];
   for (const [x, col] of [[-5.5, '#9d6bff'], [5.5, '#4dff8a'], [-11, '#4dff8a'], [11, '#9d6bff']]) {
-    const sp = new THREE.SpotLight(col, 30, 26, 0.55, 0.6, 1.2); sp.position.set(x, 0.3, 9.5); sp.target.position.set(x * 0.9, 9, 4.5);
+    // close to the facade so they wash the walls, not the graveyard lawn
+    const sp = new THREE.SpotLight(col, 30, 26, 0.55, 0.6, 1.2); sp.position.set(x, 0.6, 7.2); sp.target.position.set(x * 0.9, 9, 4.5);
     g.add(sp, sp.target); ups.push(sp);
   }
   g.userData.uplights = ups;
@@ -389,10 +402,16 @@ export function buildEstate(W) {
   const gy = new THREE.Group(); gy.name = 'graveyard'; root.add(gy);
   const rnd = mulberry32(77);
   const tombs = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     const x = MANSION.pos[0] + (rnd() - 0.5) * 22, z = -19.5 + rnd() * 5.2;
     if (Math.abs(x - MANSION.pos[0]) < 2.4 || x < 2.8) continue;   // keep the path and our house clear
     const t = makeTombstone(i); t.position.set(x, 0, z); gy.add(t); tombs.push(t);
+  }
+  // a row of tombstones close along both sides of the path (so every graveyard shot reads)
+  for (let k = 0; k < 4; k++) for (const sd of [-1, 1]) {
+    const t = makeTombstone(100 + k * 2 + (sd > 0 ? 1 : 0));
+    t.position.set(MANSION.pos[0] + sd * (2.05 + ((k + (sd > 0 ? 1 : 0)) % 2) * 0.35), 0, -14.7 - k * 1.25 - (sd > 0 ? 0.4 : 0));
+    t.rotation.y += sd * 0.35; gy.add(t); tombs.push(t);
   }
   const lanterns = [];
   for (let i = 0; i < 8; i++) {
@@ -403,6 +422,21 @@ export function buildEstate(W) {
     }
   }
   for (const [x, z, s] of [[-5.5, -18.5, 1], [8.5, -16.5, 2], [-3.0, -15.5, 3]]) { const t = makeDeadTree(s, 5); t.position.set(MANSION.pos[0] + x, 0, z); gy.add(t); }
+  // a darker, muddier patch of ground under the graveyard (soft edges blend into the lawn)
+  const gyGround = canvasTex(512, 256, (c, w, h) => {
+    const rnd2 = mulberry32(5);
+    c.fillStyle = '#3b4636'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 400; i++) { c.fillStyle = `rgba(${20 + rnd2() * 40},${30 + rnd2() * 40},${30 + rnd2() * 30},0.35)`; c.beginPath(); c.arc(rnd2() * w, rnd2() * h, 2 + rnd2() * 9, 0, 7); c.fill(); }
+    // fade out at the edges
+    const m = c.getImageData(0, 0, w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const ex = Math.min(x, w - 1 - x) / (w * 0.12), ey = Math.min(y, h - 1 - y) / (h * 0.25);
+      m.data[(y * w + x) * 4 + 3] = 255 * Math.min(1, ex, ey) * 0.92;
+    }
+    c.putImageData(m, 0, 0);
+  });
+  const gyg = add(gy, new THREE.PlaneGeometry(27, 8.5), new THREE.MeshStandardMaterial({ map: gyGround, transparent: true, depthWrite: false, roughness: 1 }), [MANSION.pos[0], 0.012, -16.9], [-Math.PI / 2, 0, 0], 1, { shadow: false });
+  gyg.receiveShadow = true; gyg.renderOrder = 1; gyg.userData.noAO = true;
   // path to the door
   add(gy, new THREE.PlaneGeometry(2.6, 8), clay('#7d7488', { roughness: 1 }), [MANSION.pos[0], 0.02, -17.0], [-Math.PI / 2, 0, 0], 1, { shadow: false });
   // iron fence + gate across the front of the graveyard

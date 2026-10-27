@@ -128,7 +128,8 @@ export class Sheet extends THREE.Group {
     geo.setIndex(idx);
     this.geo = geo;
     this.face = new Face({ eyeStyle: 'sheet', blush: null, freckles: null, pupilR: 0.07, lineW: 0.03 }, 1024);
-    this.mat = cloth(PAL.sheet, { unique: true, side: THREE.DoubleSide, sheen: 0.35, roughness: 0.9 });
+    // a touch of self-light keeps the white sheet white in shade (no green lawn bounce, readable at night)
+    this.mat = cloth(PAL.sheet, { unique: true, side: THREE.DoubleSide, sheen: 0.35, roughness: 0.9, emissive: '#fff6ee', emissiveIntensity: 0.14 });
     this.faceCenterY = 0.94;     // Larry's head centre
     applyFace(this.mat, this.face, { extent: 0.33, center: [0, this.faceCenterY], glow: 0.0, depth: 0.12 });
     this.mesh = new THREE.Mesh(geo, this.mat);

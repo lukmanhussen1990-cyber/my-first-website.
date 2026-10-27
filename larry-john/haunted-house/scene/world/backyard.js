@@ -64,8 +64,9 @@ export function makeTree(seed = 1, h = 3.2) {
   const n = 3 + Math.floor(rnd() * 3);
   for (let i = 0; i < n; i++) {
     const r = h * (0.24 + rnd() * 0.1);
-    const geo = new THREE.IcosahedronGeometry(r, 1);
-    const mat = clay(TREE_GREENS[(seed + i) % TREE_GREENS.length], { flatShading: true, roughness: 0.85 });
+    // soft lumpy clay balls (no hard facets)
+    const geo = blob(Math.round(r * 100) / 100, 3, 0.07, seed * 10 + i);
+    const mat = clay(TREE_GREENS[(seed + i) % TREE_GREENS.length], { roughness: 0.85 });
     add(g, geo, mat, [(rnd() - 0.5) * h * 0.35, h * (0.55 + rnd() * 0.3), (rnd() - 0.5) * h * 0.35], [rnd() * 3, rnd() * 3, 0]);
   }
   return g;
@@ -73,7 +74,7 @@ export function makeTree(seed = 1, h = 3.2) {
 export function makeBush(seed = 1, r = 0.5) {
   const g = new THREE.Group();
   const rnd = mulberry32(seed);
-  for (let i = 0; i < 3; i++) add(g, new THREE.IcosahedronGeometry(r * (0.6 + rnd() * 0.4), 1), clay(TREE_GREENS[(seed + i) % 4], { flatShading: true }),
+  for (let i = 0; i < 3; i++) add(g, blob(Math.round(r * (0.6 + rnd() * 0.4) * 100) / 100, 3, 0.08, seed * 7 + i), clay(TREE_GREENS[(seed + i) % 4]),
     [(rnd() - 0.5) * r * 1.2, r * 0.5, (rnd() - 0.5) * r]);
   return g;
 }
@@ -316,7 +317,8 @@ export function makePumpkin(r = 0.3, carved = false, seed = 1) {
     const mg = new THREE.ShapeGeometry(mouth); mg.scale(r, r, r);
     add(fg, mg, lit, [0, -r * 0.12, 0.01], [0, 0, 0], 1, { shadow: false });
     fg.children.forEach((m) => { m.userData.noAO = true; });
-    const L = new THREE.PointLight('#ff9a2e', 0.0, 3.5, 2); L.position.set(0, r * 0.9, r * 1.2); g.add(L); g.userData.light = L;
+    // the candle sits inside: it warms the ground around the pumpkin without a hot spot on its face
+    const L = new THREE.PointLight('#ff9a2e', 0.0, 3.0, 2); L.position.set(0, r * 0.8, 0); g.add(L); g.userData.light = L;
   }
   return g;
 }
@@ -448,19 +450,27 @@ export function buildBackyard(nightGlass) {
     for (let i = 0; i <= n; i++) pickets.push([[x0 + (x1 - x0) * i / n, 0, z0 + (z1 - z0) * i / n], ry, 1]);
     for (const y of [0.28, 0.7]) rails.push([[(x0 + x1) / 2, y, (z0 + z1) / 2], ry, [L, 1, 1]]);
   };
-  fenceLine(-24, -42, 24, -42); fenceLine(-24, -42, -24, 14); fenceLine(24, -42, 24, 14);
   const fenceMat = clay(PAL.fence, { roughness: 0.7 });
-  root.add(instanced(picket, fenceMat, pickets));
-  root.add(instanced(new THREE.BoxGeometry(1, 0.07, 0.03).translate(0, 0, -0.03), fenceMat, rails));
+  const fenceMesh = () => {
+    const g = new THREE.Group();
+    g.add(instanced(picket, fenceMat, pickets.splice(0)));
+    g.add(instanced(new THREE.BoxGeometry(1, 0.07, 0.03).translate(0, 0, -0.03), fenceMat, rails.splice(0)));
+    root.add(g); return g;
+  };
+  fenceLine(-24, -42, 24, -42); fenceLine(-24, -42, -24, 14); fenceMesh();
+  fenceLine(24, -42, 24, 14);
+  const fenceRight = fenceMesh();
   // trees and bushes
+  const estateTrees = [];       // hidden when the haunted estate stands there
   for (const [x, z, h, s] of [[-17, -16, 4.2, 3], [-21, -4, 3.6, 4], [14, -14, 4.0, 5], [19, -26, 4.5, 6], [-6, -30, 4.8, 7], [10, -38, 4.0, 8],
     [-14, -37, 4.4, 9], [21, 4, 3.8, 10], [-20, 8, 3.2, 12], [28, -48, 5, 13], [-30, -50, 5.2, 14], [2, -52, 4.6, 15], [40, -20, 5, 16], [-40, -20, 5, 17]]) {
     const t = makeTree(s, h); t.position.set(x, 0, z); root.add(t);
+    if (x > 3 && z < -10 && z > -45) estateTrees.push(t);
   }
   for (let i = 0; i < 18; i++) { const b = makeBush(i + 30, 0.4 + rnd() * 0.3); b.position.set(-22 + i * 2.6, 0, -41); root.add(b); }
   // vegetable garden rows in the back corner
   for (let r = 0; r < 4; r++) for (let k = 0; k < 9; k++) {
-    add(root, new THREE.IcosahedronGeometry(0.22, 1), clay('#4f9a3a', { flatShading: true }), [-18 + k * 0.7, 0.18, -30 + r * 1.1], [0, k, 0], 1);
+    add(root, blob(0.22, 2, 0.1, 50 + k), clay('#4f9a3a'), [-18 + k * 0.7, 0.18, -30 + r * 1.1], [0, k, 0], 1);
   }
   for (let r = 0; r < 4; r++) add(root, roundedBox(6.6, 0.12, 0.7, 0.04), clay('#7a5233'), [-15.2, 0.03, -30 + r * 1.1], [0, 0, 0], 1, { shadow: false });
   // distant houses beyond the fences
@@ -488,6 +498,9 @@ export function buildBackyard(nightGlass) {
     p.position.copy(new THREE.Vector3(...S.pos).add(new THREE.Vector3(dx, 0, dz).applyAxisAngle(new THREE.Vector3(0, 1, 0), S.rotY)));
     p.rotation.y = S.rotY + dx * 0.2; pumpkins.push(p);
   }
-  root.userData = { ground, house, shed, sign, jar, pumpkins, stones: root.userData.stones, doorPos };
+  root.userData = { ground, house, shed, sign, jar, pumpkins, stones: root.userData.stones, doorPos, estateTrees, fenceRight };
+  // the estate shots hide the trees and the side fence that stand where the mansion grows
+  root.userData.estateMode = (on) => { estateTrees.forEach((t) => { t.visible = !on; }); fenceRight.visible = !on; };
+  root.userData.reset = () => root.userData.estateMode(false);
   return root;
 }

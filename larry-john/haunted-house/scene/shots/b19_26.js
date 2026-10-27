@@ -18,6 +18,7 @@ export function shots19_26(T, W) {
   const estate = (look = 'night') => {
     W.show('backyard', 'estate');
     const e = E(); e.mansion.visible = true; e.graveyard.visible = true; e.gate.visible = true; e.showFence(true);
+    W.sets.backyard.userData.estateMode(true);
     W.look(look);
     W.moonAt([M[0] + 30, 75, M[2] - 260], 30);
     return e;
@@ -74,9 +75,11 @@ export function shots19_26(T, W) {
 
   // ---------------- beat 20: the 3-hour line ----------------
   const t20b = T.cut(20, 'People'), three = T.word(20, 'three').s, faint = T.word(20, 'faint').s, t21 = T.beatCut(21);
+  // from the mansion's gate, around the old shed (never through it), across the yard and out of sight
   const linePath = () => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(M[0], 0, E().gateZ + 0.8), new THREE.Vector3(M[0] - 1.5, 0, -7), new THREE.Vector3(M[0] - 7, 0, -4),
-    new THREE.Vector3(-1.5, 0, 0.5), new THREE.Vector3(-6, 0, 4), new THREE.Vector3(-14, 0, 6), new THREE.Vector3(-22, 0, 9), new THREE.Vector3(-30, 0, 9),
+    new THREE.Vector3(M[0], 0, E().gateZ + 0.8), new THREE.Vector3(M[0] - 1.2, 0, -9.5), new THREE.Vector3(5.8, 0, -7.0),
+    new THREE.Vector3(5.6, 0, -2.0), new THREE.Vector3(2.0, 0, 1.8), new THREE.Vector3(-4, 0, 4.2), new THREE.Vector3(-12, 0, 6.2),
+    new THREE.Vector3(-20, 0, 8.5), new THREE.Vector3(-28, 0, 9),
   ]);
   S.push({
     id: '20a', beat: 20, at: t20, look: 'night',
@@ -96,8 +99,8 @@ export function shots19_26(T, W) {
       }
       // the hidden ghost, quietly waiting in the line
       const gp = path.getPointAt(0.012 + 9.5 * (0.98 / N));
-      const gc = C.ghostCameo; gc.visible = true; gc.position.set(gp.x + 0.3, 0.15, gp.z + 0.2); gc.scale.setScalar(0.85);
-      gc.rotation.y = 2.4; gc.mat.opacity = 0.42; gc.set({ t: abs, armWave: 0 }); gc.face.set('bored');
+      const gc = C.ghostCameo; gc.visible = true; gc.position.set(gp.x + 0.35, 0.3 + Math.sin(abs * 2) * 0.05, gp.z + 0.25); gc.scale.setScalar(0.9);
+      gc.rotation.y = 2.4; gc.mat.opacity = 0.55; gc.set({ t: abs, armWave: 0 }); gc.face.set('bored');
       waitSign.visible = true; waitSign.position.set(-2.8, 0, 1.6); waitSign.rotation.y = 0.55;
       W.cam.set([-9 + u * 1.5, 9.5, 14], [M[0] - 6, 0.5, -9], 58).shake(abs, 0.4, 70);
       W.shadow([-4, 0, -2], 22);
@@ -260,11 +263,19 @@ export function shots19_26(T, W) {
     labels: [notLabel(not3, 2)],
     sfx: [['squeak_toy', past2 + 0.3, 0.5], ['meh', not3 + 0.05, 0.4]],
     frame({ t, abs }) {
-      const gp = H(0.4, 0.35, lerp(-9.6, -11.0, smooth(t / 1.4)));
+      // the zombie actors huddle against the wall, shaking; the ghost drifts past them, bored
+      const gp = H(lerp(0.55, 0.3, smooth(t / 1.4)), 0.35, lerp(-8.3, -10.15, smooth(t / 1.4)));
       inHall(gp);
-      HI().mask.visible = true;
-      ghostAt(gp, Math.PI, abs, 'bored', { pupil: [0, -0.8] });
-      W.cam.set(H(-1.0, 0.8, -12.6), H(0.5, 0.6, -10.4), 52).shake(abs, 0.4, 80);
+      HI().mask.visible = false;
+      C.zombies.forEach((z, i) => {
+        const zp = H(-1.55 + (i === 1 ? 0.35 : 0), 0, -9.3 - i * 0.45);
+        place(z, zp, [gp[0], 0, gp[2]]);
+        z.position.x += Math.sin(abs * 55 + i * 2) * 0.012;
+        z.applyPose(P({ armL: { fwd: 60, out: 15, elbow: 120 }, armR: { fwd: 60, out: 15, elbow: 120 }, legL: { knee: 15 }, legR: { knee: 15 }, lean: (i - 1) * 8, squash: 0.94, y: -0.03 }));
+        z.setFace('terrified', { pupil: [0.4, 0], sweat: 1 });
+      });
+      ghostAt(gp, Math.PI + 0.25, abs, 'bored', { pupil: [-0.7, 0] });
+      W.cam.set(H(1.25, 1.05, -12.3), H(-0.5, 0.85, -9.7), 52).shake(abs, 0.4, 80);
     },
   });
 
@@ -284,7 +295,7 @@ export function shots19_26(T, W) {
       const gp = H(lerp(0.6, 1.6, k), 0.35, lerp(-11.6, -12.2, k));
       inHall(gp);
       ghostAt(gp, lerp(Math.PI, Math.PI / 2, k), abs, 'bored', { pupil: [0.6, 0] });
-      W.cam.set(H(-0.9, 1.25, -9.6), [gp[0] + 0.6, 1.0, gp[2]], 50).shake(abs, 0.4, 81);
+      W.cam.set(H(-0.7, 1.2, -9.4), [gp[0] + 0.15, 1.0, gp[2]], 50).shake(abs, 0.4, 81);
     },
   });
   S.push({
@@ -362,9 +373,14 @@ export function shots19_26(T, W) {
       inHall(gp);
       const up = Math.max(0, t - 0.08) ** 2 * 30;
       ghostAt([gp[0], gp[1] + up, gp[2]], Math.PI / 2, abs, 'screaming', {}, { armUp: 1, stretch: 1.5, tailSwish: 3 });
-      HI().ceilHole.visible = t > 0.3;
-      if (t > 0.3) { W.fx.puffs.pop(H(1.9, 3.6, -12.2), t - 0.3, { radius: 1.3, count: 10, size: 0.4, life: 0.8, seed: 9, color: '#b8a8c8' }); W.fx.crumbs.show(H(1.9, 3.6, -12.2), t - 0.3); }
-      W.cam.set(H(1.2, 0.45, -10.4), H(1.9, 3.2, -12.2), 68).shake(abs, 1.8, 85);
+      // the ghost shoots up through the ceiling: a ghost-shaped hole (night sky inside), dust, plaster chunks
+      const hit = t - 0.3;
+      HI().ceilHole.visible = hit > 0;
+      if (hit > 0) {
+        W.fx.puffs.pop(H(1.9, 3.3, -12.2), hit, { radius: 1.2, count: 12, size: 0.26, life: 0.9, up: -0.5, seed: 9, color: '#c9bdd8' });
+        W.fx.plaster.show(H(1.9, 3.72, -12.2), hit, { spread: 0.6, size: 1.2, floorY: 0.02 });
+      }
+      W.cam.set(H(0.9, 0.5, -10.0), H(1.9, 3.0, -12.2), 68).shake(abs, hit > 0 && hit < 0.4 ? 2.4 : 1.0, 85);
     },
   });
   S.push({
@@ -380,7 +396,8 @@ export function shots19_26(T, W) {
       const k = Math.max(0, t - 0.02);
       ghostAt([hp.x, hp.y - 0.3 + k * k * 40 + k * 8, hp.z + k * 3], 0, abs, 'screaming', {}, { armUp: 1, stretch: 1.6 });
       G.scale.setScalar(1.6);
-      W.fx.puffs.pop(hp.toArray(), t, { radius: 2.2, count: 14, size: 0.7, life: 1.0, seed: 10 });
+      W.fx.puffs.pop(hp.toArray(), t, { radius: 2.2, count: 14, size: 0.7, life: 1.0, seed: 10, color: '#b9aed0' });
+      W.fx.shingles.show(hp.toArray(), t, { spread: 2.5, up: 7, size: 5, floorY: -100 });
       W.cam.set([M[0] - 3, 6, M[2] + 22], [hp.x, hp.y + 2.5, hp.z], 50).shake(abs, 1.4, 86);
       W.shadow([M[0], 0, M[2]], 20);
     },
@@ -398,7 +415,8 @@ export function shots19_26(T, W) {
       e.searchlights.forEach((s, i) => { s.visible = true; s.userData.pivot.rotation.set(Math.sin(abs * 0.9 + i * 2.1) * 0.5, 0, Math.cos(abs * 0.7 + i) * 0.45); });
       e.mansion.userData.hole.updateWorldMatrix(true, false);
       const hp = new THREE.Vector3().setFromMatrixPosition(e.mansion.userData.hole.matrixWorld);
-      W.cam.set([M[0] - 3, 3.0, -8.0], [hp.x, hp.y - 4, hp.z], 56).push(u * 2.0).shake(abs, 0.4, 87);
+      // over the gate, looking up at the roof: the ghost-shaped hole, searchlights sweeping
+      W.cam.set([M[0] + 1.5, 14.0, -6.0], [hp.x - 0.3, hp.y + 2.7, hp.z], 42).push(u * 2.5).shake(abs, 0.4, 87);
       W.shadow([M[0], 0, M[2] + 6], 24);
     },
   });

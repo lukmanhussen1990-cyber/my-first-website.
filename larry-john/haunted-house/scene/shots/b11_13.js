@@ -68,13 +68,13 @@ export function shots11_13(T, W) {
     if (abs > popB - 0.02 && abs < popC + 0.15) {
       E_.spooky.visible = true;
       E_.spooky.scale.setScalar(popScale(abs, popB, 0.4) * (abs > popC ? Math.max(0.0001, 1 - (abs - popC) / 0.15) : 1));
-      W.fx.puffs.pop([W.SPOOKY.pos[0], 0, W.SPOOKY.pos[2] + 2.5], abs - popB, { radius: 4, count: 14, size: 1.1, life: 0.9, seed: 4 });
+      W.fx.puffs.pop([W.SPOOKY.pos[0], 0, W.SPOOKY.pos[2] + 2.5], abs - popB, { radius: 4, count: 14, size: 0.8, life: 0.9, seed: 4, color: '#d9cfe6' });
     }
     // pop 3: the giant mansion, the full moon rising behind it
     if (abs > popC - 0.02) {
       E_.mansion.visible = true; E_.graveyard.visible = abs > popC + 0.25;
       E_.mansion.scale.setScalar(popScale(abs, popC, 0.5) * W.MANSION.scale);
-      W.fx.puffs.pop([W.MANSION.pos[0], 0, W.MANSION.pos[2] + 9], abs - popC, { radius: 16, count: 18, size: 3.2, life: 0.9, seed: 5 });
+      W.fx.puffs.pop([W.MANSION.pos[0], 0, W.MANSION.pos[2] + 9], abs - popC, { radius: 15, count: 26, size: 1.7, life: 0.9, seed: 5, color: '#b9aed0' });
     }
     const rise = smooth(clamp((abs - popC + 0.2) / 1.4));
     W.moonAt([W.MANSION.pos[0] + 30, lerp(-10, 60, rise) + 20, W.MANSION.pos[2] - 260], 30);
@@ -106,13 +106,18 @@ export function shots11_13(T, W) {
       const p = shedXZ(W, -2.3, 3.6);
       const cpos = shedXZ(W, -1.6, 6.2, 1.2);
       place(J, p, cpos);
-      // John raises a big hammer, determined grin: time to build bigger
-      const swing = Math.max(0, Math.sin((t - 0.25) * 14));
-      J.applyPose(P({ armR: { fwd: 100 + 50 * swing, out: 18, elbow: 30 + 40 * swing }, armL: { fwd: 40, out: 25, elbow: 80 }, head: { nod: -4 } }));
+      // John raises a big hammer high (clear of his face) with a rolled-up blueprint in the other hand:
+      // determined grin, time to build bigger
+      const raise = easeOutBack(clamp(t / 0.25), 1.8);
+      const pump = Math.max(0, Math.sin((t - 0.3) * 13)) * clamp((t - 0.3) / 0.1);
+      // (with the arm raised past horizontal, a negative 'out' swings it outward)
+      J.applyPose(P({ armR: { fwd: 40 + 115 * raise, out: 30 - 60 * raise, elbow: 25 + 30 * pump }, armL: { fwd: 55, out: 20, elbow: 85 }, head: { nod: -6, tilt: 4 }, y: 0.03 * pump }));
       J.setFace('grin', { brows: 'angry' }, t);
       const hm = W.props.hammer; hm.visible = true;
-      J.updateMatrixWorld(true); J.hand('R').add(hm); hm.position.set(0, -0.08, 0.02); hm.rotation.set(Math.PI / 2, 0, 0);
-      W.cam.set(cpos, [p[0], 1.15, p[2]], 44).push(t * 0.3).shake(t, 0.6, 42);
+      J.updateMatrixWorld(true); J.hand('R').add(hm); hm.position.set(0, -0.06, 0.02); hm.rotation.set(Math.PI, 0, 0); hm.scale.setScalar(1.25);
+      const bp = W.props.blueprint; bp.visible = true;
+      J.hand('L').add(bp); bp.position.set(0, -0.05, 0.03); bp.rotation.set(0, 0, Math.PI / 2 - 0.3);
+      W.cam.set(cpos, [p[0], 1.32, p[2]], 46).push(t * 0.3).shake(t, 0.6, 42);
       W.shadow(p, 4);
     },
   });
@@ -205,6 +210,7 @@ export function shots11_13(T, W) {
       inHall(tgt);
       const k = abs - dropAt;
       HI().trapdoor.hinge.rotation.x = k > 0 ? Math.min(1.75, k * 22) - wobble(k - 0.08, 4, 6) * 0.25 : 0;
+      HI().trapdoor.light.intensity = k > 0 ? 4 : 0;
       place(L, H(0, 0, -9.2), H(0, 0, -6));
       // cartoon hang time: he hangs for a beat, looks down, then drops
       const fall = k > 0.22 ? (k - 0.22) ** 2 * 18 : 0;
@@ -220,17 +226,17 @@ export function shots11_13(T, W) {
     id: '13c', beat: 13, at: john13.s - 0.05, look: 'mansion',
     sfx: [],
     frame({ t, abs }) {
-      const tgt = H(0, -2.5, -9.2);
       inHall(H(0, 0, -9.2));
       HI().trapdoor.hinge.rotation.x = 1.75;
-      // looking down the dark hole: Larry lies face-up at the bottom, yelling up at us
-      place(L, H(0, -2.4, -8.6), null, 0);
+      HI().trapdoor.light.intensity = 2.6;
+      // looking down the hole: Larry lies face-up on an old mattress at the bottom, yelling up at us
+      place(L, H(0, -2.36, -8.58), null, 0);
       L.rotation.x = -Math.PI / 2;
       L.setSheet(true); L.sheet.set({ drape: 1, mouthPush: 1.0 * clamp((abs - john13.s) / 0.06) * (1 - clamp((abs - john13.e) / 0.3)) });
       L.sheet.face.set('yell');
-      L.sheet.mat.userData.faceUniforms.faceGlow.value = 0.9;
-      L.applyPose(P({ armL: { fwd: 30, out: 70, elbow: 20 }, armR: { fwd: 30, out: 70, elbow: 20 } }));
-      W.cam.set(H(0.0, 2.6, -9.2), H(0.0, -2.0, -9.2), 62, 0.2).shake(abs, 1.2, 48);
+      L.applyPose(P());
+      // a quick zoom down the hole as he yells
+      W.cam.set(H(0.04, 1.9, -8.95), H(0.0, -2.4, -9.3), lerp(40, 31, easeOutCubic(clamp(t / 0.5))), 0.08).shake(abs, 1.2, 48);
     },
   });
   S.push({
