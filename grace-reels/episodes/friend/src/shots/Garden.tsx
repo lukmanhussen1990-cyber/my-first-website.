@@ -8,7 +8,7 @@ import {Flame} from '../fx/Flame';
 import {lerpHex} from '../lib/color';
 import {clamp, easeInOut, easeOut, keys, lerp, seg} from '../lib/ease';
 import {hash, noise1} from '../lib/random';
-import {B, SCENE} from '../lib/timeline';
+import {B, SCENE, WALK} from '../lib/timeline';
 import type {CamState, ShotDef, Vec3} from '../render/types';
 import {emberSpecs, Embers, GardenLayers, TORCH_HEAD} from '../world/Garden';
 import {Haze, Pool} from '../world/Layer';
@@ -180,7 +180,8 @@ export const S10: ShotDef = {
 	end: B.kissLean + 0.6,
 	Content: ({t, lite}) => {
 		const jx = judasX10(t);
-		const stepPh = (t - B.walkUp) / 0.5;
+		// a foot lands (lowest point of the bob) on each footstep sound (src/beats.mjs: walkUp + 0.1 + 0.5 k)
+		const stepPh = (t - B.walkUp - WALK.judas.phase * WALK.judas.period) / (0.5 * WALK.judas.period);
 		const walking = t < B.kissLean;
 		const bobY = walking ? 0.025 * Math.abs(Math.sin(stepPh * Math.PI)) : 0;
 		return (
