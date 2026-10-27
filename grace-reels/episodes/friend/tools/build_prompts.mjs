@@ -152,7 +152,7 @@ const assets = [
 	// ---------------- NICE-TO-HAVE (each has a code fallback) ----------------
 	{file: 'bg_garden_far.png', size: 'L', bg: 'layer', light: 'garden', prio: 'NICE', attach: ['bg_garden_sky.png', 'bg_garden_mid.png'],
 		use: 'S9 depth behind the grove (code hills if skipped)',
-		lines: [A.scene('the approved night sky and olive-grove layers of this same scene'),
+		lines: ['ATTACHED: the approved night sky and olive-grove layers of this same scene. Match their light, colors, haze and level of detail exactly.',
 			'IMAGE: the FAR layer of the night olive garden, as a wide strip: low, rolling low-poly hills in deep moonlit blue-grey (#2E3A55, #45557A) along the bottom third, and on a far hilltop a tiny, simple city wall with a few small warm window lights. Soft night haze. Everything above the hills is transparent.'], avoid: 'scene'},
 	{file: 'bg_garden_near.png', size: 'L', bg: 'layer', light: 'garden', prio: 'NICE', attach: ['bg_garden_mid.png'],
 		use: 'S1, S9 foreground parallax (blurred in code)',
