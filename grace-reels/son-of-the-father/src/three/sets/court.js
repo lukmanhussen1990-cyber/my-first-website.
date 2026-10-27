@@ -428,8 +428,8 @@ export function build(ctx) {
           split: 0.22, splitShadow: '#5b6a92', splitHigh: '#ffcf7a', ao: 0.55, aoRadius: 0.5, tilt: 0, tonemap: 'agx', agxLook: 0.55,
           godrays: { pos: [J[0] - 380, 160, J[2] + 80], color: '#ffd9a0', strength: 0.55, radius: 0.16, decay: 0.968, density: 0.92, streaks: 0.65 } },
       });
-      if (id === 'S1' || id === 'LOOP') return merge(dawn, { hemi: { intensity: 0.95 }, char: '#fff4e4', fog: { density: 0.0018 },
-        point: { pos: [J[0] + 2.6, 2.3, J[2] - 1.7], color: '#ffd8a8', intensity: 4, distance: 9, charColor: '#ffdcb0', charK: 0.35, charRange: 3.5 },
+      if (id === 'S1' || id === 'LOOP') return merge(dawn, { hemi: { intensity: 0.95 }, char: '#fff4e4', fog: { density: 0.001, color: '#d2a878' },
+        point: { pos: [J[0] + 1.6, 2.0, J[2] - 0.9], color: '#ffd8a8', intensity: 3, distance: 6, charColor: '#ffdcb0', charK: 0.55, charRange: 4.5 },
         sky: { horizon: '#d9ad7c', sunGlow: '#e8a65c' },
         post: { exposure: 0.98, bloom: 0.5, bloomThreshold: 0.92, haze: 0.0, dof: 0.55, focusRange: 1.0, vignette: 0.42, contrast: 1.16, godrays: { strength: 0.35 } } });
       if (id === 'S2') return merge(dawn, { char: '#f2e2cc', post: { dof: 0.75, focusRange: 0.8, vignette: 0.58, sat: 0.98, contrast: 1.14, godrays: { strength: 0.5 } } });
@@ -474,22 +474,25 @@ export function build(ctx) {
       }
       if (id === 'S12') {
         const ages = [t - E.thunder1, t - E.thunder2].filter((a) => a > 0);
+        // the depth of field is |z - focus| in metres, so the in-focus band grows with the rack (0.6 m on his face,
+        // ~120 m on the far hill: the city wall, the path and the tiny figures all come sharp)
+        const rk = smooth(invLerp(E.rackFocus - 0.2, E.rackFocus + 1.1, t));
         const age = ages.length ? Math.min(...ages) : null;
         return merge(dawn, {
           sky: { storm: 0.9, stormDark: '#2e2f38', stormLit: '#6a6670', stormAlt: 80, clouds: 0, top: '#5a6274', horizon: '#c9b393', crack: age != null ? { age, pos: [COURT.hill[0] + 30, 120, COURT.hill[2] - 150], size: 220, hold: false, hole: 0, glowK: 0.6 } : null },
           sun: { intensity: 2.5 }, hemi: { sky: '#8c96ac', intensity: 0.7 }, char: '#ffeedd',
           fog: { color: '#a89f94', density: 0.0009, height: 18, near: 60, far: 800 },
-          post: { dof: 1.2, focusRange: 0.6, vignette: 0.55, haze: 0.015, contrast: 1.14, godrays: { strength: 0 }, sat: 0.92, split: 0.3, splitShadow: '#3e4a66', splitHigh: '#ffd6a0' },
+          post: { dof: 1.2, focusRange: 0.6 * Math.pow(200, rk), vignette: 0.55, haze: 0.015, contrast: 1.14, godrays: { strength: 0 }, sat: 0.92, split: 0.3, splitShadow: '#3e4a66', splitHigh: '#ffd6a0' },
         });
       }
       if (id === 'S13') {
         const lb = smooth(invLerp(E.lightBreaks - 0.4, E.lightBreaks + 2.6, t));
-        const hp = [COURT.hill[0] - 3, COURT.hillTop + 22, COURT.hill[2] - 30];
+        const hp = [COURT.hill[0] - 3, COURT.hillTop + 30, COURT.hill[2] - 30];   // between the card and the cross
         return merge(MOODS.storm, {
           sky: { storm: 1, stormDark: '#2a2b33', stormLit: '#77706a', top: '#3a3f4c', horizon: '#8d8378', crack: { age: lb > 0 ? 0.5 + lb * 3 : -1, pos: hp, size: 120, hold: true, color: '#000000', hole: 1.2 * lb, glowColor: '#ffd9a0', glowK: 1.3 * lb, cloudK: 0.9 } },
           sunDir: [-0.2, 0.55, -0.8], sun: { color: '#ffd8a8', intensity: 0.8 + 1.6 * lb }, hemi: { sky: '#7d8496', ground: '#3a352c', intensity: 0.65 + 0.3 * lb },
           fog: { color: '#6e6a66', density: 0.0045, height: 20, near: 40, far: 700 }, char: '#d8d0c4', wind: 1.6,
-          post: { exposure: 0.86 + 0.16 * lb, bloom: 0.7 + 0.5 * lb, contrast: 1.18, haze: 0.02, sat: 0.78 + 0.3 * lb, vignette: 0.62, tilt: 0.2, dof: 0, split: 0.35, splitShadow: '#2c3a54', splitHigh: '#ffcf8a',
+          post: { exposure: 0.84 + 0.1 * lb, bloom: 0.55 + 0.3 * lb, contrast: 1.18, haze: 0.02, sat: 0.78 + 0.3 * lb, vignette: 0.62, tilt: 0.2, dof: 0, split: 0.35, splitShadow: '#2c3a54', splitHigh: '#ffcf8a',
             godrays: { pos: hp, color: '#ffdca8', strength: 0.95 * lb, radius: 0.2, decay: 0.97, density: 0.95, streaks: 0.85 } },
         });
       }

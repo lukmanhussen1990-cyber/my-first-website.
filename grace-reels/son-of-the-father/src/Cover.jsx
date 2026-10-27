@@ -13,7 +13,7 @@ const COVER_CAM = { pos: [13.65, 4.4, 0.0], look: [4.4, 2.25, 0.0], fov: 30, foc
 const GOLD = '#f2c463', CREAM = '#fbf1dc';
 
 export const Cover = ({ frame = 1305 }) => {
-  const [h] = useState(() => delayRender('cover fonts', { timeoutInMilliseconds: 600000 }));
+  const [h] = useState(() => delayRender('cover fonts', { timeoutInMilliseconds: 1800000 }));
   useEffect(() => { fontsReady().then(() => continueRender(h)); }, [h]);
   const shadow = '0 10px 40px rgba(0,0,0,0.65), 0 3px 10px rgba(0,0,0,0.6)';
   return (

@@ -8,7 +8,7 @@ path = sys.argv[1] if len(sys.argv) > 1 else "voice/voice.wav"
 T = json.load(open("timeline.json"))
 pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", "16000", "-f", "f32le", "-"], capture_output=True, check=True).stdout
 m = WhisperModel("small.en", device="cpu", compute_type="int8")
-segs, _ = m.transcribe(np.frombuffer(pcm, dtype=np.float32), word_timestamps=True, initial_prompt="Methuselah, Enoch, Lamech, Noah, Genesis, longsuffering, repentance.")
+segs, _ = m.transcribe(np.frombuffer(pcm, dtype=np.float32), word_timestamps=True, initial_prompt="Jesus, Barabbas, Pilate, Passover, Aramaic, Abba, insurrection, twain.")
 heard = [(w.start, re.sub(r"[^a-z0-9']", "", w.word.lower())) for s in segs for w in s.words]
 # numbers compare as numbers: "five" == "5", "one hundred eighty-seven" == "187"
 ONES = {w: i for i, w in enumerate("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split())}

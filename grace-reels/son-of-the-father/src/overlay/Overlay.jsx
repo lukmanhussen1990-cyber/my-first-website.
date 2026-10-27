@@ -15,7 +15,7 @@ import { Cta } from './cta.jsx';
 import { EndCard } from './endcard.jsx';
 
 export const Overlay = ({ frame, debug }) => {
-  const [handle] = useState(() => delayRender('overlay fonts', { timeoutInMilliseconds: 600000 }));
+  const [handle] = useState(() => delayRender('overlay fonts', { timeoutInMilliseconds: 1800000 }));
   const [ready, setReady] = useState(false);
   useEffect(() => { fontsReady().then(() => setReady(true)); }, []);
   useEffect(() => { if (ready) continueRender(handle); }, [ready, handle]);
