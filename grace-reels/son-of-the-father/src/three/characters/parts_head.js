@@ -132,6 +132,11 @@ function wrinkles(D, view) {
       W(smooth([[0.064, 0.13], [0.05, 0.11], [0.048, 0.088]], false), 0.003, 0.5);
     }
   }
+  if (D.scar) {                                          // an old scar through the near eyebrow
+    const pale = lift(s, 0.38), edge = ink(s, 0.62);
+    const sc = view === 'side' ? [[0.082, 0.283], [0.098, 0.247], [0.112, 0.214]] : view === 'threeQuarter' ? [[0.012, 0.281], [0.028, 0.246], [0.043, 0.213]] : null;
+    if (sc) { W(smooth(sc.map(([x, y]) => [x + 0.004, y]), false), 0.0034, 0.55, edge); W(smooth(sc, false), 0.0052, 0.95, pale); }
+  }
   return out;
 }
 
@@ -215,6 +220,7 @@ export function browParts(D, view) {
       draw = [F(shape, col)];
       for (let i = 0; i < 3; i++) draw.push(L(smooth([[-w * 0.8 + i * w * 0.55, -h * 0.4], [-w * 0.55 + i * w * 0.55, h * 0.6]], false), ln, 0.002, { a: 0.6 }));
     }
+    if (D.scar && tag === 'N') draw.push(L(poly([[-w * 0.05, 0.03], [w * 0.2, -0.03]], false), D.skin, 0.0085, { a: 1 }));   // the scar splits the brow
     return { id: `brow${tag}`, pivot: `brow${tag}`, layer: 31 + (tag === 'F' ? 0.01 : 0), outline: false, density: 'face', bulge: 0.4, rim: false, shape, draw };
   };
   if (view === 'side') return [mk('N', bushy ? 0.05 : 0.04)];
@@ -298,7 +304,8 @@ export function hairParts(D, view) {
     P.push({ id, pivot: extra.pivot || 'head', layer: extra.layer ?? 30, density: extra.density || 'face', bulge: extra.bulge ?? 0.75, prof: 1.5, shape, draw, shadow: true, ...(extra.strip ? { strip: extra.strip } : {}), ...(extra.toggle ? { toggle: extra.toggle } : {}) });
   };
   const S = (pts, w, a, col) => ({ pts, w, a, col });
-  const cloth = ['wrap', 'turban', 'veil'].includes(st);
+  const cloth = ['wrap', 'turban', 'veil', 'mitre', 'helmet'].includes(st);
+  const TALL = { turban: 0.03, mitre: 0.15, helmet: -0.004 };
   const wc = D.wrap || '#d9c9a6', wl = ink(wc, 0.7);
   const knotAndTail = (W, dens, tailLayer) => {
     cap('wrapKnot', W.knot.pts, W.knot.lines.map((l) => S(l, 0.0038, 0.75, W.wl)), { fill: shade(wc, 0.96), layer: 30.7, bulge: 0.6, density: dens });
@@ -338,7 +345,7 @@ export function hairParts(D, view) {
     } else if (st === 'bald') {
       cap('hair', [[-0.03, 0.225], [-0.1, 0.25], [-0.16, 0.2], [-0.172, 0.11], [-0.13, 0.03, 0.6], [-0.095, 0.06], [-0.1, 0.13], [-0.075, 0.19], [-0.035, 0.2]], [S([[-0.05, 0.22], [-0.13, 0.21], [-0.155, 0.12]], 0.003)]);
     } else if (cloth) {
-      const tall = st === 'turban' ? 0.03 : 0;
+      const tall = TALL[st] ?? 0;
       cap('hair', [[0.12, 0.25], [0.04, 0.28], [-0.05, 0.27], [-0.06, 0.2], [0.02, 0.22]], [], { fill: c, layer: 29.4, bulge: 0.3 });
       if (st === 'veil') {
         const pts = [[0.04, 0.392], [-0.06, 0.4], [-0.15, 0.36], [-0.205, 0.27], [-0.225, 0.12], [-0.232, -0.06], [-0.24, -0.2], [-0.25, -0.32], [-0.13, -0.33], [-0.05, -0.31], [-0.04, -0.14], [-0.03, -0.02], [0.02, 0.1], [0.06, 0.2], [0.11, 0.26], [0.142, 0.285], [0.13, 0.34], [0.1, 0.375]];
@@ -347,7 +354,7 @@ export function hairParts(D, view) {
         const pts = [[0.155, 0.268], [0.158, 0.31 + tall], [0.13, 0.36 + tall], [0.07, 0.398 + tall * 1.4], [-0.02, 0.41 + tall * 1.4], [-0.1, 0.395 + tall], [-0.165, 0.35], [-0.2, 0.27], [-0.205, 0.17], [-0.18, 0.08], [-0.14, 0.03, 0.6], [-0.09, 0.07], [-0.07, 0.15], [-0.04, 0.2], [0.03, 0.235], [0.1, 0.25]];
         const W = clothWrap('side', wc, tall, [[0.162, 0.268], [0.1, 0.25], [0.03, 0.235], [-0.04, 0.2], [-0.07, 0.15]]);
         cap('wrap', pts, [], { fill: wc, extraDraw: W.draw, bulge: 0.8 });
-        knotAndTail(W, 'face', 18);
+        if (st !== 'helmet') knotAndTail(W, 'face', 18);
         if (D.hairUnder) cap('hairUnder', [[-0.14, 0.05], [-0.1, 0.07], [-0.07, 0.0], [-0.09, -0.08], [-0.13, -0.1], [-0.17, -0.04]], [S([[-0.12, 0.04], [-0.12, -0.06]], 0.003, 0.7)], { fill: D.hairUnder, layer: 27.6 });
       }
     }
@@ -377,11 +384,11 @@ export function hairParts(D, view) {
         const pts = [[0.13, 0.29], [0.11, 0.35], [0.04, 0.395], [-0.06, 0.4], [-0.15, 0.36], [-0.2, 0.27], [-0.22, 0.1], [-0.225, -0.1], [-0.235, -0.3], [-0.06, -0.32], [-0.08, -0.1], [-0.1, 0.05], [-0.12, 0.15], [-0.08, 0.25], [0.0, 0.29], [0.08, 0.285]];
         cap('veil', pts, [S([[0.1, 0.34], [-0.02, 0.37], [-0.15, 0.3], [-0.2, 0.12]], 0.004, 0.8, wl), S([[-0.15, 0.2], [-0.19, 0.0], [-0.2, -0.25]], 0.004, 0.7, wl)], { fill: wc, pivot: 'hairBack', layer: 30, strip: { bend: 'hair', cols: 5, w0: 0.4 }, density: 'face3' });
       } else {
-        const tall = st === 'turban' ? 0.03 : 0;
+        const tall = TALL[st] ?? 0;
         const pts = [[0.15, 0.255], [0.155, 0.31 + tall], [0.12, 0.36 + tall], [0.05, 0.4 + tall], [-0.04, 0.408 + tall], [-0.12, 0.385 + tall], [-0.175, 0.33], [-0.2, 0.25], [-0.2, 0.17], [-0.17, 0.14], [-0.15, 0.2], [-0.1, 0.25], [0.0, 0.27], [0.08, 0.262]];
         const W = clothWrap('threeQuarter', wc, tall, [[0.155, 0.256], [0.08, 0.263], [0.0, 0.27], [-0.1, 0.25], [-0.15, 0.2]]);
         cap('wrap', pts, [], { fill: wc, density: 'face3', extraDraw: W.draw, bulge: 0.8 });
-        knotAndTail(W, 'face3', 18);
+        if (st !== 'helmet') knotAndTail(W, 'face3', 18);
       }
     }
     if (D.headband) cap('headband', [[0.148, 0.258], [0.152, 0.286], [0.0, 0.31], [-0.14, 0.29], [-0.18, 0.25], [-0.17, 0.225], [-0.06, 0.27], [0.06, 0.272]], [], { fill: D.headband, layer: 30.5, density: 'face3', bulge: 0.5 });
@@ -408,12 +415,12 @@ export function hairParts(D, view) {
         const pts = [[0.0, 0.4], [0.12, 0.38], [0.19, 0.3], [0.21, 0.15], [0.22, -0.05], [0.24, -0.32], [0.0, -0.33], [-0.24, -0.32], [-0.22, -0.05], [-0.21, 0.15], [-0.19, 0.3], [-0.12, 0.38]];
         cap('veil', pts, [S([[0.0, 0.38], [0.02, 0.1], [0.0, -0.3]], 0.004, 0.6, wl), S([[0.12, 0.3], [0.15, 0.0], [0.16, -0.28]], 0.004, 0.7, wl), S([[-0.12, 0.3], [-0.15, 0.0], [-0.16, -0.28]], 0.004, 0.7, wl)], { fill: wc, pivot: 'hairBack', layer: 30.2, strip: { bend: 'hair', cols: 6, w0: 0.4 }, density: 'face3' });
       } else {
-        const tall = st === 'turban' ? 0.03 : 0;
+        const tall = TALL[st] ?? 0;
         const half = [[0.0, 0.41 + tall], [0.1, 0.39 + tall], [0.17, 0.33], [0.2, 0.24], [0.19, 0.12], [0.15, 0.06, 0.6]];
         const pts = [...half, [0.0, 0.08], ...mirrorPts(half.slice().reverse())].slice(0, -1);
         const W = clothWrap('back', wc, tall, null);
         cap('wrap', pts, [], { fill: wc, density: 'face3', layer: 30, extraDraw: W.draw, bulge: 0.8 });
-        knotAndTail(W, 'face3', 30.3);
+        if (st !== 'helmet') knotAndTail(W, 'face3', 30.3);
       }
     }
     if (D.headband && !cloth) cap('headband', [[0.17, 0.235], [0.172, 0.262], [0.0, 0.3], [-0.172, 0.262], [-0.17, 0.235], [0.0, 0.272]], [], { fill: D.headband, layer: 30.5, density: 'face3', bulge: 0.5 });

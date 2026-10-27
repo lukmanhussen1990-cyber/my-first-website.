@@ -10,6 +10,7 @@ import { Person, Poses, expr } from './three/rig.js';
 import { U } from './three/materials.js';
 import { STATS as ATLAS_STATS } from './three/characters/atlas.js';
 import * as CAST from './three/characters/cast.js';
+import './three/poses3.js';
 
 const W = 2560, H = 1920;
 const VIEWS = ['side', 'threeQuarter', 'back'];
@@ -18,22 +19,22 @@ const T = 1.3; // sheet time (s)
 // [label, preset, side pose, 3/4 pose, extra]
 const ROWS = [
   [
-    ['METHUSELAH · old', CAST.METHUSELAH_OLD, (t, s) => Poses.oldWalk(t, s), (t, s) => expr(Poses.oldStand(t, s), 'kind', 0.6)],
-    ['METHUSELAH · young', CAST.METHUSELAH_YOUNG, (t, s) => Poses.holdBaby(t, s), (t, s) => expr(Poses.idle(t, s), 'wonder', 0.7), { baby: CAST.BABY_LAMECH }],
-    ['ENOCH', CAST.ENOCH, (t, s) => Poses.walk(t, s, 0.8), (t, s) => expr(Poses.idle(t, s), 'peace', 1)],
+    ['JESUS', CAST.JESUS, (t, s) => Poses.bound(t, s, 0.3), (t, s) => Poses.bound(t, s, 0.8)],
+    ['BARABBAS', CAST.BARABBAS, (t, s) => Poses.shackled(t, s, 1), (t, s) => Poses.shackled(t, s, 0.8)],
+    ['PILATE', CAST.PILATE, (t, s) => Poses.present(t, s, 1), (t, s) => expr(Poses.idle(t, s), 'worry', 0.8)],
   ],
   [
-    ['LAMECH', CAST.LAMECH, (t, s) => Poses.holdBaby(t, s), (t, s) => expr(Poses.idle(t, s), 'happy', 1), { baby: CAST.BABY_NOAH }],
-    ['NOAH · young', CAST.NOAH_YOUNG, (t, s) => Poses.walk(t, s, 1), (t, s) => expr(Poses.lookUp(t, s, 0.8), 'wonder', 0.8)],
-    ['NOAH · 600', CAST.NOAH_OLD, (t, s) => Poses.hammer(t, s, 1.0), (t, s) => expr(Poses.idle(t, s), 'worry', 1)],
+    ['CHIEF PRIEST', CAST.PRIESTS[0], (t, s) => Poses.whisper(t, s, 1), (t, s) => expr(Poses.idle(t, s), 'sly', 0.6)],
+    ['CHIEF PRIEST', CAST.PRIESTS[2], (t, s) => Poses.whisper(t, s, 1), (t, s) => expr(Poses.idle(t, s), 'proud', 0.6)],
+    ['ROMAN SOLDIER', CAST.soldier(0), (t, s) => Poses.idle(t, s), (t, s) => expr(Poses.idle(t, s), 'focus', 0.6)],
   ],
   [
-    ['ADAM', CAST.ADAM, (t, s) => Poses.idle(t, s), (t, s) => expr(Poses.idle(t, s), 'sadness', 1)],
-    ['CITY PERSON', CAST.CITY_PERSON, (t, s) => Poses.walk(t, s, 0.9), (t, s) => expr(Poses.lookUp(t, s, 1), 'wonder', 1)],
-    ['CITY · coat', CAST.CITY_PERSON_COAT, (t, s) => Poses.idle(t, s), (t, s) => expr(Poses.idle(t, s), 'worry', 0.8)],
+    ['BLIND MAN', CAST.BLIND_MAN, (t, s) => expr(Poses.idle(t, s), 'wonder', 1), (t, s) => Poses.lookUp(t, s, 0.8)],
+    ['LAZARUS', CAST.LAZARUS, (t, s) => Poses.walk(t, s, 0.6), (t, s) => expr(Poses.idle(t, s), 'peace', 1)],
+    ['MODERN PERSON', CAST.CITY_PERSON, (t, s) => expr(Poses.idle(t, s), 'sadness', 1), (t, s) => Poses.lookUp(t, s, 1)],
   ],
 ];
-const CROWD_POSES = [(t, s) => Poses.pointLaugh(t, s), (t, s) => Poses.shout(t, s), (t, s) => Poses.pointLaugh(t + 0.3, s), (t, s) => expr(Poses.idle(t, s), 'sly', 1)];
+const CROWD_POSES = [(t, s) => Poses.chant(t, s, 0.5), (t, s) => Poses.chant(t, s, 1), (t, s) => Poses.chant(t + 0.3, s, 0.7), (t, s) => Poses.chant(t, s, 0)];
 
 // ---------------------------------------------------------------- scene build (no GL needed; atlases are canvases)
 function buildSheet() {
@@ -47,25 +48,21 @@ function buildSheet() {
       VIEWS.forEach((v, vi) => {
         const p = new Person({ ...preset, view: v });
         p.root.position.set(gi * (3 * colW + groupGap) + vi * colW, -ri * rowH, 0); scene.add(p.root);
-        const fn = vi === 0 ? pSide : vi === 1 ? p3q : preset === CAST.METHUSELAH_OLD ? (t, s) => Poses.oldStand(t, s) : (t, s) => Poses.idle(t, s);
+        const fn = vi === 0 ? pSide : vi === 1 ? p3q : (t, s) => Poses.idle(t, s);
         if (extra.baby && vi === 0) p.hold(new Person(extra.baby));
         items.push({ p, fn, label: vi === 0 ? label : null, view: v, lx: gi * (3 * colW + groupGap) + colW, ly: -ri * rowH });
       });
     });
   });
   const cy = -3 * rowH;
-  CAST.CROWD.forEach((o, i) => {
+  [...CAST.JERUSALEM_CROWD, CAST.CHILD].forEach((o, i) => {
     const p = new Person({ ...o, view: i % 5 === 3 ? 'threeQuarter' : 'side' });
-    p.root.position.set(i * 0.66, cy, 0); scene.add(p.root);
+    p.root.position.set(i * 0.5, cy, 0); scene.add(p.root);
     items.push({ p, fn: CROWD_POSES[i % CROWD_POSES.length], facing: i % 2 ? -1 : 1 });
   });
-  [CAST.BABY_LAMECH, CAST.BABY_NOAH].forEach((o, i) => {
-    const p = new Person(o); p.root.position.set(12 * 0.66 + 0.4 + i * 0.75, cy, 0); scene.add(p.root);
-    items.push({ p, fn: (t, s) => Poses.baby(t, s, i === 1), baby: true });
-  });
-  const hero = new Person({ ...CAST.METHUSELAH_OLD, view: 'side' });
+  const hero = new Person({ ...CAST.JESUS, view: 'threeQuarter' });
   hero.root.position.set(60, 0, 0); scene.add(hero.root);
-  items.push({ p: hero, fn: (t, s) => expr(Poses.sitOld(t, s, 0.0, 0.25), 'kind', 0.7), hero: true });
+  items.push({ p: hero, fn: (t, s) => Poses.bound(t, s, 0.7), hero: true });
   const buildMs = performance.now() - t0;
   // ---- cameras
   const vw = 1840, vh = H - 140;
@@ -133,9 +130,9 @@ export const CastSheet = () => {
       </ThreeCanvas>
       {label('CAST · rig v3 — SVG parts → atlas, cel-shaded, 5 px outline', 40, 26, 30, '#2a1d14')}
       {label(`${st.persons} figures · build ${(st.buildMs / 1000).toFixed(2)} s (${st.atlases} atlases, ${st.mpx.toFixed(0)} Mpx, ${(st.atlasMs / 1000).toFixed(2)} s) · per frame ${st.frameMs.toFixed(2)} ms for all figures`, 40, 68, 18)}
-      {label('METHUSELAH · close-up (hero atlas ' + st.heroAtlas + '²)', 1866, 486, 18)}
+      {label('JESUS · close-up (hero atlas ' + st.heroAtlas + '²)', 1866, 486, 18)}
       {S.labels.map((l, i) => <div key={i} style={{ position: 'absolute', left: l.x - 240, width: 480, top: l.y, textAlign: 'center', color: '#3a2a1c', font: '700 20px Inter, sans-serif', letterSpacing: '0.1em' }}>{l.txt}<div style={{ font: '500 14px Inter, sans-serif', letterSpacing: '0.2em', opacity: 0.7 }}>SIDE · ¾ · BACK</div></div>)}
-      {label('CROWD · 12 mockers (crowd atlases) + BABY LAMECH / BABY NOAH', S.crowdLabel[0], S.crowdLabel[1], 18)}
+      {label('JERUSALEM CROWD · 16 variants (crowd atlases) + CHILD — the 200+ crowd is instanced from these', S.crowdLabel[0], S.crowdLabel[1], 18)}
     </AbsoluteFill>
   );
 };

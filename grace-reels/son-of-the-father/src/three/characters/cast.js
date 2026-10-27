@@ -115,3 +115,66 @@ export const PRESETS = {
 };
 export const preset = (name, extra = {}) => ({ ...(PRESETS[name] || {}), ...extra });
 export const crowdMember = (i, extra = {}) => ({ ...CROWD[((i % CROWD.length) + CROWD.length) % CROWD.length], ...extra, seed: (extra.seed ?? CROWD[((i % CROWD.length) + CROWD.length) % CROWD.length].seed + Math.floor(i / CROWD.length) * 3) });
+
+// ============================================================ Q.03 SON OF THE FATHER
+// JESUS — the most carefully crafted figure: calm, gentle, strong. Shoulder-length dark brown hair, short beard, warm brown
+// skin, off-white robe with a soft blue-grey sash, simple sandals. No halo, no realistic face: dignity from posture + light.
+// His wrists are bound with a simple rope (a 3D rope loop attached at the hands by the set; Matthew 27:2).
+export const JESUS = {
+  name: 'Jesus', seed: 33, quality: 'hero',
+  height: 1.78, build: 1.0, age: 0.3,
+  skin: '#9a6238', nose: 1.03, noseDroop: 0.1, jaw: 1.0, chin: 1.0,
+  hair: 'long', hairColor: '#3b2717', beard: 'short', beardColor: '#3b2717',
+  brows: 'normal', browColor: '#2c1d12', eyeColor: '#3b2516',
+  outfit: 'robe', cloth: '#ece4d2', sash: '#7f90a2', belt: '#7f90a2', sleeveStyle: 'wide',
+  feet: 'sandal',
+};
+// BARABBAS — rough, strong: wild dark hair, thick scruffy beard, a scar through one eyebrow, torn dusty tunic,
+// heavy iron shackles + chain (3D, attached at the hands by the set). Hard eyes that later soften.
+export const BARABBAS = {
+  name: 'Barabbas', seed: 15, quality: 'hero',
+  height: 1.84, build: 1.2, age: 0.3,
+  skin: '#8a5530', nose: 1.12, noseDroop: 0.3, jaw: 1.16, chin: 1.05, browRidge: 0.9,
+  hair: 'curly', hairColor: '#17100b', beard: 'medium', beardColor: '#17100b',
+  brows: 'normal', browColor: '#120c08', eyeColor: '#2a180e', scar: true,
+  outfit: 'tunic', cloth: '#7a6650', worn: true, patches: ['#6a5a46', '#857059'], patchColors: ['#5e4f3d', '#8d7a60'], belt: '#3a281a',
+  bareArms: true, feet: 'bare',
+};
+// PILATE — Roman governor: short hair, clean-shaven, white toga with a deep red border, uneasy.
+export const PILATE = {
+  name: 'Pilate', seed: 26, quality: 'main',
+  height: 1.79, build: 1.04, age: 0.42,
+  skin: '#c4916c', nose: 1.14, jaw: 1.03, chin: 1.0,
+  hair: 'short', hairColor: '#5a4636', beard: 'none', brows: 'normal', browColor: '#4a3828',
+  outfit: 'robe', cloth: '#f3eee4', trim: '#8a1f1f', shawl: '#f6f1e8', belt: '#8a1f1f', sleeveStyle: 'wide', bracelet: '#c9a24a',
+  feet: 'sandal',
+};
+// CHIEF PRIESTS — tall head coverings, rich layered robes in blue, white and gold; they whisper to the crowd (Mark 15:11).
+const PR = (i, o) => ({ name: `Chief priest ${i + 1}`, seed: 700 + i * 13, quality: 'main', feet: 'sandal', outfit: 'robe', sleeveStyle: 'wide', hair: 'mitre', ...o });
+export const PRIESTS = [
+  PR(0, { height: 1.8, build: 1.06, age: 0.6, skin: '#a2693d', wrap: '#f1ece2', headband: '#c9a24a', beard: 'long', hairColor: '#8f8a83', beardColor: '#8f8a83', cloth: '#2f4a7a', sash: '#c9a24a', belt: '#c9a24a', shawl: '#f1ece2', trim: '#c9a24a' }),
+  PR(1, { height: 1.74, build: 1.12, age: 0.5, skin: '#8f5a33', wrap: '#e9e2d4', headband: '#2f4a7a', beard: 'medium', hairColor: '#33251b', beardColor: '#33251b', cloth: '#f0eadc', sash: '#2f4a7a', belt: '#c9a24a', shawl: '#2f4a7a', trim: '#c9a24a' }),
+  PR(2, { height: 1.83, build: 0.98, age: 0.7, skin: '#b47a49', wrap: '#2f4a7a', headband: '#c9a24a', beard: 'long', hairColor: '#cfc8bc', beardColor: '#d9d3c8', cloth: '#3a5a8a', sash: '#f0eadc', belt: '#c9a24a', shawl: '#c9a24a', trim: '#f0eadc' }),
+];
+// ROMAN SOLDIERS — red tunics, simple iron caps, spears held upright (no violence).
+export const soldier = (i) => ({
+  name: `Soldier ${i + 1}`, seed: 800 + i * 7, quality: 'main',
+  height: 1.78 + 0.06 * ((i * 37) % 5) / 4, build: 1.08 + 0.08 * ((i * 11) % 3) / 2, age: 0.25,
+  skin: ['#c28b58', '#a2693d', '#b47a49', '#8f5a33'][i % 4], nose: 1.05, jaw: 1.08,
+  hair: 'helmet', wrap: '#8d939b', hairColor: '#2b2119', beard: i % 3 === 0 ? 'stubble' : 'none', stubble: '#3a2a1e',
+  outfit: 'tunic', cloth: '#9a2a22', belt: '#4a3222', strap: '#5a3c22', bareArms: true, bracelet: '#8d939b',
+  feet: 'sandal', prop: 'spear',
+});
+// the memory vignettes (S5): a blind man whose eyes open, a child lifted up, Lazarus in white grave cloth
+export const BLIND_MAN = { name: 'Blind man', seed: 41, quality: 'main', height: 1.7, build: 0.95, age: 0.55, skin: '#a2693d', hair: 'short', hairColor: '#6a5c50', beard: 'medium', beardColor: '#6a5c50', outfit: 'robe', cloth: '#8a7a64', belt: '#5a4632', feet: 'bare' };
+export const CHILD = { name: 'Child', seed: 42, quality: 'main', height: 1.1, kid: true, skin: '#b47a49', hair: 'curly', hairColor: '#231a14', outfit: 'tunic', cloth: '#c9a36a', belt: '#6e4a2e', feet: 'bare' };
+export const LAZARUS = { name: 'Lazarus', seed: 43, quality: 'main', height: 1.76, build: 0.98, age: 0.35, skin: '#a2693d', hair: 'veil', wrap: '#f3f0ea', beard: 'short', beardColor: '#3a2a1e', hairColor: '#3a2a1e', outfit: 'robe', cloth: '#f3f0ea', belt: '#e3ded4', sleeveStyle: 'wide', feet: 'bare' };
+// a Jerusalem crowd: the Q.02 crowd presets plus women, elders and kids, re-coloured for the city
+const JC = (i, o) => ({ name: `Crowd ${i + 1}`, seed: 5100 + i * 19, quality: 'crowd', feet: 'sandal', ...o });
+export const JERUSALEM_CROWD = [
+  ...CROWD.map((c, i) => ({ ...c, name: `Crowd ${i + 1}`, seed: 5100 + i * 19 })),
+  JC(12, { height: 1.64, build: 0.9, skin: '#a2693d', hair: 'veil', wrap: '#d9c08e', hairColor: '#231a14', outfit: 'robe', cloth: '#7a4a6a', belt: '#e3d6bb', lashes: true }),
+  JC(13, { height: 1.77, build: 1.05, skin: '#7d4c2c', hair: 'wrap', wrap: '#e3d6bb', beard: 'long', hairColor: '#8f8a83', beardColor: '#8f8a83', age: 0.65, outfit: 'robe', cloth: '#5a6e3a', belt: '#c99a3a' }),
+  JC(14, { height: 1.2, build: 0.9, kid: true, skin: '#b47a49', hair: 'short', hairColor: '#231a14', outfit: 'tunic', cloth: '#3c6b66', belt: '#d0b07a' }),
+  JC(15, { height: 1.81, build: 1.14, skin: '#8f5a33', hair: 'turban', wrap: '#c06a2a', beard: 'short', hairColor: '#231a14', outfit: 'tunic', cloth: '#d9b46a', belt: '#5a3c22', bareArms: true }),
+];

@@ -372,6 +372,12 @@ export function propParts(kind, D) {
     const pts = [[-0.02, top - 0.02], [-0.004, top + 0.03], [0.022, top + 0.02], [0.026, top - 0.03], [0.016, top - 0.07], [0.017, 0.2], [0.02, 0.02, 1.3], [0.015, -0.1], [0.012, bot + 0.02], [0.008, bot, 0.5], [-0.01, bot, 0.5], [-0.013, bot + 0.02], [-0.016, -0.1], [-0.018, 0.1, 1.2], [-0.016, top - 0.07]];
     const shape = smooth(pts, true);
     add('staff', shape, { fill: wood, list: [L(smooth([[0.002, top], [0.004, 0.3], [0.0, -0.3], [0.002, bot + 0.05]], false), woodD, 0.0035, { a: 0.55 }), L(smooth([[0.008, top - 0.05], [0.009, 0.1]], false), woodL, 0.003, { a: 0.4 }), L(ellipse(0.002, top - 0.02, 0.012, 0.016), woodD, 0.003, { a: 0.6 })] }, { tip: [0, bot], top: [0, top] });
+  } else if (kind === 'spear') {
+    const top = 1.02, bot = -0.95, iron = '#8a9098';
+    const pts = [[-0.012, top - 0.12], [0.012, top - 0.12], [0.013, 0.2], [0.014, 0.0], [0.012, bot + 0.02], [0.008, bot, 0.5], [-0.009, bot, 0.5], [-0.012, bot + 0.02], [-0.014, 0.0], [-0.013, 0.2]];
+    add('shaft', smooth(pts, true), { fill: wood, list: [L(smooth([[0.002, top - 0.14], [0.003, 0.3], [0.0, -0.3], [0.002, bot + 0.05]], false), woodD, 0.003, { a: 0.5 })] });
+    const tip = smooth([[0.0, top + 0.17, 0.4], [0.03, top + 0.03], [0.022, top - 0.06], [0.012, top - 0.13], [-0.012, top - 0.13], [-0.022, top - 0.06], [-0.03, top + 0.03]], true);
+    add('tip', tip, { fill: iron, list: [L(poly([[0.0, top + 0.15], [0.0, top - 0.1]], false), lift(iron, 0.5), 0.004, { a: 0.8 }), F(poly([[-0.016, top - 0.12], [0.016, top - 0.12], [0.016, top - 0.16], [-0.016, top - 0.16]]), shade(iron, 0.7))] }, { layer: 0.05, bulge: 0.5, tip: [0, bot], top: [0, top + 0.17] });
   } else if (kind === 'hammer' || kind === 'adze') {
     const len = 0.32, wd = 0.014, iron = '#5c6066';
     const hs = smooth([[-0.04, -0.045 + wd], [len, -0.045 + wd * 0.9], [len, -0.045 - wd * 0.9], [-0.04, -0.045 - wd], [-0.05, -0.045, 0.6]].map((p) => [...p.slice(0, 2), p[2] ?? 0.4]), true);

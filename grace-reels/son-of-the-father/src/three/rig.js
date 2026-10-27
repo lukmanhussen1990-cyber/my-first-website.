@@ -86,7 +86,7 @@ function designOf(o) {
   if (DESIGNS.has(d.key)) return DESIGNS.get(d.key);
   DESIGNS.set(d.key, d); return d;
 }
-const PROP_KINDS = ['cane', 'staff', 'hammer', 'adze', 'lamp', 'bowl', 'cup', 'fruitGood', 'fruitBad'];
+const PROP_KINDS = ['cane', 'staff', 'spear', 'hammer', 'adze', 'lamp', 'bowl', 'cup', 'fruitGood', 'fruitBad'];
 const PROP_D = { seed: 3, caneLen: 0.84, wood: '#7a5232', clay: '#a8683e' };
 let _propAtlas = null, _propParts = null;
 function propAtlas() {
@@ -488,7 +488,7 @@ export class Person {
       if ((P.propHand === 'B') !== (this.prop.parent === J['armB.hand'])) this._mountProp();
       const A = P.propHand === 'B' ? aB : aF;
       const k = v === 'back' ? 0 : v === 'threeQuarter' ? 0.85 : 1;
-      const upright = this.propKind === 'cane' || this.propKind === 'staff';
+      const upright = this.propKind === 'cane' || this.propKind === 'staff' || this.propKind === 'spear';
       const up = P.propUp ?? (upright && P.propRot == null ? 0.05 + 0.12 * A[0] : null);
       if (up != null) this.prop.rotation.z = up - (-(P.lean || 0) + (A[0] + A[1]) * k + (A[2] || 0));
       else this.prop.rotation.z = P.propRot ?? 0;
