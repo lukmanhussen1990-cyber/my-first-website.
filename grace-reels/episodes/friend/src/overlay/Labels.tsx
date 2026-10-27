@@ -9,12 +9,11 @@ import {C, SAFE, SANS} from './theme';
 type LabelDef = {text: string; from: number; to: number; anchor: string; dx: number; dy: number};
 
 export const LABELS: LabelDef[] = [
-	{text: 'Enoch · Genesis 5:24', from: B.enochLabel, to: B.enochIntoLight + 0.1, anchor: 'enoch', dx: -60, dy: -170},
-	{text: 'Elijah', from: B.elijahLabel, to: B.elijahLabel + 2.6, anchor: 'elijah', dx: 40, dy: -150},
-	{text: 'Elisha', from: B.elishaLabel, to: B.elishaLabel + 2.3, anchor: 'elisha', dx: -150, dy: -140},
-	{text: 'Parted them both asunder · 2 Kings 2:11', from: B.asunderLabel, to: B.between + 1.1, anchor: 'gap', dx: -320, dy: -190},
-	{text: 'Matthew 17:3', from: B.matthewLabel, to: B.eliasLabel - 0.25, anchor: 'summit', dx: -110, dy: -150},
-	{text: 'Elias = Elijah', from: B.eliasLabel, to: B.jesusShine + 0.7, anchor: 'elijah8', dx: 30, dy: -160},
+	{text: 'Matthew 26:15', from: B.labelDeal, to: B.silver + 0.6, anchor: 'palm', dx: -150, dy: -330},
+	{text: 'The price of a slave', from: B.labelSlave, to: B.s8 - 0.05, anchor: 'chain', dx: -40, dy: -250},
+	{text: 'Matthew 26:47', from: B.labelGarden, to: B.swordsUp + 0.6, anchor: 'judas9', dx: -60, dy: -190},
+	{text: 'The same night', from: B.labelSameNight, to: B.warmTakesOver + 1.4, anchor: 'sameNight', dx: -40, dy: -260},
+	{text: 'Friend of sinners · Luke 7:34', from: B.labelSinners, to: B.right + 0.35, anchor: 'feastJesus', dx: -200, dy: -230},
 ];
 
 const TAG_H = 46;
@@ -23,7 +22,7 @@ const estWidth = (s: string) => s.length * 18.5 + 34;
 // Where an anchor is on screen right now (handles transitions by following the dominant shot).
 const anchorAt = (shots: ShotDef[], transitions: Transition[], t: number, key: string): {x: number; y: number} | null => {
 	const a = activeShots(shots, transitions, t);
-	const order = a.b && a.mix > 0.5 ? [a.b, a.a] : [a.a, a.b];
+	const order = a.b && a.wB > 0.5 ? [a.b, a.a] : [a.a, a.b];
 	for (const s of order) {
 		const p: Vec3 | undefined = s?.anchors?.(t)?.[key];
 		if (s && p) return projectToScreen(s.camera(t), t, p);

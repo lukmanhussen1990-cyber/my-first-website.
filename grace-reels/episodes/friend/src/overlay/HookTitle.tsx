@@ -1,4 +1,5 @@
-// The opening punch: "2 MEN NEVER DIED", then it flies up into the caption spot as the first caption arrives.
+// The opening punch: "HE ANSWERED WITH ONE WORD", then it flies up into the caption spot as the
+// first caption arrives.
 import {easeInOut, easeOutBack, seg, smooth} from '../lib/ease';
 import {B} from '../lib/timeline';
 import {C, SAFE, SERIF} from './theme';
@@ -11,9 +12,9 @@ export const HookTitle: React.FC<{t: number}> = ({t}) => {
 	const drift = 1 + 0.035 * seg(t, B.hookTitleIn + 0.4, B.hookTitleFly);
 	// fly toward the caption block (top-left), shrinking
 	const cx = (SAFE.left + SAFE.right) / 2;
-	const cy = 760;
+	const cy = 1240;
 	const tx = (SAFE.left + 300 - cx) * fly;
-	const ty = (300 - cy) * fly;
+	const ty = (330 - cy) * fly;
 	const scale = punch * drift * (1 - 0.5 * fly);
 	const blur = 8 * (1 - smooth(inP / 0.6)) + 4 * fly;
 	const opacity = smooth(inP / 0.4) * (1 - smooth((fly - 0.35) / 0.65));
@@ -27,16 +28,16 @@ export const HookTitle: React.FC<{t: number}> = ({t}) => {
 				textAlign: 'center',
 				fontFamily: SERIF,
 				fontWeight: 700,
-				lineHeight: 0.95,
-				letterSpacing: '0.03em',
+				lineHeight: 0.98,
+				letterSpacing: '0.02em',
 				whiteSpace: 'nowrap',
 				opacity,
 				filter: blur > 0.05 ? `blur(${blur}px)` : undefined,
-				textShadow: '0 6px 30px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5)',
+				textShadow: '0 6px 30px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.55)',
 			}}
 		>
-			<div style={{fontSize: 132, color: C.gold}}>2 MEN</div>
-			<div style={{fontSize: 118, color: C.cream}}>NEVER DIED</div>
+			<div style={{fontSize: 124, color: C.cream}}>HE ANSWERED</div>
+			<div style={{fontSize: 112, color: C.gold}}>WITH ONE WORD</div>
 		</div>
 	);
 };

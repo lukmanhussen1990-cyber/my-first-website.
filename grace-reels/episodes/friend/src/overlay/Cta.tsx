@@ -1,23 +1,11 @@
-// S10 call to action and S11 end card (2D screens drawn over a dark background).
+// S15 call to action (drawn over the glowing basin) and S16 end card (on a dark warm background).
 import {clamp, easeOut, easeOutBack, seg, smooth} from '../lib/ease';
 import {hash} from '../lib/random';
 import {B, COMMENT_TEXT} from '../lib/timeline';
-import {Badge, FACES} from './Badge';
 import {Logo} from './Logo';
 import {C, SAFE, SANS, SERIF} from './theme';
 
-const CTA_IN = B.s10 - 0.15;
-const END_IN = B.s11;
-
-// Faint gold rings slowly widening from the centre of the badges.
-const Rings: React.FC<{t: number; cx: number; cy: number}> = ({t, cx, cy}) => (
-	<svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
-		{Array.from({length: 7}, (_, i) => {
-			const r = 140 + ((i * 120 + (t - CTA_IN) * 28) % 840);
-			return <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={C.gold} strokeWidth={1.5} opacity={0.12 * (1 - r / 980)} />;
-		})}
-	</svg>
-);
+const END_IN = B.s16;
 
 const Heart: React.FC<{x: number; y: number; size: number; color: string; opacity: number; rot: number}> = ({x, y, size, color, opacity, rot}) => (
 	<svg width={size} height={size} viewBox="0 0 24 24" style={{position: 'absolute', left: x - size / 2, top: y - size / 2, opacity, transform: `rotate(${rot}deg)`}}>
@@ -25,43 +13,66 @@ const Heart: React.FC<{x: number; y: number; size: number; color: string; opacit
 	</svg>
 );
 
-export const CallToAction: React.FC<{t: number}> = ({t}) => {
-	const inP = seg(t, CTA_IN, CTA_IN + 0.5);
-	const out = seg(t, END_IN - 0.25, END_IN + 0.1);
-	if (inP <= 0 || out >= 1) return null;
-	const badgeY = 900;
-	const typed = clamp(Math.floor((t - B.typingStart) * B.typingCps), 0, COMMENT_TEXT.length);
-	const cursorOn = Math.floor(t * 2.2) % 2 === 0 || (t > B.typingStart && t < B.typingEnd);
-	const boxIn = seg(t, B.typingStart - 0.5, B.typingStart - 0.05);
+// A YES / NO answer chip: pops in with a little overshoot and a ring that widens once.
+const Choice: React.FC<{t: number; at: number; x: number; label: string; yes: boolean}> = ({t, at, x, label, yes}) => {
+	const p = seg(t, at - 0.04, at + 0.32);
+	if (p <= 0) return null;
+	const s = easeOutBack(p, 2.4);
+	const ring = clamp((t - at) / 0.6);
+	const w = 300;
 	return (
-		<div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, opacity: smooth(inP) * (1 - out)}}>
-			<div style={{position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 85% 60% at 50% 46%, #3a2719 0%, #2a1c13 45%, #1a120c 100%)'}} />
-			<Rings t={t} cx={540} cy={badgeY} />
-			{/* the two men, complete */}
-			{(['enoch', 'elijah'] as const).map((k, i) => {
-				const p = seg(t, CTA_IN + 0.15 + i * 0.12, CTA_IN + 0.6 + i * 0.12);
-				const x = i === 0 ? 330 : 750;
-				return (
-					<div key={k} style={{position: 'absolute', left: x - 110, top: badgeY - 110 + 40 * (1 - easeOutBack(p, 1.3)), opacity: smooth(p)}}>
-						<Badge face={FACES[k]} size={220} fill={5} appear={1} />
-						<div style={{position: 'absolute', top: 236, left: '50%', transform: 'translateX(-50%)', fontFamily: SERIF, fontStyle: 'italic', fontWeight: 600, fontSize: 44, color: C.cream, whiteSpace: 'nowrap'}}>
-							{FACES[k].name}
-						</div>
-						<div style={{position: 'absolute', top: 296, left: '50%', transform: 'translateX(-50%)', fontFamily: SANS, fontWeight: 600, fontSize: 17, letterSpacing: '0.2em', color: C.gold, opacity: 0.8, whiteSpace: 'nowrap'}}>
-							{i === 0 ? 'GENESIS 5:24' : '2 KINGS 2:11'}
-						</div>
-					</div>
-				);
-			})}
-			<div style={{position: 'absolute', left: 0, width: 1080, top: badgeY - 214, textAlign: 'center', fontFamily: SANS, fontWeight: 700, fontSize: 24, letterSpacing: '0.24em', color: C.gold, opacity: smooth(seg(t, CTA_IN + 0.3, CTA_IN + 0.8))}}>
-				2 MEN WHO NEVER DIED
+		<div style={{position: 'absolute', left: x - w / 2, top: CHOICE_Y - 56, width: w, height: 112, transform: `scale(${s})`, opacity: smooth(p / 0.4)}}>
+			<div style={{position: 'absolute', inset: -14 * ring, borderRadius: 70, border: `3px solid ${yes ? C.gold : C.cream}`, opacity: 0.6 * (1 - ring)}} />
+			<div
+				style={{
+					position: 'absolute',
+					inset: 0,
+					borderRadius: 56,
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					gap: 18,
+					background: yes ? C.gold : 'rgba(20,16,13,0.82)',
+					border: yes ? 'none' : `3px solid ${C.cream}`,
+					boxSizing: 'border-box',
+					boxShadow: '0 14px 34px rgba(0,0,0,0.45)',
+				}}
+			>
+				<svg width={44} height={44} viewBox="0 0 24 24">
+					{yes ? (
+						<path d="M5 12.5 L10 17.5 L19 7.5" stroke={C.ink} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+					) : (
+						<path d="M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5" stroke={C.cream} strokeWidth={3.2} strokeLinecap="round" fill="none" />
+					)}
+				</svg>
+				<span style={{fontFamily: SANS, fontWeight: 700, fontSize: 46, letterSpacing: '0.14em', color: yes ? C.ink : C.cream}}>{label}</span>
 			</div>
-			{/* the comment box typing a question */}
+		</div>
+	);
+};
+
+const CHOICE_Y = 1040;
+const BOX_Y = 1250;
+
+// S15: the question is in the captions; YES and NO pop in as they are said, then a comment types itself
+// and hearts float up from it. The picture behind is the glowing basin and towel.
+export const CallToAction: React.FC<{t: number}> = ({t}) => {
+	const out = seg(t, END_IN - 0.25, END_IN + 0.1);
+	if (t < B.yes - 0.1 || out >= 1) return null;
+	const typed = [...COMMENT_TEXT].slice(0, clamp(Math.floor((t - B.typingStart) * B.typingCps), 0, [...COMMENT_TEXT].length)).join('');
+	const cursorOn = Math.floor(t * 2.2) % 2 === 0 || (t > B.typingStart && t < B.typingEnd);
+	const boxIn = seg(t, B.typingStart - 0.45, B.typingStart - 0.05);
+	const tap = Math.exp(-Math.max(0, t - B.typingEnd) * 6) * (t > B.typingEnd ? 1 : 0);
+	return (
+		<div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, opacity: 1 - out}}>
+			<Choice t={t} at={B.yes} x={(SAFE.left + SAFE.right) / 2 - 170} label="YES" yes />
+			<Choice t={t} at={B.no} x={(SAFE.left + SAFE.right) / 2 + 170} label="NO" yes={false} />
+			{/* the comment box typing an answer */}
 			<div
 				style={{
 					position: 'absolute',
 					left: SAFE.left + 6,
-					top: 1250 + 30 * (1 - easeOut(boxIn)),
+					top: BOX_Y + 30 * (1 - easeOut(boxIn)),
 					width: SAFE.right - SAFE.left - 12,
 					height: 112,
 					borderRadius: 56,
@@ -73,20 +84,27 @@ export const CallToAction: React.FC<{t: number}> = ({t}) => {
 				}}
 			>
 				<div style={{width: 64, height: 64, borderRadius: 32, marginLeft: 24, marginRight: 20, background: `radial-gradient(circle at 35% 35%, #ffd27a, ${C.gold} 55%, #b9822a)`, flex: 'none'}} />
-				<div style={{fontFamily: SERIF, fontStyle: 'italic', fontWeight: 500, fontSize: 46, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden'}}>
-					{COMMENT_TEXT.slice(0, typed)}
+				<div style={{flex: 1, fontFamily: SERIF, fontStyle: 'italic', fontWeight: 500, fontSize: 46, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden'}}>
+					{typed}
 					<span style={{display: 'inline-block', width: 3, height: 46, marginLeft: 4, verticalAlign: '-6px', background: C.ink, opacity: cursorOn ? 0.9 : 0}} />
+				</div>
+				{/* send arrow, tapped when the comment is done */}
+				<div style={{width: 64, height: 64, borderRadius: 32, marginRight: 24, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: t > B.typingEnd ? C.deepGold : 'rgba(30,26,22,0.12)', transform: `scale(${1 - 0.15 * tap})`}}>
+					<svg width={30} height={30} viewBox="0 0 24 24">
+						<path d="M4 12 L20 4 L14 20 L11.5 13 Z" fill={t > B.typingEnd ? C.cream : 'rgba(30,26,22,0.45)'} />
+					</svg>
 				</div>
 			</div>
 			{/* hearts floating up from the box */}
 			{Array.from({length: 9}, (_, k) => {
-				const born = B.hearts + k * 0.2;
+				const born = B.hearts + k * 0.18;
 				const age = t - born;
 				if (age < 0 || age > 2.2) return null;
-				const x = 760 + (hash(91, k) - 0.5) * 300 + Math.sin(age * 3 + k) * 26;
-				const y = 1260 - age * 260;
+				// up the right edge, clear of the YES / NO words
+				const x = 905 + (hash(91, k) - 0.5) * 90 + Math.sin(age * 3 + k) * 18;
+				const y = BOX_Y - age * 240;
 				const size = 34 + hash(92, k) * 26;
-				return <Heart key={k} x={x} y={y} size={size * (0.6 + 0.4 * easeOutBack(clamp(age / 0.3), 2))} color={k % 3 === 0 ? C.cream : k % 3 === 1 ? C.gold : '#e8a3a0'} opacity={clamp(age / 0.15) * (1 - clamp((age - 1.4) / 0.8))} rot={(hash(93, k) - 0.5) * 30} />;
+				return <Heart key={k} x={x} y={y} size={size * (0.6 + 0.4 * easeOutBack(clamp(age / 0.3), 2))} color={k % 3 === 0 ? C.cream : k % 3 === 1 ? C.gold : '#e8a3a0'} opacity={clamp(age / 0.15) * (1 - clamp((age - 1.3) / 0.7))} rot={(hash(93, k) - 0.5) * 30} />;
 			})}
 		</div>
 	);

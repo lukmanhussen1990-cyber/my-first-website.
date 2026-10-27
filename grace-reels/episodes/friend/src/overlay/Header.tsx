@@ -24,7 +24,7 @@ export const Header: React.FC<{opacity: number}> = ({opacity}) => {
 				<span style={text}>Grace in Motion</span>
 			</div>
 			<div style={{position: 'absolute', right: 1080 - SAFE.right, top: 150, transform: 'translateY(-50%)', opacity}}>
-				<span style={text}>They Never Died</span>
+				<span style={text}>Friend</span>
 			</div>
 		</>
 	);

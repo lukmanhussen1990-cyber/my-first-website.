@@ -71,7 +71,7 @@ const split = (text: string) => {
 	return m ? {lead: m[1], core: m[2], tail: m[3]} : {lead: '', core: text, tail: ''};
 };
 
-const keyPop = (x: number) => (x <= 0 ? 1 : x < 0.07 ? 1 + 0.2 * smooth(x / 0.07) : 1 + 0.2 * Math.exp(-(x - 0.07) * 9));
+const keyPop = (x: number) => (x <= 0 ? 1 : x < 0.07 ? 1 + 0.12 * smooth(x / 0.07) : 1 + 0.12 * Math.exp(-(x - 0.07) * 9));
 
 const WordView: React.FC<{w: Word; t: number; instant: boolean}> = ({w, t, instant}) => {
 	let opacity = 0;
@@ -142,10 +142,12 @@ export const Captions: React.FC<{t: number}> = ({t}) => {
 	);
 };
 
-// Soft warm haze band behind the captions (like the reference), following caption presence.
+// Soft warm haze band behind the captions, following caption presence. `strength` deepens it over bright
+// pictures (the feast, the dawn) so the cream words always read.
 export const CaptionScrim: React.FC<{t: number; strength?: number}> = ({t, strength = 1}) => {
-	const a = captionPresence(t) * strength;
+	const a = captionPresence(t);
 	if (a <= 0.001) return null;
+	const k = (x: number) => Math.min(0.85, x * strength).toFixed(3);
 	return (
 		<div
 			style={{
@@ -155,8 +157,7 @@ export const CaptionScrim: React.FC<{t: number; strength?: number}> = ({t, stren
 				width: 1080,
 				height: 560,
 				opacity: a,
-				background:
-					'radial-gradient(ellipse 72% 50% at 40% 46%, rgba(52,26,6,0.26) 0%, rgba(52,26,6,0.16) 50%, rgba(52,26,6,0) 100%)',
+				background: `radial-gradient(ellipse 76% 46% at 42% 34%, rgba(46,22,6,${k(0.28)}) 0%, rgba(46,22,6,${k(0.18)}) 55%, rgba(46,22,6,0) 100%)`,
 			}}
 		/>
 	);

@@ -56,6 +56,8 @@ export const PourStream: React.FC<{
 					}`,
 				transparent: true,
 				depthWrite: false,
+				// the ribbon's winding flips with the direction of the pour: draw both faces
+				side: THREE.DoubleSide,
 			}),
 		[],
 	);
@@ -95,7 +97,8 @@ export const WaterSurface: React.FC<{
 	light?: THREE.ColorRepresentation;
 	color?: THREE.ColorRepresentation;
 	renderOrder?: number;
-}> = ({position, radius, t, hits, fill, light = '#ffd9a0', color = '#7d97a0', renderOrder = 610}) => {
+	aspect?: number; // if set, the surface is drawn facing the camera as an ellipse (matches a painted basin)
+}> = ({position, radius, t, hits, fill, light = '#ffd9a0', color = '#7d97a0', renderOrder = 610, aspect}) => {
 	const mat = useMemo(
 		() =>
 			new THREE.ShaderMaterial({
@@ -150,6 +153,12 @@ export const WaterSurface: React.FC<{
 		if (h) v.set(h.at, h.x, h.z, h.amp);
 		else v.set(0, 0, 0, 0);
 	});
+	if (aspect !== undefined)
+		return (
+			<mesh position={[position[0], position[1] + 0.02 * fill * aspect, position[2]]} scale={[1, aspect, 1]} material={mat} renderOrder={renderOrder} visible={fill > 0.001}>
+				<circleGeometry args={[1, 48]} />
+			</mesh>
+		);
 	return (
 		<mesh position={[position[0], position[1] + 0.02 * fill, position[2]]} rotation-x={-Math.PI / 2} material={mat} renderOrder={renderOrder} visible={fill > 0.001}>
 			<circleGeometry args={[1, 48]} />

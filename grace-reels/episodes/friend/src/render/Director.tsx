@@ -17,21 +17,36 @@ const KIND_ID: Record<string, number> = {cut: 0, dissolve: 1, haze: 2, cloak: 3,
 
 export type ShotRender = {shot: ShotDef; t: number};
 
-// Which shots are on screen at time t, and how far along a transition we are.
+// Which shots are on screen at time t, and how far along a transition we are. `wB` is how much of the
+// picture belongs to shot B (the grade and the label anchors follow it); for a split it is B's share of
+// the screen (B is right of the divider).
 export const activeShots = (shots: ShotDef[], transitions: Transition[], t: number) => {
 	for (const tr of transitions) {
 		const a = tr.at - tr.dur / 2;
 		const b = tr.at + tr.dur / 2;
 		if (tr.kind !== 'cut' && t >= a && t < b) {
-			const mix = tr.kind === 'split' && tr.divider ? tr.divider(t) : (t - a) / tr.dur;
-			return {a: shots.find((s) => s.id === tr.from)!, b: shots.find((s) => s.id === tr.to)!, mix, kind: tr.kind, slant: tr.slant ?? 0};
+			const split = tr.kind === 'split' && tr.divider;
+			const mix = split ? tr.divider!(t) : (t - a) / tr.dur;
+			const from = shots.find((s) => s.id === tr.from);
+			const to = shots.find((s) => s.id === tr.to);
+			if (from && to) return {a: from, b: to as ShotDef | null, mix, wB: split ? 1 - mix : mix, kind: tr.kind, slant: tr.slant ?? 0};
 		}
 	}
+	// Outside a blend: of the shots whose windows hold t, each transition between two of them picks the
+	// earlier one before its time and the later one after it (so cuts land exactly on their beat).
+	let live = shots.filter((x) => t >= x.start && t < x.end);
+	for (const tr of transitions) {
+		if (live.length < 2) break;
+		const from = live.find((x) => x.id === tr.from);
+		const to = live.find((x) => x.id === tr.to);
+		if (from && to) live = live.filter((x) => x !== (t >= tr.at ? from : to));
+	}
 	const s =
-		shots.find((x) => t >= x.start && t < x.end) ??
-		// outside every shot: hold the nearest real shot (insets have start < 0 and are never picked)
-		[...shots].filter((x) => x.start >= 0).sort((p, q) => Math.min(Math.abs(t - p.start), Math.abs(t - p.end)) - Math.min(Math.abs(t - q.start), Math.abs(t - q.end)))[0];
-	return {a: s, b: null as ShotDef | null, mix: 0, kind: 'cut' as const, slant: 0};
+		live[0] ??
+		// outside every shot: hold the nearest real shot (the cover has start < 0 and is never picked)
+		[...shots].filter((x) => x.start >= 0).sort((p, q) => Math.min(Math.abs(t - p.start), Math.abs(t - p.end)) - Math.min(Math.abs(t - q.start), Math.abs(t - q.end)))[0] ??
+		shots[0];
+	return {a: s, b: null as ShotDef | null, mix: 0, wB: 0, kind: 'cut' as Transition['kind'], slant: 0};
 };
 
 export const gradeAt = (shot: ShotDef | null, t: number): Grade => ({...DEFAULT_GRADE, ...(shot?.grade?.(t) ?? {})});
@@ -114,9 +129,10 @@ export const Director: React.FC<{
 						c = mix(b, a * (1. - smoothstep(0., 0.5, m) * 0.85), mask);
 					}
 					else if (uKind < 4.5) {
-						float up = smoothstep(0., 0.5, m), down = smoothstep(0.45, 1., m);
-						vec3 w = vec3(1.6, 1.45, 1.18);
-						c = mix(mix(a, w, up), b, down) + w * (1.0 - abs(m - 0.5) * 2.0) * 0.25;
+						// a warm bloom of light between the shots (never a full white frame)
+						float up = smoothstep(0., 0.5, m) * 0.4, down = smoothstep(0.4, 1., m);
+						vec3 w = vec3(1.25, 1.05, 0.78);
+						c = mix(mix(a, w, up), b, down) + w * (1.0 - abs(m - 0.5) * 2.0) * 0.12;
 					}
 					else if (uKind < 5.5) {
 						float s = sin(3.14159 * m);
@@ -263,7 +279,7 @@ export const Director: React.FC<{
 	}, [size.width, size.height, lite]);
 
 	const active = activeShots(shots, transitions, t);
-	const grade = active.b ? lerpGrade(gradeAt(active.a, t), gradeAt(active.b, t), active.mix) : gradeAt(active.a, t);
+	const grade = active.b ? lerpGrade(gradeAt(active.a, t), gradeAt(active.b, t), active.wB) : gradeAt(active.a, t);
 
 	useFrame(() => {
 		const cam = camera as THREE.PerspectiveCamera;
