@@ -44,6 +44,7 @@ const MAGENTA_LINE = 'BACKGROUND: plain solid flat magenta (#FF00FF) filling all
 // Characters and props are drawn in neutral light so the same art works by candlelight, torchlight and daylight.
 const LIGHT = {
 	neutral: 'LIGHT: soft, even, neutral light from the upper left, so the art can be re-lit later in animation; no colored light, no strong shadows, no glow, no rim light, no cast shadows.',
+	sky: 'LIGHT: night. The moon is the only light: a soft, cool silver glow around it that fades into the deep blue sky, and a faint warm orange glow low on the far left edge, as if from distant torches.',
 	garden: 'LIGHT: night. Cool blue-silver moonlight from the upper right outlines the leaves, trunks and rocks; deep blue-violet shadows (#1E2236, #2B2440, never pure black); a faint warm orange glow low on the far left, as if from distant torches.',
 	room: 'LIGHT: night interior lit only by small clay oil lamps: warm amber-gold pools of light on the walls and floor (#C9894E fading to #7A4E2E), soft dark warm-brown corners (never pure black), and a cool deep-blue night outside the window.',
 	deal: 'LIGHT: dim. One small oil lamp on the table makes a warm pool of light; everything else falls into deep warm-brown shadow.',
@@ -107,7 +108,7 @@ const assets = [
 		use: 'S5 the pouch glints, S6 counting, S7 the stack, S8 the spinning coin',
 		lines: ['ATTACHED: our approved JUDAS character sheet (match his leather coin pouch exactly) and the approved JESUS sheet as a STYLE MATCH only. Do not draw any person.',
 			'IMAGE: a props sheet of silver coins and a pouch, every item a separate flat paper-cut piece with wide empty space around it: (1) one large silver coin seen face-on, a plain round coin with a simple raised rim and a plain simple pattern of dots (no face, no portrait, no letters), silver-grey (#B9BDC2) with one darker grey tone (#7F858C); (2) the same coin seen exactly edge-on, a thin silver bar; (3) the same coin tilted at a 45-degree angle; (4) a neat stack of about ten coins seen from the side; (5) a small heap of about thirty coins on a flat surface, seen from a slight high angle; (6) the leather coin pouch from Judas\'s belt (#8A5A32), closed with a drawstring; (7) the same pouch open with a few coins spilling out.'], avoid: 'prop'},
-	{file: 'bg_garden_sky.png', size: 'P', bg: 'full', light: 'garden', prio: 'MUST', attach: ['style_ref_2.png'],
+	{file: 'bg_garden_sky.png', size: 'P', bg: 'full', light: 'sky', prio: 'MUST', attach: ['style_ref_2.png'],
 		use: 'S1, S9–S13 night sky with the big moon',
 		lines: [A.refs(1, 'flat, low-poly look and soft haze'),
 			'IMAGE: the SKY layer of a night olive garden, filling the whole image: a deep blue night sky (#1B2440 at the top fading to #32456B near the bottom), a big, bright, pale cream full moon (#F3ECDF) in the upper right third with a soft halo of light around it, a few small simple stars, and thin, soft low-poly clouds lit silver at their edges near the bottom. Calm, cinematic and quiet. Sky only.'], avoid: 'sky'},

@@ -321,7 +321,7 @@ ATTACHED: 1 style reference screenshot. Copy only its flat, low-poly look and so
 
 IMAGE: the SKY layer of a night olive garden, filling the whole image: a deep blue night sky (#1B2440 at the top fading to #32456B near the bottom), a big, bright, pale cream full moon (#F3ECDF) in the upper right third with a soft halo of light around it, a few small simple stars, and thin, soft low-poly clouds lit silver at their edges near the bottom. Calm, cinematic and quiet. Sky only.
 
-LIGHT: night. Cool blue-silver moonlight from the upper right outlines the leaves, trunks and rocks; deep blue-violet shadows (#1E2236, #2B2440, never pure black); a faint warm orange glow low on the far left, as if from distant torches.
+LIGHT: night. The moon is the only light: a soft, cool silver glow around it that fades into the deep blue sky, and a faint warm orange glow low on the far left edge, as if from distant torches.
 
 BACKGROUND: a complete, opaque picture that fills the whole image (no transparency).
 
