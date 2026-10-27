@@ -503,10 +503,12 @@ export function makeShackles({ links = 22, sag = 0.34 } = {}) {
   return {
     group: g, cuffs, chain,
     // attached: wrists a, b (world, already pushed toward the camera), sway (m) for a little swing
-    set(a, b, sway = 0, toCam = null) {
+    // dirA / dirB: forearm directions (the cuff rings sit around them)
+    set(a, b, sway = 0, toCam = null, dirA = null, dirB = null) {
       A.copy(a); B.copy(b);
       cuffs[0].position.copy(A); cuffs[1].position.copy(B);
-      if (toCam) { const yaw = Math.atan2(toCam.x, toCam.z); cuffs[0].rotation.set(0, yaw, 0.35); cuffs[1].rotation.set(0, yaw, -0.35); }
+      if (dirA && dirB) { cuffs[0].quaternion.setFromUnitVectors(Y, dirA); cuffs[1].quaternion.setFromUnitVectors(Y, dirB); }
+      else if (toCam) { const yaw = Math.atan2(toCam.x, toCam.z); cuffs[0].rotation.set(0, yaw, 0.35); cuffs[1].rotation.set(0, yaw, -0.35); }
       const span = A.distanceTo(B);
       const sg = Math.max(0.08, sag - span * 0.25);
       for (let i = 0; i <= links; i++) {
@@ -518,7 +520,7 @@ export function makeShackles({ links = 22, sag = 0.34 } = {}) {
     },
     // dropped at age (s) after release from wrists a0/b0: falls as it hung (slow-motion gravity g0), then settles in a
     // loose pile on groundY over 0.35 s (a small bounce)
-    fall(age, a0, b0, { groundY = 0.03, g0 = 9.8 * 0.3, toCam = null } = {}) {
+    fall(age, a0, b0, { groundY = 0.03, g0 = 9.8 * 0.3, toCam = null, dirA = null, dirB = null } = {}) {
       const drop = 0.5 * g0 * Math.max(0, age) ** 2;
       const low = Math.min(a0.y, b0.y) - 0.3;                      // lowest point of the hanging chain
       const tf = Math.sqrt(2 * Math.max(0.01, low - groundY) / g0);
@@ -536,7 +538,10 @@ export function makeShackles({ links = 22, sag = 0.34 } = {}) {
       [a0, b0].forEach((w, j) => {
         const c = cuffs[j], e = pts[j ? links : 0];
         c.position.set(lerp(w.x, e.x, ls), Math.max(groundY + 0.03, lerp(w.y - drop, groundY + 0.03, ls)) + bounce, lerp(w.z, e.z, ls));
-        c.rotation.set(0, yaw + j * 0.7 * ls, (j ? -0.35 : 0.35) * (1 - ls));
+        const flat = q2.setFromEuler(new THREE.Euler(0, yaw + j * 0.7, (j ? -0.15 : 0.15)));
+        const dd = j ? dirB : dirA;
+        if (dd) { q.setFromUnitVectors(Y, dd); c.quaternion.copy(q).slerp(flat, Math.max(ls, clamp(age / 1.2) * 0.4)); }
+        else c.quaternion.copy(flat);
       });
     },
   };
@@ -544,11 +549,12 @@ export function makeShackles({ links = 22, sag = 0.34 } = {}) {
 
 // ---------- the rope on Jesus' wrists (a few coils + a short hanging end) ----------
 export function makeRope() {
-  const g = new THREE.Group();
-  const m = new THREE.MeshLambertMaterial({ color: '#b39a6a', flatShading: true });
-  for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.013, 5, 12).rotateX(Math.PI / 2), m); t.position.y = (i - 1) * 0.024; t.rotation.z = (i - 1) * 0.12; g.add(t); }
-  const end = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.22, 5).translate(0, -0.11, 0), m); end.position.set(0.03, -0.03, 0.05); end.rotation.z = 0.25; g.add(end);
+  const g = new THREE.Group(), coils = new THREE.Group(); g.add(coils);
+  const m = new THREE.MeshLambertMaterial({ color: '#d2b47c', emissive: '#3a2a12', emissiveIntensity: 0.6, flatShading: true });
+  for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 5, 12).rotateX(Math.PI / 2), m); t.position.y = (i - 1) * 0.02; t.rotation.z = (i - 1) * 0.1; coils.add(t); }
+  const end = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.007, 0.2, 5).translate(0, -0.1, 0), m); g.add(end);
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  g.userData.coils = coils; g.userData.end = end;
   return g;
 }
 

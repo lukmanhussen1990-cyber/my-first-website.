@@ -4,34 +4,29 @@
 import React from 'react';
 import { Img, staticFile } from 'remotion';
 import { plan } from '../lib/planInstance.js';
-import { C, L, SAFE, SOMESAY, SERIF, SANS, ease, pop, shake, clamp, lerp, layoutWords, popFit, measure, pretty, mixHex } from './theme.js';
-import { timelineCover } from './timeline.jsx';
+import { C, L, SAFE, SERIF, SANS, ease, pop, shake, clamp, lerp, layoutWords, popFit, measure, pretty, mixHex } from './theme.js';
+import { fullCardCover } from './fullcard.jsx';
 
 const E = plan.ev;
 const DUR = plan.dur;
-const S5 = plan.shots.find((s) => s.id === 'S5');
 
 // ------------------------------------------------------------------ caption blocks + display windows
-// these blocks are shown by a card / note instead (1 Pet 3:20, 2 Pet 3:9 cards; the S10 "some say" note)
-const CARD_HIDDEN = new Set(['B11#0', 'B13#0', 'B15#0']);
-const HIDDEN_AT = { 'B11#0': SOMESAY.t0, 'B13#0': E.card320, 'B15#0': E.card39 };
+// these blocks are shown by a card instead (the Matthew 27:21 quote, the shouted "Barabbas" slam, the full-screen
+// Matthew 27:26 card, the 1 Peter 3:18 card)
+const HIDDEN_AT = { 'B07#1': E.card2721, 'B08#1': E.shout, 'B13#0': E.card2726, 'B16#0': E.card318, 'B16#1': E.card318 };
 export const BLOCKS = (() => {
   const out = [];
   for (const b of Object.values(plan.beats)) b.blocks.forEach((text, k) => {
     const id = `${b.id}#${k}`;
-    let words = plan.words.filter((w) => w.block === id);
-    if (id === 'B03#0') words = words.filter((w) => w.start < E.card524);   // "His father, Enoch," then the Gen 5:24 card takes over
-    if (words.length) out.push({ id, beat: b.id, scene: b.scene, words, hidden: CARD_HIDDEN.has(id) });
+    const words = plan.words.filter((w) => w.block === id);
+    if (words.length) out.push({ id, beat: b.id, scene: b.scene, words, hidden: id in HIDDEN_AT });
   });
   out.forEach((bl, i) => {
     bl.t0 = bl.words[0].start - 0.12;
     const end = bl.words[bl.words.length - 1].end; const nx = out[i + 1];
     bl.t1 = nx && nx.words[0].start - 0.12 - end < 1.3 ? nx.words[0].start - 0.12 : end + 0.7;
-    // a caption never crossfades over the card / note that follows it: it is gone as that arrives
+    // a caption never crossfades over the card that follows it: it is gone as that arrives
     if (nx && nx.hidden) bl.t1 = Math.min(bl.t1, HIDDEN_AT[nx.id] + 0.04);
-    if (bl.id === 'B03#0') bl.t1 = E.card524 + 0.04;
-    if (bl.id === 'B10#0') bl.t1 = Math.min(bl.t1, E.silence + 0.2);   // clear frame for the silence + raindrop
-    if (bl.id === 'B05#0') bl.t0 = Math.max(bl.t0, S5.t0 + 0.14);       // after the parchment has mostly blown away (still before "Now")
     bl.t1 = Math.min(bl.t1, E.endCard - 0.2);
   });
   return out.filter((bl) => !bl.hidden);
@@ -80,53 +75,45 @@ export const Header = ({ t, ink = 0 }) => {
     <div style={{ position: 'absolute', right: 80, top: L.headerY - 15, height: 30, display: 'flex', alignItems: 'center', gap: 16, opacity: clamp(o) }}>
       <div style={{ width: 46, height: 1.5, background: `linear-gradient(90deg, rgba(244,199,102,0), ${gold})` }} />
       <div style={{ font: `600 21px ${SANS}`, letterSpacing: '0.3em', color: cream, whiteSpace: 'nowrap', textShadow: ink > 0.5 ? 'none' : '0 1px 8px rgba(0,0,0,0.6)', opacity: 0.92 }}>
-        <span style={{ color: gold, fontWeight: 700 }}>Q.02</span>
-        <span style={{ margin: '0 0.35em', color: gold }}>·</span>THE OLDEST MAN
+        <span style={{ color: gold, fontWeight: 700 }}>Q.03</span>
+        <span style={{ margin: '0 0.35em', color: gold }}>·</span>SON OF THE FATHER
       </div>
     </div>
   );
 };
 
-// ------------------------------------------------------------------ hook title: "969 YEARS. THEN THE FLOOD."
-// On screen from frame 0, punched at hookHit, flies into the caption spot (left-aligned, where the first
-// caption appears) at hookOut and hands over to that caption; the last 0.5 s of the reel brings it back
-// exactly as frame 0 (seamless loop).
-const HOOK = { cy: 770, n: 400, years: 116, flood: 98 };
+// ------------------------------------------------------------------ hook title: "ONLY ONE / WALKS FREE"
+// Huge over the Jesus hero shot from frame 0 (below His face), punched at hookHit; at hookOut it flies up into the
+// caption spot and dissolves there (the word-timed captions run from the first word above it). The last 0.5 s of the
+// reel bring it back exactly as frame 0 (seamless loop).
+const HOOK = { cy: 1250, a: 132, b: 168 };
 export const HookTitle = ({ t, frame }) => {
   const back = ease.sine(clamp((t - (DUR - 0.5)) / 0.45));
   let tt = t, extraO = 1, extraS = 0;
   if (back > 0) { tt = 0; extraO = back; extraS = 0.06 * (1 - back); }
-  const fly = ease.inOut((tt - E.hookOut) / 0.42);
-  if (tt > E.hookOut + 0.44 && back <= 0) return null;
-  const w1 = measure(`700 ${HOOK.n}px ${SERIF}`, '969') * 1.05, wy = measure(`700 ${HOOK.years}px ${SERIF}`, 'YEARS.') + 6 * HOOK.years * 0.22;
-  const w2 = measure(`italic 700 ${HOOK.flood}px ${SERIF}`, 'THEN THE FLOOD.') * 1.04;
-  const M = Math.max(w1, w2, wy, 1);
-  const fit = Math.min(1, 940 / M);
+  const fly = ease.inOut((tt - E.hookOut) / 0.5);
+  if (tt > E.hookOut + 0.52 && back <= 0) return null;
+  const wa = measure(`700 ${HOOK.a}px ${SERIF}`, 'ONLY ONE') + 8 * HOOK.a * 0.12, wb = measure(`italic 700 ${HOOK.b}px ${SERIF}`, 'WALKS FREE') * 1.03;
+  const fit = Math.min(1, 950 / Math.max(wa, wb, 1));
   const s0 = tt - E.hookHit;
   const [sx, sy] = s0 > 0 && s0 < 0.3 ? shake(frame, 3, 13 * (1 - s0 / 0.3) ** 2) : [0, 0];
   const punch = 1 + (s0 >= 0 ? pop(tt, E.hookHit, 0.075, 19, 8) : 0);
   const flash = s0 >= 0 ? Math.exp(-5 * s0) : 0;
   const drift = 1 + 0.014 * Math.min(tt, E.hookOut);
-  // subtitles run from the very first word (in the caption band above the title), so the title does not fly into
-  // the caption spot any more: it settles back a little and dissolves in place
-  const sc = (fit * punch * drift + extraS) * lerp(1, 0.86, fly);
-  const cx = 0;
-  const cy = lerp(HOOK.cy, HOOK.cy + 40, fly);
-  const dis = clamp((fly - 0.05) / 0.85);
+  const sc = (fit * punch * drift + extraS) * lerp(1, 0.42, fly);
+  const cy = lerp(HOOK.cy, L.capTop + 120, fly);
+  const dis = clamp((fly - 0.25) / 0.75);
   const o = extraO * (1 - ease.sine(dis));
-  const shadow = '0 10px 40px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.55)';
+  const shadow = '0 10px 40px rgba(0,0,0,0.65), 0 2px 6px rgba(0,0,0,0.6)';
   return (
-    <div style={{ position: 'absolute', left: 0, width: 1080, top: cy, transform: `translate(${sx + cx}px, ${sy}px) translateY(-50%) scale(${sc})`, transformOrigin: '540px 50%', opacity: o, textAlign: 'center', filter: dis > 0.01 ? `blur(${(10 * dis).toFixed(1)}px)` : 'none' }}>
-      {/* soft dark halo so the title reads on any frame */}
-      <div style={{ position: 'absolute', left: -60, right: -60, top: -120, bottom: -120, background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6,5,10,0.6) 0%, rgba(6,5,10,0.3) 50%, rgba(6,5,10,0) 100%)' }} />
-      <div style={{ position: 'relative', font: `700 ${HOOK.n}px/0.82 ${SERIF}`, color: mixHex(C.gold, '#fff4d4', flash * 0.7), whiteSpace: 'nowrap',
-        textShadow: `0 0 ${36 + 60 * flash}px rgba(255,180,70,${0.5 + 0.45 * flash}), ${shadow}` }}>969</div>
-      {/* the full stop is pulled in so the 0.22em tracking does not leave it floating */}
-      <div style={{ position: 'relative', font: `700 ${HOOK.years}px/1 ${SERIF}`, color: '#fbf1dc', letterSpacing: '0.22em', marginTop: 18, marginRight: '-0.22em', whiteSpace: 'nowrap', textShadow: shadow }}>YEARS<span style={{ marginLeft: '-0.16em' }}>.</span></div>
-      <div style={{ position: 'relative', height: 2, width: 560, margin: '30px auto 26px', background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.95), rgba(244,199,102,0))' }}>
+    <div style={{ position: 'absolute', left: 0, width: 1080, top: cy, transform: `translate(${sx}px, ${sy}px) translateY(-50%) scale(${sc})`, transformOrigin: '540px 50%', opacity: o, textAlign: 'center', filter: dis > 0.01 ? `blur(${(8 * dis).toFixed(1)}px)` : 'none' }}>
+      <div style={{ position: 'absolute', left: -80, right: -80, top: -140, bottom: -140, background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(8,5,3,0.62) 0%, rgba(8,5,3,0.32) 50%, rgba(8,5,3,0) 100%)' }} />
+      <div style={{ position: 'relative', font: `700 ${HOOK.a}px/1 ${SERIF}`, color: '#fbf1dc', letterSpacing: '0.12em', marginRight: '-0.12em', whiteSpace: 'nowrap', textShadow: shadow }}>ONLY ONE</div>
+      <div style={{ position: 'relative', height: 2, width: 600, margin: '26px auto 20px', background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.95), rgba(244,199,102,0))' }}>
         <div style={{ position: 'absolute', left: '50%', top: -7, width: 14, height: 14, transform: 'translateX(-50%) rotate(45deg)', background: C.gold, boxShadow: '0 0 14px rgba(255,190,80,0.9)' }} />
       </div>
-      <div style={{ position: 'relative', font: `italic 700 ${HOOK.flood}px/1 ${SERIF}`, color: '#fbf1dc', letterSpacing: '0.03em', whiteSpace: 'nowrap', textShadow: shadow }}>THEN THE FLOOD.</div>
+      <div style={{ position: 'relative', font: `italic 700 ${HOOK.b}px/0.95 ${SERIF}`, color: mixHex(C.gold, '#fff4d4', flash * 0.7), letterSpacing: '0.02em', whiteSpace: 'nowrap',
+        textShadow: `0 0 ${36 + 60 * flash}px rgba(255,180,70,${0.5 + 0.45 * flash}), ${shadow}` }}>WALKS FREE</div>
     </div>
   );
 };
@@ -154,7 +141,7 @@ export const Captions = ({ t }) => {
   const isKw = (j) => !!bl.words[j].kw;
   return (
     <>
-      <div style={{ position: 'absolute', left: 0, width: 1080, top: top - 78, height: h + 150, background: band, opacity: o * (light ? 1 - 0.8 * timelineCover(t) : 1),
+      <div style={{ position: 'absolute', left: 0, width: 1080, top: top - 78, height: h + 150, background: band, opacity: o * (light ? 1 - 0.8 * fullCardCover(t) : 1),
         WebkitMaskImage: hmask, maskImage: hmask }} />
       <div style={{ position: 'absolute', left: L.capX, top, width: L.capW, height: h, opacity: o, transform: `translateY(${(1 - fin) * 14}px)`, fontVariantNumeric: 'lining-nums' }}>
         {lay.items.map((it, i) => {

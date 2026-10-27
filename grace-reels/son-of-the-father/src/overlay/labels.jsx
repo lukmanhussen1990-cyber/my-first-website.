@@ -1,13 +1,11 @@
 // World-anchored labels with leader lines (projected every frame with the engine's own camera via
-// cameraShot), the S10 "some say" note (screen-fixed, it carries the spoken B11 line) and the S2 life-ribbon.
-// Draw-on: the dot pops, the leader grows, the pill slides out of the line. Pills are clamped inside
-// the IG safe zone and kept clear of the captions band and the math tracker.
+// cameraShot). Draw-on: the dot pops, the leader grows, the pill slides out of the line. Pills are clamped inside
+// the IG safe zone and kept clear of the captions band and the name card under it.
 import React from 'react';
 import { plan } from '../lib/planInstance.js';
 import { anchorAt } from '../lib/director.js';
 import { shotAt } from '../plan.js';
-import { C, L, SERIF, SANS, SAFE, SOMESAY, ease, pop, clamp, lerp, hash01, measure, layoutWords, popFit, pretty, project } from './theme.js';
-import { TRACK } from './tracker.jsx';
+import { C, L, SERIF, SANS, SAFE, ease, pop, clamp, lerp, hash01, measure, project } from './theme.js';
 
 const E = plan.ev;
 const beat = (id) => plan.beats[id];
@@ -15,20 +13,18 @@ const S = Object.fromEntries(plan.shots.map((s) => [s.id, s]));
 
 // kind: 'pill' (NAME · REF on one line), 'name' (big serif name + small gold line), 'quote' (gold ref + quote line)
 export const LABELS = [
-  { id: 'name', shots: ['S2'], set: 'hill', anchor: 'methuselahHead', from: E.nameLabel, to: S.S2.t1 - 0.12, kind: 'name',
-    a: 'METHUSELAH', b: '969 YEARS · GENESIS 5:27', dx: 170, dy: -210, fallback: [540, 980], yMax: 1230 },   // stays above the life-ribbon
-  { id: 'g525', shots: ['S5'], set: 'family', anchor: 'methuselah', from: beat('B06').start + 0.15, to: S.S5.t1 - 0.1, kind: 'pill',
-    a: 'METHUSELAH', b: 'GENESIS 5:25', dx: 150, dy: -190, fallback: [540, 1180] },
-  { id: 'g528', shots: ['S6'], set: 'family', anchor: 'lamech', from: beat('B07').start + 0.12, to: S.S6.t1 - 0.1, kind: 'pill',
-    a: 'LAMECH', b: 'GENESIS 5:28–29', dx: -150, dy: -190, fallback: [540, 1180] },
-  { id: 'g76', shots: ['S7'], set: 'ark', anchor: 'noah', from: beat('B08').start + 0.08, to: S.S7.t1 - 0.06, kind: 'pill',
-    a: 'NOAH', b: 'GENESIS 7:6', dx: 150, dy: -190, fallback: [540, 1180] },
-  // across the S8 -> S9 cut the pill glides from its S8 spot to its S9 spot and the leader re-grows to the lamp;
-  // it leaves as the flame dies (the near silence gets a clean frame)
-  { id: 'year', shots: ['S8', 'S9'], set: 'hill', anchor: { S8: 'n969', S9: 'lamp' }, from: E.yearLabel, to: E.lampOut + 0.3, kind: 'pill',
-    a: 'THE YEAR HE DIED', b: 'GENESIS 5:27', dx: 0, dy: 300, fallback: [540, 1240] },
-  { id: 'heaven', shots: ['S12'], set: 'ark', anchor: 'sky', from: E.floodCrack + 0.3, to: S.S12.t1 - 0.1, kind: 'quote', yMin: 300,
-    a: 'GENESIS 7:11', b: '“…THE WINDOWS OF HEAVEN WERE OPENED.”', dx: 0, dy: 210, fallback: [540, 560] },
+  { id: 'jesus', shots: ['S1'], set: 'court', anchor: 'jesusHead', from: Math.max(E.jesusLabel, E.hookOut + 0.45), to: S.S1.t1 - 0.15, kind: 'name',
+    a: 'JESUS', b: 'OF NAZARETH · JOHN 19:19', dx: 0, dy: 0, fallback: [540, 1330], yMin: 1250 },
+  { id: 'barabbas', shots: ['S2'], set: 'court', anchor: 'barabbasHead', from: E.barabbasLabel, to: S.S2.t1 - 0.12, kind: 'name',
+    a: 'BARABBAS', b: 'A NOTABLE PRISONER · MATTHEW 27:16', dx: 0, dy: 0, fallback: [540, 1330], yMin: 1250 },
+  { id: 'passover', shots: ['S3'], set: 'court', anchor: 'crowd', from: E.passover, to: S.S3.t1 - 0.12, kind: 'pill',
+    a: 'PASSOVER CUSTOM', b: 'JOHN 18:39', dx: 0, dy: 160, fallback: [540, 1240] },
+  { id: 'pilate', shots: ['S4'], set: 'court', anchor: 'pilateHead', from: E.pilateLabel, to: S.S4.t1 - 0.1, kind: 'pill',
+    a: 'PONTIUS PILATE', b: 'MATTHEW 27:2', dx: 0, dy: -170, fallback: [540, 900] },
+  { id: 'riot', shots: ['S6'], set: 'riot', anchor: 'barabbas', from: E.riotLabel, to: S.S6.t1 - 0.12, kind: 'pill',
+    a: 'THE INSURRECTION', b: 'MARK 15:7', dx: 0, dy: 330, fallback: [540, 1300] },
+  { id: 'whisper', shots: ['S7b'], set: 'court', anchor: 'whisper', from: E.whisper + 0.3, to: S.S7b.t1 - 0.1, kind: 'pill', yMin: 1000,
+    a: 'WHISPERS IN THE CROWD', b: 'MARK 15:11', dx: 0, dy: 260, fallback: [540, 1240] },
 ];
 
 const PILL_FS = 26, PILL_A = `700 ${PILL_FS}px ${SANS}`, PILL_LS = 0.16;
@@ -56,8 +52,7 @@ function place(Lb, shot, t) {
   const name = typeof Lb.anchor === 'string' ? Lb.anchor : Lb.anchor[shot.id];
   const A = name ? project(shot, t, anchorAt(plan, Lb.set, name, t)) : null;
   const { w, h } = geom(Lb);
-  const trackOn = t > TRACK.t0 && t < TRACK.t1;
-  const yMin = Lb.yMin ?? (trackOn ? 800 : 660);
+  const yMin = Lb.yMin ?? L.labelMinY;
   // anchors inside the captions band / tracker zone get no dot or leader (never draw over them)
   const useA = !!(A && A.on && A.y > yMin - 10 && A.y < 1560);
   let cx = useA ? A.x + Lb.dx : Lb.fallback[0], cy = useA ? A.y + Lb.dy : Lb.fallback[1];
@@ -149,113 +144,3 @@ function Plate({ Lb, w, h, t, a }) {
     </div>
   );
 }
-
-// ------------------------------------------------------------------ S10: "SOME SAY" note
-// It IS the caption of B11 (that caption block is hidden), sitting in the caption spot: every word comes
-// in on its spoken time (next word ghosted, as in the captions), so the quote never runs ahead of the
-// voice, and "(meaning debated)" arrives together with the first word of the meaning.
-const clean = (s) => s.replace(/[^A-Za-z0-9']/g, '').toUpperCase();
-const B11W = plan.words.filter((w) => w.block === 'B11#0');
-const iHis = B11W.findIndex((w) => clean(w.w) === 'HIS'), iWhen = B11W.findIndex((w) => clean(w.w) === 'WHEN');
-const iDies = B11W.findIndex((w) => clean(w.w) === 'DIES');
-const SS = { x: 130, w: 820, top: L.capTop + 14, leadFS: 44, qFS: 54, qLH: 66, qLS: 0.05 };
-const quoteItems = (from, to) => B11W.slice(from, to).map((w) => { const tx = pretty(w.w).toUpperCase(); return { text: tx, font: `700 ${SS.qFS}px ${SERIF}`, extra: tx.length * SS.qFS * SS.qLS }; });
-const lay = (items) => layoutWords(items, { maxW: SS.w, lineH: SS.qLH, align: 'center', space: SS.qFS * 0.26 });
-
-export const SomeSay = ({ t }) => {
-  const a = SOMESAY.t0, z = SOMESAY.t1;
-  if (t < a - 0.02 || t > z + 0.05) return null;
-  // measured in the frame (fonts are loaded by then)
-  const Q1 = lay(quoteItems(iWhen, iDies + 1)), Q2 = lay(quoteItems(iDies + 1, B11W.length));
-  const lead = layoutWords(B11W.slice(iHis, iWhen).map((w) => ({ text: pretty(w.w), font: `italic 600 ${SS.leadFS}px ${SERIF}` })), { maxW: SS.w, lineH: 54, align: 'center', space: SS.leadFS * 0.24 });
-  const o = clamp((t - a) / 0.25) * clamp((z - t) / 0.3);
-  const kK = ease.out((t - (B11W[0].start - 0.06)) / 0.35);
-  const wq = B11W[iWhen].start;
-  const qK = ease.out((t - (wq - 0.08)) / 0.4);
-  const nextI = B11W.findIndex((w) => t < w.start - 0.03);
-  const yLead = SS.top + 40, yQ = yLead + 62, yQual = yQ + 2 * SS.qLH + 10;
-  // one word: ghost (40 %) while it is the next word, then lands with a 6 px rise
-  const word = (i, it, top, style) => {
-    const w = B11W[i];
-    const k = clamp((t - (w.start - 0.03)) / 0.12);
-    const wo = k > 0 ? lerp(0.4, 1, k) : i === nextI ? 0.4 : 0;
-    if (wo <= 0) return null;
-    return <span key={i} style={{ position: 'absolute', left: SS.x + it.x, top: top + it.y, font: it.font, lineHeight: `${style.lh}px`, whiteSpace: 'nowrap', opacity: wo,
-      transform: `translateY(${(1 - k) * 6}px)`, ...style.css(w, k, it) }}>{it.text}</span>;
-  };
-  const quoteCss = (items) => (w, k, it) => {
-    if (!w.kw) return { color: '#f6efe2', letterSpacing: `${SS.qLS}em`, textShadow: '0 2px 12px rgba(0,0,0,0.65)' };
-    const j = items.indexOf(it);
-    const pf = popFit(items, j, { maxAmp: 0.2, edgeL: SS.x - SAFE.x0, edgeR: SAFE.igX - SS.x });
-    const kp = k > 0 ? pop(t, w.start, pf.amp, 13, 6) : 0;
-    return { color: k > 0 ? C.gold : '#f6efe2', letterSpacing: `${SS.qLS}em`, transform: `translateY(${(1 - k) * 6}px) scale(${1 + kp})`, transformOrigin: `${pf.ox.toFixed(1)}% 62%`,
-      textShadow: k > 0 ? '0 0 22px rgba(255,180,70,0.6), 0 2px 10px rgba(0,0,0,0.6)' : '0 2px 12px rgba(0,0,0,0.65)' };
-  };
-  return (
-    <div style={{ position: 'absolute', inset: 0, opacity: o }}>
-      {/* warm soft shade that fades to nothing at its edges (no slab) */}
-      <div style={{ position: 'absolute', left: 40, width: 1000, top: SS.top - 70, height: yQual + 44 + 70 - (SS.top - 70), opacity: ease.out((t - a) / 0.4),
-        background: 'radial-gradient(closest-side, rgba(14,11,9,0.66), rgba(14,11,9,0.42) 62%, rgba(14,11,9,0) 100%)' }} />
-      {/* kicker */}
-      <div style={{ position: 'absolute', left: 0, width: 1080, top: SS.top, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, opacity: kK, transform: `translateY(${(1 - kK) * 6}px)` }}>
-        <div style={{ width: 70 * kK, height: 1.5, background: 'linear-gradient(90deg, rgba(244,199,102,0), rgba(244,199,102,0.9))' }} />
-        <div style={{ font: `700 22px ${SANS}`, letterSpacing: '0.34em', marginRight: '-0.34em', color: C.gold, textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>SOME SAY</div>
-        <div style={{ width: 70 * kK, height: 1.5, background: 'linear-gradient(90deg, rgba(244,199,102,0.9), rgba(244,199,102,0))' }} />
-      </div>
-      {/* "his name can mean" */}
-      {lead.items.map((it, j) => word(iHis + j, it, yLead, { lh: 54, css: () => ({ color: 'rgba(246,239,226,0.9)', textShadow: '0 2px 12px rgba(0,0,0,0.65)' }) }))}
-      {/* the meaning, in two lines */}
-      {Q1.items.map((it, j) => word(iWhen + j, it, yQ, { lh: SS.qLH, css: quoteCss(Q1.items) }))}
-      {Q2.items.map((it, j) => word(iDies + 1 + j, it, yQ + SS.qLH, { lh: SS.qLH, css: quoteCss(Q2.items) }))}
-      {/* always with the meaning */}
-      <div style={{ position: 'absolute', left: 0, width: 1080, top: yQual, textAlign: 'center', font: `italic 600 36px/44px ${SERIF}`, color: 'rgba(246,239,226,0.86)', opacity: qK,
-        transform: `translateY(${(1 - qK) * 6}px)`, textShadow: '0 2px 10px rgba(0,0,0,0.6)' }}>(meaning debated)</div>
-    </div>
-  );
-};
-
-// ------------------------------------------------------------------ S2: life-ribbon (0 ... 969), synced to "He lived 969 years"
-const RB = { x0: 110, x1: 930, y: 1372 };
-const W969 = plan.word('B02', '969');
-export const LifeRibbon = ({ t, frame }) => {
-  const a = E.ribbon - 0.05, end = S.S2.t1 - 0.05;
-  if (t < a || t > end) return null;
-  const dEnd = W969.end;                                  // the line reaches 969 as the spoken "969" ends
-  const p = ease.inOut((t - E.ribbon) / (dEnd - E.ribbon));
-  const o = clamp((t - a) / 0.15) * clamp((end - t) / 0.2);
-  const hx = lerp(RB.x0, RB.x1, p);
-  const yrs = Math.round(969 * p);
-  const done = t >= dEnd;
-  const popK = pop(t, dEnd, 0.3, 13, 6);
-  const shimmer = ((t - dEnd) / 1.2) % 1;
-  const ticks = Array.from({ length: 10 }, (_, i) => i * 100);
-  const X = (yr) => lerp(RB.x0, RB.x1, yr / 969);
-  return (
-    <div style={{ position: 'absolute', inset: 0, opacity: o }}>
-      {/* soft shadow band so it reads over the close-up */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: RB.y - 90, height: 180, background: 'linear-gradient(180deg, rgba(5,6,12,0), rgba(5,6,12,0.38) 50%, rgba(5,6,12,0))' }} />
-      {/* ticks */}
-      {ticks.map((yr, i) => {
-        const x = X(yr); const vis = clamp((hx - x) / 30);
-        return <div key={i} style={{ position: 'absolute', left: x - 0.75, top: RB.y + 8, width: 1.5, height: yr % 500 === 0 ? 16 : 9, background: 'rgba(255,226,160,0.7)', opacity: vis }} />;
-      })}
-      <div style={{ position: 'absolute', left: RB.x0 - 50, width: 100, top: RB.y + 28, textAlign: 'center', font: `700 21px ${SANS}`, letterSpacing: '0.18em', textIndent: '0.18em', color: 'rgba(255,236,200,0.8)', opacity: clamp((t - a) / 0.3), textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>BORN</div>
-      <div style={{ position: 'absolute', left: X(500) - 50, width: 100, top: RB.y + 28, textAlign: 'center', font: `600 21px ${SANS}`, letterSpacing: '0.1em', color: 'rgba(255,236,200,0.65)', opacity: clamp((hx - X(500)) / 40), textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>500</div>
-      {/* the line: wide glow, glow, core */}
-      <div style={{ position: 'absolute', left: RB.x0, top: RB.y - 1.5, width: hx - RB.x0, height: 3, borderRadius: 3, background: 'linear-gradient(90deg, rgba(255,214,130,0.55), #ffe6a6 30%, #fff2cf)',
-        boxShadow: '0 0 8px 1px rgba(255,200,90,0.9), 0 0 26px 5px rgba(255,170,60,0.4)' }} />
-      {done && shimmer > 0 ? <div style={{ position: 'absolute', left: lerp(RB.x0, RB.x1, shimmer) - 60, top: RB.y - 3, width: 120, height: 6, borderRadius: 6, background: 'radial-gradient(ellipse, rgba(255,255,240,0.9), rgba(255,255,240,0) 70%)' }} /> : null}
-      {/* the moving head: spark + counter */}
-      <div style={{ position: 'absolute', left: hx - 40, top: RB.y - 40, width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,250,230,1) 0%, rgba(255,210,120,0.75) 14%, rgba(255,170,60,0.0) 60%)' }} />
-      <div style={{ position: 'absolute', left: hx - 70, top: RB.y - 2, width: 140, height: 4, background: 'linear-gradient(90deg, rgba(255,240,200,0), rgba(255,250,230,0.95), rgba(255,240,200,0))' }} />
-      {Array.from({ length: 8 }, (_, k) => {
-        const age = ((t * 1.6 + hash01(k, 7)) % 1); const x = hx - 30 * age - 10 * hash01(k, 8); const y = RB.y - 6 - 46 * age * (0.6 + hash01(k, 9));
-        return p < 0.995 ? <div key={k} style={{ position: 'absolute', left: x, top: y, width: 3, height: 3, borderRadius: 2, background: '#ffe2a0', opacity: (1 - age) * 0.9, boxShadow: '0 0 6px rgba(255,190,80,0.9)' }} /> : null;
-      })}
-      <div style={{ position: 'absolute', left: Math.min(hx, 840) - 130, width: 260, top: RB.y - 84, textAlign: 'center', whiteSpace: 'nowrap', transform: `scale(${1 + popK})`, transformOrigin: '50% 80%' }}>
-        <span style={{ font: `700 52px/56px ${SERIF}`, color: done ? C.gold : '#fff2d6', fontVariantNumeric: 'lining-nums tabular-nums', textShadow: `0 0 ${done ? 26 : 12}px rgba(255,180,70,0.8), 0 2px 8px rgba(0,0,0,0.6)` }}>{yrs}</span>
-        <span style={{ font: `700 22px ${SANS}`, letterSpacing: '0.2em', color: 'rgba(255,236,200,0.9)', marginLeft: 10, opacity: done ? 1 : 0.6, textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>YEARS</span>
-      </div>
-    </div>
-  );
-};

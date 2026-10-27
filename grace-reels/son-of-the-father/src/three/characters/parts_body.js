@@ -166,7 +166,7 @@ export function shawlParts(D, view) {
     draw.push(F(poly([[x0 - 0.1, yb + 0.05], [x1 + 0.1, yb + 0.05], [x1 + 0.1, yb + 0.035], [x0 - 0.1, yb + 0.035]]), stripe), F(poly([[x0 - 0.1, yb + 0.07], [x1 + 0.1, yb + 0.07], [x1 + 0.1, yb + 0.062], [x0 - 0.1, yb + 0.062]]), stripe));
     draw.push(...fringe(x0, x1, yb + 0.02, Math.round((x1 - x0) / 0.012), 0.03, ln, 0.003));
     const pc = D.patchColors || ['#6f7d5a', '#a07a4c', '#7c5b48'];
-    patchSpots.forEach(([x, y, w, h, rot], i) => {
+    if (D.worn) patchSpots.forEach(([x, y, w, h, rot], i) => {
       const pp = [[x - w, y - h], [x + w, y - h + rot], [x + w, y + h], [x - w, y + h - rot]];
       draw.push(F(poly(pp), pc[i % pc.length]), stitches(pp.map(([px, py]) => [px * 0.9 + x * 0.1, py * 0.86 + y * 0.14]), lift(pc[i % pc.length], 0.5)));
     });

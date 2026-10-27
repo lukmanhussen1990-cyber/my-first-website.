@@ -1,13 +1,13 @@
-// S15 end card (HTML only): logo placeholder (public/logo.svg), GRACE IN MOTION with a gold shimmer
+// S16 end card (HTML only): logo placeholder (public/logo.svg), GRACE IN MOTION with a gold shimmer
 // (a brighter copy revealed through a moving clip-path band; no background-clip:text) and the handle.
-// Flare wipe in from S14; at ev.loopBack it dissolves out to the 3D LOOP shot (the lit lamp of S1).
+// Flare wipe in from S15; at ev.loopBack it dissolves out to the 3D LOOP shot (the Jesus hero shot of S1).
 import React from 'react';
 import { Img, staticFile } from 'remotion';
 import { plan } from '../lib/planInstance.js';
 import { C, SERIF, SANS, ease, clamp, lerp, hash01, grainURL } from './theme.js';
 
 const E = plan.ev;
-const S15 = plan.shots.find((s) => s.id === 'S15'), LOOP = plan.shots.find((s) => s.id === 'LOOP');
+const S15 = plan.shots.find((s) => s.id === 'S16'), LOOP = plan.shots.find((s) => s.id === 'LOOP');
 // the lockup (logo, wordmark, rule, handle) is centred on the frame: logo centre y = CY
 const CY = 800, DY = CY - 690;
 

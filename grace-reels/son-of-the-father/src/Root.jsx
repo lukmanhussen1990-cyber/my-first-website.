@@ -7,7 +7,7 @@ import { TIMELINE } from './lib/planInstance.js';
 
 export const Root = () => (
   <>
-    <Composition id="OldestMan" component={Reel} width={1080} height={1920} fps={30} durationInFrames={TIMELINE.frames}
+    <Composition id="SonOfTheFather" component={Reel} width={1080} height={1920} fps={30} durationInFrames={TIMELINE.frames}
       defaultProps={{ frames: null, audio: true, overlay: true, debug: false }} />
     <Composition id="Stills" component={Reel} width={1080} height={1920} fps={30} durationInFrames={1}
       defaultProps={{ frames: [0], audio: false, overlay: true, debug: true }}

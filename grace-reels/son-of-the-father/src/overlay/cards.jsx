@@ -11,16 +11,15 @@ const E = plan.ev;
 const shot = (id) => plan.shots.find((s) => s.id === id);
 const clean = (s) => s.replace(/[^A-Za-z0-9']/g, '').toUpperCase();
 
-// the 1 Pet and 2 Pet cards are gone by the cut into the next shot (S12 flood / S14 call to action)
+// floating verse cards (the Matthew 27:26 card is full-screen: fullcard.jsx)
 export const CARDS = [
-  { id: 'gen524', beat: 'B03', ref: 'GENESIS 5:24 · KJV', text: 'And Enoch walked with God: and he was not; for *God took him*.', t0: E.card524, t1: E.card524Out, seed: 5 },
-  { id: 'pet320', beat: 'B13', ref: '1 PETER 3:20 · KJV', text: '…the longsuffering of God *waited* in the days of Noah, while the ark was a preparing…', t0: E.card320, t1: Math.min(E.card320Out, shot('S12').t0 + 0.02), seed: 9 },
-  { id: 'pet39', beat: 'B15', ref: '2 PETER 3:9 · KJV', text: 'The Lord is… *not willing* that any should *perish*, but that all should come to repentance.', t0: E.card39, t1: Math.min(E.card39Out, shot('S14').t0 + 0.02), seed: 13 },
+  { id: 'm2721', beat: 'B07', ref: 'MATTHEW 27:21 · KJV', text: '…Whether of the twain will ye that I *release* unto you?', t0: E.card2721, t1: E.card2721Out, seed: 5 },
+  { id: 'p318', beat: 'B16', ref: '1 PETER 3:18 · KJV', text: 'For Christ also hath once suffered for sins, the *just* for the *unjust*, that he might bring us to God.', t0: E.card318, t1: Math.min(E.card318Out, shot('S14a').t0 + 0.02), seed: 9 },
 ];
 
 // tokens { text (gold or ink part), tail (ink punctuation after a gold word, closing quote), gold } +
 // spoken times (LCS alignment of card words to the timeline words of the beat)
-function prepare(card) {
+export function prepare(card) {
   const toks = []; let gold = false;
   for (const raw of card.text.split(' ')) {
     let body = '', tail = '', g = false;

@@ -1,7 +1,7 @@
-// 'city' set (S13a, S13b): a modern low-poly city at night in the same paper/diorama style — bevelled blocks with
-// lit windows, streetlights, a wet street with puddles, parked cars, rain streaks and splashes. One person stands
-// alone under a streetlight, head down. On "…but FOR you" the rain slows to slow motion and a soft warm light falls
-// on them from above (God shown only as light); they look up. Layout + blocking in src/cams/city.js (CITY).
+// 'modern' set (S14b): a modern low-poly city at night in the same paper/diorama style — bevelled blocks with lit
+// windows, streetlights, a damp street with puddles, parked cars. One person stands alone under a streetlight, head
+// bowed: the same pose and silhouette as Barabbas at the gate (the match cut on "you"). On "So am I" a soft warm light
+// falls on them from above (God shown only as light); they look up. Layout + blocking in src/cams/modern.js (MODERN).
 import * as THREE from 'three';
 import { makeBevelBox, srgb } from '../kit.js';
 import { makeBeam } from '../beam.js';
@@ -10,7 +10,8 @@ import { MOODS, merge, blend, resolve } from '../moods.js';
 import { Person, Poses, expr } from '../rig.js';
 import { CITY_PERSON } from '../characters/cast.js';
 import { clamp, smooth, invLerp, lerp, hash01, mulberry32 } from '../../lib/util.js';
-import { CITY } from '../../cams/city.js';
+import { MODERN as CITY } from '../../cams/modern.js';
+import '../poses3.js';
 
 const WALLS = ['#4a4652', '#56505a', '#3e434f', '#5a4e48', '#46505a', '#52463f'];
 
@@ -65,7 +66,7 @@ function makeCar(seed, color) {
 }
 
 export function build(ctx) {
-  const { plan } = ctx; const E = plan.ev; const B = ctx.B.city;
+  const { plan } = ctx; const E = plan.ev; const B = ctx.B.modern;
   const g = new THREE.Group();
   // street (asphalt), kerbs + sidewalks, lane markings, a crosswalk
   const asphalt = wetten(new THREE.MeshLambertMaterial({ color: '#2b2d31' }), { patch: 0.6, scale: 0.5, k: 1 });
@@ -103,26 +104,27 @@ export function build(ctx) {
       const w = B.warm(t);
       person.setFacing(-1);
       let P;
-      if (w < 0.02) { P = Poses.idle(t, 2026); expr(P, 'sadness', 1); P.lookY = -0.85; P.headTilt = -0.2; }
-      else { P = Poses.lookUp(t, 2026, w); }
+      person.setView('threeQuarter');
+      if (w < 0.02) { P = Poses.freed(t, 2026, 1); P.lookY = -0.25; P.headTilt = -0.1; expr(P, 'sadness', 0.4); P.mouth = 'none'; }
+      else { P = Poses.lookUp(t, 2026, w); P.aF = [lerp(0.12, 0.35, w), lerp(0.25, 0.5, w)]; P.aB = [lerp(-0.08, 0.2, w), lerp(0.2, 0.4, w)]; P.handF = P.handB = 'open'; }
       person.pose(P); person.billboard(cam, 0.3); person.autoOutline(cam);
       beam.group.visible = w > 0.001; beam.set(t, w * 0.5);
-      puddles.set(t, { k: lerp(0.9, 0.35, w), sky: '#3a4a64' });
+      puddles.set(t, { k: 0.05, sky: '#3a4a64' });
     },
     mood(t) {
       const w = B.warm(t);
       const head = [CITY.lamp[0] + 0.95, CITY.lampH + 0.15 - 0.22, CITY.lamp[2]];
       const night = merge(MOODS.cityNight, {
         spot: { pos: head, target: [CITY.person[0], 0, CITY.person[2]], color: '#bcd0ff', intensity: 30, angle: 0.62, penumbra: 0.75, decay: 2, distance: 16, shadow: true },
-        rain: { k: 0.85, sheets: 0.6, splash: 1, wind: [0.8, 0.25], speed: lerp(9, 1.6, w), len: lerp(0.5, 0.22, w), far: 70 },
-        wet: 1, wetSheen: '#6c7c96',
+        rain: { k: 0 },
+        wet: 0.75, wetSheen: '#6c7c96',
         post: { ao: 0.5, dof: 0.35, focusRange: 3, tilt: 0 },
       });
       if (w <= 0.001) return night;
       const warm = merge(MOODS.cityWarm, {
         spot: night.spot,
         point: { pos: [CITY.person[0], 3.2, CITY.person[2] + 0.4], color: '#ffc27a', intensity: 8 * w, distance: 9, charColor: '#ffcf8f', charK: 0.9, charRange: 3.2 },
-        rain: night.rain, wet: 1, wetSheen: '#a08870',
+        rain: night.rain, wet: 0.75, wetSheen: '#a08870',
         post: { ao: 0.5, dof: 0.35, focusRange: 3, tilt: 0, exposure: 0.85, bloom: 0.7, godrays: { strength: 0.4 * w, pos: [CITY.person[0], 26, CITY.person[2]], color: '#ffd9a0', radius: 0.12, decay: 0.97, density: 0.95, streaks: 0.5 } },
       });
       return blend(resolve(night), resolve(warm), w);

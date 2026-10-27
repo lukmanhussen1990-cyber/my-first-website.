@@ -33,7 +33,7 @@ if (mode === 'stills') {
   const [a, b] = process.argv[3].split('-').map(Number);
   const outDir = path.resolve(process.argv[4]); fs.rmSync(outDir, { recursive: true, force: true }); fs.mkdirSync(outDir, { recursive: true });
   const inputProps = { frames: null, audio: false, overlay: true, debug: false };
-  const composition = await selectComposition({ serveUrl, id: 'OldestMan', inputProps, browserExecutable, chromiumOptions });
+  const composition = await selectComposition({ serveUrl, id: 'SonOfTheFather', inputProps, browserExecutable, chromiumOptions });
   const t1 = Date.now();
   await renderFrames({ composition, serveUrl, inputProps, outputDir: outDir, imageFormat: 'jpeg', jpegQuality: 96, frameRange: [a, b], browserExecutable, chromiumOptions, timeoutInMilliseconds, concurrency,
     onStart: () => {}, onFrameUpdate: () => {}, onBrowserLog: (l) => { if (l.type === 'error') console.log('[browser]', l.text.slice(0, 300)); } });
@@ -56,7 +56,7 @@ if (mode === 'stills') {
   const out = path.resolve(process.argv[4] || 'build/preview.mp4');
   const silent = out.replace(/\.mp4$/, '_silent.mp4');
   const inputProps = { frames: null, audio: false, overlay: true, debug: false };
-  const composition = await selectComposition({ serveUrl, id: 'OldestMan', inputProps, browserExecutable, chromiumOptions });
+  const composition = await selectComposition({ serveUrl, id: 'SonOfTheFather', inputProps, browserExecutable, chromiumOptions });
   const t1 = Date.now(); let last = 0;
   await renderMedia({ composition, serveUrl, inputProps, codec: 'h264', crf: 20, pixelFormat: 'yuv420p', outputLocation: silent, browserExecutable, chromiumOptions, timeoutInMilliseconds, concurrency, frameRange: [a, b], muted: true,
     onProgress: ({ renderedFrames }) => { const n = Date.now(); if (n - last > 30000) { last = n; console.log(`  ${renderedFrames}/${b - a + 1} frames, ${((n - t1) / 1000).toFixed(0)}s`); } },
@@ -69,7 +69,7 @@ if (mode === 'stills') {
   const out = path.resolve(process.argv[3] || 'out/final_reel.mp4');
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const inputProps = { frames: null, audio: true, overlay: true, debug: false };
-  const composition = await selectComposition({ serveUrl, id: 'OldestMan', inputProps, browserExecutable, chromiumOptions });
+  const composition = await selectComposition({ serveUrl, id: 'SonOfTheFather', inputProps, browserExecutable, chromiumOptions });
   const frameRange = mode === 'range' ? process.argv[4].split('-').map(Number) : null;
   const t1 = Date.now(); let last = 0;
   await renderMedia({ composition, serveUrl, inputProps, codec: 'h264', crf: 18, pixelFormat: 'yuv420p', audioCodec: 'aac', audioBitrate: '192k',

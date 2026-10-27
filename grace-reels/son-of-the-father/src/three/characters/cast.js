@@ -122,10 +122,10 @@ export const crowdMember = (i, extra = {}) => ({ ...CROWD[((i % CROWD.length) + 
 // His wrists are bound with a simple rope (a 3D rope loop attached at the hands by the set; Matthew 27:2).
 export const JESUS = {
   name: 'Jesus', seed: 33, quality: 'hero',
-  height: 1.78, build: 1.0, age: 0.3,
-  skin: '#9a6238', nose: 1.03, noseDroop: 0.1, jaw: 1.0, chin: 1.0,
-  hair: 'long', hairColor: '#3b2717', beard: 'short', beardColor: '#3b2717',
-  brows: 'normal', browColor: '#2c1d12', eyeColor: '#3b2516',
+  height: 1.78, build: 1.0, age: 0.2,
+  skin: '#a36a3e', nose: 0.9, noseDroop: 0.0, jaw: 0.98, chin: 1.0,
+  hair: 'long', hairColor: '#4e3322', beard: 'trim', beardColor: '#57392a',
+  brows: 'normal', browColor: '#3a2618', eyeColor: '#3b2516',
   outfit: 'robe', cloth: '#ece4d2', sash: '#7f90a2', belt: '#7f90a2', sleeveStyle: 'wide',
   feet: 'sandal',
 };
@@ -133,11 +133,11 @@ export const JESUS = {
 // heavy iron shackles + chain (3D, attached at the hands by the set). Hard eyes that later soften.
 export const BARABBAS = {
   name: 'Barabbas', seed: 15, quality: 'hero',
-  height: 1.84, build: 1.2, age: 0.3,
-  skin: '#8a5530', nose: 1.12, noseDroop: 0.3, jaw: 1.16, chin: 1.05, browRidge: 0.9,
-  hair: 'curly', hairColor: '#17100b', beard: 'medium', beardColor: '#17100b',
-  brows: 'normal', browColor: '#120c08', eyeColor: '#2a180e', scar: true,
-  outfit: 'tunic', cloth: '#7a6650', worn: true, patches: ['#6a5a46', '#857059'], patchColors: ['#5e4f3d', '#8d7a60'], belt: '#3a281a',
+  height: 1.84, build: 1.2, age: 0.26,
+  skin: '#9c613a', nose: 1.12, noseDroop: 0.3, jaw: 1.16, chin: 1.05, browRidge: 0.9,
+  hair: 'curly', hairColor: '#2a1c13', beard: 'short', beardColor: '#2d1e14',
+  brows: 'bushy', browColor: '#1e140d', eyeColor: '#2a180e', scar: true,
+  outfit: 'tunic', cloth: '#a08868', worn: true, patches: ['#8a7356', '#b29a78'], patchColors: ['#7a654a', '#b49c7a'], belt: '#3a281a',
   bareArms: true, feet: 'bare',
 };
 // PILATE — Roman governor: short hair, clean-shaven, white toga with a deep red border, uneasy.

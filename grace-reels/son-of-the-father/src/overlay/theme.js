@@ -15,11 +15,7 @@ export const C = {
 // Instagram safe zone: text inside x 60–1000, y 220–1560; the right ~120 px between y 1100–1700 is under the IG buttons
 export const SAFE = { x0: 60, x1: 1000, y0: 220, y1: 1560, igX: 950, igY0: 1100, igY1: 1700 };
 // header sits just inside the safe line (IG's own top bar covers y < 220); captions start under it
-export const L = { headerY: 236, capTop: 300, capBottom: 620, capX: 72, capW: 916, trackY: 640, trackH: 120 };
-// S10 "some say" note: it carries the whole spoken B11 line (that caption block is hidden), so it starts on "Some"
-const _b11 = plan.words.filter((w) => w.block === 'B11#0');
-const _s10 = plan.shots.find((s) => s.id === 'S10');
-export const SOMESAY = { t0: Math.max(_s10.t0, Math.min(plan.ev.nameMeaning, _b11[0].start - 0.15)), t1: _s10.t1 - 0.1 };
+export const L = { headerY: 236, capTop: 300, capBottom: 600, capX: 72, capW: 916, dockY: 662, labelMinY: 760 };
 
 // ------------------------------------------------------------------ tiny pure animation helpers
 export const ease = {
