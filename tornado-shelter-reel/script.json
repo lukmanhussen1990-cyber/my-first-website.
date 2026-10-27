@@ -1,0 +1,33 @@
+{
+  "title": "Building a tornado shelter",
+  "voices": {
+    "narrator": {
+      "description": "calm, serious, documentary-style adult male voice, medium-deep, clear, steady pace, neutral accent",
+      "recording": {
+        "file": "assets/vo/source/voiceover.mp3",
+        "name": "the supplied voiceover recording (all ten lines in one file)"
+      },
+      "elevenlabs": {
+        "voice_id": "QZA1myOcnbLYY9uuhixV",
+        "name": "Dean - steady American",
+        "model_id": "eleven_multilingual_v2",
+        "voice_settings": { "stability": 0.55, "similarity_boost": 0.8, "style": 0.15, "use_speaker_boost": true, "speed": 0.98 }
+      },
+      "kokoro": { "voice": "am_fenrir", "speed": 0.95 },
+      "piper": { "model": "en_US-ryan-high.onnx", "length_scale": 1.0 },
+      "espeak": { "voice": "en-us+m3", "words_per_minute": 150 }
+    }
+  },
+  "lines": [
+    { "id": "n1", "scene": 1, "speaker": "narrator", "text": "A tornado is coming, and you have about ten minutes. Here's how to build a shelter that can survive it." },
+    { "id": "n2", "scene": 2, "speaker": "narrator", "text": "First, go underground. Tornado winds rip things off the surface, but the ground below protects you." },
+    { "id": "n3", "scene": 3, "speaker": "narrator", "text": "Then you need walls that won't break. So you pour thick concrete, with steel bars inside." },
+    { "id": "n4", "scene": 4, "speaker": "narrator", "text": "Because in a tornado, the real danger is flying debris. A plank of wood can hit at over a hundred and sixty kilometers per hour." },
+    { "id": "n5", "scene": 5, "speaker": "narrator", "text": "But strong winds can also lift things up. So you anchor the shelter deep into the ground with steel rods." },
+    { "id": "n6", "scene": 6, "speaker": "narrator", "text": "The door is the weakest point. So you use a heavy steel door with three locking bolts." },
+    { "id": "n7", "scene": 7, "speaker": "narrator", "text": "Once you're inside, you still need air. So you add small vents with caps that keep debris out." },
+    { "id": "n8", "scene": 8, "speaker": "narrator", "text": "And you might be in there for hours. So you store water, a flashlight, a first aid kit and a radio." },
+    { "id": "n9", "scene": 9, "speaker": "narrator", "text": "Then the tornado hits, with winds over three hundred kilometers per hour. Above ground, almost nothing is safe." },
+    { "id": "n10", "scene": 10, "speaker": "narrator", "text": "But underground, your family is safe." }
+  ]
+}
