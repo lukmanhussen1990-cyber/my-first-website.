@@ -52,18 +52,6 @@ async function main() {
   const srv = await startServer(ROOT, sink);
   const port = srv.address().port;
 
-  if (a.mode === 'plates' || a.mode === 'overlay') {
-    const out = path.resolve(ROOT, a.out);
-    fs.mkdirSync(path.dirname(out), { recursive: true });
-    const enc = a.mode === 'plates'
-      // lossless RGB intermediate (the final H.264 encode happens once, at the end)
-      ? ['-c:v', 'libx264rgb', '-qp', '0', '-preset', 'ultrafast', '-pix_fmt', 'rgb24']
-      // overlay keeps its alpha channel
-      : ['-c:v', 'qtrle', '-pix_fmt', 'argb'];
-    ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(a.fps),
-      '-i', '-', '-vf', 'vflip', ...enc, out], { stdio: ['pipe', 'inherit', 'inherit'] });
-  }
-
   const browser = await chromium.launch({ args: GPU_ARGS, env: { ...process.env, EGL_PLATFORM: 'surfaceless' } });
   const page = await browser.newPage({ viewport: { width: Math.min(W, 1200), height: Math.min(H, 1200) } });
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) || a.verbose) console.log('[page]', m.text()); });
@@ -76,6 +64,20 @@ async function main() {
   if (err) { console.error('page failed to start:', err); await browser.close(); srv.close(); process.exit(1); }
   const info = await page.evaluate(() => window.APP.info());
   const t0 = Date.now();
+
+  if (a.mode === 'plates' || a.mode === 'overlay') {
+    const out = path.resolve(ROOT, a.out);
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    const enc = a.mode === 'plates'
+      // lossless RGB intermediate (the final H.264 encode happens once, at the end)
+      ? ['-c:v', 'libx264rgb', '-qp', '0', '-preset', 'ultrafast', '-pix_fmt', 'rgb24']
+      // overlay keeps its alpha channel
+      : ['-c:v', 'qtrle', '-pix_fmt', 'argb'];
+    // WebGL pixels arrive bottom-up; 2D-canvas pages (the text overlay) say flipY: false
+    const flip = info.flipY === false ? [] : ['-vf', 'vflip'];
+    ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(a.fps),
+      '-i', '-', ...flip, ...enc, out], { stdio: ['pipe', 'inherit', 'inherit'] });
+  }
 
   if (a.mode === 'cues') {
     const cues = await page.evaluate(() => window.APP.getCues());
