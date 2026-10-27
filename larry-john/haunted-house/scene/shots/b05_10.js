@@ -369,8 +369,9 @@ export function shots05_10(T, W) {
       sheetLarry(t, 'scared', { wingL: 0.3, wingR: 0.3, wingY: 0.9, sway: abs * 6 });
       L.sheet.face.set('scared', { pupil: [0.5, -0.3], pupilScale: 0.6 });
       W.fog.show({ center: IN(0, 0.4, 0), size: [4, 0.8, 3.4] }, abs, { density: 0.5, color: '#9effb4', opacity: 0.12, floor: 1 });
-      const mid = new THREE.Vector3(...jpos).addScaledVector(f, 0.2).addScaledVector(left, 0.1).setY(1.02);
-      const cpos = mid.clone().addScaledVector(f, 2.7).add(new THREE.Vector3(0, 0.55, 0));
+      // from a little above, so John's tired face (and the facepalm) reads over the sheet in his arms
+      const mid = new THREE.Vector3(...jpos).addScaledVector(f, 0.2).addScaledVector(left, 0.1).setY(1.12);
+      const cpos = mid.clone().addScaledVector(f, 2.4).add(new THREE.Vector3(0, 0.85, 0));
       W.cam.set(cpos, mid, 50).push(t * 0.15).shake(t, 0.4, 34).dof(mid, 0.004, 0.008);
     },
   });

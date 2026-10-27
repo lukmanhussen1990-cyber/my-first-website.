@@ -85,12 +85,36 @@ async function main() {
     if (g.visible) add(g.localToWorld(new THREE.Vector3(0, 0.68, 0)), 0.4 * g.scale.y);
     return out;
   }
+  // in-scene signs with text (the subtitles must not cover them either): screen rects [x0, y0, x1, y1]
+  const _box = new THREE.Box3();
+  const shown = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+  function signRects() {
+    const cam = stage.camera, out = [];
+    const signs = [world.sets.backyard.userData.sign, world.sets.estate.userData.mansion.userData.chickenSign, world.props.waitSign].filter(Boolean);
+    for (const sg of signs) {
+      if (!shown(sg)) continue;
+      _box.setFromObject(sg);
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, behind = false;
+      for (let i = 0; i < 8; i++) {
+        _p.set(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z);
+        _q.copy(_p).applyMatrix4(cam.matrixWorldInverse);
+        if (_q.z > -cam.near) { behind = true; break; }
+        _p.project(cam);
+        const x = (_p.x + 1) / 2, y = (1 - _p.y) / 2;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+      if (behind || x1 < 0 || x0 > 1 || y1 < 0 || y0 > 1 || (x1 - x0) * (y1 - y0) < 0.002) continue;
+      out.push([+x0.toFixed(3), +y0.toFixed(3), +x1.toFixed(3), +y1.toFixed(3)]);
+    }
+    return out;
+  }
 
   window.APP = {
     getFaces(step = 0.1) {
       const frames = [];
-      for (let t = 0; t < T.duration; t += step) { pose(t); frames.push(faceBoxes()); }
-      return { step, frames };
+      const signs = [];
+      for (let t = 0; t < T.duration; t += step) { pose(t); frames.push(faceBoxes()); signs.push(signRects()); }
+      return { step, frames, signs };
     },
     ready: true,
     info: () => ({ frames: T.frames, duration: T.duration, fps: FPS, shots: shots.map((s) => ({ id: s.id, beat: s.beat, at: +s.at.toFixed(3), end: +s.end.toFixed(3) })) }),

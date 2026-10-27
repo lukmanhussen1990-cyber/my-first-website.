@@ -185,7 +185,7 @@ export function makeMansion(lit, litGreen) {
   const sign = add(ce, new THREE.PlaneGeometry(1.5, 0.75), new THREE.MeshStandardMaterial({ map: chickenSignTex(), roughness: 0.85 }), [0, 2.55, 0.08], [0, 0, -0.05], 1, { shadow: false });
   add(ce, roundedBox(1.6, 0.85, 0.05, 0.02), clay('#7a5233'), [0, 2.55, 0.04], [0, 0, -0.05]);
   const ceLight = new THREE.PointLight('#ffd27a', 1.6, 5, 2); ceLight.position.set(0, 2.2, 0.8); ce.add(ceLight);
-  g.userData.chickenExit = ce; g.userData.chickenDoor = ceDoor;
+  g.userData.chickenExit = ce; g.userData.chickenDoor = ceDoor; g.userData.chickenSign = sign;
   // towers
   const towers = [];
   const tL = group(g, [-13.6, 0, 4.4], [0, 0, 0.03]);       // round tower, front left

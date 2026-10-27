@@ -50,12 +50,13 @@ export class Captions {
     const cands = [o.subY, o.subY - 0.04, o.subY + 0.04, o.subY - 0.075, o.subY + 0.075, o.subY - 0.105, o.subY + 0.11];
     let prev = o.subY;
     for (const w of this.words) {
-      const boxes = [];
+      const boxes = [], rects = [];
       for (let t = Math.max(0, w.a); t < w.b; t += faces.step) {
-        const fr = faces.frames[Math.round(t / faces.step)];
-        if (fr) boxes.push(...fr);
+        const k = Math.round(t / faces.step);
+        if (faces.frames[k]) boxes.push(...faces.frames[k]);
+        if (faces.signs && faces.signs[k]) rects.push(...faces.signs[k]);
       }
-      if (!boxes.length) { w.y = prev; continue; }
+      if (!boxes.length && !rects.length) { w.y = o.subY; prev = o.subY; continue; }
       const size = this.fitFont(w.disp, o.subFont, o.subWeight, o.subSize * k * (w.shout ? 1.5 : 1), o.subMaxW * this.W);
       const hw = (c.measureText(w.disp).width / 2 + 14 * k) / this.W, hh = (size * 0.5 + 10 * k) / this.H;
       const cost = (y) => {
@@ -65,9 +66,14 @@ export class Captions {
           const d = Math.hypot((cx - fx) * aspect, cy - fy), r = fr * 1.1;
           if (d < r) worst = Math.max(worst, (r - d) / r);
         }
+        // never on top of a sign's text
+        for (const [x0, y0, x1, y1] of rects) {
+          if (o.subX + hw > x0 && o.subX - hw < x1 && y + hh > y0 - 0.01 && y - hh < y1 + 0.01) worst = Math.max(worst, 2);
+        }
         return worst;
       };
-      const order = [prev, ...cands.filter((y) => y !== prev)];
+      // the usual spot first, then where the last word was, then further up/down
+      const order = [o.subY, prev, ...cands].filter((y, i, a) => a.indexOf(y) === i);
       let best = order[0], bestCost = Infinity;
       for (const y of order) {
         const cst = cost(y);

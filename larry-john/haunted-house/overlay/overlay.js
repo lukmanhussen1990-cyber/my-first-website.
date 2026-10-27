@@ -28,7 +28,14 @@ async function main() {
   let faces = null;
   try { const r = await fetch(q.get('faces') || '/haunted-house/build/faces.json'); if (r.ok) faces = await r.json(); } catch (e) { faces = null; }
   cap.setWords(timing.words.map((w) => ({ ...w, echo: w.shout && echoBeats.has(w.beat) })), faces);
-  cap.setLabels(cues.labels);
+  // a label never runs past the end of its beat (it would sit over the next joke)
+  const beatOf = Object.fromEntries(cues.shots.map((sh) => [sh.id, sh.beat]));
+  const beatEnd = {};
+  for (const sh of cues.shots) beatEnd[sh.beat] = Math.max(beatEnd[sh.beat] ?? 0, sh.end);
+  cap.setLabels(cues.labels.map((l) => {
+    const end = Math.min(l.at + l.dur, (beatEnd[beatOf[l.shot]] ?? Infinity) + 0.25);
+    return { ...l, dur: Math.max(0.5, end - l.at) };
+  }));
   const frames = Math.round(timing.duration * FPS);
   window.APP = {
     ready: true,
