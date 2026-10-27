@@ -2,8 +2,11 @@
 
 Saved exactly as sent, so every later phase follows the same rules. Part 1 came in the first message (it was cut off after "CAMERA"); part 2 (from "CAMERA" to the end) came in the follow-up message.
 
-Session note from the owner: "I will give you voiceover and generate [the images] to send to you; you give me the script in parts (Part 1, Part 2 …); watch the reference videos; create a video like this but my topic way better."
-→ Voiceover is recorded by the owner from the parts in `GPT_IMAGE_PROMPTS.md` (section A2), not generated in code.
+**Owner's later instructions (these override the brief below):**
+- **MODE is CODE.** "Don't make image prompts, and don't use GPT Image or any other AI image generator. This video must be made 100% with code … Build all the 3D scenes with code (Blender with Python, or Three.js), and render every frame." The GPT Image plan was thrown away; skip every step marked [GPT IMAGE ONLY] and follow [CODE ONLY].
+- **Voice:** use the owner's ElevenLabs file `audio/voice_elevenlabs.mp3` (72 s, the full script) as the voiceover. Do not generate a voice.
+- Subtitles, labels ("yellow labels"), sound effects and music are made in code.
+- **Before the full render, show one still frame from each scene** for the owner to check.
 
 ---
 

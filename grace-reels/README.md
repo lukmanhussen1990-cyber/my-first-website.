@@ -1,19 +1,22 @@
 # Grace in Motion — reels
 
-Code-made Instagram Reels for @GraceINMotion616: flat paper-cut people, a warm low-poly diorama world and italic serif captions.
+Code-made Instagram Reels for @GraceINMotion616: flat paper-cut people, a warm low-poly diorama world and italic serif captions. Everything is built and rendered in code: Remotion + Three.js (React Three Fiber) + postprocessing, rendered on the CPU through SwiftShader.
 
 ```
-reference/              reference reels + style_notes.md (the .mp4 files and frames/ stay local, not in git)
-tools/                  shared helpers (contact sheets, word-timestamp transcription)
+src/                    Remotion entry (index.ts, Root.tsx) and shared engine
+  shared/               sun + sky, post effects, low-poly kit, paper-cut character rig, text overlay
 episodes/<slug>/        one folder per episode
-  MASTER_PROMPT.md      the full brief, verbatim
-  GPT_IMAGE_PROMPTS.md  script, voiceover parts, shot list and image prompts
-  style_refs/           text-free reference frames to attach in ChatGPT
-  assets/gpt/           the owner's ChatGPT images, with the exact file names from the prompts
+  MASTER_PROMPT.md      the full brief, verbatim, plus the owner's later instructions
+  src/                  timeline, sets, scenes
+  audio/                voice (input), timeline, music, sound effects, final mix
+reference/              reference reels + style_notes.md (the .mp4 files and frames/ stay local, not in git)
+tools/                  helpers (contact sheets, word-timestamp transcription, timeline builder)
 ```
+
+Render a still: `npx remotion still src/index.ts SunsetRule out/still.png --frame=30`
 
 ## Episodes
 
 | # | Episode | Mode | Status |
 |---|---|---|---|
-| 49 | The Sunset Rule (`episodes/sunset-rule`) | GPT IMAGE | Phases 1–2 done. Waiting for the images and the voiceover, then "DONE" |
+| 49 | The Sunset Rule (`episodes/sunset-rule`) | CODE | Building scenes; one still per scene goes to the owner for review first |
