@@ -16,6 +16,7 @@ TENS = {w: 10 * i for i, w in enumerate("_ _ twenty thirty forty fifty sixty sev
 def as_num(text):
     toks = re.findall(r"[a-z0-9]+", text.lower())
     if not toks: return ""
+    if not any(t.isdigit() or t in ONES or t in TENS or t in ('hundred', 'thousand') for t in toks): return re.sub(r"[^a-z0-9']", "", text.lower())
     if all(t.isdigit() for t in toks): return "".join(toks)
     total, cur = 0, 0
     for t in toks:
@@ -28,15 +29,22 @@ def as_num(text):
     return str(total + cur)
 heard = [(s, as_num(w)) for s, w in heard]
 exp = [(w["start"], as_num(w["spoken"])) for w in T["words"]]
-diffs, miss, hi = [], [], 0
-for es, ew in exp:
-    hit = None
-    for j in range(max(0, hi - 3), min(len(heard), hi + 6)):
-        hw = heard[j][1]
-        if hw == ew or (len(ew) > 3 and hw[:4] == ew[:4]):
-            hit = j; break
-    if hit is None: miss.append((round(es, 2), ew)); continue
-    diffs.append(heard[hit][0] - es); hi = hit + 1
+# align expected and heard word sequences (difflib), so a missed word never desyncs the rest
+import difflib
+ew_list, hw_list = [w for _, w in exp], [w for _, w in heard]
+sm = difflib.SequenceMatcher(a=ew_list, b=hw_list, autojunk=False)
+pair = {}
+for blk in sm.get_matching_blocks():
+    for k in range(blk.size): pair[blk.a + k] = blk.b + k
+diffs, miss = [], []
+for i, (es, ew) in enumerate(exp):
+    j = pair.get(i)
+    if j is None:   # fuzzy: a heard word near the expected position that starts the same
+        lo = max([v for k, v in pair.items() if k < i], default=-1) + 1
+        hi_ = min([v for k, v in pair.items() if k > i], default=len(heard))
+        j = next((jj for jj in range(lo, hi_) if len(ew) > 3 and heard[jj][1][:4] == ew[:4]), None)
+    if j is None: miss.append((round(es, 2), ew)); continue
+    diffs.append(heard[j][0] - es)
 d = np.array(diffs)
 print(f"{path}: matched {len(d)}/{len(exp)} words; onset diff median {np.median(d)*1000:.0f} ms, p90 |diff| {np.percentile(np.abs(d),90)*1000:.0f} ms")
 print("not matched:", miss)
