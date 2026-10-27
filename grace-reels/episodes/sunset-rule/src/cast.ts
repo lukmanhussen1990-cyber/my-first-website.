@@ -77,7 +77,7 @@ export const P = {
 	whipLow: {near: {sh: 0.28, el: 0.12, hand: 'fist'}, far: {sh: -0.18, el: 0.3, hand: 'relaxed'}, hold: {item: 'whip', swing: 0.1}, brow: {inner: 8, outer: -2}, eyes: 'narrow'} as Pose,
 	whipHigh: {lean: 0.12, stride: 0.5, near: {sh: 2.75, el: 0.35, hand: 'fist'}, far: {sh: 1.35, el: -0.1, hand: 'flat'}, hold: {item: 'whip', swing: -0.6}, brow: {inner: 8, outer: -2}, eyes: 'narrow', sway: 0.6} as Pose,
 	heal: {lean: 0.06, near: {sh: 1.32, el: 0.05, hand: 'open'}, far: {sh: 0.1, el: 0.3}, gaze: [0.2, 0.1]} as Pose,
-	calm: {near: {sh: 0.55, el: 1.0, hand: 'relaxed'}, far: {sh: 0.5, el: 1.05}, headTilt: 0.1, gaze: [0, 0.3]} as Pose,
+	calm: {near: {sh: 0.22, el: 1.32, hand: 'relaxed', fore: 0.8}, far: {sh: 0.18, el: 1.36, hand: 'hidden', fore: 0.7}, headTilt: 0.1, gaze: [0, 0.3]} as Pose,
 	armsFolded: {near: {sh: 0.2, el: 1.5, hand: 'hidden', fore: 0.62}, far: {sh: 0.12, el: 1.5, hand: 'hidden', fore: 0.55}, eyes: 'narrow', gaze: [-0.9, 0], brow: {inner: 5, outer: -1}} as Pose,
 	withered: {near: {sh: 0.32, el: 1.78, hand: 'curled', wrist: 0.5, fore: 0.85}, far: {sh: 0.05, el: 0.3}, lean: 0.12, headTilt: 0.16, gaze: [0, 0.5], shoulderLift: 1} as Pose,
 	point: {lean: 0.08, near: {sh: 1.45, el: 0.05, hand: 'point'}, far: {sh: 0.3, el: 1.6}, headTilt: -0.18, eyes: 'happy'} as Pose,

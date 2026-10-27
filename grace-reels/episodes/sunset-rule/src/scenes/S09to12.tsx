@@ -17,23 +17,23 @@ import {blinkAt} from './S02to05Synagogue';
 
 // ---------- S9: mocked, and calm (golden hour) ----------
 const S9_SUN = 202;
-const JX = 1.55;
+const JX = 1.05;
 const crowdPose = (i: number, t: number) => {
 	const bob = Math.sin(t * 7 + i * 1.7);
 	const base = [P.point, {...P.point, near: {sh: 0.5, el: 1.7, hand: 'relaxed' as const}}, {...P.armsFolded, eyes: 'happy' as const, headTilt: -0.12, brow: {inner: -4, outer: 2}}, {...P.point, near: {sh: 2.3, el: 1.2, hand: 'flat' as const}, eyes: 'open' as const}, {...P.point, near: {sh: 1.2, el: 0.6, hand: 'point' as const}, lean: 0.14}, {...P.point, near: {sh: 0.6, el: 1.9, hand: 'relaxed' as const}, far: {sh: 0.7, el: 1.8}}][i];
 	return {...base, headTilt: (base.headTilt ?? 0) - 0.06 * Math.max(0, bob), shoulderLift: Math.max(0, bob), stride: 0};
 };
 const CROWD_AT: [number, number, number][] = [
-	[-1.3, 0, 0.4],
-	[-2.0, 0, -0.6],
-	[-2.6, 0, 0.9],
-	[-0.6, 0, -1.2],
-	[-3.3, 0, -0.2],
-	[-1.6, 0, 1.8],
+	[-0.6, 0, 0.5],
+	[-1.2, 0, -0.7],
+	[-1.7, 0, 0.9],
+	[-0.2, 0, -1.4],
+	[-2.2, 0, -0.3],
+	[-1.0, 0, 1.6],
 ];
 const camS9 = (t: number, d: number): Cam => {
 	const k = ease.inOut(clamp((t - 0.3) / (d - 0.6)));
-	return {pos: [lerp(-1.5, 0.9, k), lerp(1.7, 1.75, k), lerp(6.8, 4.3, k)], target: [lerp(-1.6, JX, k), lerp(1.25, 1.62, k), 0], fov: lerp(42, 30, k)};
+	return {pos: [lerp(-1.0, 0.25, k), lerp(1.7, 1.72, k), lerp(8.2, 7.0, k)], target: [lerp(-1.1, 0.35, k), lerp(1.25, 1.45, k), 0], fov: lerp(40, 34, k)};
 };
 const S9Content: React.FC<{t: number; d: number}> = ({t}) => (
 	<>
@@ -116,7 +116,7 @@ const S11LContent: React.FC<{t: number; d: number}> = ({t}) => {
 export const S11L: SceneDef = {
 	id: 'S11L',
 	sunAz: 232,
-	camera: (t, d) => ({pos: [lerp(0.9, 0.7, t / d), 1.3, lerp(5.6, 5.0, t / d)], target: [0.55, 1.05, 0.3], fov: 44}),
+	camera: (t, d) => ({pos: [lerp(0.35, 0.3, t / d), 1.25, lerp(5.6, 5.1, t / d)], target: [0.55, 0.95, 0.7], fov: 56}),
 	post: (t, d, sun) => ({bloom: {intensity: 0.7, threshold: 0.8}, dof: {focusDistance: 5, focusRange: 2.5, bokehScale: 2.5}, vignette: {offset: 0.3, darkness: 0.6}, grade: gradeFromSun(sun, {tint: '#E0563C', tintAmt: 0.55, saturation: 0.9, contrast: 1.1})}),
 	Content: S11LContent,
 };
@@ -136,7 +136,10 @@ const camS12 = (t: number, d: number): Cam => {
 	const k = ease.inOut(clamp(t / (d - 0.2)));
 	const z = lerp(40, 560, k);
 	const y = lerp(22, 175, Math.pow(k, 0.85));
-	return {pos: [lerp(4, 0, k), y, z], target: [lerp(1, 0, k), lerp(14, 60, k), lerp(-60, -900, k)], fov: lerp(34, 40, k), far: 5000};
+	// keep the far horizon low in frame (under the full-screen card), sun sitting on it
+	const tz = lerp(-60, -900, k);
+	const ty = lerp(14, y + Math.tan(THREE.MathUtils.degToRad(5.6)) * (z - tz), smoothstep(0.1, 0.6, k));
+	return {pos: [lerp(4, 0, k), y, z], target: [lerp(1, 0, k), ty, tz], fov: lerp(34, 40, k), far: 5000};
 };
 export const S12: SceneDef = {
 	id: 'S12',

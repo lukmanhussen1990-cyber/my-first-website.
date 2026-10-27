@@ -32,7 +32,7 @@ const CLOUDS = [
 const jesusX = (t: number) => lerp(-1.6, 1.7, ease.inOut(clamp((t - BRAID_END) / 3.4)));
 
 // The market in uproar at scene time t (also frozen by S8).
-export const TempleChaos: React.FC<{t: number; frozen?: boolean}> = ({t}) => {
+export const TempleChaos: React.FC<{t: number; frozen?: boolean; settled?: boolean}> = ({t, settled = false}) => {
 	const shot = useShot();
 	const tau = t - FLIP_T + 0.55; // flip starts just before the word
 	const flip = flipAngle(tau, 0);
@@ -71,28 +71,36 @@ export const TempleChaos: React.FC<{t: number; frozen?: boolean}> = ({t}) => {
 				<Dove key={i} position={d.p} rotation={[0, d.yaw, 0]} flap={d.flap} bank={d.bank} scale={d.s} />
 			))}
 			{/* sheep and oxen driven out to the right */}
-			{Array.from({length: 7}, (_, i) => {
-				const ph = r();
-				const x0 = 0.6 + r() * 3.5;
-				const z = -2.2 + r() * 3.6;
-				const x = x0 + run * (t - BRAID_END) * (2.4 + r() * 0.8);
-				return <Sheep key={i} seed={i + 2} position={[x, 0, z]} rotation={[0, -0.12 + (r() - 0.5) * 0.4, 0]} run={run} phase={t * 2.2 + ph} />;
-			})}
-			<Ox seed={5} position={[5.2 + run * (t - BRAID_END) * 2.0, 0, -2.6]} rotation={[0, -0.05, 0]} run={run} phase={t * 1.4} />
-			<Ox seed={6} position={[6.8 + run * (t - BRAID_END) * 2.1, 0, -0.9]} rotation={[0, 0.08, 0]} run={run} phase={t * 1.4 + 0.4} />
+			{settled
+				? null
+				: Array.from({length: 8}, (_, i) => {
+						const ph = r();
+						const ahead = 0.9 + r() * 2.6;
+						const z = -1.8 + r() * 3.2;
+						const x = jx + ahead + run * (t - BRAID_END) * (0.55 + r() * 0.35);
+						return <Sheep key={i} seed={i + 2} position={[x, 0, z]} rotation={[0, -0.12 + (r() - 0.5) * 0.4, 0]} run={run} phase={t * 2.2 + ph} />;
+					})}
+			{settled ? null : <Ox seed={5} position={[jx + 3.2 + run * (t - BRAID_END) * 0.6, 0, -2.4]} rotation={[0, -0.05, 0]} run={run} phase={t * 1.4} />}
+			{settled ? null : <Ox seed={6} position={[jx + 4.4 + run * (t - BRAID_END) * 0.7, 0, -0.6]} rotation={[0, 0.08, 0]} run={run} phase={t * 1.4 + 0.4} />}
 			{/* foreground parallax objects near the camera path */}
 			<Jar seed={12} h={0.9} position={[-3.2, 0, 4.6]} />
 			<Jar seed={13} h={0.7} position={[-2.6, 0, 5.1]} color="#A65A36" />
 			<Cage seed={14} position={[5.8, 0, 4.4]} rotation={[0, 0.4, 0]} />
 			<Figure
 				look={JESUS}
-				pose={t < BRAID_END ? {...P.stand, near: {sh: 0.9, el: 1.2, hand: 'fist'}, far: {sh: 0.8, el: 1.25, hand: 'fist'}, headTilt: 0.15, gaze: [0.2, 0.6], hold: {item: 'cords'}} : {...P.whipHigh, stride: Math.sin(t * 5.5) * 0.6, hold: {item: 'whip', swing}, blink: blinkAt(t, 2.9)}}
+				pose={
+					settled
+						? {...P.whipLow, brow: {inner: 3, outer: 0}, eyes: 'open', gaze: [0.2, 0.3], blink: blinkAt(t, 3.1)}
+						: t < BRAID_END
+							? {...P.stand, near: {sh: 0.9, el: 1.2, hand: 'fist'}, far: {sh: 0.8, el: 1.25, hand: 'fist'}, headTilt: 0.15, gaze: [0.2, 0.6], hold: {item: 'cords'}}
+							: {...P.whipHigh, stride: Math.sin(t * 5.5) * 0.6, hold: {item: 'whip', swing}, blink: blinkAt(t, 2.9)}
+				}
 				at={[jx, 0, 0.2]}
 				res={1400}
 			/>
-			<Figure look={MERCHANTS[1]} pose={{...P.jumpBack, lean: -0.1 - 0.15 * smoothstep(FLIP_T - 0.4, FLIP_T + 0.4, t)}} at={[3.1, 0, 2.6]} facing={-1} res={900} />
-			<Figure look={MERCHANTS[3]} pose={{...P.jumpBack, stride: 0.5}} at={[5.6, 0, -1.6]} facing={-1} res={800} />
-			<Figure look={MERCHANTS[4]} pose={{...P.jumpBack, near: {sh: 2.6, el: 0.5, hand: 'flat'}}} at={[-2.4, 0, -1.8]} res={800} />
+			{settled ? null : <Figure look={MERCHANTS[1]} pose={{...P.jumpBack, lean: -0.1 - 0.15 * smoothstep(FLIP_T - 0.4, FLIP_T + 0.4, t)}} at={[3.3, 0, 1.0]} facing={-1} res={900} />}
+			{settled ? null : <Figure look={MERCHANTS[3]} pose={{...P.jumpBack, stride: 0.5}} at={[5.6, 0, -1.6]} facing={-1} res={800} />}
+			<Figure look={MERCHANTS[4]} pose={settled ? {...P.stand, eyes: 'wide', near: {sh: 0.4, el: 1.2}} : {...P.jumpBack, near: {sh: 2.6, el: 0.5, hand: 'flat'}}} at={[-2.4, 0, -1.8]} res={800} />
 			<Dust box={[[-4, 0.1, -3], [8, 2.6, 4]]} count={220} size={0.05} opacity={0.5 + 0.3 * smoothstep(FLIP_T, FLIP_T + 1, t)} />
 			<LightShaft from={[-10, 13, -10]} to={[0.5, 0, -1]} r0={0.9} r1={1.8} opacity={0.08} />
 		</>
@@ -106,8 +114,8 @@ const camS6 = (t: number): Cam => {
 		return {pos: [jx + 0.15, 1.12, 0.2 + 0.95 - t * 0.06], target: [jx + 0.15, 1.06, 0.2], fov: 30};
 	}
 	const k = ease.inOut(clamp((t - BRAID_END) / 3.3));
-	const x = lerp(-2.2, 2.8, k);
-	return {pos: [x, lerp(2.4, 2.0, k), lerp(8.6, 8.0, k)], target: [x + 1.0, 1.05, -0.3], fov: 46};
+	const x = lerp(-0.6, 3.0, k);
+	return {pos: [x, lerp(2.5, 2.1, k), lerp(9.6, 8.8, k)], target: [x + 0.4, 1.0, -0.4], fov: 50};
 };
 
 const S6Content: React.FC<{t: number; d: number}> = ({t}) => {
@@ -146,13 +154,13 @@ export const S06: SceneDef = {
 };
 
 // ---------- S7: card over the settling dust ----------
-const S7Content: React.FC<{t: number; d: number}> = ({t}) => <TempleChaos t={FLIP_T + 2.4 + t * 0.5} />;
+const S7Content: React.FC<{t: number; d: number}> = ({t}) => <TempleChaos t={FLIP_T + 2.4 + t * 0.5} settled />;
 export const S07: SceneDef = {
 	id: 'S7',
 	sunAz: SUN_AZ,
 	camera: (t, d) => {
 		const k = ease.inOut(t / d);
-		return {pos: [lerp(3.6, 2.4, k), lerp(3.0, 2.5, k), lerp(7.0, 6.2, k)], target: [lerp(2.6, 2.2, k), 0.6, 0.6], fov: 42};
+		return {pos: [lerp(4.2, 3.4, k), lerp(2.6, 2.3, k), lerp(8.2, 7.4, k)], target: [lerp(2.4, 2.1, k), 0.8, 0.2], fov: 44};
 	},
 	post: (t, d, sun) => ({
 		bloom: {intensity: 0.65, threshold: 0.82},
@@ -172,7 +180,7 @@ export const S08: SceneDef = {
 	camera: (t, d) => {
 		const k = ease.inOut(t / d);
 		const jx = jesusX(FREEZE);
-		return {pos: [jx + lerp(1.7, 1.5, k), lerp(1.9, 1.75, k), lerp(5.6, 4.7, k)], target: [jx + 1.25, 1.35, 0.2], fov: 40};
+		return {pos: [jx + lerp(0.9, 0.8, k), lerp(1.8, 1.7, k), lerp(6.0, 5.2, k)], target: [jx + 0.62, 1.4, 0.2], fov: 42};
 	},
 	post: (t, d, sun) => ({
 		bloom: {intensity: 0.5, threshold: 0.85},

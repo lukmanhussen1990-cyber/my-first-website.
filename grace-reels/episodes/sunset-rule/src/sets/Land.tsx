@@ -78,12 +78,13 @@ const grovesGeo = (seed = 5) => {
 		p.push(at(base, x, landH(x, z) - 0.2, z, r() * 6, 0, 0, s));
 	}
 	// rocks on the hill
-	for (let i = 0; i < 26; i++) {
+	for (let i = 0; i < 7; i++) {
 		const a = r() * Math.PI * 2;
-		const d = 3 + r() * 14;
+		const d = 5 + r() * 12;
 		const x = HILL[0] + Math.cos(a) * d;
 		const z = HILL[2] + Math.sin(a) * d;
-		p.push(facet(at(blob(0.6 + r() * 1.1, i + 7, 0.3, 0, 0.7), x, landH(x, z), z), '#A8957A', 0.08, 600 + i));
+		const rad = 0.45 + r() * 0.7;
+		p.push(facet(at(blob(rad, i + 7, 0.3, 0, 0.6), x, landH(x, z) - rad * 0.7, z), '#BCA37E', 0.08, 600 + i));
 	}
 	return merge(p);
 };

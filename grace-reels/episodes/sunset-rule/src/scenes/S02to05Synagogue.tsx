@@ -15,8 +15,8 @@ import {wordTime} from '../timeline';
 // S2 synagogue wide · S3 anger close-up · S4 grief (same face) · S5 the hand opens
 
 const SUN_AZ = 168;
-const JESUS_AT: Vec3 = [2.5, 0, 1.7];
-const MAN_AT: Vec3 = [-1.5, 0, 0.9];
+const JESUS_AT: Vec3 = [1.5, 0, 1.6];
+const MAN_AT: Vec3 = [-0.9, 0, 0.9];
 const HEAD_Y = 1.57;
 
 // watchers: three on the side bench, two on the back bench
@@ -59,11 +59,11 @@ const Base: React.FC<{beams?: number}> = ({beams = 1}) => (
 // ---------- S2 ----------
 const camS2 = (t: number, d: number): Cam => {
 	const k = ease.inOut(t / d);
-	return {pos: [lerp(3.4, 2.6, k), lerp(4.6, 4.2, k), lerp(12.8, 11.6, k)], target: [lerp(-0.9, -0.6, k), 1.15, -1.4], fov: 40};
+	return {pos: [lerp(1.4, 1.0, k), lerp(3.6, 3.3, k), lerp(10.6, 9.8, k)], target: [lerp(0.15, 0.2, k), 1.15, -1.2], fov: 42};
 };
 const S2Content: React.FC<{t: number; d: number}> = ({t, d}) => {
 	const walk = clamp(t / (d * 0.7));
-	const jx = lerp(4.6, JESUS_AT[0], ease.out(walk));
+	const jx = lerp(3.4, JESUS_AT[0], ease.out(walk));
 	const stride = walk < 1 ? Math.sin(t * 5.2) * 0.55 : 0;
 	return (
 		<>
@@ -80,9 +80,9 @@ export const S02: SceneDef = {
 	camera: camS2,
 	post: (t, d, sun) => ({
 		bloom: {intensity: 0.7, threshold: 0.78},
-		dof: {focusDistance: 12.5, focusRange: 8, bokehScale: 1.4},
+		dof: {focusDistance: 9.6, focusRange: 6, bokehScale: 1.6},
 		vignette: {offset: 0.28, darkness: 0.55},
-		grade: gradeFromSun(sun, {contrast: 1.06}),
+		grade: gradeFromSun(sun, {contrast: 1.06, exposure: 1.12}),
 	}),
 	Content: S2Content,
 	anchors: () => ({watchers: [-2.8, 1.75, -4.25], man: [MAN_AT[0], 1.9, MAN_AT[2]]}),
@@ -90,8 +90,8 @@ export const S02: SceneDef = {
 
 // ---------- S3 / S4: the same face ----------
 const faceCam = (k: number): Cam => {
-	const dist = lerp(1.75, 1.18, k);
-	return {pos: [JESUS_AT[0] - 0.55 * dist, HEAD_Y + 0.06, JESUS_AT[2] + 0.83 * dist], target: [JESUS_AT[0] + 0.02, HEAD_Y - 0.02, JESUS_AT[2]], fov: 30};
+	const dist = lerp(2.15, 1.55, k);
+	return {pos: [JESUS_AT[0] - 0.55 * dist, HEAD_Y + 0.1, JESUS_AT[2] + 0.83 * dist], target: [JESUS_AT[0] + 0.02, HEAD_Y + 0.12, JESUS_AT[2]], fov: 30};
 };
 const FaceShot: React.FC<{pose: Pose; red: number; blue: number; t: number}> = ({pose, red, blue, t}) => (
 	<>
@@ -99,15 +99,15 @@ const FaceShot: React.FC<{pose: Pose; red: number; blue: number; t: number}> = (
 		<Watchers t={t} narrow={0.45} />
 		<Figure look={MAN} pose={P.withered} at={MAN_AT} res={600} />
 		<Figure look={JESUS} pose={{...pose, noArms: true}} at={JESUS_AT} facing={-1} win={WINDOWS.bust} res={2300} />
-		<Glow at={[JESUS_AT[0] + 0.08, HEAD_Y - 0.02, JESUS_AT[2] - 0.25]} size={0.95 + red * 0.15} color="#C0392B" opacity={0.42 * red} />
-		<Glow at={[JESUS_AT[0] - 0.08, HEAD_Y - 0.06, JESUS_AT[2] - 0.22]} size={1.0} color="#3D6FB4" opacity={0.5 * blue} />
+		<Glow at={[JESUS_AT[0] + 0.1, HEAD_Y - 0.02, JESUS_AT[2] - 0.25]} size={1.15 + red * 0.15} color="#C0392B" opacity={0.5 * red} />
+		<Glow at={[JESUS_AT[0] - 0.12, HEAD_Y - 0.06, JESUS_AT[2] - 0.22]} size={1.2} color="#3D6FB4" opacity={0.7 * blue} />
 	</>
 );
 const facePost = (sun: Parameters<SceneDef['post']>[2], dist: number) => ({
 	bloom: {intensity: 0.8, threshold: 0.75},
 	dof: {focusDistance: dist, focusRange: 0.5, bokehScale: 4},
 	vignette: {offset: 0.25, darkness: 0.6},
-	grade: gradeFromSun(sun, {contrast: 1.08}),
+	grade: gradeFromSun(sun, {contrast: 1.08, exposure: 1.08}),
 });
 
 const S3Content: React.FC<{t: number; d: number}> = ({t, d}) => {
@@ -128,9 +128,9 @@ export const S03: SceneDef = {
 	id: 'S3',
 	sunAz: SUN_AZ,
 	camera: (t, d) => faceCam(0.35 * ease.inOut(t / d)),
-	post: (t, d, sun) => facePost(sun, lerp(1.75, 1.18, 0.35 * ease.inOut(t / d))),
+	post: (t, d, sun) => facePost(sun, lerp(2.15, 1.55, 0.35 * ease.inOut(t / d))),
 	Content: S3Content,
-	anchors: () => ({face: [JESUS_AT[0] - 0.25, HEAD_Y + 0.18, JESUS_AT[2]]}),
+	anchors: () => ({face: [JESUS_AT[0] - 0.2, HEAD_Y - 0.12, JESUS_AT[2]]}),
 };
 
 const S4Content: React.FC<{t: number; d: number}> = ({t}) => {
@@ -158,9 +158,9 @@ export const S04: SceneDef = {
 	id: 'S4',
 	sunAz: SUN_AZ,
 	camera: (t, d) => faceCam(0.35 + 0.65 * ease.inOut(t / d)),
-	post: (t, d, sun) => facePost(sun, lerp(1.75, 1.18, 0.35 + 0.65 * ease.inOut(t / d))),
+	post: (t, d, sun) => facePost(sun, lerp(2.15, 1.55, 0.35 + 0.65 * ease.inOut(t / d))),
 	Content: S4Content,
-	anchors: () => ({face: [JESUS_AT[0] - 0.25, HEAD_Y + 0.18, JESUS_AT[2]]}),
+	anchors: () => ({face: [JESUS_AT[0] - 0.06, HEAD_Y - 0.02, JESUS_AT[2]]}),
 };
 
 // ---------- S5: "Stretch forth thine hand" ----------
