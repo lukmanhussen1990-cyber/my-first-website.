@@ -280,7 +280,18 @@ const stationAt = (t: number) => {
 	while (i + 1 < STATIONS.length && t >= STATIONS[i + 1].at) i++;
 	return i;
 };
-const dollyX = (t: number) => keys(t, [[SCENE.S4.start - 0.3, 2.0], [B.dots[1], 1.35], [B.dots[3], 0.35], [B.dots[10], -3.75], [B.dots[11], -4.6], [SCENE.S5.start, -4.75]], easeInOut);
+// A steady track along the table that is centred on each station halfway through Jesus' time there, so
+// He is never more than half a seat from the middle of the frame. Camera x = His head (0.45 m left of
+// where He kneels) + 0.1.
+const DOLLY_KEYS: [number, number][] = [
+	[SCENE.S4.start - 0.3, 2.0],
+	...STATIONS.map((s, i): [number, number] => [
+		i + 1 < STATIONS.length ? (s.at + STATIONS[i + 1].at) / 2 : s.at + 0.3,
+		kneelAt(SEATS[s.seat].x, SEATS[s.seat].s)[0] - 0.45 + 0.1,
+	]),
+	[SCENE.S5.start, -4.75],
+];
+const dollyX = (t: number) => keys(t, DOLLY_KEYS, (x) => x);
 export const TWELVE: ShotDef = {
 	id: 'TWELVE',
 	start: SCENE.S4.start - 0.3,
