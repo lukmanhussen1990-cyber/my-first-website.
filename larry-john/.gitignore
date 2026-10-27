@@ -1,0 +1,11 @@
+node_modules/
+.cache/
+__pycache__/
+*.pyc
+# big intermediate render files (re-created by the build scripts)
+haunted-house/build/
+# reference: the original video and the frames pulled from it stay local only
+reference/reference_tent-to-hotel.mp4
+reference/frames/
+reference/fullsize/
+reference/contact_sheets/
