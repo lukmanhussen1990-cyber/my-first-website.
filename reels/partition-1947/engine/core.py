@@ -102,8 +102,9 @@ class BaseMap:
         if not (x0 >= m['x0'] and x1 <= dx1 and y1 <= m['y_top'] and y0 >= dy0) or cam.s < 40:
             name = 'wide'
         m, pyr = self.layers[name]
+        # Coarsest pyramid level that still has at least ~0.9 source px per screen px.
         k = 0
-        while k + 1 < len(pyr) and cam.s / (m['ppd'] / 2 ** (k + 1)) >= 0.7:
+        while k + 1 < len(pyr) and m['ppd'] / 2 ** (k + 1) >= cam.s * 0.9:
             k += 1
         ppd = m['ppd'] / 2 ** k
         img = pyr[k]

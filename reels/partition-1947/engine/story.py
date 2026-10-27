@@ -55,8 +55,9 @@ class Region:
     def __init__(self):
         self.ev = []
 
-    def show(self, t, color):
-        self.ev.append((t, 'show', color))
+    def show(self, t, color, fade=0.1):
+        """fade=0 when this fill replaces another one under a white flash."""
+        self.ev.append((t, 'show', (color, fade)))
 
     def recolor(self, t, color):
         self.ev.append((t, 'recolor', color))
@@ -70,8 +71,8 @@ class Region:
             if kind == 'show':
                 if T < t:
                     break
-                color = arg
-                alpha = clamp((T - t) / 0.1)
+                color, fd = arg
+                alpha = clamp((T - t) / fd) if fd > 0 else 1.0
                 flash = 1.0 if T < t + 0.08 else 1 - ease_out((T - t - 0.08) / 0.55)
             elif kind == 'recolor':
                 if T < t - 0.14:
@@ -294,7 +295,7 @@ class Story:
                      y=360, size=200)
         for key in ('IND_TODAY', 'PAK_TODAY', 'KASHMIR'):
             self.region(key).hide(t_ek, flash=True)
-        self.region('BRITISH_INDIA').show(t_ek, COL['gold'])
+        self.region('BRITISH_INDIA').show(t_ek, COL['gold'], fade=0)
         self.sound(t_ek, 'shimmer', 0.9)
 
     def part2(self, p):
@@ -495,7 +496,7 @@ class Story:
         self.on_map(t_8 - 0.25, E + 0.6, arr)
         self.sound(t_8 - 0.25, 'whoosh', 0.7)
         self.pin_with_name(77.21, 28.61, 'Delhi', t_8 + 0.35, E - 0.05, size=60, pin_scale=1.0)
-        self.tag_on_map('PEHLI BAAR', 74.3, 27.6, t_pehli, E - 0.1, size=40, bg=(196, 140, 10))
+        self.tag_on_map('PEHLI BAAR', 77.6, 26.55, t_pehli, E - 0.1, size=40, bg=(196, 140, 10))
         weeks = [('JULY', '8'), ('JULY', '15'), ('JULY', '22'), ('JULY', '29'), ('AUG', '5'), ('AUG', '12')]
         t_w = self.w(p5, 'paanch')
         pages = [(t_8, 'JULY', '8', '1947')] + [(t_w + 0.32 * (i + 1), m, d, '1947') for i, (m, d) in enumerate(weeks[1:])]
@@ -578,10 +579,10 @@ class Story:
         self.qmark(74.75, 31.25, t_bor, t_17 - 0.05, size=130)
         self.qmark(88.75, 24.6, t_bor + 0.15, t_17 - 0.05, size=130)
         self.region('BRITISH_INDIA').hide(t_17 + 0.05, flash=True)
-        self.region('IND_1947').show(t_17 + 0.05, COL['india'])
-        self.region('PAK_W_1947').show(t_17 + 0.05, COL['pakistan'])
-        self.region('PAK_E_1947').show(t_17 + 0.05, COL['pakistan'])
-        self.region('KASHMIR').show(t_17 + 0.05, COL['kashmir'])
+        self.region('IND_1947').show(t_17 + 0.05, COL['india'], fade=0)
+        self.region('PAK_W_1947').show(t_17 + 0.05, COL['pakistan'], fade=0)
+        self.region('PAK_E_1947').show(t_17 + 0.05, COL['pakistan'], fade=0)
+        self.region('KASHMIR').show(t_17 + 0.05, COL['kashmir'], fade=0)
         self.sound(t_17, 'boom', 0.8)
         self.sound(t_17 + 0.05, 'shimmer', 0.8)
         self.tag_on_map('J&K: not decided yet', 76.4, 36.4, t_17 + 0.5, E + 0.2, size=34, bg=(66, 70, 78))
@@ -720,9 +721,9 @@ class Story:
         self.sound(t_1971 - 1.3, 'riser', 0.7, dur=1.3)
         self.title3d([[('1971', *RED3D)]], t_1971 - 0.05, t_part - 0.3, y=380, size=210)
         self.region('PAK_E_1947').hide(t_bd, flash=True)
-        self.region('BGD').show(t_bd, COL['bangladesh'])
-        self.badge_on_map('bangladesh', 90.25, 23.75, 70, t_bd + 0.1, E + 0.6, k=0.4)
-        self.name_on_map('Bangladesh', 89.9, 25.3, t_bd + 0.2, E + 0.5, size=72, k=0.4)
+        self.region('BGD').show(t_bd, COL['bangladesh'], fade=0)
+        self.badge_on_map('bangladesh', 90.25, 23.75, 70, t_bd + 0.1, None, k=0.4)
+        self.name_on_map('Bangladesh', 89.9, 25.3, t_bd + 0.2, None, size=72, k=0.4)
         self.sound(t_bd, 'ding', 0.9)
         self.qmark(88.2, 22.4, t_kaise - 0.05, E + 0.5, size=170)
 
@@ -754,6 +755,17 @@ class Story:
                     cur = []
             if cur:
                 chunks.append((p, cur))
+        # Fold one-word leftovers ("tha.", "ko —") into the phrase before them.
+        merged = []
+        for p, idx in chunks:
+            text = ' '.join(self.words[p][j] for j in idx)
+            if merged and len(idx) == 1 and len(text) <= 7 and merged[-1][0] == p:
+                prev = ' '.join(self.words[p][j] for j in merged[-1][1])
+                if len(prev) + 1 + len(text) <= 22 and not prev.endswith(('.', '?', '!', '…')):
+                    merged[-1] = (p, merged[-1][1] + idx)
+                    continue
+            merged.append((p, idx))
+        chunks = merged
         out = []
         for i, (p, idx) in enumerate(chunks):
             start = self.wt[p][idx[0]][0]
