@@ -16,7 +16,7 @@ export const fullCardCover = (t) => clamp((t - IN.t) / IN.d) * (1 - clamp((t - O
 
 const FS = 96, LH = 120, GS = 1.0, PADX = 120, TOP = 760;
 const INK = '#2e1c0e', GOLD = '#8a520a', PAPER = '#efe1bf';
-const GHOST = mixHex(INK, PAPER, 0.74), GHOST_G = mixHex(GOLD, PAPER, 0.66);
+const GHOST = mixHex(INK, PAPER, 0.6), GHOST_G = mixHex(GOLD, PAPER, 0.54);
 const fontOf = (w) => (w.gold ? `700 ${Math.round(FS * GS)}px ${SERIF}` : `italic 600 ${FS}px ${SERIF}`);
 
 export const FullCard = ({ t, frame }) => {

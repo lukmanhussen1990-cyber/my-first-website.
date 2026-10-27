@@ -45,7 +45,7 @@ if (mode === 'stills') {
   console.log('cast sheet ->', out);
 } else if (mode === 'cover') {
   // node render.mjs cover [frame] [out.jpg]
-  const inputProps = { frame: Number(process.argv[3] || 150) };
+  const inputProps = { frame: Number(process.argv[3] || 1305) };
   const out = path.resolve(process.argv[4] || 'out/cover.jpg');
   const composition = await selectComposition({ serveUrl, id: 'Cover', inputProps, browserExecutable, chromiumOptions });
   await renderStill({ composition, serveUrl, inputProps, output: out, imageFormat: 'jpeg', jpegQuality: 94, browserExecutable, chromiumOptions, timeoutInMilliseconds });

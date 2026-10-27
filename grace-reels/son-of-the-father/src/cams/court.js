@@ -37,12 +37,12 @@ export function blocking(plan, H) {
     return T1 + (T2 - T1) - (1 - R2) * (T2 - T1) / 2 + R2 * (t - T2);
   };
   // S1 orbit: angular speed w(t) (fast -> slow); the azimuth ends in front of Him (camera on the +x side)
-  const W = [[0, 0.8], [0.35, 0.8], [1.1, 0.55], [1.7, 0.05], [99, 0.05]];
-  const wAt = (t) => { for (let i = 0; i < W.length - 1; i++) if (t <= W[i + 1][0]) { const [a, wa] = W[i], [b, wb] = W[i + 1]; return wa + (wb - wa) * H.clamp((t - a) / (b - a)); } return 0.05; };
+  const W = [[0, 0.58], [0.35, 0.58], [1.1, 0.4], [1.7, 0.035], [99, 0.035]];
+  const wAt = (t) => { for (let i = 0; i < W.length - 1; i++) if (t <= W[i + 1][0]) { const [a, wa] = W[i], [b, wb] = W[i + 1]; return wa + (wb - wa) * H.clamp((t - a) / (b - a)); } return 0.035; };
   const integ = (a, b) => { let s = 0; const n = 80; for (let i = 0; i < n; i++) s += wAt(a + (b - a) * (i + 0.5) / n); return s * (b - a) / n; };
   const R0 = integ(0, S.S1.t1);
   // from the north-west round to the front (Barabbas, west of Him, stays out of the frame the whole way)
-  const orbitA = (t) => (t >= 0 ? Math.PI / 2 + (R0 - integ(0, t)) : Math.PI / 2 + R0 - 0.8 * t);
+  const orbitA = (t) => (t >= 0 ? Math.PI / 2 + (R0 - integ(0, t)) : Math.PI / 2 + R0 - 0.58 * t);
   // piecewise-linear walks at a speed (m/s) -> [x, 0, z, heading yaw, moving]
   const path = (pts, t0, speed) => (t) => {
     let d = Math.max(0, (t - t0) * speed);
@@ -54,16 +54,20 @@ export function blocking(plan, H) {
     return [pts[0][0], 0, pts[0][2], 0, false];
   };
   const bWalk = path([B, [3.15, 0, 1.4], [3.0, 0, 12], [3.6, 0, 20]], E.barabbasWalks, 0.62);
-  const jLed = path([J, [5.05, 0, -4], [5.1, 0, -14], [4.6, 0, -21.5]], E.jesusLed, 0.8);
+  // S10: Jesus stands a step north of His mark (out of the two-shot at the cuffs; beside, not in front of, Barabbas
+  // in the wide from the east), then is led away west
+  const J10 = [5.0, 0, 0.3];
+  const jLed = path([J10, [5.05, 0, -4], [5.1, 0, -14], [4.6, 0, -21.5]], E.jesusLed, 0.8);
   const gateWalk = path([[4.15, 0, 18.4], [3.9, 0, 23.6]], S.S12.t0 - 0.4, 0.75);    // S12: out through the gate, stops
   const s4 = (t) => { const u = H.clamp((t - S.S4.t0 + 0.2) / (S.S4.t1 - S.S4.t0 + 0.4)); return 2.1 * (1 - u); };
   const s4z = (z) => z * 0.38;                                                     // side by side, close together
   return {
-    s1Time, orbitA, wAt, bWalk, jLed, gateWalk,
+    s1Time, orbitA, wAt, bWalk, jLed, gateWalk, J10,
+    s10cut: E.shacklesLand + 0.25,                                     // S10: the cut on the clank (two-shot -> wide)
     // positions of the two men: [x, 0, z, facing yaw, moving]
     jesusAt(t, shot) {
       if (shot === 'S4') return [J[0] + s4(t), 0, s4z(J[2]), -Math.PI / 2, true];
-      if (shot === 'S10' && t >= E.jesusLed) { const p = jLed(t); return [p[0], 0, p[2], p[3], p[4]]; }
+      if (shot === 'S10') { if (t >= E.jesusLed) { const p = jLed(t); return [p[0], 0, p[2], p[3], p[4]]; } return [J10[0], 0, J10[2], COURT.face, false]; }
       if (shot === 'S5') return [J[0], 0, J[2], -Math.PI / 2, false];     // He has turned to look at the people
       return [J[0], 0, J[2], COURT.face, false];
     },
@@ -117,11 +121,11 @@ export function camera(plan, Bk, shot, t, H) {
       const a = Bk.orbitA(tt);
       const k = H.smooth(H.invLerp(-0.2, 2.2, tt));
       const d = H.lerp(4.4, 3.35, k) - 0.12 * H.clamp((tt - 2.2) / 2.8);
-      const camY = H.lerp(1.2, 0.62, k);
+      const camY = H.lerp(1.28, 1.02, k);
       const look = at([J[0], H.lerp(1.5, 1.52, k), J[2] - 0.02]);
       const pos = at([J[0] + Math.sin(a) * d, camY, J[2] + Math.cos(a) * d]);
       const w = Bk.wAt(Math.max(0, tt));
-      return { pos, look, fov: 30, focus: Math.hypot(pos[0] - look[0], pos[2] - look[2]) + 0.05, mblur: w > 0.3 ? 6 : 0 };
+      return { pos, look, fov: 30, focus: Math.hypot(pos[0] - look[0], pos[2] - look[2]) + 0.05, mblur: w > 0.25 ? 6 : 0 };
     }
     case 'S2': {
       // Barabbas in chains: medium close-up, slightly low, backlit by the low sun; slow creep in
@@ -145,14 +149,14 @@ export function camera(plan, Bk, shot, t, H) {
     }
     case 'S5': {
       // over Jesus' shoulder: He has turned to look at the people (south); soft light on their faces
-      const look = at([J[0] - 6, 1.5, J[2] - 0.45]);
-      const pos = at([J[0] + 1.2 - 0.1 * u, 1.8 - 0.02 * u, J[2] + 0.19]);
+      const look = at([J[0] - 6, 1.45, J[2] - 0.5]);
+      const pos = at([J[0] + 1.85 - 0.12 * u, 1.76 - 0.02 * u, J[2] + 0.42]);
       return { pos, look, fov: 31, focus: 6.4 };
     }
     case 'S7': {
       // over Pilate's shoulder: he stands and raises a hand toward each man below; the crowd beyond, the sun ahead
-      const look = at([3.4, 1.3 - 0.05 * u, 0.0]);
-      const pos = at([11.75 - 0.2 * u, 4.0, 0.0]);
+      const look = at([3.4, 1.05 - 0.05 * u, 0.0]);
+      const pos = at([11.7 - 0.2 * u, 4.7, 0.0]);
       return { pos, look, fov: 31, focus: 7.6 };
     }
     case 'S7b': {
@@ -163,40 +167,44 @@ export function camera(plan, Bk, shot, t, H) {
     }
     case 'S8': {
       // in front of Jesus: He stands perfectly still on the right, the crowd erupts behind Him; shake on the shout
-      const look = at([J[0] - 16, 1.95, J[2] + 0.5]);
-      let pos = at([J[0] + 6.0 - 0.25 * u, 1.22, J[2] + 0.5]);
+      const look = at([J[0] - 16, 1.5, J[2] + 0.38]);
+      let pos = at([J[0] + 3.3 - 0.2 * u, 1.55, J[2] + 0.32]);
       const sh = H.smooth(H.invLerp(E.shout - 0.05, E.shout + 0.05, t)) * Math.exp(-2.2 * Math.max(0, t - E.shout));
       const n = (s) => H.noise2(t * 22, s, 5);
       pos = H.add(pos, [n(1) * 0.07 * sh, n(2) * 0.07 * sh, n(3) * 0.09 * sh]);
-      return { pos, look: H.add(look, [0, n(5) * 0.05 * sh, n(4) * 0.05 * sh]), roll: n(6) * 0.012 * sh, fov: 32, focus: 6.0 - 0.25 * u, locked: sh > 0.02 };
+      return { pos, look: H.add(look, [0, n(5) * 0.05 * sh, n(4) * 0.05 * sh]), roll: n(6) * 0.012 * sh, fov: 32, focus: 6.5, locked: sh > 0.02 };
     }
     case 'S9': {
       // the world freezes and drains to dark: both men under spotlights, the name card above them; slow push-in
       const k = H.easeInOut(u);
-      const look = at([J[0], H.lerp(2.35, 2.3, k), 0.0]);
-      const dist = H.lerp(10.2, 9.0, k);
-      return { pos: H.sph(look, Math.PI / 2, H.lerp(0.02, 0.03, k), dist), look, fov: 30, focus: dist - 0.1, locked: true };
+      // high in the palace colonnade (the empty seat below): the line of sight clears the dais down to their feet
+      const look = at([J[0], H.lerp(2.3, 2.25, k), 0.0]);
+      const pos = at([H.lerp(14.5, 13.6, k), H.lerp(4.6, 4.4, k), 0.0]);
+      return { pos, look, fov: 30, focus: Math.hypot(pos[0] - J[0], pos[1] - 1.6) - 0.1, locked: true };
     }
     case 'S10': {
-      // the swap (slow motion): close on the shackles -> they fall -> the camera rises and pulls back east while
-      // Barabbas walks toward it into the warm light and Jesus is led away west, toward the far hill
+      // the swap (slow motion). A: a profile two-shot from the north at the cuffs, the guard (left) turning the key;
+      // the shackles fall and the camera tilts down to the stone. B (cut on the clank): wide from the east, craning
+      // up and back while Barabbas walks toward us into the warm light and Jesus is led away west, toward the hill
       const bp = Bk.barabbasAt(t, 'S10');
-      const k = H.easeInOut(H.invLerp(E.shacklesLand - 0.2, E.shacklesLand + 4.8, t));
-      const tilt = H.smooth(H.invLerp(E.shacklesFall - 0.1, E.shacklesLand + 0.1, t));
-      const lookNear = at([B[0] + 0.02, H.lerp(1.0, 0.22, tilt), B[2] + 0.12]);
-      const lookFar = at([6.4, 6.2, -59.5]);
-      const look = H.mixv(lookNear, lookFar, k);
-      const posNear = at([B[0] + 0.55, H.lerp(1.08, 0.66, tilt), B[2] + 1.6]);
-      const posFar = at([3.4, 3.2, 15.5]);
-      const pos = H.mixv(posNear, posFar, k);
-      return { pos, look, fov: H.lerp(30, 30, k), focus: H.lerp(1.6, Math.hypot(bp[0] - 3.4, bp[2] - 15.5) + 0.3, k) };
+      if (t < Bk.s10cut) {
+        const tilt = H.smooth(H.invLerp(E.shacklesFall - 0.05, E.shacklesLand + 0.02, t));
+        const creep = H.easeInOut(H.clamp((t - shot.t0) / (E.shacklesFall - shot.t0)));
+        const look = at([B[0] + 0.05, H.lerp(1.85, 0.4, tilt), B[2] + 0.38]);
+        const pos = at([B[0] + 4.2 - 0.3 * creep, 1.86, B[2] + 0.38]);
+        return { pos, look, fov: 30, focus: Math.hypot(pos[0] - look[0], pos[2] - look[2]) };
+      }
+      const k = H.easeInOut(H.invLerp(Bk.s10cut, Bk.s10cut + 5.2, t));
+      const look = at([H.lerp(5.3, 6.4, k), H.lerp(2.6, 6.2, k), H.lerp(-40, -59.5, k)]);
+      const pos = at([H.lerp(4.15, 3.4, k), H.lerp(1.9, 3.2, k), H.lerp(8.6, 15.5, k)]);
+      return { pos, look, fov: 30, focus: Math.max(2, Math.hypot(bp[0] - pos[0], bp[2] - pos[2]) + 0.2) };
     }
     case 'S12': {
       // outside the east gate: Barabbas walks out toward us, stops, turns back; rack focus to the far hill where a
       // tiny figure carries the beam up the path (far away only)
       const bp = Bk.barabbasAt(t, 'S12');
-      const look = at([H.lerp(3.2, 3.0, u), H.lerp(3.1, 3.6, u), -120]);
-      const pos = at([4.0, 1.66, 26.5 - 0.2 * u]);
+      const look = at([H.lerp(5.4, 5.8, u), H.lerp(4.2, 4.8, u), -120]);
+      const pos = at([4.08, 1.66, 26.5 - 0.2 * u]);
       const near = Math.hypot(bp[0] - pos[0], bp[2] - pos[2]) + 0.1, far = 240;
       const rk = H.smooth(H.invLerp(E.rackFocus - 0.2, E.rackFocus + 1.1, t));
       return { pos, look, fov: 22, focus: near * Math.pow(far / near, rk) };

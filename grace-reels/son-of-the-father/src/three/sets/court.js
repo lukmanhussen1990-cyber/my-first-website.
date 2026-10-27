@@ -53,7 +53,7 @@ const groundColor = (x, z, y) => {
   const dh = Math.hypot(x - COURT.hill[0], z - COURT.hill[2]);
   const rock = smooth(invLerp(40, 8, dh)) * clamp(0.4 + fbm(x * 0.2, z * 0.2, 2, 11));
   let c = mixc(srgb('#9a9064'), srgb('#ab9e6e'), n);
-  c = mixc(c, srgb('#b6a684'), rock);
+  c = mixc(c, srgb('#8d8069'), rock);                  // the hill's rock a shade darker (it must read against a storm sky)
   return mixc(c, srgb('#9d9a86'), smooth(invLerp(150, 500, Math.hypot(x, z))) * 0.5);
 };
 
@@ -130,7 +130,7 @@ export function build(ctx) {
   // courtyard dressing: amphorae + baskets by the portico, palms in planters, straw on the stone, a water basin
   g.add(scatterPots(26, { points: Array.from({ length: 26 }, (_, i) => [-15.0 + 0.6 * hash01(i, 3), -18 + i * 1.42 + 0.4 * hash01(i, 4)]), height: () => 0, scale: [0.9, 1.4] }));
   g.add(scatterBaskets(8, { points: [[-14.6, -6], [-14.4, 7], [-14.7, 12.5], [8.5, -17], [8.8, 17.5], [-14.6, 16], [9.2, -14.5], [-14.5, -13]], height: () => 0 }));
-  g.add(makePalms([[9.4, -19.4], [9.4, 19.4], [-15.2, -20.2], [-15.2, 20.6], [7.6, -20.6], [-3, -20.8]], { seed: 31 }));
+  const courtPalms = makePalms([[9.4, -19.4], [9.4, 19.4], [-15.2, -20.2], [-15.2, 20.6], [7.6, -20.6], [-3, -20.8]], { seed: 31 }); g.add(courtPalms);
   for (const [x, z] of [[9.4, -19.4], [9.4, 19.4], [-15.2, -20.2], [-15.2, 20.6], [7.6, -20.6], [-3, -20.8]]) { const pl = makeBevelBox(1.2, 0.7, 1.2, '#b89a72', { bevel: 0.06, seed: 40 + x }); pl.position.set(x, 0.35, z); g.add(pl); }
   g.add(makeStraw(520, { area: [C.x0 + 1, C.z0 + 1, C.x1 - 1, C.z1 - 1], seed: 8 }));
   const basin = makeBevelBox(2.2, 0.6, 1.4, '#cdbb96', { bevel: 0.08, seed: 51 }); basin.position.set(7.4, 0.3, -15.5); g.add(basin);
@@ -241,6 +241,7 @@ export function build(ctx) {
       const s9 = id === 'S9', far = ['S3', 'S10', 'S12', 'S13'].includes(id);
       // what is on stage
       cross.visible = id === 'S13';
+      courtPalms.visible = id !== 'S12';                   // S12: their fronds stood right over the far hill
       jesusFar.root.visible = farS[0].root.visible = farS[1].root.visible = id === 'S12';
       caster.visible = id === 'S4';
       temple.group.visible = !['S12', 'S13', 'S14a'].includes(id);
@@ -253,7 +254,7 @@ export function build(ctx) {
       if (jesus.root.visible) {
         const o = orient(jesus, cam, jp[3], { pref: id === 'S8' ? -1 : 1, force: id === 'S5' ? 'back' : null });
         let fn;
-        if (id === 'S4' || (id === 'S10' && jp[4])) fn = (tt) => { const P = Poses.walk(tt, 33, id === 'S10' ? 0.55 : 0.8, 0.7); P.aF = [0.3, 1.28, 0.12]; P.aB = [0.25, 1.38, 0.08]; P.handF = P.handB = 'open'; expr(P, 'peace', 1); return P; };
+        if (id === 'S4' || (id === 'S10' && jp[4])) fn = (tt) => { const P = Poses.walk(tt, 33, id === 'S10' ? 0.55 : 0.8, 0.7); P.aF = [0.235, 1.0, 0.1]; P.aB = [-0.53, 1.48, 0.06]; P.handF = P.handB = 'open'; expr(P, 'peace', 1); P.brow = 0; return P; };
         else if (isS1(id)) fn = (tt) => Poses.bound(tt, 33, lift(t));
         else if (id === 'S8') fn = (tt) => { const P = Poses.bound(tt, 33, 0.35); P.breath *= 0.5; return P; };
         else if (s9) fn = (tt) => Poses.bound(E.freeze + (t - E.freeze) * 0.3, 33, 0.25 + 0.35 * smooth(invLerp(E.goldName - 0.4, E.goldName + 1.2, t)));
@@ -283,7 +284,7 @@ export function build(ctx) {
         else fn = (tt) => { const P = Poses.shackled(tt, 15, 1); const jerk = Math.exp(-(((t - E.chainClank) / 0.12) ** 2)); P.aF[0] += 0.35 * jerk; P.aB[0] += 0.2 * jerk; return P; };
         // S12: he stops and turns back toward the hill (paper flip to the side view, then the back), face softening
         if (id === 'S12' && t >= E.turnBack) {
-          barabbas.viewAt(t, [[E.turnBack, 'threeQuarter', -1], [E.turnBack + 0.25, 'side', -1]], 3);
+          barabbas.viewAt(t, [[E.turnBack, 'threeQuarter', 1], [E.turnBack + 0.25, 'side', 1]], 3);   // he looks back toward the hill (screen right)
           fn = (tt) => { const P = Poses.freed(tt, 15, soft); P.look = 0.4; P.lookY = 0.12; P.headTilt = 0.06; return P; };
         }
         if (id === 'S14a') { barabbas.setView('threeQuarter'); barabbas.setFacing(-1); fn = (tt) => { const P = Poses.freed(tt, 15, 1); P.lookY = -0.25; P.headTilt = -0.1; expr(P, 'sadness', 0.4); P.mouth = 'none'; return P; }; }
@@ -294,7 +295,8 @@ export function build(ctx) {
         if (id === 'S10' && t >= E.shacklesFall) {
           if (!rel.set) { releaseWrists(); barabbas.act(fn, T, { wind: 0.5, vx: bp[4] ? 0.6 : 0 }); barabbas.billboard(cam, 0.3); }
           shackles.group.visible = true;
-          shackles.fall((t - E.shacklesFall) * 0.55, rel.a, rel.b, { groundY: 0.02, toCam: _d.set(cam.position.x - rel.a.x, 0, cam.position.z - rel.a.z).normalize(), dirA: rel.da, dirB: rel.db });
+          const low = Math.min(rel.a.y, rel.b.y) - 0.3, g0 = 2 * Math.max(0.05, low - 0.02) / (E.shacklesLand - E.shacklesFall) ** 2;   // lands on the clank
+          shackles.fall(t - E.shacklesFall, rel.a, rel.b, { groundY: 0.02, g0, toCam: _d.set(cam.position.x - rel.a.x, 0, cam.position.z - rel.a.z).normalize(), dirA: rel.da, dirB: rel.db });
         } else if (shackles.group.visible) {
           const dir = placeWrists(barabbas, cam, _a, _b, 0.04);
           shackles.set(_a, _b, 0.01 * Math.sin(T * 2.3), dir, fa1, fa2);
@@ -313,24 +315,28 @@ export function build(ctx) {
         pilate.act((tt) => Poses.seatedUneasy(tt, 26, 0.5), s9 ? E.freeze : T, { wind: 0.3 });
       }
       pilate.billboard(cam, 0.25); pilate.autoOutline(cam);
+      if (s9) pilate.root.visible = false;
+      if (bema.chair) bema.chair.visible = !s9;
       // ---- soldiers
       const sol = (p, x, z, yaw, seed, fn = null) => { p.root.position.set(x, 0, z); p.root.visible = true; orient(p, cam, yaw, { pref: 1 }); p.setProp('spear'); p.act(fn || ((tt) => { const P = Poses.idle(tt, seed); P.aF = [0.32, 0.55, 0.1]; return P; }), s9 ? E.freeze : T, { wind: 0.3 }); p.billboard(cam, 0.3); p.autoOutline(cam); };
       if (id === 'S10' && t < E.barabbasWalks + 1.5) {
         // the guard unlocks the shackles (turns the key), then steps back
-        const back = smooth(invLerp(E.shacklesLand, E.shacklesLand + 0.9, t));
-        guards[1].setProp(null); guards[1].root.position.set(B[0] + 0.5 + 0.5 * back, 0, B[2] + 0.42 + 0.3 * back); guards[1].root.visible = true;
-        orient(guards[1], cam, -Math.PI / 2 - 0.6, { pref: 1 });
-        guards[1].act((tt) => (back < 0.5 ? Poses.unlock(tt, 801) : Poses.idle(tt, 801)), T, { wind: 0.3 }); guards[1].billboard(cam, 0.3); guards[1].autoOutline(cam);
+        const back = t >= Bk.s10cut ? 1 : smooth(invLerp(E.shacklesLand, E.shacklesLand + 0.9, t));
+        guards[1].setProp(null); guards[1].root.position.set(B[0] + 0.04 + 1.16 * back, 0, B[2] + 0.75 - 0.2 * back); guards[1].root.visible = true;
+        orient(guards[1], cam, back > 0.5 ? -Math.PI / 2 : Math.PI, { pref: 1 });
+        guards[1].act((tt) => { if (back >= 0.5) return Poses.idle(tt, 801); const P = Poses.unlock(tt, 801); P.lean = 0.05; return P; }, T, { wind: 0.3 }); guards[1].billboard(cam, 0.3); guards[1].autoOutline(cam);
       } else sol(guards[1], 4.0, B[2] - 1.65, -Math.PI / 2, 801);
       sol(guards[0], 4.0, J[2] + 1.65, -Math.PI / 2, 802);
-      for (const [p, z, i] of [[daisS[0], -2.9, 0], [daisS[1], 2.9, 1]]) { sol(p, 11.3, z, -Math.PI / 2, 810 + i); p.root.position.y = COURT.palace.h; }
+      if (id === 'S7b' || id === 'S8') for (const p of guards) p.root.visible = false;
+      if (id === 'S10') guards[0].root.visible = false;
+      for (const [p, z, i] of [[daisS[0], -2.9, 0], [daisS[1], 2.9, 1]]) { sol(p, 11.3, z, -Math.PI / 2, 810 + i); p.root.position.y = COURT.palace.h; p.root.visible = !s9; }
       line.forEach((p, i) => sol(p, 2.55, [-11.5, -6.6, 6.6, 11.5][i], -Math.PI / 2, 820 + i));
       for (const [i, p] of leaders.entries()) {
-        p.root.visible = id === 'S10';
+        p.root.visible = id === 'S10' && t >= Bk.s10cut;
         if (!p.root.visible) continue;
         const led = t >= E.jesusLed;
-        const pt = led ? Bk.jLed(t) : null;
-        const x = led ? pt[0] + (i ? 0.25 : -0.2) : J[0] + (i ? -0.5 : 0.5), z = led ? pt[2] + (i ? 1.35 : -1.25) : J[2] + (i ? 1.0 : -0.95);
+        const pt = led ? Bk.jLed(t) : null, J10 = Bk.J10;
+        const x = led ? pt[0] + (i ? 0.25 : -0.2) : J10[0] + (i ? 0.45 : 0.6), z = led ? pt[2] + (i ? 1.35 : -1.25) : J10[2] + (i ? 0.85 : -0.75);
         p.root.position.set(x, 0, z); orient(p, cam, led ? Math.PI : -Math.PI / 2, { pref: 1 }); p.setProp('spear');
         p.act(led ? (tt) => { const P = Poses.walk(tt, 830 + i, 0.55, 0.7); P.aF = [0.32, 0.55, 0.1]; return P; } : (tt) => Poses.idle(tt, 830 + i), T, { wind: 0.3 });
         p.billboard(cam, 0.3); p.autoOutline(cam);
@@ -422,12 +428,15 @@ export function build(ctx) {
           split: 0.22, splitShadow: '#5b6a92', splitHigh: '#ffcf7a', ao: 0.55, aoRadius: 0.5, tilt: 0, tonemap: 'agx', agxLook: 0.55,
           godrays: { pos: [J[0] - 380, 160, J[2] + 80], color: '#ffd9a0', strength: 0.55, radius: 0.16, decay: 0.968, density: 0.92, streaks: 0.65 } },
       });
-      if (id === 'S1' || id === 'LOOP') return merge(dawn, { post: { dof: 0.75, focusRange: 0.9, vignette: 0.5, godrays: { strength: 0.75 } } });
+      if (id === 'S1' || id === 'LOOP') return merge(dawn, { hemi: { intensity: 0.95 }, char: '#fff4e4', fog: { density: 0.0018 },
+        point: { pos: [J[0] + 2.6, 2.3, J[2] - 1.7], color: '#ffd8a8', intensity: 4, distance: 9, charColor: '#ffdcb0', charK: 0.35, charRange: 3.5 },
+        sky: { horizon: '#d9ad7c', sunGlow: '#e8a65c' },
+        post: { exposure: 0.98, bloom: 0.5, bloomThreshold: 0.92, haze: 0.0, dof: 0.55, focusRange: 1.0, vignette: 0.42, contrast: 1.16, godrays: { strength: 0.35 } } });
       if (id === 'S2') return merge(dawn, { char: '#f2e2cc', post: { dof: 0.75, focusRange: 0.8, vignette: 0.58, sat: 0.98, contrast: 1.14, godrays: { strength: 0.5 } } });
       if (id === 'S3') return merge(dawn, {
         sky: { top: '#86a8cc', horizon: '#f0dcb8', clouds: 0.5 }, sunDir: [-0.7, 0.62, 0.36], sun: { color: '#ffe6c2', intensity: 2.6 }, hemi: { intensity: 0.85 },
-        fog: { color: '#e6d3b0', density: 0.0045, height: 14, near: 120, far: 900 },
-        post: { exposure: 0.94, tilt: 0.45, tiltTop: 0.72, tiltBottom: 0.18, haze: 0.2, hazeTop: 0.6, hazeColor: '#eedcb8', bloom: 0.5, godrays: { strength: 0 }, split: 0.15 },
+        fog: { color: '#e6d3b0', density: 0.0028, height: 14, near: 120, far: 900 },
+        post: { exposure: 0.94, tilt: 0.45, tiltTop: 0.72, tiltBottom: 0.18, haze: 0.08, hazeTop: 0.6, hazeColor: '#eedcb8', bloom: 0.45, contrast: 1.16, sat: 1.12, godrays: { strength: 0 }, split: 0.15 },
       });
       if (id === 'S4') return merge(dawn, {
         sky: { top: '#8ea6c6', horizon: '#e9d6be' }, sun: { color: '#ffe0b4', intensity: 2.5 }, hemi: { sky: '#9db4d8', ground: '#a08a6e', intensity: 0.8 }, char: '#f4ece2',
@@ -459,8 +468,8 @@ export function build(ctx) {
         return merge(dawn, {
           sky: { storm: 0.85 * st, stormDark: '#3a3a42', stormLit: '#8a8078', stormAlt: 85, clouds: 0.35 * (1 - st), horizon: '#e8c79a' },
           sun: { intensity: 2.6 }, char: '#fff0dc',
-          fog: { color: st > 0.5 ? '#bfae98' : '#e9c79a', density: 0.006 + 0.004 * st },
-          post: { dof: 0.6, focusRange: 2.2, vignette: 0.5, godrays: { strength: 0.25 }, split: 0.28, splitShadow: '#4a5670' },
+          fog: { color: st > 0.5 ? '#bfae98' : '#e9c79a', density: 0.0025 + 0.0015 * st },
+          post: { dof: 0.45, focusRange: 3.0, vignette: 0.5, haze: 0.02, contrast: 1.14, godrays: { strength: 0.2 }, split: 0.28, splitShadow: '#4a5670' },
         });
       }
       if (id === 'S12') {
@@ -469,18 +478,18 @@ export function build(ctx) {
         return merge(dawn, {
           sky: { storm: 0.9, stormDark: '#2e2f38', stormLit: '#6a6670', stormAlt: 80, clouds: 0, top: '#5a6274', horizon: '#c9b393', crack: age != null ? { age, pos: [COURT.hill[0] + 30, 120, COURT.hill[2] - 150], size: 220, hold: false, hole: 0, glowK: 0.6 } : null },
           sun: { intensity: 2.5 }, hemi: { sky: '#8c96ac', intensity: 0.7 }, char: '#ffeedd',
-          fog: { color: '#a89f94', density: 0.005, height: 18, near: 60, far: 800 },
-          post: { dof: 1.2, focusRange: 0.6, vignette: 0.55, godrays: { strength: 0 }, sat: 0.92, split: 0.3, splitShadow: '#3e4a66', splitHigh: '#ffd6a0' },
+          fog: { color: '#a89f94', density: 0.0009, height: 18, near: 60, far: 800 },
+          post: { dof: 1.2, focusRange: 0.6, vignette: 0.55, haze: 0.015, contrast: 1.14, godrays: { strength: 0 }, sat: 0.92, split: 0.3, splitShadow: '#3e4a66', splitHigh: '#ffd6a0' },
         });
       }
       if (id === 'S13') {
         const lb = smooth(invLerp(E.lightBreaks - 0.4, E.lightBreaks + 2.6, t));
-        const hp = [COURT.hill[0] - 4, COURT.hillTop + 40, COURT.hill[2] - 30];
+        const hp = [COURT.hill[0] - 3, COURT.hillTop + 22, COURT.hill[2] - 30];
         return merge(MOODS.storm, {
           sky: { storm: 1, stormDark: '#2a2b33', stormLit: '#77706a', top: '#3a3f4c', horizon: '#8d8378', crack: { age: lb > 0 ? 0.5 + lb * 3 : -1, pos: hp, size: 120, hold: true, color: '#000000', hole: 1.2 * lb, glowColor: '#ffd9a0', glowK: 1.3 * lb, cloudK: 0.9 } },
           sunDir: [-0.2, 0.55, -0.8], sun: { color: '#ffd8a8', intensity: 0.8 + 1.6 * lb }, hemi: { sky: '#7d8496', ground: '#3a352c', intensity: 0.65 + 0.3 * lb },
-          fog: { color: '#6e6a66', density: 0.008, height: 20, near: 40, far: 700 }, char: '#d8d0c4', wind: 1.6,
-          post: { exposure: 0.95 + 0.15 * lb, bloom: 0.8 + 0.5 * lb, sat: 0.75 + 0.3 * lb, vignette: 0.55, tilt: 0.2, dof: 0, split: 0.35, splitShadow: '#2c3a54', splitHigh: '#ffcf8a',
+          fog: { color: '#6e6a66', density: 0.0045, height: 20, near: 40, far: 700 }, char: '#d8d0c4', wind: 1.6,
+          post: { exposure: 0.86 + 0.16 * lb, bloom: 0.7 + 0.5 * lb, contrast: 1.18, haze: 0.02, sat: 0.78 + 0.3 * lb, vignette: 0.62, tilt: 0.2, dof: 0, split: 0.35, splitShadow: '#2c3a54', splitHigh: '#ffcf8a',
             godrays: { pos: hp, color: '#ffdca8', strength: 0.95 * lb, radius: 0.2, decay: 0.97, density: 0.95, streaks: 0.85 } },
         });
       }

@@ -11,10 +11,10 @@ Object.assign(Poses, {
   // lift 0 = gaze lowered .. 1 = eyes lifted
   bound(t, s = 1, lift = 0.4) {
     const P = Poses.idle(t, s);
-    P.aF = [0.3, 1.28, 0.12]; P.aB = [0.25, 1.38, 0.08]; P.handF = 'open'; P.handB = 'open';
+    P.aF = [0.235, 1.0, 0.1]; P.aB = [-0.53, 1.48, 0.06]; P.handF = 'open'; P.handB = 'open';   // both wrists meet in front of the belt
     P.dx *= 0.35; P.lean = 0.004 * P.breath; P.look *= 0.15;
-    P.lookY = lerp(-0.4, 0.3, lift); P.headTilt = lerp(-0.09, 0.07, lift);
-    expr(P, 'peace', 1);
+    P.lookY = lerp(-0.22, 0.3, lift); P.headTilt = lerp(-0.06, 0.07, lift);
+    expr(P, 'peace', 1); P.brow = 0; P.eye = lerp(0.68, 0.8, lift);   // calm, not sad
     return P;
   },
   // Barabbas: heavy and restless, shackled hands low in front; glare 1 = hard eyes .. 0 = softened

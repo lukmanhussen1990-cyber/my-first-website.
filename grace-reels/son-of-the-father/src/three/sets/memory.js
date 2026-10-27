@@ -65,8 +65,8 @@ export function build(ctx) {
       } else if (id === 'S5b') {
         jesus.root.position.set(...MEM.B.jesus); jesus.setView('threeQuarter'); jesus.setFacing(1);
         const L = Bk.lift(t);
-        jesus.act((tt) => { const P = Poses.idle(tt, 33); P.aF = [lerp(1.4, 2.55, L), lerp(0.9, 0.35, L)]; P.aB = [lerp(1.3, 2.45, L), lerp(1.0, 0.4, L)]; P.handF = P.handB = 'open'; expr(P, 'laugh', 0.8); P.headTilt = 0.12 * L; P.lookY = 0.6 * L; return P; }, t, { wind: 0.4 });
-        child.root.position.set(MEM.B.child[0], lerp(0.55, 1.08, L), MEM.B.child[2]);
+        jesus.act((tt) => { const P = Poses.idle(tt, 33); P.aF = [lerp(1.6, 2.85, L), lerp(0.8, 0.12, L)]; P.aB = [lerp(1.5, 2.75, L), lerp(0.9, 0.18, L)]; P.handF = P.handB = 'open'; expr(P, 'laugh', 0.8); P.headTilt = 0.14 * L; P.lookY = 0.75 * L; return P; }, t, { wind: 0.4 });
+        child.root.position.set(MEM.B.child[0] + 0.12 * L, lerp(1.2, 1.84, L), MEM.B.child[2] - 0.18 * L);
         child.setView('threeQuarter'); child.setFacing(-1); child.uni.uLayerBase.value = 26;
         child.act((tt) => { const P = Poses.idle(tt, 42); P.aF = [2.4, 0.3]; P.aB = [2.2, 0.4]; P.lF = [0.5, -0.6]; P.lB = [-0.2, -0.3]; expr(P, 'laugh', 1); return P; }, t, { wind: 0.5 });
         mother.setView('threeQuarter'); mother.setFacing(-1);
@@ -91,9 +91,9 @@ export function build(ctx) {
       return merge(MOODS.morningGold, {
         sky: { top: '#f3e2c2', horizon: '#fff2dc', bottom: '#e6cfa6', band: '#000000', sunGlow: '#fff0d0', sunDisk: '#ffffff', clouds: 0 },
         sunDir: [0.35, 0.72, 0.6], sun: { color: '#fff1d8', intensity: 2.4 }, hemi: { sky: '#fff4e2', ground: '#d8b88a', intensity: 1.05 },
-        fog: { color: '#f6e6c8', near: 8, far: 70, density: 0.03, height: 6, sun: 0.4 }, char: '#fff6ea', ao: 0.14,
-        post: { exposure: 1.02, bloom: 1.1, bloomThreshold: 0.72, haze: 0.32, hazeTop: 0.45, hazeColor: '#fff0d6', vignette: 0.22, grain: 0.02, sat: 0.86, contrast: 0.96,
-          split: 0.2, splitShadow: '#9a7a6a', splitHigh: '#ffe6b8', dof: shot.id === 'S5a' ? 1.2 : 0.8, focusRange: shot.id === 'S5a' ? 0.25 : 0.8, tilt: 0, ao: 0.35,
+        fog: { color: '#f6e6c8', near: 8, far: 70, density: 0.016, height: 6, sun: 0.4 }, char: '#fff6ea', ao: 0.14,
+        post: { exposure: 1.0, bloom: 0.9, bloomThreshold: 0.76, haze: 0.16, hazeTop: 0.45, hazeColor: '#fff0d6', vignette: 0.28, grain: 0.02, sat: 0.95, contrast: 1.04,
+          split: 0.2, splitShadow: '#9a7a6a', splitHigh: '#ffe6b8', dof: shot.id === 'S5a' ? 1.0 : shot.id === 'S5c' ? 0.45 : 0.7, focusRange: shot.id === 'S5a' ? 0.3 : shot.id === 'S5c' ? 2.5 : 0.8, tilt: 0, ao: 0.35,
           godrays: { pos: [40, 60, 40], strength: 0 } },
       });
     },

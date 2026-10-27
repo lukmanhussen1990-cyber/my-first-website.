@@ -54,7 +54,7 @@ CARDS.forEach((c) => { c.toks = prepare(c); });
 const CW = 920, CX = 80, CTOP = 380, PADX = 90, FS = 62, LH = 78, GS = 0.9, GLS = 0.035;
 const TW = CW - 2 * PADX;
 const PAPER = '#efe2c2', INK = '#2b1a0e', CUR = '#3d2412', GOLD = '#87500a';
-const GHOST = mixHex(INK, PAPER, 0.72), GHOST_G = mixHex(GOLD, PAPER, 0.64);
+const GHOST = mixHex(INK, PAPER, 0.58), GHOST_G = mixHex(GOLD, PAPER, 0.52);
 const fontOf = (w) => (w.gold ? `700 ${Math.round(FS * GS)}px ${SERIF}` : `italic 600 ${FS}px ${SERIF}`);
 
 export const cardAt = (t) => CARDS.find((c) => t >= c.t0 - 0.05 && t < c.t1 + 0.05) || null;

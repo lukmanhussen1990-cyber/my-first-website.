@@ -549,10 +549,14 @@ export function makeShackles({ links = 22, sag = 0.34 } = {}) {
 
 // ---------- the rope on Jesus' wrists (a few coils + a short hanging end) ----------
 export function makeRope() {
+  // a tight wrap of rope around both wrists (turns overlap and cross, so it reads as one bound band, never as
+  // separate rings), a knot, and the loose end hanging down in two segments
   const g = new THREE.Group(), coils = new THREE.Group(); g.add(coils);
-  const m = new THREE.MeshLambertMaterial({ color: '#d2b47c', emissive: '#3a2a12', emissiveIntensity: 0.6, flatShading: true });
-  for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 5, 12).rotateX(Math.PI / 2), m); t.position.y = (i - 1) * 0.02; t.rotation.z = (i - 1) * 0.1; coils.add(t); }
-  const end = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.007, 0.2, 5).translate(0, -0.1, 0), m); g.add(end);
+  const m = new THREE.MeshLambertMaterial({ color: '#b8925c', emissive: '#2a1d0c', emissiveIntensity: 0.35, flatShading: true });
+  for (let i = 0; i < 5; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.043 + 0.003 * (i % 2), 0.0135, 6, 14).rotateX(Math.PI / 2), m); t.position.y = (i - 2) * 0.017; t.rotation.z = (i % 2 ? 1 : -1) * 0.32; coils.add(t); }
+  const knot = new THREE.Mesh(new THREE.IcosahedronGeometry(0.024, 0), m); knot.position.set(0, 0.005, 0.045); knot.scale.set(1.2, 0.9, 0.8); coils.add(knot);
+  const end = new THREE.Mesh(new THREE.CylinderGeometry(0.0115, 0.0105, 0.15, 6).translate(0, -0.075, 0), m); g.add(end);
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.0105, 0.008, 0.12, 6).translate(0, -0.06, 0), m); tail.position.y = -0.145; tail.rotation.z = 0.35; end.add(tail);
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   g.userData.coils = coils; g.userData.end = end;
   return g;

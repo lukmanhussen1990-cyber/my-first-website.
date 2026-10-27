@@ -648,3 +648,260 @@ export function heartPop({ f = 700, seed = 'hpop' } = {}) {
 }
 // the loop seam: a soft breath of air that rises (brightening) toward the seam and falls into the hook hit
 export const loopWhoosh = ({ dur = 0.82, peak = 0.85, seed = 'loop' } = {}) => whoosh({ dur, peak, f0: 280, f1: 1900, f2: 500, q: 0.9, air: 0.4, rise: 2.0, fall: 0.06, seed });
+
+// ================================================================== Q.03 SON OF THE FATHER
+// the crowd (roar with chant-like pulses, bursts, whispers), iron (chains, shackles on stone, the key, the
+// lock breaking), the heartbeat, torches, steps on stone, distant horn calls, low drums, birds, a city at night
+const METAL = [1, 1.47, 2.09, 2.56, 3.31, 4.12, 5.03];
+// inharmonic iron partials (a link, a cuff, a lock body) added into x at sample offset
+function addMetal(x, off, r, f, amp, tau, k = 5) {
+  for (let j = 0; j < k; j++) addMode(x, off, f * METAL[j] * r.uni(0.985, 1.015), amp * Math.pow(0.72, j) * r.uni(0.6, 1), tau * Math.pow(0.8, j) * r.uni(0.8, 1.2), 0.0002);
+}
+
+// crowd roar: a mass of shouting voices (formant-filtered band-limited saws on long "ah / a / eh / oh"
+// shouts, pitched up with the energy) over a broadband noise roar; no words. energy(tSec) 0..~1.2 drives
+// level, pitch and brightness. chant = {rate, sync, depth, phase}: a share of the shouters lock to rhythmic
+// pulses (chant-like, wordless). burst: every voice shouts at once (the crowd hit)
+const SHOUT = [[760, 1150, 2500], [660, 1080, 2650], [560, 1720, 2500], [500, 880, 2400]];
+export function crowdRoar({ dur = 4, energy = () => 1, voices = 26, chant = null, burst = false, bright = 1, seed = 'roar' } = {}) {
+  const r = makeRng(seed), n = smp(dur), E = f32(Math.ceil(n / 64) + 1);
+  for (let b = 0; b < E.length; b++) E[b] = clamp(energy(b * 64 / SR), 0, 1.5);
+  const eAt = (i) => E[Math.max(0, Math.min(E.length - 1, i >> 6))];
+  const per = chant ? 1 / chant.rate : 0, ph0 = chant?.phase ?? 0, depth = chant?.depth ?? 0.6;
+  const pulseAt = (t) => (chant ? Math.pow(0.5 + 0.5 * Math.cos(TAU * (t - ph0) / per), 3) : 0);
+  // noise roar (a breathy wall of voices at a distance)
+  const roar = { L: f32(n), R: f32(n) };
+  for (const ch of ['L', 'R']) {
+    const a = pink(n, r); bp2(a, 220, 3000 * bright); normRms(a, 1);
+    const b = pink(n, r); svf(b, (i) => 650 + 550 * eAt(i), 1.3, 'bp', 32); normRms(b, 1);
+    const g = smoothRand(n, 1.4, r);
+    for (let i = 0; i < n; i++) { const p = chant ? 1 - depth * 0.55 + depth * 0.55 * pulseAt(i / SR) * 1.6 : 1; roar[ch][i] = eAt(i) * p * (0.85 + 0.15 * g[i]) * (0.5 * a[i] + 0.5 * b[i]); }
+  }
+  // shouters
+  const vox = { L: f32(n), R: f32(n) };
+  const shoutAt = (t, d, base, gl, gr, lvl) => {
+    const i0 = smp(t), m = Math.min(smp(d), n - i0); if (m < 128 || i0 < 0) return;
+    const e0 = eAt(i0), V = r.pick(SHOUT), f0 = base * (1 + 0.5 * e0) * r.uni(0.95, 1.06), freq = f32(m), jit = smoothRand(m, 16, r), bend = r.uni(0.04, 0.16);
+    for (let i = 0; i < m; i++) { const u = i / m; freq[i] = f0 * (1 + bend * sin(Math.PI * Math.min(1, u * 1.7)) - 0.12 * u * u) * (1 + 0.014 * jit[i]); }
+    const src = blepSaw(freq, r), syl = f32(m);
+    V.forEach((fc, j) => { const y = copy(src); filt(y, 'bp', fc * (1 + 0.1 * e0) * r.uni(0.96, 1.04), 4 + 2 * j); for (let i = 0; i < m; i++) syl[i] += y[i] * [1, 0.55, 0.28][j]; });
+    const asp = white(m, r); bp2(asp, 900, 4200); normRms(asp, 0.1);
+    const a = lvl * r.uni(0.6, 1);
+    for (let i = 0; i < m; i++) { const u = i / m, ee = smooth(u / 0.07) * (u > 0.55 ? cosRamp((1 - u) / 0.45) : 1) * a * eAt(i0 + i), s = (syl[i] + asp[i]) * ee; vox.L[i0 + i] += s * gl; vox.R[i0 + i] += s * gr; }
+  };
+  for (let k = 0; k < voices; k++) {
+    const female = r.next() < 0.4, base = female ? r.uni(190, 300) : r.uni(105, 185), [gl, gr] = panLR(r.uni(-0.95, 0.95)), lvl = r.uni(0.35, 1);
+    if (burst) { shoutAt(r.uni(0, 0.05), r.uni(0.55, 1.15), base, gl, gr, lvl); continue; }
+    if (chant && r.next() < (chant.sync ?? 0.55)) {                   // chanter: one shout per pulse (some skipped)
+      for (let t = ph0 + per * Math.floor((0 - ph0) / per); t < dur; t += per) if (t > -0.05 && r.next() > 0.18) shoutAt(Math.max(0, t - 0.07 + r.uni(-0.03, 0.03)), per * r.uni(0.42, 0.62), base, gl, gr, lvl);
+      continue;
+    }
+    for (let t = r.uni(0, 0.9); t < dur - 0.1;) { const d = r.uni(0.35, 1.0); shoutAt(t, d, base, gl, gr, lvl); t += d + (r.next() > 0.3 ? r.uni(0.05, 0.25) : r.uni(0.4, 1.2)); }
+  }
+  normStereoRms(roar, 1); normStereoRms(vox, 1);
+  const out = { L: f32(n), R: f32(n) };
+  for (const ch of ['L', 'R']) {
+    for (let i = 0; i < n; i++) out[ch][i] = 0.55 * roar[ch][i] + 0.85 * vox[ch][i];
+    lp4(out[ch], 5200 * bright); filt(out[ch], 'hp', 110, 0.7);
+  }
+  return normStereoRms(out, 0.1);
+}
+// whispers through a hushed crowd: unvoiced formant syllables and sibilants, wide; no words
+export function whispers({ dur = 3, voices = 8, seed = 'whisper' } = {}) {
+  const r = makeRng(seed), n = smp(dur), out = { L: f32(n), R: f32(n) };
+  for (let k = 0; k < voices; k++) {
+    const [gl, gr] = panLR(r.uni(-0.9, 0.9)), lvl = r.uni(0.4, 1); let t = r.uni(0, 0.7);
+    while (t < dur - 0.12) {
+      const sib = r.next() < 0.3, d = sib ? r.uni(0.06, 0.16) : r.uni(0.07, 0.17), m = smp(d), syl = f32(m), src = white(m, r);
+      if (sib) { const y = copy(src); filt(y, 'hp', r.uni(3800, 5600), 0.8); filt(y, 'lp', 10000, 0.7); for (let i = 0; i < m; i++) syl[i] = y[i] * 0.55; }
+      else r.pick(VOW).forEach((fc, j) => { const y = copy(src); filt(y, 'bp', fc * r.uni(0.95, 1.08), 4 + 2 * j); for (let i = 0; i < m; i++) syl[i] += y[i] * [1, 0.7, 0.4][j]; });
+      const i0 = smp(t), a = lvl * r.uni(0.5, 1);
+      for (let i = 0; i < m && i0 + i < n; i++) { const e = Math.pow(sin(Math.PI * i / m), sib ? 1 : 1.6) * a; out.L[i0 + i] += syl[i] * e * gl; out.R[i0 + i] += syl[i] * e * gr; }
+      t += d + (r.next() > 0.22 ? r.uni(0.01, 0.06) : r.uni(0.3, 0.9));
+    }
+  }
+  for (const ch of ['L', 'R']) filt(out[ch], 'hp', 320, 0.7);
+  return normStereoRms(out, 0.1);
+}
+// heavy iron chain: the big first impact (iron thud + link ring) and the links jingling to rest
+export function chainClank({ links = 8, spread = 0.26, weight = 1, seed = 'chain' } = {}) {
+  const r = makeRng(seed), n = smp(spread + 1.5), out = { L: f32(n), R: f32(n) }, ev = f32(smp(1.2));
+  addMode(ev, 0, r.uni(105, 130), 0.9 * weight, 0.05, 0.001);
+  addMetal(ev, 0, r, r.uni(820, 1050), 0.8 * weight, 0.16);
+  addClick(ev, 0, r, 3200, 1.0, 0.0015, 0.7);
+  addSt(out, ev, 0, 1, 0);
+  for (let k = 0, t = r.uni(0.012, 0.03); k < links && t < spread; k++) {
+    ev.fill(0); const a = r.uni(0.25, 0.7) * exp(-t / (spread * 0.6));
+    addMetal(ev, 0, r, r.uni(1500, 4200), a, r.uni(0.04, 0.12), 4);
+    addClick(ev, 0, r, r.uni(2500, 6500), 1.2, 0.0008, a * 0.6);
+    addSt(out, ev, smp(t), 1, r.uni(-0.4, 0.4));
+    t += r.uni(0.012, 0.05) * (1 + 1.5 * t / spread);
+  }
+  for (const ch of ['L', 'R']) { onePoleLP(out[ch], 9000); fades(out[ch], 0.0003, 0.25); }
+  return normStereoPeak(out);
+}
+// a chain dragging over stone: gritty friction with links knocking
+export function chainDrag({ dur = 1.2, rate = 14, seed = 'chainDrag' } = {}) {
+  const r = makeRng(seed), n = smp(dur + 0.5), nd = smp(dur), out = { L: f32(n), R: f32(n) }, ev = f32(smp(0.5));
+  const rough = smoothRand(n, 40, r), slow = smoothRand(n, 2.5, r);
+  for (const ch of ['L', 'R']) {
+    const x = white(n, r); svf(x, (i) => 2200 * Math.pow(1.6, slow[i]), 1.4, 'bp', 32); normRms(x, 1);
+    for (let i = 0; i < n; i++) { const u = i / nd, e = i < nd ? smooth(u / 0.15) * (u > 0.8 ? cosRamp((1 - u) / 0.2) : 1) : 0; out[ch][i] = 0.12 * e * x[i] * (0.4 + 0.6 * Math.abs(rough[i])); }
+  }
+  for (let t = r.uni(0, 0.05); t < dur;) {
+    ev.fill(0); addMetal(ev, 0, r, r.uni(1600, 4800), r.uni(0.15, 0.6) * smooth(t / 0.1), r.uni(0.03, 0.09), 4);
+    addSt(out, ev, smp(t), 1, r.uni(-0.3, 0.3));
+    t += -Math.log(1 - r.next() * 0.95) / rate;
+  }
+  for (const ch of ['L', 'R']) { onePoleLP(out[ch], 8500); fades(out[ch], 0.01, 0.15); }
+  return normStereoPeak(out);
+}
+// open shackles hitting the stone: stone thud + heavy iron ring, two bounces, the chain settling
+export function ironOnStone({ seed = 'ironStone' } = {}) {
+  const r = makeRng(seed), n = smp(2.6), out = { L: f32(n), R: f32(n) }, ev = f32(smp(1.8));
+  const hit = (t, a, f, pan) => {
+    ev.fill(0);
+    addMode(ev, 0, r.uni(62, 78), 1.0 * a, 0.07, 0.0015); addMode(ev, 0, r.uni(140, 170), 0.5 * a, 0.035, 0.001);
+    addMetal(ev, 0, r, f, 0.85 * a, 0.42, 6);
+    addClick(ev, 0, r, 2600, 0.9, 0.003, 0.9 * a); addClick(ev, 0, r, 900, 0.8, 0.008, 0.6 * a);
+    addSt(out, ev, smp(t), 1, pan);
+  };
+  hit(0, 1, r.uni(420, 520), 0); hit(0.085 + r.uni(0, 0.02), 0.45, r.uni(600, 760), 0.15); hit(0.16 + r.uni(0, 0.02), 0.22, r.uni(800, 1000), -0.1);
+  addSt(out, chainClank({ links: 10, spread: 0.45, weight: 0.5, seed: seed + 'c' }), smp(0.03), 0.45);
+  for (const ch of ['L', 'R']) { onePoleLP(out[ch], 9000); fades(out[ch], 0.0003, 0.4); }
+  return normStereoPeak(out);
+}
+// an iron key in the shackle lock: a short scrape in, three ratchet clicks, the bolt clunks open
+export function keyTurn({ seed = 'key' } = {}) {
+  const r = makeRng(seed), n = smp(1.1), out = { L: f32(n), R: f32(n) }, ev = f32(smp(0.5));
+  { const m = smp(0.12), x = white(m, r); bp2(x, 2500, 7000); for (let i = 0; i < m; i++) x[i] *= 0.25 * sin(Math.PI * i / m); addSt(out, x, 0, 1, 0.1); }
+  [0.2, 0.26, 0.32].forEach((t) => { ev.fill(0); addMetal(ev, 0, r, r.uni(2800, 3600), 0.35, 0.02, 3); addClick(ev, 0, r, 5000, 1.2, 0.0006, 0.4); addSt(out, ev, smp(t + r.uni(-0.005, 0.005)), 1, 0.1); });
+  ev.fill(0); addMode(ev, 0, 180, 0.8, 0.03, 0.001); addMetal(ev, 0, r, r.uni(1100, 1300), 0.6, 0.08, 5); addClick(ev, 0, r, 2200, 1.0, 0.002, 0.7);
+  addSt(out, ev, smp(0.42), 1, 0.1);
+  for (const ch of ['L', 'R']) fades(out[ch], 0.0005, 0.12);
+  return normStereoPeak(out);
+}
+// a small padlock clunk (the locked name card): body knock + a short iron ring
+export function lockClunk({ seed = 'lockClunk' } = {}) {
+  const r = makeRng(seed), n = smp(0.9), x = f32(n);
+  addMode(x, 0, 150, 0.8, 0.03, 0.001); addMetal(x, 0, r, r.uni(1250, 1400), 0.55, 0.12, 5); addClick(x, 0, r, 2400, 1.0, 0.002, 0.8);
+  addMetal(x, smp(0.035), r, r.uni(2300, 2600), 0.18, 0.05, 3);
+  fades(x, 0.0004, 0.2);
+  return normPeak(x);
+}
+// the lock breaks: a sharp crack, the two halves ringing apart (L / R), tiny shards tinkling
+export function lockCrack({ seed = 'lockCrack' } = {}) {
+  const r = makeRng(seed), n = smp(2.3), out = { L: f32(n), R: f32(n) }, ev = f32(smp(1.7));
+  const snap = white(smp(0.06), r); filt(snap, 'hp', 900, 0.7);
+  for (let i = 0; i < snap.length; i++) { const t = i / SR; snap[i] *= (1 - exp(-t / 0.0004)) * exp(-t / 0.007); }
+  addSt(out, normPeak(snap, 1), 0, 1, 0);
+  addMetal(ev, 0, r, r.uni(700, 820), 0.7, 0.5, 6); addSt(out, ev, smp(0.002), 0.8, -0.4);
+  ev.fill(0); addMetal(ev, 0, r, r.uni(980, 1150), 0.6, 0.42, 6); addSt(out, ev, smp(0.006), 0.8, 0.4);
+  for (let k = 0, t = 0.04; k < 9; k++, t += r.uni(0.02, 0.08)) { ev.fill(0); addMetal(ev, 0, r, r.uni(2500, 6000), r.uni(0.1, 0.35) * exp(-t / 0.35), r.uni(0.03, 0.1), 3); addSt(out, ev, smp(t), 1, r.uni(-0.8, 0.8)); }
+  for (const ch of ['L', 'R']) { onePoleLP(out[ch], 11000); fades(out[ch], 0.0002, 0.5); }
+  return normStereoPeak(out);
+}
+// heartbeat "lub-dub": two soft low thumps with a little body (2nd harmonic for small speakers)
+export function heartbeat({ gap = 0.21, weight = 1, seed = 'heart' } = {}) {
+  const r = makeRng(seed), n = smp(0.9), x = f32(n);
+  const thump = (t0, f, a, tau) => { const i0 = smp(t0); let ph = 0; for (let i = i0; i < n; i++) { const t = (i - i0) / SR; ph += TAU * f * (1 + 0.5 * exp(-t / 0.015)) / SR; x[i] += a * sin(ph) * (1 - exp(-t / 0.004)) * exp(-t / tau); } };
+  thump(0, 52, 1.0 * weight, 0.07); thump(0, 104, 0.3 * weight, 0.03); thump(gap, 58, 0.7 * weight, 0.06); thump(gap, 116, 0.22 * weight, 0.025);
+  const b = brown(n, r); lp4(b, 140); normRms(b, 0.25);
+  for (let i = 0; i < n; i++) { const t = i / SR; x[i] += b[i] * (exp(-t / 0.05) + 0.7 * (t > gap ? exp(-(t - gap) / 0.045) : 0)); }
+  softClip(normPeak(x), 1.4); lp4(x, 420); fades(x, 0.001, 0.15);
+  return normPeak(x);
+}
+// a burning torch: low roar with flutter, crackles and the odd pop
+export function torchFire({ dur = 4, size = 1, seed = 'fire' } = {}) {
+  const r = makeRng(seed), n = smp(dur), out = { L: f32(n), R: f32(n) }, fl = smoothRand(n, 7, r), sw = smoothRand(n, 0.8, r);
+  for (const ch of ['L', 'R']) {
+    const lo = brown(n, r); lp4(lo, 380 * size); filt(lo, 'hp', 45, 0.7); normRms(lo, 1);
+    const mid = pink(n, r); bp2(mid, 300, 2200); normRms(mid, 1);
+    for (let i = 0; i < n; i++) out[ch][i] = (0.7 + 0.2 * sw[i] + 0.25 * fl[i]) * (0.75 * lo[i] + 0.25 * mid[i] * (0.6 + 0.4 * fl[i]));
+  }
+  const c = f32(smp(0.03));
+  for (let t = r.uni(0, 0.05); t < dur - 0.03; t += -Math.log(1 - r.next() * 0.96) / 28) {
+    c.fill(0); const a = Math.exp(r.gauss() * 0.6) * 0.35;
+    addClick(c, 0, r, r.uni(1500, 6000), 1.2, r.uni(0.0004, 0.0018), a);
+    if (r.next() < 0.08) addMode(c, 0, r.uni(300, 700), a * 0.8, 0.006, 0.0005);
+    addSt(out, c, smp(t), 1, r.uni(-0.5, 0.5));
+  }
+  return normStereoRms(out, 0.1);
+}
+// a footstep on stone paving (leather sandal): heel knock + grit, then the lighter toe
+export function stepStone({ weight = 1, hard = 0.5, seed = 'stone' } = {}) {
+  const r = makeRng(seed), n = smp(0.3), x = f32(n);
+  addMode(x, 0, 95 + r.uni(-10, 10), 0.6 * weight, 0.018, 0.002);
+  addClick(x, 0, r, r.uni(1400, 2400) * (1 + hard * 0.5), 1.1, 0.0016 + 0.002 * (1 - hard), 0.55 * weight * (0.5 + hard));
+  for (let k = 0; k < 8; k++) addClick(x, smp(0.003 + 0.04 * r.next()), r, r.uni(2500, 6000), 1.3, r.uni(0.0004, 0.001), 0.12 * weight * r.next());
+  const t2 = 0.085 + r.uni(-0.015, 0.015);
+  addMode(x, smp(t2), 130, 0.22 * weight, 0.012, 0.002); addClick(x, smp(t2), r, r.uni(1800, 3000), 1.1, 0.0012, 0.25 * weight * (0.5 + hard));
+  onePoleLP(x, 8000); fades(x, 0.0004, 0.04);
+  return normPeak(x);
+}
+// a distant horn call over the city (ram's-horn-like, synthesized): a low swelling note that breaks up a fifth
+export function hornCall({ f0 = 233, dur = 1.6, jump = 1.5, seed = 'horn' } = {}) {
+  const r = makeRng(seed), n = smp(dur + 0.2), nd = smp(dur), freq = f32(n), jit = smoothRand(n, 30, r), vib = smoothRand(n, 4, r), tj = 0.45 * dur;
+  for (let i = 0; i < n; i++) { const t = i / SR, base = t < tj ? f0 * Math.pow(2, -2.5 * exp(-t / 0.08) / 12) : f0 * jump * Math.pow(2, -1.5 * exp(-(t - tj) / 0.05) / 12); freq[i] = base * (1 + 0.004 * jit[i] + 0.006 * vib[i]); }
+  const src = blepSaw(freq, r), out = f32(n);
+  [[620, 3, 1], [1350, 4, 0.6], [2500, 5, 0.25], [3600, 6, 0.1]].forEach(([fc, q, g]) => { const y = copy(src); filt(y, 'bp', fc, q); for (let i = 0; i < n; i++) out[i] += g * y[i]; });
+  const br = white(n, r); bp2(br, 1200, 5000); normRms(br, 0.08);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR, u = i / nd, e = (t < tj ? smooth(t / 0.12) * (0.7 + 0.3 * smooth(t / tj)) : 1) * (u > 0.85 ? cosRamp((1 - u) / 0.15) : 1) * (i < nd ? 1 : 0);
+    out[i] = (out[i] + br[i]) * e * (t > tj - 0.03 && t < tj + 0.02 ? 0.55 : 1);
+  }
+  lp4(out, 3800); fades(out, 0.005, 0.1);
+  return normPeak(out);
+}
+// low drum (taiko-like): a pitched skin thump with stick, muffle 0..1 darkens and shortens it
+export function taiko({ f = 58, vel = 1, muffle = 0, dur = 1.4, seed = 'taiko' } = {}) {
+  const r = makeRng(seed), n = smp(dur), x = f32(n); let ph = 0;
+  for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * f * (1 + 0.9 * exp(-t / 0.025)) / SR; x[i] = sin(ph) * (1 - exp(-t / 0.002)) * exp(-t / (0.32 - 0.12 * muffle)); }
+  addMode(x, 0, f * 1.58, 0.35, 0.12, 0.002); addMode(x, 0, f * 2.14, 0.2, 0.08, 0.002);
+  const sk = white(n, r); bp2(sk, 90, 1100 - 600 * muffle); normRms(sk, 1);
+  for (let i = 0; i < n; i++) x[i] += (0.55 + 0.25 * vel) * sk[i] * exp(-(i / SR) / 0.045);
+  addClick(x, 0, r, 2400, 1, 0.0018, 0.25 * vel * (1 - muffle));
+  softClip(normPeak(x), 1.3 + 0.5 * vel); lp4(x, 2600 - 1700 * muffle); fades(x, 0.0005, 0.25);
+  return normPeak(x);
+}
+// a light hand-drum tap (ghost notes between the low drums)
+export function frameTap({ f = 190, bright = 0.5, seed = 'tap' } = {}) {
+  const r = makeRng(seed), n = smp(0.25), x = f32(n);
+  addMode(x, 0, f * r.uni(0.97, 1.03), 0.8, 0.05, 0.001); addMode(x, 0, f * 1.6, 0.25, 0.03, 0.001);
+  const sk = white(n, r); bp2(sk, 400, 2500 + 2500 * bright); normRms(sk, 1);
+  for (let i = 0; i < n; i++) x[i] += 0.5 * sk[i] * exp(-(i / SR) / 0.018);
+  fades(x, 0.0004, 0.06);
+  return normPeak(x);
+}
+// small birds over a sunny yard (the memories): short chirp phrases
+export function birds({ dur = 3, count = 3, rate = 1.6, seed = 'birds' } = {}) {
+  const r = makeRng(seed), n = smp(dur), out = { L: f32(n), R: f32(n) }, ev = f32(smp(0.1));
+  for (let k = 0; k < count; k++) {
+    const pan = r.uni(-0.8, 0.8), f = r.uni(2800, 4800);
+    for (let t = r.uni(0, 1 / rate); t < dur - 0.4; t += -Math.log(1 - r.next() * 0.95) / rate + 0.25) {
+      for (let j = 0, tt = t, cnt = 2 + r.int(4); j < cnt; j++, tt += r.uni(0.06, 0.1)) {
+        ev.fill(0); const m = smp(r.uni(0.03, 0.07)), f0 = f * r.uni(0.85, 1.2), f1 = f0 * r.uni(0.7, 1.4); let ph = 0;
+        for (let i = 0; i < m; i++) { const u = i / m; ph += TAU * (f0 + (f1 - f0) * u) / SR; ev[i] = sin(ph) * Math.pow(sin(Math.PI * u), 2); }
+        addSt(out, ev, smp(tt), r.uni(0.5, 1), pan);
+      }
+    }
+  }
+  return normStereoPeak(out, 0.8);
+}
+// a city at night (the modern match cut): low traffic hum, a far highway band, a car or two passing
+export function cityNight({ dur = 6, passes = 2, seed = 'cityNight' } = {}) {
+  const r = makeRng(seed), n = smp(dur), out = {};
+  for (const ch of ['L', 'R']) {
+    const lo = brown(n, r); lp4(lo, 260); filt(lo, 'hp', 35, 0.7); normRms(lo, 1);
+    const mid = pink(n, r); bp2(mid, 350, 1300); normRms(mid, 1);
+    const sw = smoothRand(n, 0.12, r), x = f32(n);
+    for (let i = 0; i < n; i++) x[i] = (0.75 + 0.25 * sw[i]) * (0.7 * lo[i] + 0.3 * mid[i]);
+    out[ch] = x;
+  }
+  for (let k = 0; k < passes; k++) {
+    const t0 = r.uni(0, Math.max(0.1, dur - 3)), m = smp(r.uni(2.4, 3.6)), p0 = r.uni(0.3, 0.9) * (k % 2 ? 1 : -1), x = pink(m, r), i0 = smp(t0);
+    svf(x, (i) => 300 + 1300 * Math.pow(sin(Math.PI * i / m), 2), 0.7, 'lp', 32); normRms(x, 1);
+    for (let i = 0; i < m && i0 + i < n; i++) { const e = 0.7 * Math.pow(sin(Math.PI * i / m), 2), [gl, gr] = panLR(p0 * (1 - 2 * i / m)); out.L[i0 + i] += x[i] * e * gl; out.R[i0 + i] += x[i] * e * gr; }
+  }
+  return normStereoRms(out, 0.1);
+}

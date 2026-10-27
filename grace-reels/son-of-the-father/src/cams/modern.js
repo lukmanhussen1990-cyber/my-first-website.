@@ -19,7 +19,7 @@ export function camera(plan, B, shot, t, H) {
   // starts exactly where S14a ends (head close-up, same angle), then eases back as the warm light falls
   const look = H.at('modern', [P[0], P[1] + 1.56 + 0.1 * k, P[2] + 0.05]);
   const dist = H.lerp(1.75, 3.6, k);
-  return { pos: H.sph(look, 0.42 - 0.04 * k, 0.0 + 0.05 * k, dist), look, fov: 30, focus: dist };
+  return { pos: H.sph(look, 1.47 - 0.04 * k, 0.0 + 0.05 * k, dist), look, fov: 30, focus: dist };
 }
 
 export const anchors = {

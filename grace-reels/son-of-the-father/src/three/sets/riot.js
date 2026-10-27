@@ -73,7 +73,7 @@ export function build(ctx) {
     update(t, cam) {
       const bp = Bk.bAt(t);
       bar.root.position.set(bp[0], 0, bp[2]); bar.setView('threeQuarter'); bar.setFacing(-1);
-      bar.act((tt) => { const P = Poses.walk(tt, 15, 0.62, 0.85); P.aF = [2.75 + 0.03 * Math.sin(tt * 3), -0.25, 0.1]; P.handF = 'grip'; P.aB[1] += 0.3; P.handB = 'grip'; expr(P, 'angry', 0.75); P.mouth = 'none'; P.lookY = 0.05; return P; }, t, { wind: 0.7, vx: 0.6 });
+      bar.act((tt) => { const P = Poses.walk(tt, 15, 0.62, 0.85); P.aF = [3.8 + 0.03 * Math.sin(tt * 3), 0.0, 0.1]; /* the torch held straight up beside his head, never across the face (3/4 view damps angles x0.85) */ P.handF = 'grip'; P.aB[1] += 0.3; P.handB = 'grip'; expr(P, 'angry', 0.75); P.mouth = 'none'; P.lookY = 0.05; return P; }, t, { wind: 0.7, vx: 0.6 });
       bar.billboard(cam, 0.3); bar.autoOutline(cam);
       torch.group.position.set(0.0, -0.02, 0.03); torch.group.rotation.set(0, 0, Math.PI - 0.15);
       torch.set(t, cam);

@@ -14,6 +14,6 @@ export const Root = () => (
       calculateMetadata={({ props }) => ({ durationInFrames: props.frames.length })} />
     <Composition id="CastSheet" component={CastSheet} width={2560} height={1920} fps={30} durationInFrames={1} />
     <Composition id="CastCloseup" component={CastCloseup} width={1080} height={1920} fps={30} durationInFrames={1} defaultProps={{ view: 'threeQuarter', t: 1.0, lamp: 1 }} />
-    <Composition id="Cover" component={Cover} width={1080} height={1920} fps={30} durationInFrames={1} defaultProps={{ frame: 150 }} />
+    <Composition id="Cover" component={Cover} width={1080} height={1920} fps={30} durationInFrames={1} defaultProps={{ frame: 1305 }} />
   </>
 );

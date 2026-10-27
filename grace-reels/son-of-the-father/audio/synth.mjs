@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Q.02 THE OLDEST MAN: the whole soundtrack (music, SFX and the final mix), synthesized in pure JS (no
+// Q.03 SON OF THE FATHER: the whole soundtrack (music, SFX and the final mix), synthesized in pure JS (no
 // samples, no downloads). Every cue time comes from src/plan.js, the same plan that drives the picture;
 // script.json's per-beat SFX notes are checked against the placed cues. ffmpeg is only used for the
 // two-pass EBU R128 loudness normalisation and the final checks.
@@ -9,7 +9,7 @@
 //                      audio/mix_prenorm.wav (float), audio/final_mix.wav (48 kHz / 24-bit / stereo,
 //                      -14 LUFS, <= -1 dBTP), public/final_mix.wav, audio/cuesheet.json
 //
-//   audio/score.mjs  the music (D minor -> D major)       audio/foley.mjs  the SFX + ambience
+//   audio/score.mjs  the music (D minor -> hard stop -> D major)   audio/foley.mjs  the SFX + ambience
 //   audio/lib/*      DSP, instruments, SFX generators       audio/qc.py      spectrogram / level / word checks
 import fs from 'node:fs';
 import path from 'node:path';
@@ -46,21 +46,15 @@ const W = (beat, w, nth = 0, fallback = null) => {
     console.warn(`  ! word "${w}"#${nth} not in ${beat}; using ${t.toFixed(2)} s`); return t;
   }
 };
-// the time-lapse grid (not in plan.ev): 5 bars from the S11 cut to the flood crack, so the crack lands on a downbeat
-const G = (() => {
-  const a = SC.S11.t0, b = E.floodCrack, nb = 5, bar = (b - a) / nb;
-  return { bar, beat: bar / 4, bars: Array.from({ length: nb }, (_, k) => a + k * bar) };
-})();
-derived.timelapseBars = G.bars.map((t) => +t.toFixed(3)); derived.timelapseBPM = +(60 / G.beat).toFixed(2);
 const cues = [];
 const cue = (t, what) => { cues.push({ t: +t.toFixed(3), what }); return t; };
-const ctx = { N, NB, E, W, SC, G, plan, cue, q, dur };
+const ctx = { N, NB, E, W, SC, plan, cue, q, dur };
 
 // voice (untouched): mono 48 kHz, padded/trimmed to the reel duration
 const vw = D.readWav(P('voice', 'voice.wav'));
 if (vw.sr !== SR) throw new Error(`voice.wav must be ${SR} Hz`);
 const voice = new Float32Array(N); voice.set(vw.chans[0].subarray(0, N));
-log(`plan: ${dur.toFixed(3)} s (${N} samples, ${plan.frames} frames), voice ${(vw.chans[0].length / SR).toFixed(3)} s, time-lapse ${derived.timelapseBPM} BPM`);
+log(`plan: ${dur.toFixed(3)} s (${N} samples, ${plan.frames} frames), voice ${(vw.chans[0].length / SR).toFixed(3)} s`);
 
 // ================================================================== render
 const M = renderMusic(ctx);
@@ -92,16 +86,16 @@ for (const b of [music, sfx]) { D.dcBlock(b.L, 22); D.dcBlock(b.R, 22); }
 log('reverbs done');
 
 // ================================================================== automation (post-reverb, so the tails go too)
-// the lamp dies: music falls to -50 dB from "died" to the near silence, holds until the drop splash, then
-// lets the S10 music back in; SFX dip 14 dB in the silence (only tails live there)
+// the shout: a HARD STOP. The music (and its reverb tails) is cut to -60 dB within 60 ms of the crowd hit
+// and stays out until the freeze; SFX dip 14 dB in the near silence (only the hit's tails live there)
 const gainCurve = (keys) => { const f = D.ramp(keys); return (i) => f(i / SR); };
-const mAuto = gainCurve([[0, 0], [E.lampOut - 0.05, 0], [E.silence, -50], [E.dropSplash, -50], [E.dropSplash + 0.6, 0]]);
-const sAuto = gainCurve([[0, 0], [E.silence - 0.1, 0], [E.silence + 0.15, -14], [E.dropFall - 0.05, -14], [E.dropFall + 0.15, 0]]);
-for (let i = smp(E.lampOut - 0.1); i < smp(E.dropSplash + 0.7); i++) {
+const mAuto = gainCurve([[0, 0], [E.shout - 0.004, 0], [E.shout + 0.06, -60], [E.freeze - 0.02, -60], [E.freeze + 0.02, 0]]);
+const sAuto = gainCurve([[0, 0], [E.silence - 0.1, 0], [E.silence + 0.15, -14], [E.freeze - 0.05, -14], [E.freeze + 0.1, 0]]);
+for (let i = smp(E.shout - 0.05); i < smp(E.freeze + 0.15); i++) {
   const gm = 10 ** (mAuto(i) / 20), gs = 10 ** (sAuto(i) / 20);
   music.L[i] *= gm; music.R[i] *= gm; sfx.L[i] *= gs; sfx.R[i] *= gs;
 }
-cue(E.lampOut, 'music fades to -50 dB (near silence until the drop splash)');
+cue(E.shout, 'music HARD STOP (-60 dB until the freeze)');
 
 // ================================================================== ducking + mix
 // calibrate the music bed against the voice: un-ducked music sits 4 LU under the narration (integrated)
@@ -111,7 +105,7 @@ const musicGain = dB(Lvoice - 4.0 - Lmusic0);
 // ducking from an envelope follower on the voice (70 ms attack, 500 ms release, smooth S-curve, 200 ms
 // look-ahead: the dip starts ~120-130 ms before a word and is ~-7 dB on it); music -8 dB, SFX -3 dB
 // (the detector sees the voice wrapped around the loop seam, so the end of the reel already dips for the
-// first word after the restart, "The" at 0.12 s, and the level is continuous across the seam)
+// first word after the restart, "This" at 0.05 s, and the level is continuous across the seam)
 const vLoop = new Float32Array(N + SR); vLoop.set(voice); vLoop.set(voice.subarray(0, SR), N);
 const act = D.voiceActivity(vLoop, { att: 0.07, rel: 0.5, look: 0.2 }).subarray(0, N);
 // plus a gentle speech-band dip (-4 dB, broad, ~1 kHz) on the music while the narrator speaks
@@ -127,6 +121,13 @@ for (let i = 0; i < N; i++) {
 // loop seam: the music is continuous across it (wrap); 5 ms fade-in / 15 ms fade-out only guard the SFX beds
 for (const x of [mixL, mixR, musicStem.L, musicStem.R, sfxStem.L, sfxStem.R]) D.fades(x, 0.005, 0.015);
 log(`levels: voice ${Lvoice.toFixed(1)} LUFS, music (raw) ${Lmusic0.toFixed(1)} -> gain ${D.lin2db(musicGain).toFixed(1)} dB, sfx ${D.loudness([sfx.L, sfx.R]).toFixed(1)} LUFS`);
+// per-shot balance (integrated loudness of each stem inside each shot; voice-free shots show '-')
+{
+  const seg = (b, a, z) => { const i0 = smp(a), i1 = Math.min(N, smp(z)); return i1 - i0 > SR * 0.4 ? D.loudness(b.R ? [b.L.subarray(i0, i1), b.R.subarray(i0, i1)] : [b.subarray(i0, i1), b.subarray(i0, i1)]) : NaN; };
+  const f = (x) => (Number.isFinite(x) && x > -70 ? x.toFixed(1).padStart(6) : '     -');
+  console.log('  shot     voice  music    sfx   (LUFS, post-duck)');
+  for (const s of plan.shots) { const z = Math.min(dur, s.t1); console.log(`  ${s.id.padEnd(5)} ${f(seg(voice, s.t0, z))} ${f(seg(musicStem, s.t0, z))} ${f(seg(sfxStem, s.t0, z))}`); }
+}
 
 fs.mkdirSync(P('audio', 'stems'), { recursive: true });
 D.writeWav(P('audio', 'stems', 'music.wav'), [musicStem.L, musicStem.R]);
@@ -186,10 +187,12 @@ fs.copyFileSync(FINAL, P('public', 'final_mix.wav'));
 const pr = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-count_packets', '-show_entries', 'stream=sample_rate,channels,bits_per_sample,duration_ts,duration', '-of', 'json', FINAL], { encoding: 'utf8' });
 const st = JSON.parse(pr.stdout).streams[0];
 const durOk = Math.abs(st.duration_ts / SR - dur) <= 1 / plan.fps;
-// music depth in the near silence (stem RMS in [silence, dropSplash] vs. the 3 s before the lamp dies)
+// depth of the near silence: music stem RMS in [silence, freeze] vs. the 3 s before the shout, and the
+// whole mix in the same window vs. its integrated loudness
 const rmsDb = (st2, a, b) => { let e = 0; const i0 = smp(a), i1 = smp(b); for (let i = i0; i < i1; i++) e += st2.L[i] ** 2 + st2.R[i] ** 2; return 10 * Math.log10(e / (2 * (i1 - i0)) + 1e-30); };
-const silDepth = rmsDb(musicStem, E.lampOut - 3, E.lampOut) - rmsDb(musicStem, E.silence, E.dropSplash);
-const silDepthInt = D.loudness([musicStem.L, musicStem.R]) - (rmsDb(musicStem, E.silence, E.dropSplash) - 0.691);
+const silDepth = rmsDb(musicStem, E.shout - 3, E.shout) - rmsDb(musicStem, E.silence, E.freeze);
+const mixSil = rmsDb({ L: mixL, R: mixR }, E.silence + 0.05, E.freeze - 0.05) - 0.691;
+const silDepthInt = D.loudness([mixL, mixR]) - mixSil;
 cues.sort((a, b) => a.t - b.t);
 // script.json SFX notes per beat, with the cues that fall inside each beat (start - 0.5 .. hold_end + 0.3)
 const beats = SCRIPT.beats.map((b) => {
@@ -200,10 +203,10 @@ for (const b of beats) if (b.sfxNotes?.length && !b.cues) console.warn(`  ! ${b.
 const evOut = Object.fromEntries(Object.entries(E).filter(([, v]) => typeof v !== 'function').map(([k, v]) => [k, Array.isArray(v) ? v.map((x) => +x.toFixed(3)) : +v.toFixed(3)]));
 fs.writeFileSync(P('audio', 'cuesheet.json'), JSON.stringify({
   reel: `${SCRIPT.episode} ${SCRIPT.title}`, duration: dur, samples: N, sampleRate: SR, lufs: V.I, truePeak: V.TP, lra: V.LRA,
-  musicDepthInSilence_dB: +silDepth.toFixed(1), events: evOut, derived,
+  musicDepthInSilence_dB: +silDepth.toFixed(1), mixDepthInSilence_dB: +silDepthInt.toFixed(1), events: evOut, derived,
   shots: plan.shots.map((x) => ({ id: x.id, scene: x.scene, t0: +x.t0.toFixed(3), t1: +Math.min(dur, x.t1).toFixed(3), trans: x.trans })), beats, cues,
 }, null, 1));
 log(`final_mix.wav: ${st.sample_rate} Hz, ${st.channels} ch, ${st.bits_per_sample}-bit, ${st.duration_ts} samples = ${(st.duration_ts / SR).toFixed(4)} s (plan ${dur} s) ${durOk ? 'OK' : 'MISMATCH'}`);
 log(`ebur128: I = ${V.I} LUFS, true peak = ${V.TP} dBTP, LRA = ${V.LRA} LU  ${Math.abs(V.I + 14) <= 0.05 && V.TP <= -1.0 ? 'OK' : 'CHECK'}`);
-log(`near silence: music ${silDepth.toFixed(1)} dB below the 3 s before the lamp dies (${silDepthInt.toFixed(1)} dB below its integrated loudness)  ${silDepth >= 35 ? 'OK' : 'CHECK'}`);
+log(`near silence: music ${silDepth.toFixed(1)} dB below the 3 s before the shout; the whole mix sits ${silDepthInt.toFixed(1)} dB below its integrated loudness  ${silDepth >= 35 && silDepthInt >= 20 ? 'OK' : 'CHECK'}`);
 log(`done -> audio/final_mix.wav + public/final_mix.wav (${((Date.now() - t00) / 1000).toFixed(1)} s)`);

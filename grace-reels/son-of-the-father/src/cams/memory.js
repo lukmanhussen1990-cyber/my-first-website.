@@ -26,14 +26,14 @@ export function camera(plan, B, shot, t, H) {
     return { pos: H.sph(look, 0.22 + 0.05 * u, 0.02, dist), look, fov: 30, focus: dist };
   }
   if (shot.id === 'S5b') {
-    const j = MEM.B.jesus, look = at([j[0] + 0.15, 1.62 + 0.08 * u, j[2] + 0.1]);
-    const dist = 3.7 - 0.25 * u;
-    return { pos: H.sph(look, 0.1 + 0.04 * u, -0.07, dist), look, fov: 30, focus: dist };
+    const j = MEM.B.jesus, look = at([j[0] + 0.12, 2.25 + 0.06 * u, j[2] + 0.05]);
+    const dist = 4.75 - 0.25 * u;
+    return { pos: H.sph(look, 0.1 + 0.04 * u, -0.05, dist), look, fov: 30, focus: dist };
   }
-  // S5c: behind Jesus' right shoulder, the dark tomb ahead; Lazarus walks out into the light
-  const look = at([80.05, 1.25, -2.6]);
-  const pos = at([81.55 - 0.1 * u, 1.62, 3.5 - 0.35 * u]);
-  return { pos, look, fov: 30, focus: Math.hypot(pos[0] - look[0], pos[2] - look[2]) - 0.4 };
+  // S5c: wide, from behind Jesus (on the right, His hand raised), the dark tomb ahead; Lazarus walks out into the light
+  const look = at([80.15, 1.3, -3.0]);
+  const pos = at([80.3, 1.45, 9.3 - 0.35 * u]);
+  return { pos, look, fov: 30, focus: Math.hypot(pos[0] - 80.0, pos[2] + 2.6) };
 }
 
 export const anchors = {};

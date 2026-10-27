@@ -525,8 +525,13 @@ export function beardParts(D, view, beardLenBody = 0) {
   // moustache (on the head): droops from under the nose down into the beard
   let mp;
   if (st === 'trim') {
-    mp = view === 'side' ? [[0.158, 0.108], [0.166, 0.1], [0.165, 0.09], [0.156, 0.083, 0.8], [0.144, 0.08, 0.5], [0.134, 0.083], [0.13, 0.092], [0.143, 0.103]]
-      : [[0.13, 0.106], [0.142, 0.098], [0.138, 0.086, 0.7], [0.126, 0.078, 0.5], [0.11, 0.082], [0.094, 0.086], [0.074, 0.08, 0.5], [0.066, 0.088], [0.082, 0.098], [0.108, 0.102]];
+    // a slim moustache that stays inside the face outline (the lip line is at x ~0.16 in profile, ~0.142 in 3/4)
+    // and flows down into the beard at the mouth corners; no outline, no extra strokes (it must never read as a pipe)
+    mp = view === 'side' ? [[0.146, 0.1], [0.153, 0.095], [0.15, 0.088, 0.7], [0.138, 0.085, 0.6], [0.124, 0.079, 0.6], [0.114, 0.069, 0.5], [0.109, 0.073], [0.116, 0.085], [0.13, 0.094]]
+      : [[0.116, 0.1], [0.126, 0.095], [0.123, 0.088, 0.7], [0.112, 0.085, 0.6], [0.098, 0.087], [0.083, 0.086], [0.066, 0.08, 0.6], [0.055, 0.07, 0.5], [0.05, 0.075], [0.06, 0.088], [0.078, 0.095], [0.1, 0.098]];
+    const ms = smooth(mp, true);
+    out.push({ id: 'moustache', pivot: 'head', layer: 34, outline: false, rim: false, density: 'face', bulge: 0.15, shape: ms, draw: [F(ms, c), L(smooth(view === 'side' ? [[0.146, 0.096], [0.13, 0.09], [0.118, 0.08]] : [[0.118, 0.096], [0.1, 0.093], [0.08, 0.091]], false), hi, 0.0022, { a: 0.35 })] });
+    return out;
   } else if (view === 'side') {
     mp = D.age > 0.6
       ? [[0.166, 0.116], [0.178, 0.108], [0.182, 0.09], [0.178, 0.068], [0.168, 0.046, 0.8], [0.156, 0.03, 0.5], [0.148, 0.046], [0.138, 0.068], [0.128, 0.088], [0.146, 0.106]]

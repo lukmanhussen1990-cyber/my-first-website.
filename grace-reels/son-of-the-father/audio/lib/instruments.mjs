@@ -297,3 +297,32 @@ export function timpani(f, { dur = 3.0, vel = 0.6, seed = 'timp' } = {}) {
   filt(out, 'lp', 900 + 1600 * vel, 0.7);
   return out;
 }
+
+// ------------------------------------------------------------------ low brass stab / swell (Q.03)
+// a detuned saw section through a resonant low-pass with a fast "blat" (the filter jumps open on the attack
+// and settles); swell > 0 turns it into a crescendo (slow attack, the filter opening with it)
+// o: midi (number or list), t, dur (hold), rel, amp, peak / floor (filter Hz), voices, detune, swell, pan, sends, seed
+export function brassStab(bus, o) {
+  const { midi, t, dur = 0.9, rel = 0.8, amp = 0.1, peak = 2400, floor = 380, voices = 3, detune = 7, swell = 0, pan = 0, sends = null, seed = 'brass' } = o;
+  for (const m of Array.isArray(midi) ? midi : [midi]) {
+    const r = makeRng(`${seed}:${m}:${t.toFixed(3)}`), f0 = mtof(m), nHold = Math.max(1, Math.round(dur * SR)), nRel = Math.round(rel * SR), n = nHold + nRel;
+    const L = f32(n), R = f32(n);
+    for (let v = 0; v < voices; v++) {
+      const u = voices === 1 ? 0 : (v / (voices - 1)) * 2 - 1, p = clamp(pan + 0.35 * u, -1, 1), a = (p + 1) * Math.PI / 4;
+      osc(L, R, 'saw', f0 * Math.pow(2, (u * detune + r.uni(-1, 1)) / 1200), n, Math.cos(a), Math.sin(a), r, 1.2, null);
+    }
+    const env = f32(n), nS = Math.max(1, swell * SR);
+    for (let i = 0; i < n; i++) {
+      const tt = i / SR;
+      let e = swell > 0 ? Math.pow(Math.min(1, i / nS), 2.2) : (1 - Math.exp(-tt / 0.012)) * (0.55 + 0.45 * Math.exp(-tt / 0.25));
+      if (i >= nHold) e *= relCurve((i - nHold) / nRel, 3.5);
+      env[i] = e;
+    }
+    const fcAt = swell > 0 ? (i) => floor + (peak - floor) * env[Math.min(n - 1, i)] : (i) => { const tt = i / SR; return floor + (peak - floor) * Math.exp(-tt / 0.18) * (1 - Math.exp(-tt / 0.02)); };
+    svf(L, fcAt, 0.9, 'lp', 16); svf(R, fcAt, 0.9, 'lp', 16);
+    filt(L, 'hp', 40, 0.7); filt(R, 'hp', 40, 0.7);
+    const g = amp / Math.sqrt(voices);
+    for (let i = 0; i < n; i++) { L[i] *= env[i] * g; R[i] *= env[i] * g; }
+    place(bus, { L, R }, t, 1, 0, sends);
+  }
+}

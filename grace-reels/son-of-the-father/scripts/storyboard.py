@@ -14,7 +14,7 @@ S = Image.new('RGB', (cols * (W + 8) + 8, rows * (H + 40) + 70), (22, 16, 12))
 d = ImageDraw.Draw(S)
 try: font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 18); big = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 30)
 except Exception: font = big = ImageFont.load_default()
-d.text((12, 18), 'GRACE IN MOTION · Q.01 SEVEN THINGS · storyboard', fill=(240, 191, 90), font=big)
+d.text((12, 18), 'GRACE IN MOTION · Q.03 SON OF THE FATHER · storyboard', fill=(240, 191, 90), font=big)
 for k, s in enumerate(shots):
     f = os.path.join(tmp, f'{k}.jpg')
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', f"{s['t']:.3f}", '-i', src, '-frames:v', '1', '-vf', f'scale={W}:{H}', f], check=True)
