@@ -34,9 +34,9 @@ export function buildPlan(T) {
   // --- S4 Pilate
   ev.pilateLabel = word('B04', 'Pilate').start;
   // --- S5 who Jesus is: glowing memory vignettes (~0.7 s each)
-  ev.mem1 = word('B05', 'healed').start - 0.1;       // a blind man's eyes opening
-  ev.mem2 = word('B05', 'sick').start + 0.25;        // a child lifted up
-  ev.mem3 = word('B05', 'raised').start - 0.05;      // Lazarus walks out of the tomb in white cloth
+  ev.mem1 = word('B05', 'who').start - 0.1;         // a blind man's eyes opening
+  ev.mem2 = word('B05', 'sick').start - 0.02;        // a sick child lifted up, well again
+  ev.mem3 = word('B05', 'raised').start - 0.06;      // Lazarus walks out of the tomb in white cloth
   // --- S6 who Barabbas is: night riot flashback
   ev.riotLabel = word('B06', 'committed').start;
   // --- S7 the question
@@ -96,7 +96,10 @@ export function buildPlan(T) {
     S('S2', 'S2', st('B02'), st('B03'), 'whip', 0.4),              // whip pan: Barabbas in chains beside Him
     S('S3', 'S3', st('B03'), st('B04'), 'cut'),                    // crane-up over Jerusalem at Passover
     S('S4', 'S4', st('B04'), st('B05'), 'cut'),                    // Pilate on the judgment seat; the two men led forward
-    S('S5', 'S5', st('B05'), st('B06'), 'flare', 0.4),             // over Jesus' shoulder: glowing memories
+    S('S5', 'S5', st('B05'), ev.mem1, 'cut'),                      // over Jesus' shoulder...
+    S('S5a', 'S5', ev.mem1, ev.mem2, 'flare', 0.25),               // ...glowing memories: the blind man sees
+    S('S5b', 'S5', ev.mem2, ev.mem3, 'flare', 0.25),               // a sick child lifted up
+    S('S5c', 'S5', ev.mem3, st('B06'), 'flare', 0.25),             // Lazarus walks out of the tomb
     S('S6', 'S6', st('B06'), st('B07'), 'cut'),                    // night riot flashback (shadows)
     S('S7', 'S7', st('B07'), st('B08'), 'cut'),                    // the question; the priests whisper
     S('S8', 'S8', st('B08'), ev.freeze, 'cut'),                    // the shout; Jesus perfectly still
