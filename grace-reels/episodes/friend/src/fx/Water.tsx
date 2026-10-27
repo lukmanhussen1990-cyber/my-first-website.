@@ -129,7 +129,8 @@ export const WaterSurface: React.FC<{
 						float sheen = vn(vP * 26.0 + vec2(uT * 0.4, -uT * 0.3));
 						vec3 col = uColor * (0.75 + 0.25 * sheen);
 						// a warm reflected highlight of the lamps, slightly off centre
-						col += uLight * (0.55 * exp(-pow(length(vP / uR - vec2(-0.25, 0.2)) * 2.4, 2.0)) + 0.9 * ring);
+						// rings from many quick hits overlap, so their light is capped
+						col += uLight * (0.45 * exp(-pow(length(vP / uR - vec2(-0.25, 0.2)) * 2.4, 2.0)) + 0.55 * min(ring, 1.2));
 						float glint = step(0.93, vn(vP * 60.0 + vec2(floor(uT * 6.0) * 3.1, 0.0))) * 0.7;
 						col += uLight * glint * (0.4 + ring);
 						float edge = smoothstep(1.0, 0.94, r);
@@ -184,5 +185,5 @@ export const splashSpecs = (t0: number, t1: number, at: [number, number, number]
 };
 
 export const Splash: React.FC<{specs: ParticleSpec[]; t: number; px?: number; renderOrder?: number}> = ({specs, t, px = 6, renderOrder = 630}) => (
-	<Particles specs={specs} t={t} gravity={-6} drag={0.2} additive colors={['#fff4dc', '#e8f0f0', '#9fb6be']} opacity={0.7} px={px} swirl={0} renderOrder={renderOrder} />
+	<Particles specs={specs} t={t} gravity={-6} drag={0.2} additive colors={['#fff4dc', '#e8f0f0', '#9fb6be']} opacity={0.45} px={px} swirl={0} renderOrder={renderOrder} />
 );

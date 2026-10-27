@@ -13,7 +13,7 @@ export const LABELS: LabelDef[] = [
 	{text: 'The price of a slave', from: B.labelSlave, to: B.s8 - 0.05, anchor: 'chain', dx: -40, dy: -250},
 	{text: 'Matthew 26:47', from: B.labelGarden, to: B.swordsUp + 0.6, anchor: 'judas9', dx: -60, dy: -190},
 	{text: 'The same night', from: B.labelSameNight, to: B.warmTakesOver + 1.4, anchor: 'sameNight', dx: -40, dy: -260},
-	{text: 'Friend of sinners · Luke 7:34', from: B.labelSinners, to: B.right + 0.35, anchor: 'feastJesus', dx: -200, dy: -230},
+	{text: 'A friend of publicans and sinners · Luke 7:34', from: B.labelSinners, to: B.right + 0.35, anchor: 'feastJesus', dx: -430, dy: -230},
 ];
 
 const TAG_H = 46;

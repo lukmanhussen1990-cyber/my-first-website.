@@ -219,7 +219,6 @@ export const POUR: ShotDef = {
 
 // ---------------- S3 end: Jesus kneels and washes the first feet (Peter's) ----------------
 // Jesus kneeling faces left, His hands at the seated man's feet; the basin under them.
-const KNEEL_PX = 462;
 const kneelAt = (seatX: number, seatSprite: string): Vec3 => {
 	// the seated man's toes are ~0.17 m right of his foot point; Jesus' hands reach ~0.55 m in front of His knee
 	const toes = seatSprite.startsWith('judas') ? 0.17 : 0.16;
@@ -299,10 +298,12 @@ export const TWELVE: ShotDef = {
 				<Actor position={[SEATS[0].x - 0.06 * peter, 0.015 * peter, SEATS[0].z]} t={t} poses={[[0, 'disciples/d5']]} look={WARM} warp={{lean: -34 * peter, breath: 0.01 * peter}} renderOrder={-400} />
 				<Actor position={[SEATS[1].x, 0, SEATS[1].z]} t={t} poses={[[0, 'disciples/d7']]} look={WARM} warp={{tilt: [-0.22 * john, 0.62, 0.3, 0.33], breath: 0.006 * Math.sin(t * 2)}} renderOrder={-399} />
 				<group visible={t >= STATIONS[0].at}>
-					<group scale={[1, 1, 1]}>
-						<WashGroup seat={seat} t={t} from={st.at} scrub={1} look={{opacity: 0.55 + 0.45 * pop, blur: 3 * (1 - pop)}} />
-					</group>
+					<WashGroup seat={seat} t={t} from={st.at} scrub={1} look={{opacity: 0.55 + 0.45 * pop, blur: 3 * (1 - pop)}} />
 				</group>
+				{/* a short afterimage at the seat He just left: the montage reads as a time-lapse, not a jump */}
+				{i > 0 && t - st.at < 0.2 && (
+					<WashGroup seat={SEATS[STATIONS[i - 1].seat]} t={t} from={STATIONS[i - 1].at} scrub={1} look={{opacity: 0.45 * (1 - (t - st.at) / 0.2), blur: 4}} order={-290} />
+				)}
 				{STATIONS.map((s, k) => (
 					<Glow key={k} position={[basinFor(SEATS[s.seat].x)[0], 0.16, -1.1]} size={0.6} color="#ffe6b0" intensity={0.6 * pulse(t, s.at + 0.05, 0.03, 0.25)} renderOrder={-200} />
 				))}
@@ -366,7 +367,7 @@ export const COVER: ShotDef = {
 	end: -9,
 	Content: ({lite}) => <JUDAS_SHOT.Content t={B.pouchGlint + 0.12} lite={lite} />,
 	// the title sits over the top third, so the men sit lower: Judas's eyes ~42% down, the pouch ~70%
-	camera: () => ({pos: [-5.1, 0.42, 1.65], target: [-5.12, 0.92, -1.5], fov: 40, drift: 0}),
+	camera: () => ({pos: [-5.02, 0.45, 1.85], target: [-5.04, 0.95, -1.5], fov: 44, drift: 0}),
 	grade: () => roomGrade({vignette: 0.6}),
 };
 

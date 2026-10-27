@@ -5,3 +5,4 @@ Episodes already made for Grace in Motion (@GraceINMotion616), so ideas don't re
 | Episode | Title | Bible | Note |
 |---|---|---|---|
 | 26 | They Never Died | Genesis 5:24, Hebrews 11:5, 2 Kings 2:11–13, Matthew 17:3, John 11:26 | GPT Image test |
+| 44 | Friend | John 13:4–11, Matthew 26:15, 26:47–50, Exodus 21:32, Romans 5:10, Luke 7:34 | GPT Image |

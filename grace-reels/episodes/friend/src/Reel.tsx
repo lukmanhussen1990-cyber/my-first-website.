@@ -1,6 +1,5 @@
 import {ThreeCanvas} from '@remotion/three';
 import {AbsoluteFill, Audio, staticFile, useVideoConfig} from 'remotion';
-import * as THREE from 'three';
 import {B} from './lib/timeline';
 import {usePreloadTextures} from './lib/textures';
 import {CoverTitle} from './overlay/CoverTitle';

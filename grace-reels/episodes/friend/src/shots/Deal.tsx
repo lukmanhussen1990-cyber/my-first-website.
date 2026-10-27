@@ -6,11 +6,11 @@ import spritesJson from '../../public/sprites/sprites.json';
 import {CharacterRoot, PoseSprite} from '../characters/Character';
 import {PoseWithBlink} from '../characters/Actor';
 import {Flame, flicker, Glow} from '../fx/Flame';
-import {clamp, easeIn, easeInOut, easeOut, keys, lerp, pulse, seg, springStep} from '../lib/ease';
+import {clamp, easeIn, easeInOut, lerp, pulse, seg} from '../lib/ease';
 import {hash} from '../lib/random';
 import {B, SCENE} from '../lib/timeline';
 import {meta} from '../lib/textures';
-import type {CamState, ShotDef, Vec3} from '../render/types';
+import type {ShotDef, Vec3} from '../render/types';
 import {Haze, Layer, Pool} from '../world/Layer';
 
 const SHEET = spritesJson as unknown as Record<string, {sheetBox: [number, number, number, number]; foot: [number, number]}>;
@@ -240,7 +240,7 @@ export const SCALE: ShotDef = {
 		const u = seg(t, SCENE.S7.start - 0.5, SCENE.S8.start + 0.4, (x) => x);
 		const level = seg(t, B.chainDrop - 0.3, B.scaleLevel + 0.5, easeInOut);
 		const px = pivotWorld()[0];
-		return {pos: [px, -0.02 + 0.02 * u, 2.95 - 0.2 * u - 0.15 * level], target: [px, -0.06 + 0.02 * level, 0], fov: 32, drift: 0.5};
+		return {pos: [px, 0.04 + 0.02 * u, 2.95 - 0.2 * u - 0.15 * level], target: [px, 0.05 + 0.02 * level, 0], fov: 32, drift: 0.5};
 	},
 	grade: () => ({exposure: 1.02, contrast: 1.1, saturation: 0.95, gain: [1.06, 1.0, 0.9], lift: [0.012, 0.008, 0.0], vignette: 0.65, bloom: 0.5, bloomThreshold: 0.75, grain: 0.025}),
 	anchors: (t) => {

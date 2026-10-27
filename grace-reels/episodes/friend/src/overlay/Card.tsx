@@ -19,7 +19,7 @@ export const CARDS: CardDef[] = [
 	{
 		from: B.coinsLanded - 0.4,
 		to: B.chainDrop - 0.05,
-		text: '“…he shall give unto their master **thirty shekels of silver**…”',
+		text: '“If the ox shall push a manservant or a maidservant; he shall give unto their master **thirty shekels of silver**…”',
 		ref: 'Exodus 21:32',
 		keyAt: B.shekels,
 		top: 500,
@@ -27,7 +27,7 @@ export const CARDS: CardDef[] = [
 	{
 		from: B.cardMatthewIn - 0.2,
 		to: B.s12 + 0.35,
-		text: '“And Jesus said unto him, **Friend**, wherefore art thou come?”',
+		text: '“And Jesus said unto him, **Friend**, wherefore art thou come?…”',
 		ref: 'Matthew 26:50',
 		keyAt: word('12a', 'friend').start,
 		top: 1060,

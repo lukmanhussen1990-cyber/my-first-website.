@@ -6,12 +6,12 @@ import {CharacterRoot} from '../characters/Character';
 import {PoseWithBlink} from '../characters/Actor';
 import {Flame} from '../fx/Flame';
 import {ParticleSpec, Particles} from '../fx/Particles';
-import {clamp, easeInOut, keys, lerp, seg, smooth} from '../lib/ease';
+import {clamp, easeInOut, lerp, seg, smooth} from '../lib/ease';
 import {hash, noise1} from '../lib/random';
 import {B, SCENE} from '../lib/timeline';
 import type {CamState, ShotDef} from '../render/types';
 import {emberSpecs, Embers, GardenLayers, TORCH_HEAD} from '../world/Garden';
-import {Layer, Pool} from '../world/Layer';
+import {Pool} from '../world/Layer';
 
 const SHEET = spritesJson as unknown as Record<string, {sheetBox: [number, number, number, number]; foot: [number, number]}>;
 const PX = 1500; // close-up pixels per metre
@@ -26,9 +26,11 @@ const JESUS = centre('kiss/jesus');
 // Judas's lean (metres to the right) against the story time of the kiss. Contact (his face behind
 // Jesus' cheek) at tauTouch; before that he leans in slowly; earlier times keep him further away
 // (the rewind and the loop run time backwards past 0).
+// Halfway in he hesitates: the approach almost stops for a moment, then goes on.
+const hesitate = (u: number) => u - 0.1 * Math.sin(Math.PI * clamp((u - 0.32) / 0.36)) ** 2;
 const leanAt = (tau: number, tauTouch: number) => {
 	if (tau < -0.6) return 0.022 + 0.03 * (tau + 0.6);
-	if (tau < tauTouch) return lerp(0.022, 0.1, easeInOut((tau + 0.6) / (tauTouch + 0.6)) ** 0.9);
+	if (tau < tauTouch) return lerp(0.022, 0.1, easeInOut(hesitate((tau + 0.6) / (tauTouch + 0.6))) ** 0.9);
 	return 0.1 - 0.012 * seg(tau, tauTouch + 1.0, tauTouch + 2.8);
 };
 
@@ -137,9 +139,9 @@ export const KissScene: React.FC<KissState> = ({tau, tauTouch, t, dark, spot, je
 						rimColor: '#ffb878',
 						rimDir: [-1, 0.3],
 						grad: {dir: [0.6, 1], color: '#eef2ff', amount: 0.22},
-						light: 0.16 * spot,
+						light: 0.07 * spot,
 						lightColor: '#ffd9a0',
-						glow: 0.05 * spot,
+						glow: 0.04 * spot,
 					}}
 					warp={{breath: breathJ}}
 					renderOrder={20}
@@ -152,7 +154,7 @@ export const KissScene: React.FC<KissState> = ({tau, tauTouch, t, dark, spot, je
 };
 
 // ---------------- S1 · the hook ----------------
-const S1_EMBERS = emberSpecs(140, -2, B.s2 + 1.2, {x: [-2.4, 2.2], y: [-1.2, 0.4], z: [-5.5, 0.3]}, 11, 0.42);
+const S1_EMBERS = emberSpecs(140, -2, B.s2 + 1.2, {x: [-2.4, 2.2], y: [-1.2, 0.4], z: [-5.5, -0.12]}, 11, 0.42);
 
 const cam1 = (tau: number): CamState => {
 	// a slow push-in from the two-shot to Jesus' calm face
@@ -200,7 +202,7 @@ export const slowBlink = (t: number, at: number) => {
 };
 
 // ---------------- S10 (close-up) and S11 · the kiss, then "Friend" ----------------
-const S11_EMBERS = emberSpecs(150, B.s10 - 1, B.s12 + 1, {x: [-2.4, 2.2], y: [-1.2, 0.4], z: [-5.5, 0.3]}, 23, 0.42);
+const S11_EMBERS = emberSpecs(150, B.s10 - 1, B.s12 + 1, {x: [-2.4, 2.2], y: [-1.2, 0.4], z: [-5.5, -0.12]}, 23, 0.42);
 // gold dust in the warm light around Jesus once everything else has gone dark
 const DUST: ParticleSpec[] = Array.from({length: 90}, (_, i) => ({
 	birth: B.freeze + 0.2 + (i / 90) * (B.s12 - B.freeze),
@@ -250,8 +252,8 @@ export const S11: ShotDef = {
 			gain: [1.0 + 0.04 * dark, 0.98, 1.03 - 0.08 * dark],
 			lift: [0.004 * (1 - dark), 0.006 * (1 - dark), 0.018 * (1 - dark)],
 			vignette: 0.55 + 0.35 * dark,
-			bloom: 0.6 + 0.2 * dark,
-			bloomThreshold: 0.72,
+			bloom: 0.5 - 0.1 * dark,
+			bloomThreshold: 0.78 + 0.06 * dark,
 			desat: 0.25 * clamp((t - B.freeze) / 0.2) * (1 - seg(t, B.freeze + 0.3, B.friendWord)),
 		};
 	},
