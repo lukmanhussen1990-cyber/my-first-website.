@@ -364,7 +364,7 @@ export function makePlan(tl, E) {
     E.place(w.hero, w.house, -2.5, 0.0, -Math.PI / 2);
     const t = L + W(8, 'a', 's', 1);
     const open = t > chirpT && t < chirpT + 0.35;
-    w.hero.update({ t, sit: 1, tailLift: 0.8, headYaw: -1.25 * smooth((L - 0.3) / 0.4), mouth: open ? 'open' : 'closed', headPitch: open ? 0.12 : 0.05 });
+    w.hero.update({ t, sit: 1, tailLift: 0.8, headYaw: 1.2 * smooth((L - 0.3) / 0.4), mouth: open ? 'open' : 'closed', headPitch: open ? 0.12 : 0.05 });
     move(k, V(-1.55, 0.32, 0.6), V(-2.62, 0.4, 0.0), V(-1.7, 0.31, 0.5), V(-2.62, 0.42, 0.0), 48, 46);
   });
   sfx('meow_chirp', chirpT, 0.9);

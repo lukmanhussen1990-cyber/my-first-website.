@@ -1,6 +1,8 @@
 # Reel: "Your cat says MEOW only to you"
 
-English voiceover, ~60 s total (estimated at ~2.6 words/s). One recording per part: `part1` … `part10`.
+English voiceover, 62.6 s final video. The current render uses a free local AI voice (Kokoro, voice `am_michael`,
+picked to match the reference narrator's pitch). To use your own voice, record `part1` … `part10` with the lines
+below and rebuild (README.md) — every cut, caption and sound cue re-times itself to your recording.
 
 | Part | Exact line | On screen |
 |---|---|---|

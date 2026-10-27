@@ -45,6 +45,26 @@ def envelope(x, attack=0.03, release=0.3):
     return out
 
 
+def active_rms_db(x):
+    """RMS (dBFS) over the parts of a signal that are actually sounding (20 ms frames above -50 dBFS)."""
+    m = x.mean(axis=1) if x.ndim > 1 else x
+    win = int(0.02 * SR)
+    k = len(m) // win
+    if k == 0:
+        return 20 * np.log10(np.sqrt(np.mean(m ** 2)) + 1e-9)
+    fr = np.sqrt(np.mean(m[: k * win].reshape(k, win) ** 2, axis=1))
+    act = fr[fr > 10 ** (-50 / 20)]
+    return 20 * np.log10(np.sqrt(np.mean(act ** 2)) + 1e-9) if len(act) else -90.0
+
+
+# target loudness of each element while it is sounding (dBFS); voice speech is -20
+VOICE_DB = -20.0
+TARGET_DB = {"meow_hook": -21, "meow_long": -21, "meow_chirp": -23, "meow_soft": -23, "kitten_mew": -24,
+             "hiss": -26, "purr": -28, "kibble": -27, "door": -29, "pop": -29, "pop_hi": -30, "pop_lo": -29,
+             "whoosh": -31, "whoosh_down": -31, "ding": -30, "sparkle": -31, "hit": -27}
+MUSIC_GAP_DB, MUSIC_DUCK_DB = -30.0, -35.0
+
+
 def main():
     tl_path, vdir, sdir, music_path, cues_path, out_path = sys.argv[1:7]
     tl = json.load(open(tl_path))
@@ -52,22 +72,22 @@ def main():
     voice = np.zeros((n, 2), np.float32)
     for p in tl["parts"]:
         put(voice, load(f"{vdir}/{p['file']}"), p["start"], 1.0)
-    voice *= 0.5 / max(1e-6, np.abs(voice).max())  # voice peaks at -6 dBFS before the final loudness pass
+    voice *= 10 ** ((VOICE_DB - active_rms_db(voice)) / 20)
 
     music = np.zeros((n, 2), np.float32)
     put(music, load(music_path), 0.0, 1.0)
+    music *= 10 ** ((MUSIC_GAP_DB - active_rms_db(music)) / 20)
     duck = envelope(voice[:, 0])
-    music *= (0.32 - 0.2 * duck)[:, None]  # ~-10 dB under speech, rises in the gaps
+    music *= (10 ** ((MUSIC_DUCK_DB - MUSIC_GAP_DB) / 20 * duck))[:, None]
 
     fx = np.zeros((n, 2), np.float32)
     cache = {}
-    base = {"meow_hook": 0.62, "meow_long": 0.62, "meow_chirp": 0.55, "meow_soft": 0.5, "kitten_mew": 0.5,
-            "hiss": 0.55, "purr": 0.5, "kibble": 0.45, "door": 0.4, "pop": 0.3, "pop_hi": 0.28, "pop_lo": 0.3,
-            "whoosh": 0.3, "whoosh_down": 0.3, "ding": 0.25, "sparkle": 0.22, "hit": 0.4}
     for c in json.load(open(cues_path)):
-        if c["name"] not in cache:
-            cache[c["name"]] = load(f"{sdir}/{c['name']}.wav")
-        put(fx, cache[c["name"]], c["t"], base.get(c["name"], 0.4) * c.get("gain", 1.0), c.get("pan", 0.0))
+        name = c["name"]
+        if name not in cache:
+            x = load(f"{sdir}/{name}.wav")
+            cache[name] = x * 10 ** ((TARGET_DB.get(name, -28) - active_rms_db(x)) / 20)
+        put(fx, cache[name], c["t"], c.get("gain", 1.0), c.get("pan", 0.0))
 
     mix = voice + music + fx
     peak = np.abs(mix).max()

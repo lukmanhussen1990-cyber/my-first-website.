@@ -1,7 +1,9 @@
-# Assets to make outside of code
+# Assets to make outside of code (optional upgrades)
 
-Everything in `previews/look-test-v1.jpg` is 100% code. These assets upgrade it closer to the reference
-(photo-like faces and fur). If an asset never arrives, the code version stays in.
+The finished video is 100% code + a free local AI voice: procedural textures, low-poly models, synthesized meows /
+hiss / purr / kibble / pops / whooshes and synthesized music. The assets below are optional upgrades that bring it
+closer to the reference (photo-like faces, real recordings). Drop images into `assets/images/` (and list their names
+in `assets/images/index.json`) or sounds into `assets/audio/sfx/` with the same names, then rebuild.
 
 Every prompt ends with the same style line: **low-poly 3D video game style like a PS2 game, slightly pixelated textures**
 
