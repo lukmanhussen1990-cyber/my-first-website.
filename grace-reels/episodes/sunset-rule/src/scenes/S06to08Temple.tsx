@@ -1,12 +1,10 @@
 import React from 'react';
 import * as THREE from 'three';
 import {Figure} from '../../../../src/shared/three/Figure';
-import {Card2D} from '../../../../src/shared/three/Card2D';
 import {Coins, Dove, Ox, Sheep, Table, Cage, Jar} from '../../../../src/shared/three/props';
 import {Dust, LightShaft} from '../../../../src/shared/three/fx';
 import {Sky, Clouds} from '../../../../src/shared/three/Sky';
 import {Atmosphere, SunLight} from '../../../../src/shared/three/world';
-import {drawBraidHands} from '../../../../src/shared/rig/paperdoll';
 import {clamp, ease, lerp, rng, smoothstep} from '../../../../src/shared/math';
 import {useShot, type Cam, type Vec3} from '../../../../src/shared/three/shot';
 import {TempleCourt} from '../sets/Temple';
@@ -92,11 +90,11 @@ export const TempleChaos: React.FC<{t: number; frozen?: boolean; settled?: boole
 					settled
 						? {...P.whipLow, brow: {inner: 3, outer: 0}, eyes: 'open', gaze: [0.2, 0.3], blink: blinkAt(t, 3.1)}
 						: t < BRAID_END
-							? {...P.stand, near: {sh: 0.9, el: 1.2, hand: 'fist'}, far: {sh: 0.8, el: 1.25, hand: 'fist'}, headTilt: 0.15, gaze: [0.2, 0.6], hold: {item: 'cords'}}
+							? {...P.stand, near: {sh: 0.42, el: 1.38 + 0.12 * Math.sin(t * 7), hand: 'fist'}, far: {sh: 0.36, el: 1.42 + 0.12 * Math.cos(t * 7), hand: 'fist'}, headTilt: 0.22, gaze: [0.25, 0.8], hold: {item: 'cords', swing: 0.15 * Math.sin(t * 5)}}
 							: {...P.whipHigh, stride: Math.sin(t * 5.5) * 0.6, hold: {item: 'whip', swing}, blink: blinkAt(t, 2.9)}
 				}
 				at={[jx, 0, 0.2]}
-				res={1400}
+				res={t < BRAID_END ? 2400 : 1400}
 			/>
 			{settled ? null : <Figure look={MERCHANTS[1]} pose={{...P.jumpBack, lean: -0.1 - 0.15 * smoothstep(FLIP_T - 0.4, FLIP_T + 0.4, t)}} at={[3.3, 0, 1.0]} facing={-1} res={900} />}
 			{settled ? null : <Figure look={MERCHANTS[3]} pose={{...P.jumpBack, stride: 0.5}} at={[5.6, 0, -1.6]} facing={-1} res={800} />}
@@ -109,35 +107,16 @@ export const TempleChaos: React.FC<{t: number; frozen?: boolean; settled?: boole
 
 const camS6 = (t: number): Cam => {
 	if (t < BRAID_END) {
-		// hands close-up
+		// close on Jesus braiding the cords, a slow push
 		const jx = jesusX(0);
-		return {pos: [jx + 0.15, 1.12, 0.2 + 0.95 - t * 0.06], target: [jx + 0.15, 1.06, 0.2], fov: 30};
+		return {pos: [jx + 0.75, 1.22, 0.2 + 2.9 - t * 0.3], target: [jx + 0.42, 1.08, 0.2], fov: 34};
 	}
 	const k = ease.inOut(clamp((t - BRAID_END) / 3.3));
 	const x = lerp(-0.6, 3.0, k);
 	return {pos: [x, lerp(2.5, 2.1, k), lerp(9.6, 8.8, k)], target: [x + 0.4, 1.0, -0.4], fov: 50};
 };
 
-const S6Content: React.FC<{t: number; d: number}> = ({t}) => {
-	const jx = jesusX(0);
-	return (
-		<>
-			<TempleChaos t={t} />
-			{t < BRAID_END ? (
-				<Card2D
-					at={[jx + 0.15, 1.06, 0.62]}
-					size={[0.62, 0.4]}
-					res={1200}
-					draw={(g, w, h, light, k) => {
-						const s = w / 1300;
-						g.setTransform(s, 0, 0, s, w * 0.5, h * 0.48);
-						drawBraidHands(g, JESUS.skin, JESUS.robe, t * 0.9, {ol: 5 / (k * s), light});
-					}}
-				/>
-			) : null}
-		</>
-	);
-};
+const S6Content: React.FC<{t: number; d: number}> = ({t}) => <TempleChaos t={t} />;
 
 export const S06: SceneDef = {
 	id: 'S6',
@@ -145,7 +124,7 @@ export const S06: SceneDef = {
 	camera: camS6,
 	post: (t, d, sun) => ({
 		bloom: {intensity: 0.7, threshold: 0.82},
-		dof: t < BRAID_END ? {focusDistance: 0.55, focusRange: 0.3, bokehScale: 5} : {focusDistance: 8.6, focusRange: 5, bokehScale: 2.2},
+		dof: t < BRAID_END ? {focusDistance: 2.95 - t * 0.3, focusRange: 1.1, bokehScale: 3.5} : {focusDistance: 8.6, focusRange: 5, bokehScale: 2.2},
 		vignette: {offset: 0.3, darkness: 0.5},
 		grade: gradeFromSun(sun, {contrast: 1.06}),
 	}),

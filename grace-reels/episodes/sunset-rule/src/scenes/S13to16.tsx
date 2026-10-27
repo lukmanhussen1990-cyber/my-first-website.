@@ -127,7 +127,7 @@ export const SUNRISE_VIEW: SceneDef = {
 	id: 'SUNRISE',
 	sunAz: LAND_SUN,
 	camera: (t) => ({pos: [0, 40, 300], target: [0, 60, -900], fov: 42, far: 5000}),
-	post: (t, d, sun) => ({bloom: {intensity: 1.1, threshold: 0.7}, vignette: {offset: 0.3, darkness: 0.4}, grade: gradeFromSun(sun)}),
+	post: (t, d, sun) => ({bloom: {intensity: 0.8, threshold: 0.8}, vignette: {offset: 0.3, darkness: 0.45}, grade: gradeFromSun(sun, {exposure: 0.82, contrast: 1.08})}),
 	Content: () => (
 		<>
 			<Sky />
