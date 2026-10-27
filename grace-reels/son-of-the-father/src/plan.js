@@ -42,7 +42,7 @@ export function buildPlan(T) {
   // --- S7 the question
   ev.card2721 = word('B07', 'Whether').start - 0.3;
   ev.card2721Out = B.B07.end + 0.15;
-  ev.whisper = word('B07', 'asked').start + 0.2;     // the chief priests move through the crowd whispering (Mark 15:11)
+  ev.whisper = ev.card2721 + 0.35;                   // people lean in and whisper through the hushed crowd (Mark 15:11)
   ev.hush = B.B07.start;                             // the crowd goes quiet
   // --- S8 the shout
   ev.shoutRise = word('B08', 'shouted').start;
@@ -101,7 +101,8 @@ export function buildPlan(T) {
     S('S5b', 'S5', ev.mem2, ev.mem3, 'flare', 0.25),               // a sick child lifted up
     S('S5c', 'S5', ev.mem3, st('B06'), 'flare', 0.25),             // Lazarus walks out of the tomb
     S('S6', 'S6', st('B06'), st('B07'), 'cut'),                    // night riot flashback (shadows)
-    S('S7', 'S7', st('B07'), st('B08'), 'cut'),                    // the question; the priests whisper
+    S('S7', 'S7', st('B07'), ev.card2721, 'cut'),                  // the question: Pilate raises a hand toward each man
+    S('S7b', 'S7', ev.card2721, st('B08'), 'cut'),                 // the hushed crowd, whispers (the Matthew 27:21 card above)
     S('S8', 'S8', st('B08'), ev.freeze, 'cut'),                    // the shout; Jesus perfectly still
     S('S9', 'S9', ev.freeze, st('B11'), 'cut'),                    // freeze, drain to dark: the name card unlocks
     S('S10', 'S10', st('B11'), ev.card2726, 'dissolve', 0.45),     // the swap

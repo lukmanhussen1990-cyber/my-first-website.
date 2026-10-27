@@ -6,8 +6,9 @@ sentence (WordBoundary timings), joined with our own pauses: 0.3 s between sente
 silence after the crowd shouts "Barabbas"), per-beat `gaps` between clips (0.5 s between "Bar means son" and "Abba
 means father") and `pause_before` (0.7 s before "And here's the truth").
 
-If input/voice.mp3 exists (your own recording of the same script) it is used instead and the word
-timings come from faster-whisper word timestamps.
+If voice/input/P01.mp3 ... P18.mp3 exist (the user's own recording, one file per beat, see VOICEOVER_SCRIPT.md) they
+are used instead of TTS: each part is trimmed at its speech onset/offset (energy), its word timings come from
+faster-whisper word timestamps aligned to the script words, and the same pauses are put between the parts.
 
 Writes: voice/voice.wav (48 kHz mono, polished) and timeline.json (every word with start/end,
 keyword flag, sentence id, beat id, scene id + caption blocks + scene windows).
@@ -25,7 +26,7 @@ BACKUP = "en-US-ChristopherNeural"
 RATE = os.environ.get("RATE", "-5%")
 PITCH = os.environ.get("PITCH", "-3Hz")
 LEAD_IN = 0.08
-END_CARD = 3.4   # seconds after the last word: CTA tail + end card + loop back to the Jesus hero shot
+END_CARD = 3.1   # seconds after the last word: CTA tail + end card + loop back to the Jesus hero shot
 
 S = json.load(open(os.path.join(ROOT, "script.json")))
 P = S["pauses"]
@@ -195,6 +196,45 @@ def clip_audio(text, key):
     sys.exit(f"TTS failed for {key}: no working voice — stopping as requested (no robotic fallback).")
 
 
+# ---------------------------------------------------------------- the user's own recording (one file per beat)
+USER_DIR = os.path.join(HERE, "input")
+def user_part(bi):
+    f = os.path.join(USER_DIR, f"P{bi + 1:02d}.mp3")
+    return f if os.path.exists(f) else None
+USER = all(user_part(i) for i in range(len(S["beats"])))
+# where a part gets a minimum pause between two of its words (word index -> seconds), e.g. the breath before "Abba"
+USER_GAPS = {"B09": {3: 0.3, 8: 0.45}}
+
+
+def user_clip(bi, text):
+    os.makedirs(CLIPS, exist_ok=True)
+    src = user_part(bi)
+    a = decode_to(src, os.path.join(CLIPS, f"user_P{bi + 1:02d}.wav"))
+    meta = os.path.join(CLIPS, f"user_P{bi + 1:02d}.json")
+    st = os.stat(src)
+    want = dict(src=os.path.basename(src), size=st.st_size, text=text)
+    if os.path.exists(meta) and json.load(open(meta)).get("key") == want:
+        words = json.load(open(meta))["words"]
+    else:
+        words = whisper_words(src, text)
+        json.dump(dict(key=want, words=words), open(meta, "w"))
+    return a, words
+
+
+def decode_to(path, wav):
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", path, "-ac", "1", "-ar", str(SR), "-c:a", "pcm_f32le", wav], check=True)
+    a, _ = sf.read(wav, dtype="float32")
+    return a
+
+
+def trim_user(a):
+    """speech onset / offset by energy (10 ms windows): -42 dBFS in, -45 dBFS out; keep a short pre-roll and tail"""
+    win = int(0.01 * SR); n = len(a) // win
+    db = np.array([20 * np.log10(np.sqrt(np.mean(a[k * win:(k + 1) * win] ** 2)) + 1e-9) for k in range(n)])
+    on = int(np.argmax(db > -42)); off = n - 1 - int(np.argmax(db[::-1] > -45))
+    return max(0, (on - 3) * win), min(len(a), (off + 9) * win)
+
+
 def trim(a, words):
     s = max(0, int((words[0]["start"] - 0.04) * SR))
     e = int((words[-1]["end"] + 0.08) * SR)
@@ -230,14 +270,19 @@ def build():
             prev_gap = P["between_sentences"]
             gap = max(prev_gap, pb)
             pieces.append(np.zeros(int(gap * SR), np.float32)); t += gap
-        clips = [c.strip() for c in b["tts"].split("|")]
+        clips = [b["text"].replace("*", "")] if USER else [c.strip() for c in b["tts"].split("|")]
         b_start = t
         b_words = []
         for ci, ctext in enumerate(clips):
-            a, words = clip_audio(ctext, f"{b['id']}_{ci}")
-            s, e = trim(a, words)
+            if USER:
+                a, words = user_clip(S["beats"].index(b), ctext)
+                s, e = trim_user(a)
+                gaps = dict(USER_GAPS.get(b["id"], {}))
+            else:
+                a, words = clip_audio(ctext, f"{b['id']}_{ci}")
+                s, e = trim(a, words)
+                gaps = {int(k): v for k, v in (b.get("inner_gaps") or {}).items()}
             sid = f"{b['id']}.{ci + 1}"
-            gaps = {int(k): v for k, v in (b.get("inner_gaps") or {}).items()}
             # cut the clip at word boundaries and stretch the pauses there to the wanted length
             cuts = [s]
             for i in sorted(gaps):
@@ -305,13 +350,14 @@ def main():
     user = os.path.join(ROOT, "input", "voice.mp3")
     if os.path.exists(user):
         sys.exit("input/voice.mp3 found: run voice/align_user.py (faster-whisper word timestamps) instead.")
+    print("voice: the user's own recording (voice/input/P01-P18)" if USER else f"voice: edge-tts {VOICE}")
     voice, beats, words, t_end = build()
     voice = polish(voice)
     last_word = words[-1]["end"]
     total = round(last_word + END_CARD, 3)
     voice = np.pad(voice, (0, max(0, int(total * SR) - len(voice))))[: int(total * SR)]
     sf.write(os.path.join(HERE, "voice.wav"), voice, SR, subtype="PCM_24")
-    tl = dict(episode=S["episode"], title=S["title"], fps=30, voice=VOICE, rate=RATE, pitch=PITCH,
+    tl = dict(episode=S["episode"], title=S["title"], fps=30, voice="user recording P01-P18" if USER else VOICE, rate=None if USER else RATE, pitch=None if USER else PITCH,
               voice_end=round(last_word, 3), duration=total, frames=int(np.ceil(total * 30)),
               scenes=scene_windows(beats, last_word), beats=beats, words=words)
     json.dump(tl, open(os.path.join(ROOT, "timeline.json"), "w"), indent=1)

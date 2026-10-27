@@ -9,22 +9,22 @@
 // H = helpers below (at(set, p) converts set-local to world coords; sets live at SETS offsets).
 import { clamp, lerp, smooth, invLerp, easeInOut, easeOut, easeIn, hash01, noise2 } from './util.js';
 import { shotAt } from '../plan.js';
-import * as hill from '../cams/hill.js';
-import * as enoch from '../cams/enoch.js';
-import * as family from '../cams/family.js';
-import * as ark from '../cams/ark.js';
-import * as city from '../cams/city.js';
+import * as court from '../cams/court.js';
+import * as memory from '../cams/memory.js';
+import * as riot from '../cams/riot.js';
+import * as modern from '../cams/modern.js';
 import * as cta from '../cams/cta.js';
-import * as _lab from '../cams/_lab.js'; // LAB-TEMP
 
-export const SETS = { hill: [0, 0, 0], enoch: [1000, 0, 0], family: [2000, 0, 0], ark: [3000, 0, 0], city: [4000, 0, 0], cta: [5000, 0, 0] };
-// which 3D set each shot shows (shots not listed are HTML-only: S4 timeline, S15 end card)
+export const SETS = { court: [0, 0, 0], memory: [3000, 0, 0], riot: [6000, 0, 0], modern: [9000, 0, 0], cta: [12000, 0, 0] };
+// which 3D set each shot shows (shots not listed are HTML-only: S11 Matthew 27:26 card, S16 end card)
 export const SHOT_SET = {
-  S1: 'hill', S2: 'hill', S3: 'enoch', S5: 'family', S6: 'family', S7: 'ark', S8: 'hill', S9: 'hill', S10: 'hill',
-  S11a: 'ark', S11b: 'ark', S11c: 'ark', S12: 'ark', S13a: 'city', S13b: 'city', S14: 'cta', LOOP: 'hill',
+  S1: 'court', S2: 'court', S3: 'court', S4: 'court', S5: 'court', S5a: 'memory', S5b: 'memory', S5c: 'memory', S6: 'riot',
+  S7: 'court', S7b: 'court', S8: 'court', S9: 'court', S10: 'court', S12: 'court', S13: 'court', S14a: 'court', S14b: 'modern',
+  S15: 'cta', LOOP: 'court',
 };
-export const CAMS = { hill, enoch, family, ark, city, cta };
-SETS._lab = [9000, 0, 0]; Object.assign(SHOT_SET, _lab.LAB_SHOT_SET); CAMS._lab = _lab; // LAB-TEMP
+export const CAMS = { court, memory, riot, modern, cta };
+// whip pans swing toward screen-right by default; -1 swings left
+const WHIP_DIR = {};
 
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const at = (set, p) => add(SETS[set], p);
@@ -56,7 +56,7 @@ export function cameraShot(plan, shot, t) {
   if (next && next.trans === 'whip' && t > next.t0 - 0.2) whip = easeIn(invLerp(next.t0 - 0.2, next.t0, t));
   if (shot.trans === 'whip' && lt < 0.2) whip = -easeOut(1 - Math.max(0, lt) / 0.2);
   if (whip !== 0) {
-    const yaw = whip * 0.65, dx = look[0] - pos[0], dz = look[2] - pos[2], cs = Math.cos(yaw), sn = Math.sin(yaw);
+    const yaw = whip * 0.65 * (WHIP_DIR[(whip > 0 ? next : shot).id] || 1), dx = look[0] - pos[0], dz = look[2] - pos[2], cs = Math.cos(yaw), sn = Math.sin(yaw);
     look = [pos[0] + dx * cs - dz * sn, look[1], pos[2] + dx * sn + dz * cs];
     mblur = Math.max(mblur, 5);
   }
@@ -72,7 +72,6 @@ export function anchorAt(plan, set, name, t) {
 
 // which shots are on screen at time t, and how they are joined (shared by the engine and the overlay)
 export function layersAt(plan, t) {
-  if (t >= _lab.LAB_T0) { const s = _lab.labShot(t); return { shot: s, A: s, B: null, k: 0, mode: null, a3d: true, b3d: false }; } // LAB-TEMP
   const { i, shot } = shotAt(plan, t);
   const prev = plan.shots[i - 1], next = plan.shots[i + 1];
   const Wd = (s) => (s.trans === 'whip' ? 0.2 : s.tdur || 0);

@@ -101,6 +101,8 @@ export function charFillMaterial(atlas, uni) {
     for (const k of ['uCharLight', 'uPointPos', 'uPointColor', 'uPointRange', 'uAO', 'uGroundY', 'uSunDir', 'uSunColor', 'uShadeTone', 'uCelWrap', 'uRimPx', 'uRimK', 'uPointShade']) sh.uniforms[k] = U[k];
     for (const k of ['uLayerStep', 'uLayerBase', 'uLayerScale', 'uOutline']) sh.uniforms[k] = uni[k];
     sh.uniforms.uGlow = uni.uGlow || { value: 0 };
+    sh.uniforms.uLit = uni.uLit || { value: 1 };
+    sh.uniforms.uTintP = uni.uTint || { value: new THREE.Color(1, 1, 1) };
     sh.uniforms.shapeMap = { value: atlas.shapeTex };
     sh.uniforms.shapeSize = { value: new THREE.Vector2(atlas.SW, atlas.SH) };
     sh.vertexShader = VS_HEAD + sh.vertexShader
@@ -108,7 +110,7 @@ export function charFillMaterial(atlas, uni) {
       .replace('#include <project_vertex>', LAYER_VS('layer'));
     sh.fragmentShader = `uniform vec3 uCharLight; uniform vec3 uPointPos; uniform vec3 uPointColor; uniform float uPointRange; uniform float uAO; uniform float uGroundY;
 uniform vec3 uSunDir; uniform vec3 uSunColor; uniform vec3 uShadeTone; uniform float uCelWrap; uniform float uRimPx; uniform float uRimK; uniform float uPointShade;
-uniform sampler2D shapeMap; uniform vec2 shapeSize; uniform float uGlow;
+uniform sampler2D shapeMap; uniform vec2 shapeSize; uniform float uGlow; uniform float uLit; uniform vec3 uTintP;
 varying vec3 vWP; varying vec3 vTx; varying vec3 vBy; varying float vTint;
 ` + sh.fragmentShader.replace('#include <opaque_fragment>', `
   {
@@ -119,7 +121,7 @@ varying vec3 vWP; varying vec3 vTx; varying vec3 vBy; varying float vTint;
     vec3 Fw = normalize(cross(Tw, Bw)); if (dot(Fw, cameraPosition - vWP) < 0.0) Fw = -Fw;
     vec3 N = normalize(Tw * gd.x * xm + Bw * gd.y * xm + Fw * sqrt(max(0.0, 1.0 - xm * xm)));
     vec3 Ls = normalize(uSunDir);
-    float litS = smoothstep(-uCelWrap - 0.035, -uCelWrap + 0.035, dot(N, Ls));
+    float litS = smoothstep(-uCelWrap - 0.035, -uCelWrap + 0.035, dot(N, Ls)) * uLit;   // uLit: 0 = this figure stands in shadow
     vec3 Lp = uPointPos - vWP; float dp = length(Lp); Lp /= max(dp, 1e-4);
     vec3 pl = uPointColor * pow(1.0 - smoothstep(0.0, uPointRange, dp), 1.6);
     float litP = smoothstep(-0.05, 0.05, dot(N, Lp) + 0.06);
@@ -134,7 +136,7 @@ varying vec3 vWP; varying vec3 vTx; varying vec3 vBy; varying float vTint;
     float rimP = edge * smoothstep(0.2, 0.65, dot(gd, Lp2 / max(length(Lp2), 1e-4))) * smoothstep(0.08, 0.4, length(Lp2));
     vec3 warm = vec3(1.0, 0.8, 0.55);
     col += (rimS * uSunColor * uCharLight * 0.6 + rimP * pl * 1.2) * warm * (0.3 + base) * uRimK;
-    outgoingLight = mix(col, vec3(1.7, 1.42, 1.0), uGlow);   // taken into the light
+    outgoingLight = mix(col * uTintP, vec3(1.7, 1.42, 1.0), uGlow);   // per-figure tint (spotlights), then: taken into the light
   }
   #include <opaque_fragment>`);
   };
