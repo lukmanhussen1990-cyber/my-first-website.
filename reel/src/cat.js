@@ -27,10 +27,15 @@ export class Cat {
     this.faceCache = {};
     this.faceTextures = faceTextures; // optional {variantKey: THREE.Texture} from image assets
     this._build(furTextures);
-    if (kitten) {
-      this.root.scale.setScalar(0.5);
-      this.head.scale.setScalar(1.42);
-    }
+    this.setAge(kitten ? 0 : 1);
+  }
+
+  // 0 = kitten proportions (small body, big head, big-eyed face), 1 = adult. Used for the grow-up morph.
+  setAge(a) {
+    this.age = a;
+    this.kitten = a < 0.5;
+    this.root.scale.setScalar(lerp(0.5, 1, a));
+    this.head.scale.setScalar(lerp(1.42, 1, a));
   }
 
   _mat(tex, opts = {}) {
@@ -149,7 +154,7 @@ export class Cat {
   }
 
   faceMap(eyes, mouth, extra = '') {
-    const key = `${eyes}_${mouth}${extra}`;
+    const key = `${eyes}_${mouth}${extra}${this.kitten ? '_k' : ''}`;
     if (this.faceTextures && this.faceTextures[key]) return this.faceTextures[key];
     if (!this.faceCache[key]) {
       this.faceCache[key] = toTexture(catFaceCanvas(this.pal, { eyes, mouth, kitten: this.kitten, seed: this.seed + 3, tears: extra === '_tears' }));
@@ -182,18 +187,19 @@ export class Cat {
     hp.z += hiss * 0.012;
     placeBone(this.neck, this.neckBase, hp);
     this.head.position.copy(hp);
-    let yaw = p.headYaw || 0, pitch = p.headPitch || 0;
+    // head aim is expressed in the root (level) frame, then converted into the pitched body frame,
+    // so a sitting cat still looks level / straight at its target
+    let yaw = p.headYaw || 0, pitch = (p.headPitch || 0) - hiss * 0.12;
+    const bodyPitch = this.body.rotation.x;
     if (p.lookTarget) {
       this.root.updateMatrixWorld(true);
-      const local = this.body.worldToLocal(p.lookTarget.clone()).sub(hp);
-      yaw += clamp(Math.atan2(local.x, local.z), -1.3, 1.3);
-      pitch += clamp(Math.atan2(local.y, Math.hypot(local.x, local.z)), -0.7, 0.7);
+      const hRoot = hp.clone().applyMatrix4(this.body.matrix);
+      const d = this.root.worldToLocal(p.lookTarget.clone()).sub(hRoot);
+      yaw += clamp(Math.atan2(d.x, d.z), -1.3, 1.3);
+      pitch += clamp(Math.atan2(d.y, Math.hypot(d.x, d.z)), -0.7, 0.75);
     }
-    const bodyPitch = this.body.rotation.x;
-    this.head.rotation.set(0, 0, 0);
-    this.head.rotateY(yaw);
-    this.head.rotateX(-pitch - bodyPitch * 0.9 + hiss * 0.12);
-    this.head.rotateZ(p.headRoll || 0);
+    const qAim = new THREE.Quaternion().setFromEuler(new THREE.Euler(-pitch, yaw, p.headRoll || 0, 'YXZ'));
+    this.head.quaternion.copy(this.body.quaternion).invert().multiply(qAim);
     const eb = clamp((p.earsBack || 0) + hiss, 0, 1);
     for (const e of this.ears) {
       const sd = e.userData.side;

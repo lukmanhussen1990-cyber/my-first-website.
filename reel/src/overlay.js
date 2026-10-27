@@ -33,7 +33,8 @@ export function drawCaption(ctx, words, { y = 1340, size = 88, age = 1, maxW = 8
   const measure = () => words.reduce((s, w) => s + ctx.measureText(w.text).width, 0) + space() * (words.length - 1);
   let total = measure();
   if (total > maxW) { fs = Math.floor(fs * maxW / total); ctx.font = `${fs}px Anton`; total = measure(); }
-  const s = popScale(age, 0.12, 1.07);
+  // subtle pop: 85% -> 105% -> 100% over ~0.13 s (text is readable from the first frame)
+  const s = age < 0.07 ? 0.85 + 0.2 * (age / 0.07) : age < 0.13 ? 1.05 - 0.05 * ((age - 0.07) / 0.06) : 1;
   ctx.translate(W / 2, y);
   ctx.scale(s, s);
   ctx.textBaseline = 'middle';

@@ -366,8 +366,17 @@ export function buildHouse() {
   scene.add(bag);
   bag.visible = false;
 
+  // clipboard (the "study" prop)
+  const clip = new THREE.Group();
+  clip.add(box(0.24, 0.32, 0.012, col('#a0703a', { flatShading: true }), 0, 0, 0));
+  clip.add(box(0.2, 0.26, 0.004, col('#f8f6ee'), 0, -0.015, 0.008));
+  clip.add(box(0.08, 0.03, 0.02, col('#c0c0c0', { flatShading: true }), 0, 0.15, 0.01));
+  for (let i = 0; i < 5; i++) clip.add(box(0.14, 0.008, 0.002, col('#5a6a8a'), 0, 0.06 - i * 0.04, 0.011));
+  clip.visible = false;
+  scene.add(clip);
+
   return {
-    scene, hemi, sun, doorPivot, bowl, kibble, bag,
+    scene, hemi, sun, doorPivot, bowl, kibble, bag, clip,
     setKibble(n) { kibble.forEach((k, i) => { k.visible = i < n; }); },
     setDoor(open) { doorPivot.rotation.y = -open * 1.4; },
   };

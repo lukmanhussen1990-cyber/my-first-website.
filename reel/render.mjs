@@ -2,6 +2,8 @@
 // Usage:
 //   node render.mjs stills <outDir> [name ...]      render named test stills
 //   node render.mjs frames <outDir> [from] [to]     render timeline frames (inclusive range)
+//   node render.mjs times <outDir> t1 t2 ...         render single timestamps (seconds)
+//   node render.mjs sfx <outDir>                    dump the sound-effect cue list (sfx.json)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,6 +47,13 @@ if (mode === 'stills') {
     save(path.join(outDir, `${n}.jpg`), url);
     console.log('still', n);
   }
+} else if (mode === 'times') {
+  for (const t of rest.map(Number)) {
+    const url = await page.evaluate((t) => window.APP.renderTime(t), t);
+    save(path.join(outDir, `t_${t.toFixed(2).padStart(6, '0')}.jpg`), url);
+  }
+} else if (mode === 'sfx') {
+  fs.writeFileSync(path.join(outDir, 'sfx.json'), JSON.stringify(await page.evaluate(() => window.APP.sfxEvents()), null, 1));
 } else {
   const total = await page.evaluate(() => window.APP.frameCount());
   const from = Number(rest[0] ?? 0), to = Math.min(Number(rest[1] ?? total - 1), total - 1);

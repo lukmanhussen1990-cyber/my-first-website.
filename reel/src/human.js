@@ -143,6 +143,11 @@ export class Human {
     this.root.add(sh);
   }
 
+  headWorld(offset = new THREE.Vector3(0, 0, 0)) {
+    this.root.updateMatrixWorld(true);
+    return this.head.localToWorld(offset.clone());
+  }
+
   faceMap(eyes, mouth) {
     const key = `${eyes}_${mouth}`;
     if (this.faceTextures && this.faceTextures[key]) return this.faceTextures[key];
@@ -157,7 +162,8 @@ export class Human {
     const walking = p.walking ? 1 : 0;
     const ph = p.walkPhase || 0;
     const crouch = clamp(p.crouch || 0, 0, 1);
-    const hipY = 0.97 - crouch * 0.42 + (walking ? Math.abs(Math.sin(ph * Math.PI * 2)) * 0.025 - 0.02 : 0);
+    const sit = clamp(p.sit || 0, 0, 1);
+    const hipY = lerp(0.97 - crouch * 0.42 + (walking ? Math.abs(Math.sin(ph * Math.PI * 2)) * 0.025 - 0.02 : 0), p.seatY ?? 0.56, sit);
     this.pelvis.position.set(0, hipY, 0);
     this.pelvis.rotation.set(0, walking ? Math.sin(ph * Math.PI * 2) * 0.08 : 0, 0);
     this.chest.rotation.set((p.lean || 0) + crouch * 0.35, walking ? -Math.sin(ph * Math.PI * 2) * 0.12 : 0, 0);
@@ -169,14 +175,14 @@ export class Human {
       const hipLocal = new THREE.Vector3(l.side * 0.1, -0.02, 0);
       const A = this.pelvis.localToWorld(hipLocal.clone());
       this.root.worldToLocal(A);
-      let fz = crouch * 0.08, fy = 0.075, pitch = 0;
+      let fz = crouch * 0.08 + sit * 0.5, fy = 0.075, pitch = 0;
       if (walking) {
         const q = (ph + (l.side > 0 ? 0.5 : 0)) % 1;
         const stride = p.stride || 0.62, duty = 0.6;
         if (q < duty) fz += stride * (0.5 - q / duty);
         else { const s = (q - duty) / (1 - duty); fz += stride * (-0.5 + (1 - Math.cos(s * Math.PI)) / 2); fy += Math.sin(s * Math.PI) * 0.12; pitch = Math.sin(s * Math.PI) * 0.3; }
       }
-      const target = new THREE.Vector3(l.side * 0.1, fy, fz);
+      const target = new THREE.Vector3(l.side * (0.1 + sit * 0.03), fy, fz);
       const pole = new THREE.Vector3(l.side * 0.12, A.y - 0.3, A.z + 1);
       const { J, E } = ik3(A, target, l.L[0], l.L[1], pole);
       placeBone(l.upper, A, J); placeBone(l.lower, J, E);
