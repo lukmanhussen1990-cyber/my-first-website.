@@ -109,8 +109,8 @@ export const T = {
 // camera keys: t, frame centre x, ground row (pixel row of y = 0 at the cut face),
 // scale (pixels per metre at the cut face) and camera height. Between keys the
 // camera eases (C1-smooth), so pans and push-ins never jerk.
-// The subtitles sit on rows ~770-900: in most shots the ground row is ~900-1000,
-// so they cover the far lawn and the fence, never the shelter.
+// The subtitles sit on rows ~790-890: every shot keeps its action (the people, the
+// door, the vents, the plank) out of that band.
 export const CAM = [
   { t: 0.0, cx: 0.9, row: 1170, s: 128, cy: 2.2 }, // the backyard, the sky, far away the tornado
   { t: 2.6, cx: 0.95, row: 1140, s: 134, cy: 2.1 },
@@ -118,28 +118,28 @@ export const CAM = [
   { t: 12.4, cx: 1.2, row: 975, s: 172, cy: 1.7 }, // the pit
   { t: 15.0, cx: 1.2, row: 975, s: 172, cy: 1.7 },
   { t: 17.6, cx: 0.4, row: 940, s: 205, cy: 1.6 },
-  { t: 18.7, cx: -0.8, row: 930, s: 300, cy: 1.4 }, // the wall in section, "30 CM"
-  { t: 20.4, cx: -0.75, row: 935, s: 305, cy: 1.4 },
+  { t: 18.7, cx: -0.8, row: 975, s: 300, cy: 1.4 }, // the wall in section, "30 CM" (the slab lands below the subtitles)
+  { t: 20.4, cx: -0.75, row: 980, s: 305, cy: 1.4 },
   { t: 22.2, cx: 0.4, row: 1060, s: 182, cy: 1.8 }, // sky, debris, the roof
   { t: 25.6, cx: 0.1, row: 1050, s: 190, cy: 1.8 },
-  { t: 27.0, cx: -1.45, row: 1005, s: 212, cy: 1.6 }, // the plank comes in from the left
-  { t: 28.6, cx: -1.35, row: 995, s: 240, cy: 1.5 },
-  { t: 29.5, cx: -1.1, row: 990, s: 285, cy: 1.5 }, // impact
-  { t: 30.3, cx: -0.5, row: 985, s: 280, cy: 1.5 },
+  { t: 27.0, cx: -1.45, row: 1090, s: 212, cy: 1.6 }, // the plank comes in from the left, under the subtitles
+  { t: 28.6, cx: -1.35, row: 1080, s: 240, cy: 1.5 },
+  { t: 29.5, cx: -1.1, row: 1075, s: 285, cy: 1.5 }, // impact
+  { t: 30.3, cx: -0.5, row: 1050, s: 280, cy: 1.5 },
   { t: 32.8, cx: 1.0, row: 860, s: 150, cy: 1.8 }, // the whole shelter and the soil below it
   { t: 37.4, cx: 1.05, row: 850, s: 152, cy: 1.8 },
-  { t: 39.6, cx: 2.7, row: 990, s: 270, cy: 1.4 }, // the stairwell
-  { t: 41.0, cx: 3.0, row: 1010, s: 380, cy: 1.1 }, // the door
-  { t: 43.4, cx: 3.05, row: 1015, s: 410, cy: 1.0 },
-  { t: 45.6, cx: 0.2, row: 880, s: 255, cy: 1.5 }, // inside, the roof and the vents
-  { t: 51.0, cx: 0.15, row: 870, s: 262, cy: 1.5 },
+  { t: 39.6, cx: 2.7, row: 1005, s: 270, cy: 1.4 }, // the stairwell
+  { t: 41.0, cx: 3.0, row: 1070, s: 380, cy: 1.1 }, // the door (it lands below the subtitles)
+  { t: 43.4, cx: 3.05, row: 1075, s: 410, cy: 1.0 },
+  { t: 45.6, cx: 0.2, row: 1127, s: 195, cy: 1.3 }, // inside, the roof and the vents: caps to floor between the subtitles and the bottom 20 %
+  { t: 51.0, cx: 0.15, row: 1132, s: 200, cy: 1.3 },
   { t: 52.4, cx: 0.0, row: 905, s: 300, cy: 1.4 }, // benches, shelves, supplies
   { t: 57.9, cx: 0.05, row: 905, s: 305, cy: 1.4 },
   { t: 59.4, cx: 2.0, row: 1010, s: 150, cy: 2.0 }, // the yard: the family runs in
   { t: 62.4, cx: 2.0, row: 1000, s: 152, cy: 2.0 },
   { t: 64.6, cx: 1.1, row: 930, s: 165, cy: 1.8 }, // the tornado passes over; inside, calm
   { t: 71.8, cx: 1.1, row: 925, s: 168, cy: 1.8 },
-  { t: 74.3, cx: 2.3, row: 985, s: 215, cy: 1.6 }, // the door opens, they climb out
-  { t: 77.4, cx: 2.4, row: 1000, s: 205, cy: 1.6 },
+  { t: 74.3, cx: 2.2, row: 1250, s: 180, cy: 1.6 }, // the door opens, they climb out (below the subtitles, under the clearing sky)
+  { t: 77.4, cx: 2.2, row: 1255, s: 176, cy: 1.6 },
   { t: 81.5, cx: 1.2, row: 1130, s: 132, cy: 2.2 }, // calm wide shot
 ];

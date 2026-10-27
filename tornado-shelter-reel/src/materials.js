@@ -137,11 +137,11 @@ vec3 soilAt(vec2 p, out float h){
   float d = -p.y; // depth below the lawn
   float wob = (fbm(vec2(p.x * 0.3, 1.7)) - 0.5) * 0.55 + (vnoise(vec2(p.x * 1.7, 4.1)) - 0.5) * 0.14;
   float b = d + wob;
-  vec3 humus = s2l(vec3(0.22, 0.155, 0.105));
-  vec3 loam = s2l(vec3(0.43, 0.3, 0.2));
-  vec3 clay = s2l(vec3(0.48, 0.32, 0.21));
-  vec3 sub = s2l(vec3(0.5, 0.39, 0.28));
-  vec3 deep = s2l(vec3(0.44, 0.36, 0.28));
+  vec3 humus = s2l(vec3(0.2, 0.14, 0.095));
+  vec3 loam = s2l(vec3(0.39, 0.27, 0.18));
+  vec3 clay = s2l(vec3(0.44, 0.29, 0.19));
+  vec3 sub = s2l(vec3(0.46, 0.355, 0.255));
+  vec3 deep = s2l(vec3(0.41, 0.33, 0.255));
   vec3 c = mix(humus, loam, smoothstep(0.16, 0.7, b));
   c = mix(c, clay, smoothstep(1.5, 2.4, b));
   c = mix(c, sub, smoothstep(3.4, 4.4, b));
@@ -154,18 +154,32 @@ vec3 soilAt(vec2 p, out float h){
   float f2 = fbm(vec2(wx * 6.8 + 11.0, p.y * 0.55));
   float f3 = vnoise(vec2(wx * 19.0 + 3.0, p.y * 1.6));
   float r1 = 1.0 - abs(f1 * 2.0 - 1.0), r2 = 1.0 - abs(f2 * 2.0 - 1.0);
-  h += below * (0.11 * (r1 - 0.55) + 0.04 * (r2 - 0.5) + 0.012 * (f3 - 0.5));
-  c *= mix(1.0, 0.74 + 0.4 * r1 + 0.16 * (r2 - 0.5), below);
+  h += below * (0.1 * (r1 - 0.55) + 0.022 * (r2 - 0.5) + 0.005 * (f3 - 0.5));
+  c *= mix(1.0, 0.76 + 0.36 * r1 + 0.1 * (r2 - 0.5), below);
   // ledges where a slab of soil broke away (lighter, fresher soil below a lip)
   float lv = fbm(vec2(p.x * 0.9 + 4.0, p.y * 2.6));
   float ledge = smoothstep(0.62, 0.7, lv) * below;
   c *= 1.0 + 0.12 * ledge;
   h += 0.02 * ledge;
-  // clods and crumbs
-  vec3 vc = voro(p * 10.0);
-  float clod = smoothstep(0.0, 0.32, vc.y - vc.x);
-  h += 0.006 * clod + 0.0025 * vnoise(p * 70.0);
-  c *= 0.9 + 0.12 * clod + 0.12 * (vnoise(p * 26.0) - 0.5);
+  // crumb structure: a granular, crumbly face - small rounded aggregates, pores and a
+  // few larger clods standing proud (isolated soft bumps, never a network of cell edges)
+  float gr = fbm(p * 34.0 + 3.0);
+  h += 0.007 * (gr - 0.5) + 0.0025 * (vnoise(p * 90.0) - 0.5);
+  c *= 0.95 + 0.12 * (gr - 0.5) + 0.1 * (vnoise(p * 26.0) - 0.5);
+  {
+    vec4 cr = cellv(p * 24.0 + (vec2(fbm(p * 9.0), fbm(p * 9.0 + 5.0)) - 0.5) * 1.2);
+    float rad = 0.22 + 0.22 * fract(cr.w * 7.1);
+    float bump = (1.0 - smoothstep(0.0, rad, cr.z)) * step(0.45, cr.w);
+    h += 0.009 * bump * bump * below;
+    vec4 pv = cellv(p * 42.0 + 11.0);
+    float pore = (1.0 - smoothstep(0.05, 0.12, pv.z)) * step(0.9, pv.w) * below;
+    c *= 1.0 - 0.3 * pore;
+    h -= 0.003 * pore;
+    vec4 cl = cellv(p * 3.2 + (vec2(fbm(p * 2.0 + 1.0), fbm(p * 2.0 + 8.0)) - 0.5) * 1.4);
+    float mound = (1.0 - smoothstep(0.0, 0.42, cl.z)) * step(0.72, cl.w) * below;
+    h += 0.014 * mound * mound;
+    c *= 1.0 + 0.05 * mound;
+  }
   // damp blotches and lighter dry crust
   c *= 0.86 + 0.26 * fbm(p * 0.8 + 7.0);
   c = mix(c, c * vec3(1.12, 1.1, 1.06), 0.35 * smoothstep(0.55, 0.8, fbm(p * 2.2 + 31.0)) * below);
@@ -173,12 +187,8 @@ vec3 soilAt(vec2 p, out float h){
   // (sparse: a few long fissures, mostly vertical, not a mud-plate network)
   vec3 cr = voro(p * vec2(1.1, 0.55) + vec2((fbm(p * 1.9) - 0.5) * 1.2, 0.0));
   float crk = (1.0 - smoothstep(0.008, 0.024, cr.y - cr.x)) * smoothstep(0.6, 0.72, fbm(p * 0.9 + 17.0)) * smoothstep(0.35, 0.9, d) * (1.0 - smoothstep(4.8, 6.0, d));
-  c *= 1.0 - 0.5 * crk;
-  h -= 0.02 * crk;
-  vec3 cr2 = voro(p * vec2(4.0, 2.2) + 3.1);
-  float crk2 = (1.0 - smoothstep(0.004, 0.012, cr2.y - cr2.x)) * smoothstep(0.66, 0.76, vnoise(p * 2.2 + 9.0)) * smoothstep(0.25, 0.6, d);
-  c *= 1.0 - 0.3 * crk2;
-  h -= 0.005 * crk2;
+  c *= 1.0 - 0.42 * crk;
+  h -= 0.016 * crk;
   // roots: fine dark threads hanging from the turf, a few long ones, branching
   if (d > 0.04 && d < 1.7) {
     float rr = 0.0;
@@ -211,34 +221,54 @@ vec3 soilAt(vec2 p, out float h){
     c = mix(c, s2l(vec3(0.2, 0.14, 0.09)) * (0.85 + 0.3 * vnoise(p * 40.0)), rr * 0.85);
     h += 0.003 * rr;
   }
-  // gravel and stones (more and bigger with depth), grey, beige and rusty
+  // stones (more and bigger with depth): irregular, part-angular outlines, a few flat
+  // facets, mostly coated in soil, sitting in the face with a dark contact rim
   {
-    vec4 ce = cellv(p * 6.5);
-    float r = 0.025 + 0.035 * fract(ce.w * 5.7);
-    float on = step(mix(0.95, 0.84, smoothstep(0.5, 4.0, d)), ce.w) * smoothstep(0.2, 0.4, d);
-    float m = (1.0 - smoothstep(r - 0.006, r, ce.z / 6.5 * (1.0 + 0.25 * (vnoise(p * 60.0) - 0.5)))) * on;
-    vec3 pc = mix(s2l(vec3(0.42, 0.38, 0.33)), s2l(vec3(0.58, 0.51, 0.42)), fract(ce.w * 7.3));
-    pc = mix(pc, s2l(vec3(0.5, 0.36, 0.26)), step(0.8, fract(ce.w * 13.1)));
-    pc = mix(pc, c, 0.25);
-    float dome = sqrt(max(0.0, 1.0 - pow(ce.z / 6.5 / max(r, 1e-4), 2.0)));
-    pc *= 0.75 + 0.35 * dome + 0.12 * vnoise(p * 90.0);
-    c = mix(c * (1.0 - 0.3 * on * (1.0 - smoothstep(r, r + 0.012, ce.z / 6.5))), pc, m);
-    h += 0.018 * m * dome * (r / 0.05);
+    vec2 wp = p + (vec2(fbm(p * 11.0), fbm(p * 11.0 + 4.0)) - 0.5) * 0.05;
+    vec4 ce = cellv(wp * 6.5);
+    float sz = fract(ce.w * 5.7);
+    float r = 0.016 + 0.032 * sz * sz;
+    float ang = fract(ce.w * 17.3) * 3.1416;
+    vec2 v = ce.xy / 6.5;
+    vec2 a1 = vec2(cos(ang), sin(ang)), a2 = vec2(-a1.y, a1.x);
+    vec2 e = vec2(dot(v, a1), dot(v, a2) * (1.25 + 0.6 * fract(ce.w * 3.7)));
+    float sd = mix(length(e), max(abs(e.x), abs(e.y)) * 1.08, 0.3 + 0.45 * fract(ce.w * 9.1));
+    sd *= 1.0 + 0.2 * (vnoise(p * 70.0) - 0.5);
+    float on = step(mix(0.95, 0.86, smoothstep(0.5, 4.0, d)), ce.w) * smoothstep(0.2, 0.4, d);
+    float m = (1.0 - smoothstep(r - 0.004, r, sd)) * on;
+    vec3 pc = mix(s2l(vec3(0.4, 0.37, 0.33)), s2l(vec3(0.53, 0.48, 0.41)), fract(ce.w * 7.3));
+    pc = mix(pc, s2l(vec3(0.47, 0.34, 0.24)), step(0.75, fract(ce.w * 13.1)));
+    pc = mix(pc, c, 0.4);
+    float dome = sqrt(max(0.0, 1.0 - pow(sd / max(r, 1e-4), 2.0)));
+    vec3 fv = voro(e * 60.0 + ce.w * 13.0);
+    pc *= 0.78 + 0.3 * dome + 0.12 * (fv.z - 0.5) + 0.1 * (vnoise(p * 140.0) - 0.5);
+    float rim = on * (1.0 - smoothstep(r, r + 0.01, sd)) * (1.0 - m);
+    c = mix(c * (1.0 - 0.35 * rim), pc, m);
+    h += 0.014 * m * dome * (r / 0.04) + 0.002 * m * (fv.z - 0.5);
+    // fine grit: small soil-toned grains, not bright dots
     vec4 cf = cellv(p * 19.0 + 3.3);
-    float rf = 0.009 + 0.006 * fract(cf.w * 3.0);
-    float mf = (1.0 - smoothstep(rf - 0.003, rf, cf.z / 19.0)) * step(0.88, cf.w) * smoothstep(0.15, 0.3, d);
-    c = mix(c, mix(c, s2l(vec3(0.55, 0.5, 0.43)), 0.6) * (0.75 + 0.4 * fract(cf.w * 11.0)), mf);
-    h += 0.004 * mf;
-    // a few big rounded rocks deep down
-    vec4 cb = cellv(p * 0.9 + 7.0);
-    float rb = 0.13 + 0.09 * fract(cb.w * 3.1);
+    float rf = 0.006 + 0.005 * fract(cf.w * 3.0);
+    float mf = (1.0 - smoothstep(rf - 0.002, rf, cf.z / 19.0)) * step(0.9, cf.w) * smoothstep(0.15, 0.3, d);
+    c = mix(c, mix(c, s2l(vec3(0.5, 0.46, 0.4)), 0.35) * (0.8 + 0.3 * fract(cf.w * 11.0)), mf);
+    h += 0.003 * mf;
+    // a few big rocks deep down: irregular, faceted, part-buried
+    vec2 wq = p + (vec2(fbm(p * 3.0 + 2.0), fbm(p * 3.0 + 9.0)) - 0.5) * 0.18;
+    vec4 cb = cellv(wq * 0.9 + 7.0);
+    float rb = 0.11 + 0.1 * fract(cb.w * 3.1);
+    float angb = fract(cb.w * 5.3) * 3.1416;
+    vec2 qb = cb.xy / 0.9;
+    vec2 eb = vec2(dot(qb, vec2(cos(angb), sin(angb))), dot(qb, vec2(-sin(angb), cos(angb))) * 1.35);
+    float sdb = mix(length(eb), max(abs(eb.x), abs(eb.y)) * 1.1, 0.45) * (1.0 + 0.12 * (fbm(p * 18.0) - 0.5));
     float onb = step(0.8, cb.w) * smoothstep(2.4, 3.2, d);
-    vec2 q = -cb.xy / 0.9;
-    float mb = (1.0 - smoothstep(rb - 0.012, rb, length(q))) * onb;
-    float db = sqrt(max(0.0, 1.0 - dot(q, q) / (rb * rb)));
-    vec3 bc = mix(s2l(vec3(0.56, 0.53, 0.49)), s2l(vec3(0.66, 0.6, 0.52)), fract(cb.w * 9.0)) * (0.7 + 0.35 * db) * (0.85 + 0.25 * fbm(p * 14.0));
-    c = mix(c * (1.0 - 0.35 * onb * (1.0 - smoothstep(rb, rb + 0.04, length(q)))), bc, mb);
-    h += 0.06 * mb * db;
+    float mb = (1.0 - smoothstep(rb - 0.008, rb, sdb)) * onb;
+    float db = sqrt(max(0.0, 1.0 - pow(sdb / rb, 2.0)));
+    vec3 fb = voro(eb * 14.0 + cb.w * 7.0);
+    vec3 bc = mix(s2l(vec3(0.5, 0.48, 0.44)), s2l(vec3(0.6, 0.55, 0.47)), fract(cb.w * 9.0));
+    bc *= (0.72 + 0.3 * db) * (0.85 + 0.2 * fbm(p * 14.0)) * (0.88 + 0.24 * fb.z);
+    bc = mix(bc, c, 0.2);
+    float rimb = onb * (1.0 - smoothstep(rb, rb + 0.035, sdb)) * (1.0 - mb);
+    c = mix(c * (1.0 - 0.4 * rimb), bc, mb);
+    h += 0.05 * mb * db + 0.008 * mb * (fb.z - 0.5);
   }
   // the turf at the very top: dense dark root mat
   float turf = 1.0 - smoothstep(0.05, 0.13 + 0.04 * vnoise(vec2(p.x * 9.0, 1.0)), d);

@@ -385,7 +385,7 @@ const overPass = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, tOver: { value: overlay.texture } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
   fragmentShader: `uniform sampler2D tDiffuse, tOver; varying vec2 vUv;
-    void main(){ vec3 b = texture2D(tDiffuse, vUv).rgb; vec4 o = texture2D(tOver, vUv); gl_FragColor = vec4(mix(b, o.rgb, o.a), 1.0); }`,
+    void main(){ vec3 b = texture2D(tDiffuse, vUv).rgb; vec4 o = texture2D(tOver, vec2(vUv.x, 1.0 - vUv.y)); gl_FragColor = vec4(mix(b, o.rgb, o.a), 1.0); }`,
 });
 
 // ShaderPass clones its uniforms: point it at the live canvas texture

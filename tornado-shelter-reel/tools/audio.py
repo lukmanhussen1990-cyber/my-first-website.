@@ -920,7 +920,10 @@ def build_cues():
     cue(T["barsGlow"], sfx("clink", 1250.0), -24, -1.2)
     cue(T["backfill0"], sfx("crumble", 1.4), -19, 5.2)
     cue(T["backfill0"] + 0.5, sfx("crumble", 0.9), -22, 4.6)
-    # 4 - flying debris; the plank test
+    # 4 - flying debris (leaves and twigs whipping past); the plank test
+    for k, tt0 in enumerate([23.4, 24.25, 24.9, 25.8, 26.45]):
+        p0 = -0.8 + 0.1 * k
+        cue(tt0, sfx("flyby"), -25 + 1.0 * k, None, p=(p0, p0 + 1.1))
     cue(T["plank0"], sfx("plank_flight", T["hit"] - T["plank0"]), -10, None, p=(-0.75, -0.15), duck=False)
     cue(T["label160"], sfx("label"), -16, duck=False)
     cue(T["hit"], sfx("smash"), -2, -1.6, duck=False, verb=0.12)

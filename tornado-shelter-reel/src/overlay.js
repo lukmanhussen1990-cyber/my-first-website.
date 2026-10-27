@@ -14,8 +14,11 @@ export function build(ctx) {
   const cv = document.createElement('canvas');
   cv.width = W;
   cv.height = H;
-  const g = cv.getContext('2d');
-  const texture = new THREE.CanvasTexture(cv);
+  // a CPU canvas read back into a plain data texture every frame: handing a GPU canvas
+  // straight to WebGL (software GPU) kept old pixels wherever the new frame is clear
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  const pixels = new Uint8Array(W * H * 4);
+  const texture = new THREE.DataTexture(pixels, W, H, THREE.RGBAFormat, THREE.UnsignedByteType);
   texture.colorSpace = THREE.NoColorSpace;
   texture.minFilter = texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;
@@ -186,9 +189,9 @@ export function build(ctx) {
     label(['10 MIN'], 0.64 * W, 0.215 * H, t, T.label10, 5.1, { size: 150 });
     // 2: "UNDERGROUND = SAFEST", wind flowing over the ground, not into the pit
     label(['UNDERGROUND', '= SAFEST'], 0.5 * W, 0.235 * H, t, T.labelUG, 11.6, { size: 96, sub: 0.82 });
-    for (const [h, ph] of [[0.22, 0], [0.5, 0.45], [0.82, 0.2]]) {
+    for (const [h, ph] of [[0.07, 0], [0.23, 0.45], [0.4, 0.2]]) {
       const x0 = -3.6, x1 = 6.0, z = -0.45;
-      const over = (x) => (x > P.x0 - 0.6 && x < P.x1 + 0.6 ? 0.28 * Math.sin(Math.PI * clamp((x - P.x0 + 0.6) / (P.x1 - P.x0 + 1.2))) : 0);
+      const over = (x) => (x > P.x0 - 0.6 && x < P.x1 + 0.6 ? 0.08 * Math.sin(Math.PI * clamp((x - P.x0 + 0.6) / (P.x1 - P.x0 + 1.2))) : 0);
       stream(sampleCurve((u) => V(x0 + (x1 - x0) * u, h + over(x0 + (x1 - x0) * u), z)), t, T.wind0, T.wind1, { n: 3, len: 150, w: 20, speed: 520, phase: ph });
     }
     // 3: "30 CM CONCRETE" across the wall's section
@@ -212,7 +215,7 @@ export function build(ctx) {
         g.strokeStyle = '#ffffff';
         g.lineWidth = (10 - 7 * u) * S;
         g.beginPath();
-        g.arc(c.x, c.y, (20 + 150 * U.easeOutCubic(u)) * S, 0, Math.PI * 2);
+        g.arc(c.x, c.y, (20 + 90 * U.easeOutCubic(u)) * S, 0, Math.PI * 2);
         g.stroke();
         g.restore();
       }
@@ -226,7 +229,7 @@ export function build(ctx) {
       label(['ANCHORED 2 M DEEP'], L.x, L.y, t, T.labelAnchor + 0.15, 38.1, { size: 74 });
       // the wind pulling the shelter up: arrows rising over the roof and up its sides
       for (const [x, ph] of [[-1.3, 0], [-0.3, 0.5], [0.7, 0.2], [1.7, 0.7], [2.7, 0.35], [3.7, 0.85]]) {
-        stream([V(x, WD.TOP + 0.15, -0.2), V(x, WD.TOP + 1.25, -0.2)], t, T.uplift0, T.uplift1, { n: 1, len: 120, w: 22, speed: 330, phase: ph });
+        stream([V(x, WD.TOP + 0.35, -0.2), V(x, WD.TOP + 1.45, -0.2)], t, T.uplift0, T.uplift1, { n: 1, len: 120, w: 22, speed: 330, phase: ph });
       }
       for (const [x, ph] of [[WD.OUT.x0 - 0.25, 0], [WD.OUT.x1 + 0.25, 0.5]]) {
         stream([V(x, WD.FLOOR_B - 0.4, 0.05), V(x, -0.1, 0.05)], t, T.uplift0, T.uplift1, { n: 2, len: 110, w: 20, speed: 420, phase: ph });
@@ -273,6 +276,7 @@ export function build(ctx) {
       stream([V(-14, h, z), V(-4, h + 0.15, z), V(6, h - 0.1, z), V(16, h + 0.1, z)], t, T.label300 - 0.6, 71.0, { n: 4, len: 190, w: 24, speed: 1300, phase: ph });
     }
     label(['300 KM/H', 'WIND'], 0.5 * W, 0.18 * H, t, T.label300, 70.9, { size: 132, sub: 0.6 });
+    pixels.set(g.getImageData(0, 0, W, H).data);
     texture.needsUpdate = true;
   }
   function catmull(pts, u) {
