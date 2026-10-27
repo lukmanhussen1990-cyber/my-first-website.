@@ -8,8 +8,9 @@ export const HookTitle: React.FC<{t: number}> = ({t}) => {
 	const inP = seg(t, B.hookTitleIn, B.hookTitleIn + 0.38);
 	const fly = seg(t, B.hookTitleFly, B.hookTitleFly + 0.42, easeInOut);
 	if (inP <= 0 || fly >= 1) return null;
-	const punch = 1.35 - 0.35 * easeOutBack(inP, 2.2);
-	const drift = 1 + 0.035 * seg(t, B.hookTitleIn + 0.4, B.hookTitleFly);
+	const punch = 1.2 - 0.2 * easeOutBack(inP, 2.2);
+	// a slow grow while it holds (kept small so both lines stay inside the safe area, x 72–960)
+	const drift = 1 + 0.008 * seg(t, B.hookTitleIn + 0.4, B.hookTitleFly);
 	// fly toward the caption block (top-left), shrinking
 	const cx = (SAFE.left + SAFE.right) / 2;
 	const cy = 1240;
@@ -29,15 +30,15 @@ export const HookTitle: React.FC<{t: number}> = ({t}) => {
 				fontFamily: SERIF,
 				fontWeight: 700,
 				lineHeight: 0.98,
-				letterSpacing: '0.02em',
+				letterSpacing: '-0.005em',
 				whiteSpace: 'nowrap',
 				opacity,
 				filter: blur > 0.05 ? `blur(${blur}px)` : undefined,
 				textShadow: '0 6px 30px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.55)',
 			}}
 		>
-			<div style={{fontSize: 124, color: C.cream}}>HE ANSWERED</div>
-			<div style={{fontSize: 112, color: C.gold}}>WITH ONE WORD</div>
+			<div style={{fontSize: 120, color: C.cream}}>HE ANSWERED</div>
+			<div style={{fontSize: 110, color: C.gold, letterSpacing: '-0.025em'}}>WITH ONE WORD</div>
 		</div>
 	);
 };
