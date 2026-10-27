@@ -30,6 +30,7 @@ export const EXPRESSIONS = {
   terrified:{ eyes: 'huge', mouth: 'scream', brows: 'worried', mouthOpen: 1, pupilScale: 0.35 },
   wink:     { eyes: 'wink', mouth: 'grin', brows: 'up', mouthOpen: 0.6 },
   sleepy:   { eyes: 'closed', mouth: 'smile', brows: 'none', mouthOpen: 0 },
+  facepalm: { eyes: 'closed', mouth: 'frown', brows: 'worried', mouthOpen: 0 },
 };
 
 // ---- per-character drawing style --------------------------------------------------------------
@@ -108,11 +109,13 @@ export class Face {
   drawEye(side, st) {
     const c = this.ctx, s = this.style;
     const x = side * s.eyeX, y = s.eyeY;
-    let rx = s.eyeRX, ry = s.eyeRY;
+    const es = s.eyeScale ? s.eyeScale[side < 0 ? 0 : 1] : 1;
+    let rx = s.eyeRX * es, ry = s.eyeRY * es;
     const lw = s.lineW;
     c.lineWidth = lw; c.strokeStyle = s.outline;
     const mode = st.eyes;
-    const px = (st.pupil?.[0] || 0) * rx * 0.45, py = (st.pupil?.[1] || 0) * ry * 0.45;
+    const sp = s.pupilSplay ? s.pupilSplay[side < 0 ? 0 : 1] : [0, 0];
+    const px = ((st.pupil?.[0] || 0) + sp[0]) * rx * 0.45, py = ((st.pupil?.[1] || 0) + sp[1]) * ry * 0.45;
     if (s.eyeStyle === 'bean') return this.drawBeanEye(side, st);
     if (mode === 'happy' || mode === 'closed' || (mode === 'wink' && side < 0)) {
       c.beginPath();
@@ -141,7 +144,7 @@ export class Face {
     this.ell(x, y, rx, ry); c.fillStyle = s.sclera; c.fill();
     // pupil + highlight (clipped to the eye)
     c.save(); this.ell(x, y, rx, ry); c.clip();
-    const pr = s.pupilR * (st.pupilScale ?? 1) * (mode === 'bored' || mode === 'annoyed' ? 0.95 : 1);
+    const pr = s.pupilR * es * (st.pupilScale ?? 1) * (mode === 'bored' || mode === 'annoyed' ? 0.95 : 1);
     const pY = mode === 'bored' || mode === 'annoyed' ? y - ry * 0.18 + py : y + py;
     c.fillStyle = s.pupil; c.beginPath(); c.arc(x + px, pY, pr, 0, TAU); c.fill();
     c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x + px + pr * 0.38, pY + pr * 0.4, pr * 0.32, 0, TAU); c.fill();

@@ -42,7 +42,7 @@ export const POSES = {
   stand: {},
   armsUp: { armL: { fwd: 25, out: 150, elbow: 15 }, armR: { fwd: 25, out: 150, elbow: 15 }, head: { nod: -10 }, spine: { fwd: -6 } },
   cheer: { armL: { fwd: 10, out: 140, elbow: 25 }, armR: { fwd: 10, out: 140, elbow: 25 }, head: { nod: -12 } },
-  facepalm: { armR: { fwd: 112, out: 20, twist: 0, elbow: 112 }, head: { nod: 18, tilt: -6 }, spine: { fwd: 8 }, armL: { fwd: 0, out: 10, elbow: 10 } },
+  facepalm: { armR: { fwd: 97, out: 26, twist: 0, elbow: 51 }, head: { nod: 18, tilt: -4 }, spine: { fwd: 8 }, armL: { fwd: 0, out: 10, elbow: 10 } },
   shrug: { armL: { fwd: 20, out: 55, elbow: 75, twist: -40 }, armR: { fwd: 20, out: 55, elbow: 75, twist: 40 }, head: { tilt: 10 }, spine: { side: 0 } },
   point: { armR: { fwd: 85, out: 12, elbow: 4 } },
   zombie: { armL: { fwd: 88, out: 6, elbow: 6 }, armR: { fwd: 84, out: 6, elbow: 10 }, head: { tilt: 14, nod: 6 }, spine: { fwd: 8 } },
