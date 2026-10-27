@@ -65,6 +65,11 @@ class Cam:
         A, t = self.A(), self.t()
         return skia.Matrix.MakeAll(A[0, 0], A[0, 1], t[0], A[1, 0], A[1, 1], t[1], 0, 0, 1)
 
+    def interp(self, o, f):
+        return Cam(self.cx + (o.cx - self.cx) * f, self.cy + (o.cy - self.cy) * f,
+                   math.exp(math.log(self.s) + (math.log(o.s) - math.log(self.s)) * f),
+                   self.rot + (o.rot - self.rot) * f)
+
 
 # --------------------------------------------------------------- basemap
 
@@ -514,3 +519,651 @@ def new_canvas(bg_rgb):
 
 def snapshot(surf):
     return surf.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType)[..., :3]
+
+
+# ================================================================ animation
+# Animated primitives used by the timeline (story.py).
+
+from anim import clamp, ease_out_back, ease_in, ease_out, ease_out_bounce, ease_in_back, pop, squash
+
+
+def pop_label(c, s, x, y, size, T, t_in, t_out=None, weight='ExtraBold', color=(255, 255, 255),
+              stagger=0.035, zoom=1.0):
+    """Country name in bold white; letters pop in one by one and pop out one by one."""
+    f = font(weight, size * zoom)
+    glyphs = f.textToGlyphs(s)
+    widths = f.getWidths(glyphs)
+    total = sum(widths)
+    cursor = x - total / 2
+    n = len(s)
+    for i, ch in enumerate(s):
+        w = widths[i]
+        ti = t_in + i * stagger
+        sc = ease_out_back((T - ti) / 0.28, 2.2) if T >= ti else 0.0
+        if t_out is not None:
+            to = t_out + i * 0.028
+            if T > to:
+                sc *= 1 - ease_in((T - to) / 0.16)
+        if sc > 0.01 and ch != ' ':
+            cx = cursor + w / 2
+            c.save()
+            c.translate(cx, y)
+            c.scale(sc, sc)
+            blob = skia.TextBlob.MakeFromString(ch, f)
+            c.drawTextBlob(blob, -w / 2, 4 * zoom, skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.75),
+                                                              MaskFilter=blur(6 * zoom)))
+            o = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=5 * zoom,
+                           Color=rgba((25, 25, 25), 0.55))
+            o.setStrokeJoin(skia.Paint.kRound_Join)
+            c.drawTextBlob(blob, -w / 2, 0, o)
+            c.drawTextBlob(blob, -w / 2, 0, skia.Paint(AntiAlias=True, Color=rgba(color)))
+            c.restore()
+        cursor += w
+
+
+def pin_drop(c, x, y, T, t_in, t_out=None, scale=1.0):
+    if T < t_in:
+        return
+    u = (T - t_in) / 0.42
+    dy = -(1 - ease_out_bounce(u)) * 220 * scale
+    sc = scale
+    if t_out is not None and T > t_out:
+        sc *= 1 - ease_in_back((T - t_out) / 0.22, 1.6)
+        if sc <= 0.01:
+            return
+    a = clamp(u * 4)
+    map_pin(c, x, y + dy, sc, a)
+
+
+def badge_pop(c, kind, x, y, R, T, t_in, t_out=None):
+    sc = pop(T, t_in, t_out)
+    if sc <= 0.01:
+        return
+    sx, sy = squash(T, t_in)
+    c.save()
+    c.translate(x, y)
+    c.scale(sx, sy)
+    flag_badge(c, kind, 0, 0, R, scale=sc)
+    c.restore()
+
+
+def tag_pop(c, s, x, y, T, t_in, t_out=None, size=46, bg=COL['tag'], split=0.0, rot=0.0):
+    sc = pop(T, t_in, t_out)
+    if sc <= 0.01:
+        return
+    sx, sy = squash(T, t_in)
+    c.save()
+    c.translate(x, y)
+    c.rotate(rot)
+    c.scale(sc * sx, sc * sy)
+    if split <= 0:
+        tag_label(c, s, 0, 0, size=size, bg=bg)
+    else:
+        for side in (-1, 1):
+            c.save()
+            c.clipRect(skia.Rect(-2000 if side < 0 else 0, -500, 0 if side < 0 else 2000, 500))
+            c.translate(side * split * 42, side * split * 6)
+            c.rotate(side * split * 8)
+            tag_label(c, s, 0, 0, size=size, bg=bg)
+            c.restore()
+    c.restore()
+
+
+def pole_flag_anim(c, kind, x, y, T, t_in, t_out=None, h=190):
+    """Flag on a pole that slams into the map, waves, and flies away."""
+    if T < t_in:
+        return
+    u = (T - t_in) / 0.26
+    dy = -(1 - ease_in(u)) * 520 if u < 1 else 0.0
+    a = clamp(u * 3)
+    sq = 1.0
+    if 1 <= u < 2.6:
+        sq = 1 - 0.12 * math.exp(-3 * (u - 1)) * math.cos((u - 1) * 7)
+    rot = 0.0
+    if t_out is not None and T > t_out:
+        v = (T - t_out) / 0.45
+        if v >= 1:
+            return
+        dy = -ease_in(v) * 900
+        rot = ease_in(v) * 35
+        a *= 1 - clamp(v * 1.2 - 0.2)
+    c.save()
+    c.translate(x, y + dy)
+    c.rotate(rot)
+    c.scale(1.0, sq)
+    flag_on_pole(c, kind, 0, 0, h=h, wave=T * 6.0, alpha=a)
+    c.restore()
+
+
+def calendar(c, x, y, w, month, day, year, alpha=1.0, flip=0.0, rot=-5.0):
+    """Tear-off calendar page (reference style). flip 0..1 squashes the page
+    vertically for a page-turn."""
+    h = w * 1.12
+    c.save()
+    c.translate(x, y)
+    c.rotate(rot)
+    c.scale(1.0, max(0.02, 1 - flip))
+    r = skia.RRect.MakeRectXY(skia.Rect(-w / 2, -h / 2, w / 2, h / 2), w * 0.07, w * 0.07)
+    c.drawRRect(r.makeOffset(w * 0.04, w * 0.06) if hasattr(r, 'makeOffset') else r,
+                skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.4 * alpha), MaskFilter=blur(w * 0.05)))
+    c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((250, 250, 248), alpha)))
+    c.save()
+    c.clipRRect(r, doAntiAlias=True)
+    c.drawRect(skia.Rect(-w / 2, -h / 2, w / 2, -h / 2 + h * 0.27), skia.Paint(AntiAlias=True, Color=rgba((214, 32, 38), alpha)))
+    c.restore()
+    shadow_text(c, month, 0, -h / 2 + h * 0.2, font('Black', w * 0.17), alpha=alpha, shadow=0.25, sigma=2, dy=2)
+    f = font('Black', w * 0.46)
+    shadow_text(c, day, 0, h * 0.2, f, color=(214, 32, 38), alpha=alpha, shadow=0.0)
+    shadow_text(c, year, 0, h * 0.41, font('ExtraBold', w * 0.13), color=(60, 60, 66), alpha=alpha, shadow=0.0)
+    for sx in (-0.27, 0.27):
+        c.drawRRect(skia.RRect.MakeRectXY(skia.Rect(sx * w - w * 0.035, -h / 2 - w * 0.09, sx * w + w * 0.035, -h / 2 + w * 0.07),
+                                          w * 0.035, w * 0.035), skia.Paint(AntiAlias=True, Color=rgba((25, 25, 28), alpha)))
+    c.restore()
+
+
+def bubble(c, x, y, text, size=40, kind='speech', tail=(0, 1), alpha=1.0, scale=1.0):
+    """White speech/thought bubble with a bold word, centred at (x, y)."""
+    if scale <= 0.01:
+        return
+    f = font('Black', size)
+    lines = text.split('\n')
+    tw = max(f.measureText(l) for l in lines)
+    w, h = tw + size * 1.4, size * (1.05 * len(lines) + 0.9)
+    c.save()
+    c.translate(x, y)
+    c.scale(scale, scale)
+    outline = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=5, Color=rgba((30, 30, 34), alpha))
+    fill = skia.Paint(AntiAlias=True, Color=rgba((255, 255, 255), alpha))
+    sh = skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.35 * alpha), MaskFilter=blur(8))
+    oval = skia.Rect(-w / 2, -h / 2, w / 2, h / 2)
+    tx, ty = tail
+    if kind == 'thought':
+        for k, rr in enumerate((size * 0.32, size * 0.22, size * 0.14)):
+            px, py = tx * (w * 0.32 + k * size * 0.55), h / 2 + size * 0.35 + k * size * 0.5
+            c.drawCircle(px + 4, py + 6, rr, sh)
+            c.drawCircle(px, py, rr, fill)
+            c.drawCircle(px, py, rr, outline)
+    path = skia.Path()
+    path.addOval(oval)
+    if kind == 'speech':
+        tri = skia.Path()
+        bx = tx * w * 0.18
+        tri.moveTo(bx - size * 0.35, h * 0.3)
+        tri.lineTo(bx + tx * size * 1.2, h / 2 + size * 0.9)
+        tri.lineTo(bx + size * 0.35, h * 0.3)
+        tri.close()
+        path = skia.Op(path, tri, skia.PathOp.kUnion_PathOp)
+    c.save()
+    c.translate(4, 6)
+    c.drawPath(path, sh)
+    c.restore()
+    c.drawPath(path, fill)
+    c.drawPath(path, outline)
+    for i, l in enumerate(lines):
+        yy = (i - (len(lines) - 1) / 2) * size * 1.05 + size * 0.36
+        shadow_text(c, l, 0, yy, f, color=(30, 30, 34), alpha=alpha, shadow=0)
+    c.restore()
+
+
+def arrow(c, pts, frac=1.0, color=(255, 255, 255), width=12, alpha=1.0, head=34, outline=(30, 30, 34)):
+    """Arrow along a polyline (screen points), drawn up to `frac`."""
+    pts = np.asarray(pts, dtype=float)
+    if len(pts) < 2 or frac <= 0:
+        return
+    seg = np.hypot(*np.diff(pts, axis=0).T)
+    cum = np.concatenate([[0], np.cumsum(seg)])
+    L = cum[-1] * clamp(frac)
+    n = int(np.searchsorted(cum, L))
+    n = max(1, min(n, len(pts) - 1))
+    f = (L - cum[n - 1]) / max(seg[n - 1], 1e-9)
+    end = pts[n - 1] + f * (pts[n] - pts[n - 1])
+    body = np.vstack([pts[:n], end])
+    d = body[-1] - body[-2] if len(body) > 1 else pts[1] - pts[0]
+    d = d / (np.hypot(*d) + 1e-9)
+    nrm = np.array([-d[1], d[0]])
+    tip = body[-1] + d * head * 0.35
+    base = body[-1] - d * head * 0.65
+    p = skia.Path()
+    p.moveTo(*body[0])
+    for q in body[1:-1]:
+        p.lineTo(*q)
+    p.lineTo(*base)
+    hp = skia.Path()
+    hp.moveTo(*tip)
+    hp.lineTo(*(base + nrm * head * 0.55))
+    hp.lineTo(*(base - nrm * head * 0.55))
+    hp.close()
+    for wdt, col, a in ((width + 7, outline, 0.55), (width, color, 1.0)):
+        st = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=wdt, Color=rgba(col, a * alpha))
+        st.setStrokeCap(skia.Paint.kRound_Cap)
+        st.setStrokeJoin(skia.Paint.kRound_Join)
+        c.drawPath(p, st)
+    c.drawPath(hp, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=7,
+                              Color=rgba(outline, 0.55 * alpha), StrokeJoin=skia.Paint.kRound_Join))
+    c.drawPath(hp, skia.Paint(AntiAlias=True, Color=rgba(color, alpha)))
+
+
+def bezier(p0, p1, bend=0.25, n=40):
+    p0, p1 = np.array(p0, float), np.array(p1, float)
+    d = p1 - p0
+    m = (p0 + p1) / 2 + np.array([-d[1], d[0]]) * bend
+    t = np.linspace(0, 1, n)[:, None]
+    return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * m + t ** 2 * p1
+
+
+# ------------------------------------------------------------- 3D titles
+
+_glyph_cache = {}
+
+
+def _glyph_path(f, weight, size, ch):
+    key = (weight, round(size, 1), ch)
+    if key not in _glyph_cache:
+        g = f.textToGlyphs(ch)
+        p = f.getPath(g[0]) if len(g) else None
+        _glyph_cache[key] = (p if p is not None else skia.Path(), f.getWidths(g)[0] if len(g) else 0)
+    return _glyph_cache[key]
+
+
+def title(c, lines, cx, y, size, T, t_in, t_out=None, depth=None, stagger=0.045, weight='Black',
+          line_gap=0.95, from_side=False):
+    """Big extruded 3D title. lines: [segments, ...] or [(segments, size), ...]
+    where segments = [(text, face_rgb, side_rgb), ...]. Letters fly in one by
+    one with spin and trails, hold, then fly out."""
+    if T < t_in:
+        return
+    idx = 0
+    yy = y
+    for li, line in enumerate(lines):
+        if isinstance(line, tuple):
+            segs, lsize = line
+        else:
+            segs, lsize = line, size
+        if li > 0:
+            yy += lsize * line_gap
+        f = font(weight, lsize)
+        dep = depth or max(6, int(lsize * 0.085))
+        chars = []
+        for text, face, side in segs:
+            for ch in text:
+                chars.append((ch, face, side))
+        widths = [_glyph_path(f, weight, lsize, ch)[1] for ch, _, _ in chars]
+        x = cx - sum(widths) / 2
+        for (ch, face, side), w in zip(chars, widths):
+            ti = t_in + idx * stagger
+            idx += 1
+            if ch == ' ' or T < ti:
+                x += w
+                continue
+            for trail, ta in ((0.034, 0.16), (0.017, 0.28), (0.0, 1.0)):
+                tt = T - trail
+                u = (tt - ti) / 0.42
+                if u < 0:
+                    continue
+                e = ease_out(u)
+                s = 0.25 + 0.75 * ease_out_back(u, 1.7)
+                dx = (1 - e) * lsize * (1.8 if from_side else 0.0)
+                dy = -(1 - e) * lsize * (0.0 if from_side else 1.5)
+                rot = (1 - e) * (-50 if from_side else -38)
+                a = clamp(u * 3.5) * ta
+                if t_out is not None and tt > t_out + idx * 0.012:
+                    v = (tt - t_out - idx * 0.012) / 0.32
+                    if v >= 1:
+                        continue
+                    ev = ease_in(v)
+                    dy -= ev * lsize * 1.6
+                    dx += ev * lsize * 0.4
+                    s *= 1 + ev * 0.6
+                    rot += ev * 25
+                    a *= 1 - v
+                if a <= 0.01:
+                    continue
+                path, gw = _glyph_path(f, weight, lsize, ch)
+                c.save()
+                c.translate(x + w / 2 + dx, yy + dy)
+                c.rotate(rot)
+                c.scale(s, s)
+                c.translate(-w / 2, 0)
+                if trail == 0.0:
+                    c.save()
+                    c.translate(dep * 0.9, dep * 1.9)
+                    c.drawPath(path, skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.45 * a), MaskFilter=blur(lsize * 0.06)))
+                    c.restore()
+                    for k in range(dep, 0, -1):
+                        sh = 0.72 + 0.28 * (1 - k / dep)
+                        col = (side[0] * sh, side[1] * sh, side[2] * sh)
+                        c.save()
+                        c.translate(k * 0.32, k * 0.78)
+                        c.drawPath(path, skia.Paint(AntiAlias=True, Color=rgba(col, a)))
+                        c.restore()
+                c.drawPath(path, skia.Paint(AntiAlias=True, Color=rgba(face, a)))
+                if trail == 0.0:
+                    hl = skia.GradientShader.MakeLinear([(0, -lsize * 0.75), (0, 0)],
+                                                        [rgba((255, 255, 255), 0.22 * a), rgba((255, 255, 255), 0.0)])
+                    c.drawPath(path, skia.Paint(AntiAlias=True, Shader=hl))
+                c.restore()
+            x += w
+
+
+WHITE3D = ((255, 255, 255), (150, 152, 162))
+RED3D = ((222, 32, 40), (120, 12, 18))
+GOLD3D = ((246, 190, 40), (150, 100, 10))
+
+
+# ---------------------------------------------------------------- sprites
+
+class Sprites:
+    """GPT-image stickers. Missing files draw a labelled placeholder."""
+
+    def __init__(self, folder):
+        self.folder = folder
+        self.cache = {}
+
+    def get(self, name):
+        if name in self.cache:
+            return self.cache[name]
+        img = None
+        path = os.path.join(self.folder, name) if self.folder else None
+        if path and os.path.exists(path):
+            a = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+            if a is not None:
+                img = _prep_sprite(a)
+        self.cache[name] = img
+        return img
+
+
+def _prep_sprite(a):
+    if a.ndim == 2:
+        a = cv2.cvtColor(a, cv2.COLOR_GRAY2BGRA)
+    if a.shape[2] == 3:
+        a = cv2.cvtColor(a, cv2.COLOR_BGR2BGRA)
+    alpha = a[..., 3]
+    if alpha.min() > 250:
+        # Plain white background: flood-fill it away from the borders.
+        bgr = a[..., :3]
+        near_white = (bgr.min(axis=2) > 236).astype(np.uint8)
+        h, w = near_white.shape
+        mask = np.zeros((h + 2, w + 2), np.uint8)
+        fill = near_white.copy()
+        for (x, y) in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
+            if fill[y, x]:
+                cv2.floodFill(fill, mask, (x, y), 2)
+        bgmask = (fill == 2).astype(np.float32)
+        bgmask = cv2.GaussianBlur(bgmask, (0, 0), 1.0)
+        a[..., 3] = (255 * (1 - bgmask)).clip(0, 255).astype(np.uint8)
+    ys, xs = np.where(a[..., 3] > 8)
+    if len(xs):
+        a = a[max(0, ys.min() - 4):ys.max() + 5, max(0, xs.min() - 4):xs.max() + 5]
+    rgba_ = cv2.cvtColor(a, cv2.COLOR_BGRA2RGBA)
+    return skia.Image.fromarray(np.ascontiguousarray(rgba_), colorType=skia.kRGBA_8888_ColorType,
+                                alphaType=skia.kUnpremul_AlphaType)
+
+
+def sprite(c, bank, name, x, y, height, scale=1.0, alpha=1.0, flip=False, rot=0.0, anchor='bottom', shadow=True):
+    """Draw a sticker with its bottom-centre (or centre) at (x, y)."""
+    if scale <= 0.01 or alpha <= 0.01:
+        return
+    img = bank.get(name) if bank else None
+    h = height
+    w = h * (img.width() / img.height() if img is not None else 0.75)
+    c.save()
+    c.translate(x, y)
+    c.rotate(rot)
+    c.scale(scale * (-1 if flip else 1), scale)
+    top = -h if anchor == 'bottom' else -h / 2
+    r = skia.Rect(-w / 2, top, w / 2, top + h)
+    if img is not None:
+        if shadow:
+            sp = skia.Paint(AntiAlias=True)
+            sp.setImageFilter(skia.ImageFilters.DropShadowOnly(6, 10, 9, 9, rgba((0, 0, 0), 0.45 * alpha)))
+            c.saveLayer(None, sp)
+            c.drawImageRect(img, r, skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear))
+            c.restore()
+        p = skia.Paint(AntiAlias=True)
+        p.setAlphaf(alpha)
+        c.drawImageRect(img, r, skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear), p)
+    else:
+        rr = skia.RRect.MakeRectXY(r, w * 0.12, w * 0.12)
+        c.drawRRect(rr, skia.Paint(AntiAlias=True, Color=rgba((235, 238, 242), 0.92 * alpha)))
+        dash = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=5, Color=rgba((90, 96, 108), alpha))
+        dash.setPathEffect(skia.DashPathEffect.Make([18, 12], 0))
+        c.drawRRect(rr, dash)
+        sil = skia.Paint(AntiAlias=True, Color=rgba((150, 156, 168), alpha))
+        c.drawCircle(0, top + h * 0.3, w * 0.2, sil)
+        c.drawRRect(skia.RRect.MakeRectXY(skia.Rect(-w * 0.28, top + h * 0.5, w * 0.28, top + h * 0.9), w * 0.12, w * 0.12), sil)
+        if flip:
+            c.scale(-1, 1)
+        shadow_text(c, name, 0, top + h * 0.47, font('Bold', max(14, w * 0.075)), color=(60, 64, 74), alpha=alpha, shadow=0)
+    c.restore()
+
+
+# ----------------------------------------------------------------- clouds
+
+def make_clouds(n=5, seed=7):
+    rng = np.random.default_rng(seed)
+    out = []
+    for k in range(n):
+        Wc, Hc = 900, 560
+        acc = np.zeros((Hc, Wc), np.float32)
+        amp = 1.0
+        for octave in range(6):
+            gw, gh = 4 * 2 ** octave, 3 * 2 ** octave
+            g = rng.random((gh, gw)).astype(np.float32)
+            acc += amp * cv2.resize(g, (Wc, Hc), interpolation=cv2.INTER_CUBIC)
+            amp *= 0.5
+        acc /= acc.max()
+        yy, xx = np.mgrid[0:Hc, 0:Wc].astype(np.float32)
+        r = ((xx - Wc / 2) / (Wc * 0.42)) ** 2 + ((yy - Hc / 2) / (Hc * 0.38)) ** 2
+        blob = np.clip(1.15 - r, 0, 1)
+        dens = np.clip((acc * blob - 0.28) * 3.2, 0, 1)
+        dens = cv2.GaussianBlur(dens, (0, 0), 3)
+        shade = 0.82 + 0.18 * np.clip(1 - yy / Hc * 1.1 + (acc - 0.5) * 0.6, 0, 1)
+        img = np.zeros((Hc, Wc, 4), np.uint8)
+        img[..., 0] = (shade * 248).clip(0, 255)
+        img[..., 1] = (shade * 250).clip(0, 255)
+        img[..., 2] = (shade * 255).clip(0, 255)
+        img[..., 3] = (dens * 255).clip(0, 255)
+        out.append(skia.Image.fromarray(img, colorType=skia.kRGBA_8888_ColorType, alphaType=skia.kUnpremul_AlphaType))
+    return out
+
+
+# --------------------------------------------------------------- effects
+
+def cam_matrix3(cam):
+    A, t = cam.A(), cam.t()
+    return np.array([[A[0, 0], A[0, 1], t[0]], [A[1, 0], A[1, 1], t[1]], [0, 0, 1.0]])
+
+
+def motion_blur(img, cams, max_samples=12):
+    """Average the frame warped along the camera path (cams[0] = now,
+    cams[-1] = start of the shutter)."""
+    Mc = cam_matrix3(cams[0])
+    corners = np.array([[0, 0, 1], [W, 0, 1], [0, H, 1], [W, H, 1], [W / 2, H / 2, 1]], float).T
+    Mp = cam_matrix3(cams[-1])
+    Hm = Mc @ np.linalg.inv(Mp)
+    disp = np.max(np.hypot(*((Hm @ corners)[:2] - corners[:2])))
+    if disp < 2.5:
+        return img
+    n = int(min(max_samples, max(3, disp / 4)))
+    acc = img.astype(np.float32)
+    for i in range(1, n):
+        f = i / (n - 1)
+        k = f * (len(cams) - 1)
+        j = min(int(k), len(cams) - 2)
+        cf = cams[j].interp(cams[j + 1], k - j)
+        Hf = Mc @ np.linalg.inv(cam_matrix3(cf))
+        acc += cv2.warpAffine(img, Hf[:2], (W, H), flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
+                              borderMode=cv2.BORDER_REFLECT)
+    return (acc / n).astype(np.uint8)
+
+
+def mood_grade(bg, amount, dark=0.45):
+    """Desaturate and darken the satellite image for sad/tense moments."""
+    if amount <= 0:
+        return bg
+    f = bg.astype(np.float32)
+    lum = f @ np.array([0.3, 0.55, 0.15], np.float32)
+    grey = np.repeat(lum[..., None], 3, axis=2) * (1 - dark)
+    out = f * (1 - amount) + grey * amount
+    return out.clip(0, 255).astype(np.uint8)
+
+
+def draw_rgb(c, rgb):
+    a = np.dstack([rgb, np.full(rgb.shape[:2], 255, np.uint8)])
+    c.drawImage(skia.Image.fromarray(np.ascontiguousarray(a), colorType=skia.kRGBA_8888_ColorType), 0, 0)
+
+
+def new_canvas_plain(rgb):
+    surf = skia.Surface(W, H)
+    c = surf.getCanvas()
+    draw_rgb(c, rgb)
+    return surf, c
+
+
+# ------------------------------------------------------------ more pieces
+
+FALLBACK = {'radcliffe_thinking.png': 'radcliffe_pen.png'}
+
+
+def _sprite_get_with_fallback(self, name):
+    img = Sprites._get_raw(self, name)
+    if img is None and name in FALLBACK:
+        img = Sprites._get_raw(self, FALLBACK[name])
+    return img
+
+
+Sprites._get_raw = Sprites.get
+Sprites.get = _sprite_get_with_fallback
+
+
+def calendar_anim(c, x, y, w, pages, T, t_in, t_out=None, rot=-5.0):
+    """pages: [(t, month, day, year), ...]; flips to each page at its time."""
+    sc = pop(T, t_in, t_out)
+    if sc <= 0.01:
+        return
+    cur = pages[0]
+    flip = 0.0
+    for i, pg in enumerate(pages):
+        if T >= pg[0]:
+            cur = pg
+        if i > 0 and abs(T - pg[0]) < 0.11:
+            flip = 1 - abs(T - pg[0]) / 0.11
+            if T < pg[0]:
+                cur = pages[i - 1]
+    c.save()
+    c.translate(x, y)
+    c.scale(sc, sc)
+    calendar(c, 0, 0, w, cur[1], cur[2], cur[3], flip=flip, rot=rot)
+    c.restore()
+
+
+def dashed_double_arrow(c, p0, p1, frac=1.0, color=(255, 255, 255), width=8, alpha=1.0):
+    p0, p1 = np.array(p0, float), np.array(p1, float)
+    m = (p0 + p1) / 2
+    for a, b in ((m, p0), (m, p1)):
+        q = a + (b - a) * clamp(frac)
+        d = (q - a)
+        L = np.hypot(*d)
+        if L < 4:
+            continue
+        d /= L
+        nrm = np.array([-d[1], d[0]])
+        path = skia.Path()
+        path.moveTo(*a)
+        path.lineTo(*(q - d * 26))
+        for wdt, col, aa in ((width + 6, (30, 30, 34), 0.5), (width, color, 1.0)):
+            st = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=wdt, Color=rgba(col, aa * alpha))
+            st.setPathEffect(skia.DashPathEffect.Make([26, 16], 0))
+            st.setStrokeCap(skia.Paint.kRound_Cap)
+            c.drawPath(path, st)
+        hp = skia.Path()
+        hp.moveTo(*(q + d * 8))
+        hp.lineTo(*(q - d * 30 + nrm * 20))
+        hp.lineTo(*(q - d * 30 - nrm * 20))
+        hp.close()
+        c.drawPath(hp, skia.Paint(AntiAlias=True, Color=rgba(color, alpha)))
+
+
+def confetti(c, x, y, T, t0, colors, n=40, seed=1, spread=260):
+    u = T - t0
+    if u < 0 or u > 2.2:
+        return
+    r = np.random.default_rng(seed)
+    for i in range(n):
+        ang = r.uniform(-math.pi, 0)
+        sp = r.uniform(0.5, 1.0) * spread * 2.2
+        vx, vy = math.cos(ang) * sp, math.sin(ang) * sp
+        px = x + vx * u
+        py = y + vy * u + 520 * u * u
+        a = clamp(1.6 - u)
+        col = colors[i % len(colors)]
+        c.save()
+        c.translate(px, py)
+        c.rotate(r.uniform(0, 360) + u * r.uniform(200, 600))
+        c.drawRect(skia.Rect(-7, -4, 7, 4), skia.Paint(AntiAlias=True, Color=rgba(col, a)))
+        c.restore()
+
+
+def embers(c, x, y, T, t0, t1, w=200, n=26, seed=2):
+    if T < t0 or T > t1 + 1.0:
+        return
+    r = np.random.default_rng(seed)
+    for i in range(n):
+        period = r.uniform(0.8, 1.6)
+        ph = (T - t0 + r.uniform(0, period)) % period / period
+        if T > t1 and ph < (T - t1):
+            continue
+        px = x + r.uniform(-w / 2, w / 2) + math.sin(ph * 6 + i) * 14
+        py = y - ph * r.uniform(160, 300)
+        a = (1 - ph) * 0.9
+        c.drawCircle(px, py, r.uniform(2.5, 5.5) * (1 - ph * 0.5),
+                     skia.Paint(AntiAlias=True, Color=rgba((255, 170 + int(60 * (1 - ph)), 60), a), MaskFilter=blur(1.5)))
+
+
+def stamp_x(c, x, y, T, t0, size=160):
+    """Big red cross that slams down onto something."""
+    if T < t0:
+        return
+    u = (T - t0) / 0.22
+    sc = 2.4 - 1.4 * ease_in(min(u, 1.0))
+    if u > 1:
+        sc = 1 + 0.08 * math.exp(-4 * (u - 1)) * math.cos((u - 1) * 9)
+    a = clamp(u * 3)
+    c.save()
+    c.translate(x, y)
+    c.rotate(-8)
+    c.scale(sc, sc)
+    for wdt, col, aa in ((size * 0.30, (255, 255, 255), 1.0), (size * 0.19, (214, 30, 36), 1.0)):
+        p = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=wdt, Color=rgba(col, a * aa))
+        p.setStrokeCap(skia.Paint.kRound_Cap)
+        c.drawLine(-size / 2, -size / 2, size / 2, size / 2, p)
+        c.drawLine(size / 2, -size / 2, -size / 2, size / 2, p)
+    c.restore()
+
+
+def sound_waves(c, x, y, T, t0, t1, color=(255, 255, 255)):
+    if T < t0 or T > t1:
+        return
+    for k in range(3):
+        ph = ((T - t0) * 1.6 + k / 3) % 1.0
+        r = 40 + ph * 120
+        a = (1 - ph) * clamp((t1 - T) * 3)
+        p = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=9, Color=rgba(color, a))
+        p.setStrokeCap(skia.Paint.kRound_Cap)
+        c.drawArc(skia.Rect(x - r, y - r, x + r, y + r), -50, 100, False, p)
+        c.drawArc(skia.Rect(x - r, y - r, x + r, y + r), 130, 100, False, p)
+
+
+def dust(c, T, n=60, seed=9, alpha=0.5):
+    """Slow drifting dust motes for sad/tense moments."""
+    if alpha <= 0.01:
+        return
+    r = np.random.default_rng(seed)
+    for i in range(n):
+        x0, y0 = r.uniform(0, W), r.uniform(0, H)
+        vx, vy = r.uniform(-12, 12), r.uniform(-30, -8)
+        x = (x0 + vx * T) % W
+        y = (y0 + vy * T) % H
+        tw = 0.5 + 0.5 * math.sin(T * r.uniform(1, 3) + i)
+        c.drawCircle(x, y, r.uniform(1.5, 4.0), skia.Paint(AntiAlias=True, Color=rgba((235, 235, 230), alpha * tw * 0.7),
+                                                         MaskFilter=blur(1.2)))
