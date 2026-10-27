@@ -8,6 +8,7 @@ Episode 44 of Grace in Motion, made from GPT Image pictures.
 |---|---|
 | `out/reel_friend.mp4` | The finished reel, the CRF 18 master (486 MB; kept out of git: GitHub refuses files over 100 MB) |
 | `out/reel_friend_share.mp4` | The same reel re-encoded at CRF 22 (209 MB) so it fits the chat upload limit; this is the copy that was sent |
+| `out/reel_friend_20mb.mp4` | An 18.8 MB copy (1080×1920, 30 fps, light denoise, 2-pass 1.95 Mbps video, AAC 128 kbps) for apps with a 20 MB limit |
 | `out/animatic_friend.mp4` | Half-size animatic with full audio and light effects (also outside git) |
 | `out/cover_friend.png` | Cover: Jesus kneeling with the basin at Judas's feet, the pouch glinting, "HE KNEW… AND WASHED HIS FEET ANYWAY" |
 | `out/caption_friend.txt` | Instagram caption: hook line, three short lines, Zechariah 11:12, the yes/no question, hashtags |
