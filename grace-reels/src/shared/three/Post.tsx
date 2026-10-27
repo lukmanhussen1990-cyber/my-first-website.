@@ -67,7 +67,7 @@ export type PostSettings = {
 export const Post: React.FC<{settings: PostSettings; frameBufferType?: THREE.TextureDataType; multisampling?: number}> = ({
 	settings,
 	frameBufferType = THREE.HalfFloatType,
-	multisampling = 4,
+	multisampling = 0, // MSAA costs ~0.45 s/frame on SwiftShader; FXAA does the job
 }) => {
 	const {gl, scene, camera, size} = useThree();
 	const {bloom, dof, vignette, grade, fxaa = true} = settings;
@@ -76,7 +76,7 @@ export const Post: React.FC<{settings: PostSettings; frameBufferType?: THREE.Tex
 	const pipe = useMemo(() => {
 		const composer = new EffectComposer(gl, {frameBufferType, multisampling});
 		composer.addPass(new RenderPass(scene, camera));
-		const dofFx = hasDof ? new DepthOfFieldEffect(camera, {focusDistance: 10, focusRange: 5, bokehScale: 2, resolutionScale: 0.5}) : null;
+		const dofFx = hasDof ? new DepthOfFieldEffect(camera, {focusDistance: 10, focusRange: 5, bokehScale: 2, resolutionScale: 0.32}) : null;
 		const bloomFx = new BloomEffect({mipmapBlur: true, intensity: 0.6, luminanceThreshold: 0.9, luminanceSmoothing: 0.25, kernelSize: KernelSize.LARGE, radius: 0.75});
 		const toneFx = new ToneMappingEffect({mode: ToneMappingMode.ACES_FILMIC});
 		const gradeFx = new GradeEffect();

@@ -1,9 +1,10 @@
 import React from 'react';
-import {Composition} from 'remotion';
+import {Composition, Still} from 'remotion';
 import {PerfTest} from '../scratch/PerfTest';
 import {Lab} from '../scratch/Lab';
 import {SunsetRule} from '../episodes/sunset-rule/src/Episode';
 import {TL} from '../episodes/sunset-rule/src/timeline';
+import {SunsetRuleCover} from '../episodes/sunset-rule/src/Cover';
 
 export const RemotionRoot: React.FC = () => (
 	<>
@@ -15,5 +16,6 @@ export const RemotionRoot: React.FC = () => (
 		<Composition id="Fxdof" component={PerfTest} defaultProps={{fx: "dof"}} durationInFrames={60} fps={30} width={1080} height={1920} />
 		<Composition id="Lab" component={Lab} durationInFrames={1} fps={30} width={1080} height={1920} />
 		<Composition id="SunsetRule" component={SunsetRule} durationInFrames={TL.durationInFrames} fps={30} width={1080} height={1920} />
+		<Still id="SunsetRuleCover" component={SunsetRuleCover} width={1080} height={1920} />
 	</>
 );

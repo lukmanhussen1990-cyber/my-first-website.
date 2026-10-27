@@ -35,7 +35,7 @@ const Content: React.FC<{t: number; d: number}> = ({t}) => {
 	const tau = hookTau(t);
 	// half-vector between sun and camera: coins facing it flash
 	const glintDir = shot.sunDir.clone().add(new THREE.Vector3(...shot.cam.pos).sub(new THREE.Vector3(1.4, 1.2, 0.8)).normalize()).normalize();
-	const flip = flipAngle(tau, 0.1);
+	const flip = flipAngle(tau, 0.1, 0.64);
 	const coins = coinBurst(tau, 11, [TABLE[0], 0.84, TABLE[2]], 70, 0.32);
 	const doves = doveBurst(tau, 5, [-0.9, 1.1, -1.8], 11, 0.26, 0.5);
 	const recoil = ease.out((tau - 0.2) / 0.5);
@@ -56,7 +56,7 @@ const Content: React.FC<{t: number; d: number}> = ({t}) => {
 			{doves.map((d, i) => (
 				<Dove key={i} position={d.p} rotation={[0, d.yaw, 0]} flap={d.flap} bank={d.bank} scale={d.s} />
 			))}
-			<Figure look={JESUS} pose={{...P.whipLow, yaw: 0.55, gaze: [0.3, 0.05], hold: {item: 'whip', swing: 0.15 * Math.sin(tau * 3)}}} at={[0, 0, 0]} res={3000} />
+			<Figure look={JESUS} pose={{...P.whipLow, yaw: 0.55, gaze: [0.3, 0.05], hold: {item: 'whip', swing: 0.15 * Math.sin(tau * 3)}}} at={[0, 0, 0]} res={2200} />
 			<Figure look={MERCHANTS[0]} pose={{...P.jumpBack, lean: -0.15 - recoil * 0.12}} at={[2.7, 0, -1.6]} facing={-1} res={900} />
 			<Figure look={MERCHANTS[2]} pose={{...P.jumpBack, near: {sh: 2.0 + recoil * 0.3, el: 0.4, hand: 'flat'}, far: {sh: 1.8, el: 0.4, hand: 'flat'}}} at={[-2.0, 0, -2.4]} res={800} />
 			<Dust box={[[-4, 0.2, -4], [4, 3.5, 3]]} count={140} size={0.035} opacity={0.55} />

@@ -26,12 +26,11 @@ export const timeWarp = (t: number, fastUntil = 0.3, rampTo = 0.75, slow = 0.28,
 
 // Table flip: anticipation (tips back), then over toward +Z, lands, small bounce.
 // Returns rotation about the table's front edge in radians.
-export const flipAngle = (tau: number, start = 0.12) => {
+export const flipAngle = (tau: number, start = 0.12, land = 0.78) => {
 	const x = tau - start;
 	if (x < 0) return 0;
 	if (x < 0.16) return -0.13 * Math.sin((x / 0.16) * Math.PI); // tip back
 	const y = x - 0.16;
-	const land = 0.78;
 	if (y < land) return (ease.in(y / land) * 0.55 + (y / land) * 0.45) * (Math.PI * 0.53);
 	const b = y - land;
 	return Math.PI * 0.53 - Math.abs(Math.sin(b * 9)) * Math.exp(-b * 7) * 0.12;

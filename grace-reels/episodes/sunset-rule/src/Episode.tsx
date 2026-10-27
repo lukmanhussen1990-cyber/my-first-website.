@@ -40,7 +40,16 @@ export const SceneView: React.FC<{def: SceneDef; t: number; d: number; T: number
 	const p = def.post(t, d, sun);
 	const Content = def.Content;
 	return (
-		<ThreeCanvas width={width} height={height} shadows flat gl={{antialias: false, powerPreference: 'high-performance'}} camera={{fov: cam.fov, position: cam.pos, near: 0.1, far: 2000}}>
+		<ThreeCanvas
+			width={width}
+			height={height}
+			shadows
+			flat
+			// follow the render scale (--scale) so previews really render fewer pixels
+			dpr={typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1}
+			gl={{antialias: false, powerPreference: 'high-performance'}}
+			camera={{fov: cam.fov, position: cam.pos, near: 0.1, far: 2000}}
+		>
 			<ShotContext.Provider value={shot}>
 				<ApplyCamera />
 				<Content t={t} d={d} />

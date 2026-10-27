@@ -66,8 +66,9 @@ export const Figure: React.FC<Props> = ({
 		const tex = new THREE.CanvasTexture(canvas);
 		tex.colorSpace = THREE.SRGBColorSpace;
 		tex.anisotropy = 8;
-		tex.generateMipmaps = true;
-		tex.minFilter = THREE.LinearMipmapLinearFilter;
+		// mipmaps keep small far figures clean; big close-up canvases skip them (CPU cost)
+		tex.generateMipmaps = ch < 1400;
+		tex.minFilter = ch < 1400 ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
 		const mat = new THREE.MeshBasicMaterial({map: tex, alphaTest: 0.5, side: THREE.DoubleSide, fog: true});
 		const shadowMat = new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, side: THREE.DoubleSide});
 		const depthMat = new THREE.MeshDepthMaterial({depthPacking: THREE.RGBADepthPacking, map: tex, alphaTest: 0.5, side: THREE.DoubleSide});
