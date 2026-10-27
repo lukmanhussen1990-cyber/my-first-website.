@@ -126,7 +126,7 @@ const penGeo = () => {
 	return merge(p);
 };
 
-export const TempleCourt: React.FC<{stalls?: boolean; animals?: 'calm' | 'none'; templeZ?: number}> = ({stalls = true, animals = 'calm', templeZ = -12}) => {
+export const TempleCourt: React.FC<{stalls?: boolean; animals?: 'calm' | 'none'; templeZ?: number; templeX?: number}> = ({stalls = true, animals = 'calm', templeZ = -12, templeX = 0}) => {
 	const tiles = useMemo(() => paving(), []);
 	const geo = useMemo(() => ({temple: templeGeo(), left: porticoGeo(-1), right: porticoGeo(1), stalls: stallsGeo(), mid: midStallsGeo(), pen: penGeo()}), []);
 	useLayoutEffect(() => () => {
@@ -141,7 +141,7 @@ export const TempleCourt: React.FC<{stalls?: boolean; animals?: 'calm' | 'none';
 				<meshLambertMaterial color="#C9A577" />
 			</mesh>
 			<primitive object={tiles} />
-			<mesh geometry={geo.temple} material={mat} castShadow receiveShadow position={[0, 0, templeZ]} />
+			<mesh geometry={geo.temple} material={mat} castShadow receiveShadow position={[templeX, 0, templeZ]} />
 			<mesh geometry={geo.left} material={mat} castShadow receiveShadow />
 			<mesh geometry={geo.right} material={mat} castShadow receiveShadow />
 			{stalls ? <mesh geometry={geo.stalls} material={mat} castShadow receiveShadow /> : null}
