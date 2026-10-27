@@ -1,0 +1,401 @@
+[
+  {
+    "n": 1,
+    "file": "char_jesus_turnaround.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_1.png",
+      "style_ref_3.png"
+    ],
+    "use": "design master and style anchor for every image; S1–S16"
+  },
+  {
+    "n": 2,
+    "file": "char_judas_turnaround.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "design master for Judas; S2, S4–S10"
+  },
+  {
+    "n": 3,
+    "file": "key_kiss_closeup.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "char_judas_turnaround.png"
+    ],
+    "use": "S1 hook, S10 the kiss, S11 FRIEND close-up (the most important image)"
+  },
+  {
+    "n": 4,
+    "file": "char_jesus_poses_a.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S2 at the table, S3 the towel and the water"
+  },
+  {
+    "n": 5,
+    "file": "char_jesus_poses_b.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "char_jesus_poses_a.png"
+    ],
+    "use": "S3–S5 washing feet, S5 looking up at Judas, S10 the kiss, S14 the feast"
+  },
+  {
+    "n": 6,
+    "file": "char_judas_poses.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_judas_turnaround.png",
+      "char_jesus_turnaround.png"
+    ],
+    "use": "S2 at the table, S5 stiff and looking away, S6 the open palm, S9 walking, S10 the kiss"
+  },
+  {
+    "n": 7,
+    "file": "prop_washing_kit.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S3 pouring, S4–S5 washing, S12 split screen, S15 call to action"
+  },
+  {
+    "n": 8,
+    "file": "prop_coins.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_judas_turnaround.png",
+      "char_jesus_turnaround.png"
+    ],
+    "use": "S5 the pouch glints, S6 counting, S7 the stack, S8 the spinning coin"
+  },
+  {
+    "n": 9,
+    "file": "bg_garden_sky.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "garden",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_2.png"
+    ],
+    "use": "S1, S9–S13 night sky with the big moon"
+  },
+  {
+    "n": 10,
+    "file": "bg_garden_mid.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "garden",
+    "priority": "MUST",
+    "attach": [
+      "bg_garden_sky.png",
+      "style_ref_2.png"
+    ],
+    "use": "S1, S9–S13 the olive grove (the camera pans across it)"
+  },
+  {
+    "n": 11,
+    "file": "bg_room_back.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "full",
+    "light": "room",
+    "priority": "MUST",
+    "attach": [
+      "style_ref_2.png",
+      "char_jesus_turnaround.png"
+    ],
+    "use": "S2 landing, S3–S5 the upper room (the camera dollies along it), S12 left half"
+  },
+  {
+    "n": 12,
+    "file": "prop_table_set.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "bg_room_back.png",
+      "char_jesus_turnaround.png"
+    ],
+    "use": "S2 the 13 at supper, S4 the dolly along the table, S8 the coin on the table, S14 the feast"
+  },
+  {
+    "n": 13,
+    "file": "char_disciples_seated.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "style_ref_3.png"
+    ],
+    "use": "S2 at the table, S4 Jesus kneels at each one's feet"
+  },
+  {
+    "n": 14,
+    "file": "char_peter_john_poses.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "char_disciples_seated.png"
+    ],
+    "use": "S4 Peter surprised, John moved"
+  },
+  {
+    "n": 15,
+    "file": "char_crowd_torches.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_judas_turnaround.png",
+      "style_ref_3.png"
+    ],
+    "use": "S1 out of focus behind the kiss, S9 the torch line, S12 right half"
+  },
+  {
+    "n": 16,
+    "file": "char_jesus_parts.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "bone rig: breathing, head turns, arm moves, the robe laid aside"
+  },
+  {
+    "n": 17,
+    "file": "char_judas_parts.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "char_judas_turnaround.png",
+      "char_jesus_parts.png"
+    ],
+    "use": "bone rig: walking (S9), flinch (S5), the lean before the kiss (S10)"
+  },
+  {
+    "n": 18,
+    "file": "prop_scale_chain.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "attach": [
+      "prop_coins.png",
+      "char_jesus_turnaround.png"
+    ],
+    "use": "S7 the balance scale: 30 coins against the price of a slave"
+  },
+  {
+    "n": 19,
+    "file": "bg_garden_far.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "garden",
+    "priority": "NICE",
+    "attach": [
+      "bg_garden_sky.png",
+      "bg_garden_mid.png"
+    ],
+    "use": "S9 depth behind the grove (code hills if skipped)"
+  },
+  {
+    "n": 20,
+    "file": "bg_garden_near.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "garden",
+    "priority": "NICE",
+    "attach": [
+      "bg_garden_mid.png"
+    ],
+    "use": "S1, S9 foreground parallax (blurred in code)"
+  },
+  {
+    "n": 21,
+    "file": "bg_room_near.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "room",
+    "priority": "NICE",
+    "attach": [
+      "bg_room_back.png"
+    ],
+    "use": "S2–S5 foreground parallax in the upper room"
+  },
+  {
+    "n": 22,
+    "file": "bg_dealroom.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "deal",
+    "priority": "NICE",
+    "attach": [
+      "bg_room_back.png",
+      "prop_coins.png"
+    ],
+    "use": "S6 the flashback deal (dark code room if skipped)"
+  },
+  {
+    "n": 23,
+    "file": "prop_hands_coins.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "attach": [
+      "prop_coins.png",
+      "char_judas_turnaround.png"
+    ],
+    "use": "S6 coins counted into Judas's palm (Judas's pose sheet if skipped)"
+  },
+  {
+    "n": 24,
+    "file": "char_feast_guests.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "attach": [
+      "char_jesus_turnaround.png",
+      "style_ref_3.png"
+    ],
+    "use": "S14 the feast with publicans and sinners (code silhouettes if skipped)"
+  },
+  {
+    "n": 25,
+    "file": "bg_feast_back.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "feast",
+    "priority": "NICE",
+    "attach": [
+      "style_ref_2.png",
+      "char_jesus_turnaround.png"
+    ],
+    "use": "S14 the bright feast courtyard (code courtyard if skipped)"
+  },
+  {
+    "n": 26,
+    "file": "bg_feast_near.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "feast",
+    "priority": "NICE",
+    "attach": [
+      "bg_feast_back.png"
+    ],
+    "use": "S14 foreground parallax"
+  },
+  {
+    "n": 27,
+    "file": "prop_lamps.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "attach": [
+      "bg_room_back.png"
+    ],
+    "use": "S2–S5 lamps close to the lens, S15 call to action (flames added in code)"
+  },
+  {
+    "n": 28,
+    "file": "prop_torches_weapons.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "attach": [
+      "char_crowd_torches.png"
+    ],
+    "use": "S9 torches and weapons passing close to the lens"
+  },
+  {
+    "n": 29,
+    "file": "prop_olive_branches.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "garden",
+    "priority": "NICE",
+    "attach": [
+      "bg_garden_mid.png"
+    ],
+    "use": "S1, S9, S13 branches passing close to the lens"
+  }
+]

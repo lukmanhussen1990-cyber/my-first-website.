@@ -120,3 +120,43 @@ All three are cropped below the caption band, so **no text, header or logo is vi
 | `episodes/never-died/style_refs/style_ref_1.png` | 68 s | Character close-up: bearded man and woman, outline, eye, nose, mitten hands, flat robes, low-poly tree |
 | `episodes/never-died/style_refs/style_ref_2.png` | 74 s | Wide diorama scene: river ribbon, faceted trees and palms, long soft shadows, warm haze |
 | `episodes/never-died/style_refs/style_ref_3.png` | 50 s | Group shot: small figures walking together, holy light beam with gold dust and a glowing ground pool |
+
+**For "Friend" (episode 44):** `episodes/friend/style_refs/`, also free of text.
+
+| File | Frame | Shows |
+|---|---|---|
+| `episodes/friend/style_refs/style_ref_1.png` | 68 s | Character close-up: bearded man and woman, cropped so the snake and fruit tree trunk are out |
+| `episodes/friend/style_refs/style_ref_2.png` | 75 s | Wide diorama: river, faceted round trees and palms, sheep, long soft shadows |
+| `episodes/friend/style_refs/style_ref_3.png` | 44 s | Group of eight standing people: varied skin tones, hair and robe colours, contact shadows (label cropped out) |
+
+## 8. Lessons from "They Never Died" (GPT Image test 1)
+
+What worked:
+- GPT Image gave **real PNG transparency** on every image, with clean edges.
+- One **turnaround + parts + poses** set per character. The parts sheets became bone rigs (Elijah,
+  Enoch) that walked and talked well. The pose drawings carried the big moments (kneel, reach, rise).
+- Pasting the same **character bible** text into every prompt, and attaching the first approved sheet
+  as a style anchor, kept faces and colours consistent.
+
+What to fix this time:
+- Only 7 of 35 images got made, so the list must be **short and clearly ranked**. Group props on one
+  sheet, characters first.
+- Pose sheets came out at a different scale from the turnarounds. Ask for **one fixed figure height**.
+- No backgrounds came in, so the worlds were built in code (clean but plain). For Friend, ask for
+  **layered backgrounds** with the scene light already painted in.
+- Characters and props should be drawn in **neutral, even light**, so the same art works by
+  candlelight, torchlight and daylight. Scene light, rim light and flicker are added in code.
+
+## 9. Night and interior light for "Friend" (our extension of the style)
+
+The reference has no night scenes. We keep the same flat paper-cut people and low-poly world, and add
+cinematic light:
+- **Torch and candle light:** warm orange to gold (#FF9A4A to #FFD08A), soft falloff, a gentle flicker,
+  embers.
+- **Moonlight:** a cool fill and rim (#9FB4D8). Shadows are deep blue-violet (#1E2236, #2B2440), never
+  black.
+- **Upper room:** low oil lamps on the table, warm amber walls (#7A4E2E, glowing to #C9894E), dark corners.
+- **Olive garden:** a big moon in a deep blue sky (#1B2440 to #32456B), olive trees as dark low-poly
+  shapes with silver-green leaves where the moon touches them, and a line of torches in warm orange.
+- **Feast (daytime):** the reference's bright, warm palette.
+- **Jesus** is always the calmest and brightest point in the frame.
