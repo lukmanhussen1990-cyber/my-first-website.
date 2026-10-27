@@ -2,7 +2,7 @@
 
 Paste the same style line at the end of every prompt:
 
-> Cute chibi cartoon sticker style, thick clean dark outline, white sticker border around the whole shape, soft cel shading, bright saturated colors, full body fully visible and centered with empty margin around it, transparent background (if transparency fails: plain flat white background), no text, no letters, no numbers, no logos.
+> Style: cute chibi cartoon sticker, thick clean dark outline, white sticker border around the whole shape, soft cel shading, bright saturated colors. Full body fully visible and centered with empty space around it, nothing cut off. Plain flat pure white background. No text, no letters, no numbers, no logos.
 
 Generate `radcliffe_pen.png` first and attach it as a reference for the other Radcliffe images so he looks the same.
 
