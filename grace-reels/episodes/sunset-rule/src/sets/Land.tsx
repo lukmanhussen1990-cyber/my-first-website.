@@ -111,7 +111,12 @@ export const Land: React.FC<{cross?: boolean; detail?: boolean}> = ({cross = tru
 		// the far patch keeps its local sampling: the horizon the sun sets behind was timed against it
 		const far = terrain(3600, 1800, 90, 45, landH, grass, 4, 0.04);
 		far.translate(0, 0, -1100);
-		return {near, far, city: cityGeo(), groves: grovesGeo(), road: roadGeo()};
+		// ground in front of the near patch (z 145..645) for the high and far-back cameras of
+		// S13, S15 and the sunrise, which otherwise look past its edge; a little lower, so the
+		// near patch wins where they overlap
+		const apron = terrain(900, 500, 150, 84, (x, z) => landH(x, z + 395) - 0.3, (x, z, y) => grass(x, z + 395, y), 5, 0.05);
+		apron.translate(0, 0, 395);
+		return {near, far, apron, city: cityGeo(), groves: grovesGeo(), road: roadGeo()};
 	}, []);
 	useLayoutEffect(() => () => Object.values(geo).forEach((g) => g.dispose()), [geo]);
 	const crossGeo = useMemo(() => merge([facet(at(box(0.3, 4.4, 0.3), 0, 2.2, 0), '#3E2A1C', 0.04, 1), facet(at(box(2.3, 0.26, 0.3), 0, 3.25, 0), '#3E2A1C', 0.04, 2)]), []);
@@ -120,6 +125,7 @@ export const Land: React.FC<{cross?: boolean; detail?: boolean}> = ({cross = tru
 		<group>
 			<mesh geometry={geo.near} material={mat} receiveShadow castShadow />
 			<mesh geometry={geo.far} material={mat} receiveShadow />
+			<mesh geometry={geo.apron} material={mat} receiveShadow />
 			<mesh geometry={geo.city} material={mat} castShadow receiveShadow />
 			<mesh geometry={geo.groves} material={mat} castShadow receiveShadow />
 			<mesh geometry={geo.road} material={mat} receiveShadow />
