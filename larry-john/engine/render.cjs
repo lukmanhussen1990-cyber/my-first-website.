@@ -71,7 +71,9 @@ async function main() {
   const qs = new URLSearchParams({ w: W, h: H, fps: a.fps, mode: a.mode });
   for (const kv of a.q) { const [k, ...v] = kv.split('='); qs.set(k, v.join('=')); }
   await page.goto(`http://127.0.0.1:${port}/${a.page}?${qs}`);
-  await page.waitForFunction(() => window.APP && window.APP.ready === true, null, { timeout: 300000 });
+  await page.waitForFunction(() => window.APP && (window.APP.ready === true || window.APP.error), null, { timeout: 300000 });
+  const err = await page.evaluate(() => window.APP.error);
+  if (err) { console.error('page failed to start:', err); await browser.close(); srv.close(); process.exit(1); }
   const info = await page.evaluate(() => window.APP.info());
   const t0 = Date.now();
 

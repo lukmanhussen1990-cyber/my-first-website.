@@ -44,6 +44,7 @@ async function main() {
     s.frame(ctx);
     world.cam.apply();
     for (const f of world.after) f();
+    for (const f of world.pre) f();      // extra renders (e.g. the selfie on the phone screen)
     // make sure every glow/billboard faces the camera after the camera moved
     if (world.moon.visible) world.moon.lookAt(stage.camera.position);
     return s;

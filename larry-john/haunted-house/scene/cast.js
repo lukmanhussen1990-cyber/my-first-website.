@@ -200,7 +200,7 @@ export function makeWitch() {
   // broom: stick + straw bundle; she sits on it
   const broom = new THREE.Group(); broom.name = 'broom';
   const stick = new THREE.Mesh(cyl(0.025, 0.025, 1.7, 12), clay('#9a6a3a')); stick.rotation.z = Math.PI / 2; stick.castShadow = true; broom.add(stick);
-  const straw = new THREE.Mesh(cone(0.17, 0.42, 20), clay('#e6c25a', { roughness: 0.95 })); straw.rotation.z = Math.PI / 2; straw.position.x = -0.95; straw.castShadow = true; broom.add(straw);
+  const straw = new THREE.Mesh(cone(0.17, 0.42, 20), clay('#e6c25a', { roughness: 0.95 })); straw.rotation.z = -Math.PI / 2; straw.position.x = -0.95; straw.castShadow = true; broom.add(straw);
   const tie = new THREE.Mesh(cyl(0.06, 0.06, 0.05, 16), clay('#c0392b')); tie.rotation.z = Math.PI / 2; tie.position.x = -0.73; broom.add(tie);
   ch.broom = broom;
   ch.setFace('happy');

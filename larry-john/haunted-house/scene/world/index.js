@@ -12,9 +12,11 @@ import { makeGhost } from '../../../characters/ghost.js';
 import { makePumpkinKid, makeWitchKid, makeDinoKid, makeZombie, makeWitch, makeVampire, makeChicken, makeCrowdPerson } from '../cast.js';
 import { buildFX } from '../fx.js';
 import { buildShedInside, makeSpider, makeFogMachine, SHED_IN } from './shed_inside.js';
+import { buildEstate, MANSION, SPOOKY } from './mansion.js';
+import { buildInterior, HALL } from './interior.js';
 
 export function buildWorld(stage) {
-  const W = { stage, scene: stage.scene, sets: {}, cast: {}, props: {}, fx: {}, extras: [], after: [] };
+  const W = { stage, scene: stage.scene, sets: {}, cast: {}, props: {}, fx: {}, extras: [], after: [], pre: [] };
   W.cam = new CamRig(stage);
   const scene = stage.scene;
 
@@ -32,6 +34,10 @@ export function buildWorld(stage) {
   scene.add(W.sets.backyard);
   W.sets.shedInside = buildShedInside(); scene.add(W.sets.shedInside);
   W.SHED_IN = SHED_IN;
+  W.sets.estate = buildEstate(W); scene.add(W.sets.estate);
+  W.MANSION = MANSION; W.SPOOKY = SPOOKY;
+  W.sets.interior = buildInterior(); scene.add(W.sets.interior);
+  W.HALL = HALL;
 
   // ---- cast ----
   const C = W.cast;
@@ -72,6 +78,14 @@ export function buildWorld(stage) {
   W.props.spider = makeSpider(1); scene.add(W.props.spider);
   W.props.spider2 = makeSpider(1); scene.add(W.props.spider2);
   W.props.fogMachine = makeFogMachine(); scene.add(W.props.fogMachine);
+  W.props.hammer = (() => {
+    const g = new THREE.Group();
+    const h = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.32, 10), clay('#b07a45')); h.position.y = 0.0; g.add(h);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.16), clay('#8d939c', { roughness: 0.35, metalness: 0.7 })); head.position.y = 0.16; g.add(head);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return g;
+  })();
+  scene.add(W.props.hammer);
 
   W.registerProp = (name, obj) => { W.props[name] = obj; scene.add(obj); obj.visible = false; return obj; };
   W.registerSet = (name, obj) => { W.sets[name] = obj; scene.add(obj); obj.visible = false; return obj; };
@@ -100,9 +114,11 @@ export function buildWorld(stage) {
     C.chicken.visible = false; C.witch.broom.visible = false;
     if (C.witch.broom.parent !== scene) scene.add(C.witch.broom);
     for (const k in W.props) { W.props[k].visible = false; }
+    if (W.props.hammer.parent !== scene) scene.add(W.props.hammer);
     for (const f of W.extras) f.reset && f.reset();
     W.cam.reset();
     W.after = [];
+    W.pre = [];
     for (const k in W.sets) if (W.sets[k].userData.reset) W.sets[k].userData.reset();
     stage.grade.uniforms.flash.value = 0; stage.grade.uniforms.fade.value = 0;
     W.nightGlass.emissiveIntensity = 0;
@@ -110,7 +126,7 @@ export function buildWorld(stage) {
 
   // ---- show a set (and the sky for exteriors) ----
   W.show = (...names) => {
-    for (const n of names) { W.sets[n].visible = true; if (['backyard', 'street', 'graveyard', 'roof'].includes(n)) W.sky.visible = true; }
+    for (const n of names) { W.sets[n].visible = true; if (['backyard', 'estate'].includes(n)) W.sky.visible = true; }
   };
 
   // ---- apply a look by name, or blend two looks ----

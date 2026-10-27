@@ -106,42 +106,68 @@ export function softTex() {
   return _soft;
 }
 
-// cartoon puffs: dust clouds behind runners, smoke pops when buildings grow
+// cartoon puffs: dust clouds behind runners, smoke pops when buildings grow.
+// Soft camera-facing billboards that swell, drift and shrink away (never hard white balls).
+let _puffTex = null;
+function puffTex() {
+  if (!_puffTex) _puffTex = canvasTex(128, 128, (c, w, h) => {
+    // a cartoon cloud blob: three overlapping soft circles
+    for (const [x, y, r] of [[0.38, 0.55, 0.3], [0.62, 0.52, 0.28], [0.5, 0.38, 0.27]]) {
+      const g = c.createRadialGradient(x * w, y * h, 0, x * w, y * h, r * w);
+      g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.7, 'rgba(255,255,255,0.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(x * w, y * h, r * w, 0, 7); c.fill();
+    }
+  }, { srgb: false });
+  return _puffTex;
+}
 export class Puffs {
-  constructor(scene, n = 40, color = '#e9e2d6') {
-    this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 2), new THREE.MeshStandardMaterial({ color, roughness: 1, transparent: true, opacity: 0.92, emissive: color, emissiveIntensity: 0.15 }), n);
-    this.mesh.frustumCulled = false; this.mesh.userData.noAO = true; this.mesh.castShadow = false;
-    this.n = n; scene.add(this.mesh); this.mesh.visible = false; this.used = 0;
+  constructor(W, n = 40, color = '#e9e2d6') {
+    this.W = W; this.n = n;
+    this.mat = new THREE.MeshBasicMaterial({ map: puffTex(), color, transparent: true, opacity: 0.7, depthWrite: false, fog: false });
+    this.mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), this.mat, n);
+    this.mesh.frustumCulled = false; this.mesh.userData.noAO = true; this.mesh.renderOrder = 6;
+    W.scene.add(this.mesh); this.mesh.visible = false; this.items = [];
   }
-  reset() { this.mesh.visible = false; this.used = 0; this.mesh.count = this.n; for (let i = 0; i < this.n; i++) { _o.scale.setScalar(0); _o.updateMatrix(); this.mesh.setMatrixAt(i, _o.matrix); } this.mesh.instanceMatrix.needsUpdate = true; }
-  // a ring of puffs expanding from a point; t = time since the pop
-  pop(center, t, { radius = 1, count = 10, size = 0.35, life = 0.9, up = 0.4, seed = 1 } = {}) {
+  reset() { this.mesh.visible = false; this.items = []; }
+  _flush() {
+    if (this._queued) return; this._queued = true;
+    this.W.after.push(() => {
+      this._queued = false;
+      const q = this.W.stage.camera.quaternion;
+      this.mesh.count = Math.min(this.n, this.items.length);
+      this.items.slice(0, this.n).forEach(([p, s, roll], i) => {
+        _o.position.copy(p); _o.quaternion.copy(q); _o.rotateZ(roll); _o.scale.setScalar(Math.max(0.0001, s));
+        _o.updateMatrix(); this.mesh.setMatrixAt(i, _o.matrix);
+      });
+      this.mesh.instanceMatrix.needsUpdate = true;
+    });
+  }
+  // a ring of puffs bursting out from a point; t = time since the pop
+  pop(center, t, { radius = 1, count = 10, size = 0.35, life = 0.9, up = 0.4, seed = 1, color = null } = {}) {
     if (t < 0 || t > life) return;
-    this.mesh.visible = true;
+    this.mesh.visible = true; if (color) this.mat.color.set(color);
     const C = new THREE.Vector3(...center), rnd = mulberry32(seed);
     const k = easeOutCubic(clamp(t / life));
-    for (let i = 0; i < count && this.used < this.n; i++, this.used++) {
-      const a = (i / count) * Math.PI * 2 + rnd() * 0.5;
-      _o.position.set(C.x + Math.cos(a) * radius * k * (0.7 + rnd() * 0.6), C.y + up * k * rnd() + size * 0.3, C.z + Math.sin(a) * radius * k * (0.7 + rnd() * 0.6));
-      const s = size * (0.6 + rnd() * 0.6) * Math.sin(clamp(t / life) * Math.PI) * 1.2;
-      _o.rotation.set(0, 0, 0); _o.scale.setScalar(Math.max(0.0001, s));
-      _o.updateMatrix(); this.mesh.setMatrixAt(this.used, _o.matrix);
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + rnd() * 0.5, r1 = 0.7 + rnd() * 0.6, r2 = rnd();
+      const p = new THREE.Vector3(C.x + Math.cos(a) * radius * k * r1, C.y + size * 0.4 + up * k * r2, C.z + Math.sin(a) * radius * k * r1);
+      const s = size * (0.8 + rnd() * 0.6) * (0.4 + 0.9 * k) * (1 - Math.pow(clamp(t / life), 3));
+      this.items.push([p, s * 2.2, rnd() * 6.28]);
     }
-    this.mesh.instanceMatrix.needsUpdate = true;
+    this._flush();
   }
   // a trail of dust puffs left behind a runner: positions sampled along a path function
-  trail(pathFn, t, { count = 8, spacing = 0.12, size = 0.18, life = 0.6, seed = 2 } = {}) {
-    this.mesh.visible = true;
+  trail(pathFn, t, { count = 8, spacing = 0.12, size = 0.18, life = 0.6, seed = 2, color = null } = {}) {
+    this.mesh.visible = true; if (color) this.mat.color.set(color);
     const rnd = mulberry32(seed);
-    for (let i = 0; i < count && this.used < this.n; i++, this.used++) {
-      const born = t - i * spacing; const age = i * spacing;
-      if (born < 0 || age > life) { _o.scale.setScalar(0.0001); _o.updateMatrix(); this.mesh.setMatrixAt(this.used, _o.matrix); continue; }
+    for (let i = 0; i < count; i++) {
+      const born = t - i * spacing, age = i * spacing, r = [rnd(), rnd(), rnd()];
+      if (born < 0 || age > life) continue;
       const p = pathFn(born);
-      _o.position.set(p.x + (rnd() - 0.5) * 0.2, 0.1 + age * 0.35, p.z + (rnd() - 0.5) * 0.2);
-      _o.scale.setScalar(size * (0.5 + age / life) * (1 - age / life) * 2.2);
-      _o.updateMatrix(); this.mesh.setMatrixAt(this.used, _o.matrix);
+      const q = new THREE.Vector3(p.x + (r[0] - 0.5) * 0.25, 0.12 + age * 0.4, p.z + (r[1] - 0.5) * 0.25);
+      this.items.push([q, size * (0.6 + age / life * 1.4) * (1 - Math.pow(age / life, 2)) * 2.4, r[2] * 6.28]);
     }
-    this.mesh.instanceMatrix.needsUpdate = true;
+    this._flush();
   }
 }
 
@@ -188,15 +214,75 @@ export class FogVolume {
   }
 }
 
+// flapping bats flying along simple paths (across the moon, around the towers)
+export class Bats {
+  constructor(scene, n = 14) {
+    this.bats = [];
+    for (let i = 0; i < n; i++) {
+      const s = new THREE.Shape();
+      s.moveTo(0, 0.12); s.quadraticCurveTo(0.12, 0.1, 0.18, 0.18); s.quadraticCurveTo(0.3, 0.05, 0.55, 0.12); s.quadraticCurveTo(0.45, 0.0, 0.48, -0.1);
+      s.quadraticCurveTo(0.38, -0.05, 0.32, -0.14); s.quadraticCurveTo(0.24, -0.06, 0.16, -0.16); s.quadraticCurveTo(0.08, -0.05, 0, -0.08);
+      s.quadraticCurveTo(-0.08, -0.05, -0.16, -0.16); s.quadraticCurveTo(-0.24, -0.06, -0.32, -0.14); s.quadraticCurveTo(-0.38, -0.05, -0.48, -0.1);
+      s.quadraticCurveTo(-0.45, 0.0, -0.55, 0.12); s.quadraticCurveTo(-0.3, 0.05, -0.18, 0.18); s.quadraticCurveTo(-0.12, 0.1, 0, 0.12);
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(s, 6), new THREE.MeshBasicMaterial({ color: '#120e1a', side: THREE.DoubleSide, fog: false }));
+      m.userData.noAO = true; m.visible = false; scene.add(m); this.bats.push(m);
+    }
+  }
+  reset() { this.bats.forEach((b) => { b.visible = false; }); }
+  // fly across a point (e.g. the moon) from left to right as seen from `camPos`
+  across(center, t, { spread = 30, size = 3, speed = 18, camPos = null, seed = 3, count = null } = {}) {
+    const rnd = mulberry32(seed), C = new THREE.Vector3(...center);
+    const n = count ?? this.bats.length;
+    const right = camPos ? new THREE.Vector3().subVectors(C, new THREE.Vector3(...camPos)).cross(new THREE.Vector3(0, 1, 0)).normalize().negate() : new THREE.Vector3(1, 0, 0);
+    this.bats.forEach((b, i) => {
+      const r = [rnd(), rnd(), rnd(), rnd()];
+      if (i >= n) return;
+      b.visible = true;
+      const x = -spread + ((t * speed * (0.8 + r[0] * 0.4) + r[1] * spread * 2) % (spread * 2));
+      const p = C.clone().addScaledVector(right, x).add(new THREE.Vector3(0, (r[2] - 0.5) * spread * 0.5 + Math.sin(t * 3 + i) * size * 0.3, (r[3] - 0.5) * spread * 0.2));
+      b.position.copy(p);
+      if (camPos) b.lookAt(...camPos);
+      const flap = Math.sin(t * (14 + r[0] * 6) + i);
+      b.scale.set(size * (0.75 + 0.25 * Math.abs(flap)), size * (0.6 + 0.4 * flap), size);
+    });
+  }
+}
+
+// a jagged lightning bolt + sky flash
+export class Lightning {
+  constructor(scene) {
+    this.mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 3, 4), fog: false, transparent: true });
+    this.group = new THREE.Group(); scene.add(this.group); this.group.visible = false; this.group.userData.noAO = true;
+    const rnd = mulberry32(9);
+    let p = new THREE.Vector3(0, 0, 0);
+    for (let k = 0; k < 14; k++) {
+      const q = p.clone().add(new THREE.Vector3((rnd() - 0.5) * 6, -5 - rnd() * 3, (rnd() - 0.5) * 2));
+      const len = p.distanceTo(q);
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, len, 6), this.mat);
+      seg.position.copy(p).add(q).multiplyScalar(0.5); seg.lookAt(q); seg.rotateX(Math.PI / 2);
+      this.group.add(seg); p = q;
+    }
+  }
+  reset() { this.group.visible = false; }
+  strike(pos, t, W) {
+    if (t < 0 || t > 0.35) return;
+    const k = t < 0.06 ? 1 : t < 0.12 ? 0.3 : t < 0.18 ? 0.9 : Math.max(0, 1 - (t - 0.18) / 0.17);
+    this.group.visible = k > 0.05; this.group.position.set(...pos); this.mat.opacity = k;
+    W.stage.grade.uniforms.flash.value = 0.35 * k; W.stage.grade.uniforms.flashColor.value.set('#dfe6ff');
+  }
+}
+
 export function buildFX(W) {
   const s = W.scene;
   W.fx.confetti = new Confetti(s);
   W.fx.crumbs = new Crumbs(s);
   W.fx.stars = new DizzyStars(s);
-  W.fx.puffs = new Puffs(s, 80, '#efe8de');
-  W.fx.dust = new Puffs(s, 60, '#cdb89a');
+  W.fx.puffs = new Puffs(W, 80, '#efe8de');
+  W.fx.dust = new Puffs(W, 60, '#d6c3a5');
   W.fog = new FogVolume(W, 170, { color: '#a8ffbf', opacity: 0.3 });
   W.fx.fog = W.fog;
-  W.extras.push(W.fx.confetti, W.fx.crumbs, W.fx.stars, W.fx.puffs, W.fx.dust, W.fog);
+  W.fx.bats = new Bats(s, 16);
+  W.fx.lightning = new Lightning(s);
+  W.extras.push(W.fx.confetti, W.fx.crumbs, W.fx.stars, W.fx.puffs, W.fx.dust, W.fog, W.fx.bats, W.fx.lightning);
 }
 
