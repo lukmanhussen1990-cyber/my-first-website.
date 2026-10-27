@@ -42,10 +42,20 @@ const S14Content: React.FC<{t: number; d: number}> = ({t}) => {
 	const breath = smoothstep(0.9, 1.4, t) * (1 - smoothstep(1.7, 2.0, t));
 	const press = smoothstep(SEND_T - 0.18, SEND_T, t);
 	const warm = smoothstep(SEND_T, SEND_T + 0.7, t);
-	const pose =
-		t < SEND_T + 0.3
-			? {sit: true, near: {sh: 0.95 - press * 0.06, el: 1.3, hand: 'fist' as const}, far: {sh: 0.8, el: 1.35, hand: 'fist' as const}, hold: {item: 'phone' as const}, headTilt: 0.28 - breath * 0.12, gaze: [0.3, 0.6] as [number, number], eyes: breath > 0.5 ? ('closed' as const) : ('open' as const), shoulderLift: breath, blink: blinkAt(t + 0.3, 2.7)}
-			: {sit: true, near: {sh: 0.45, el: 1.0, hand: 'fist' as const}, far: {sh: 0.4, el: 1.0, hand: 'fist' as const}, hold: {item: 'phone' as const}, headTilt: -0.12 * warm, eyes: 'closed' as const, brow: {inner: -4, outer: 0}};
+	// after "send" the phone drops to the lap: blend the arms, no pop
+	const drop = smoothstep(SEND_T + 0.1, SEND_T + 0.65, t);
+	const pose = {
+		sit: true,
+		near: {sh: lerp(0.95 - press * 0.06, 0.45, drop), el: lerp(1.3, 1.0, drop), hand: 'fist' as const},
+		far: {sh: lerp(0.8, 0.4, drop), el: lerp(1.35, 1.0, drop), hand: 'fist' as const},
+		hold: {item: 'phone' as const},
+		headTilt: lerp(0.28 - breath * 0.12, -0.12 * warm, drop),
+		gaze: [0.3, 0.6] as [number, number],
+		eyes: breath > 0.5 || drop > 0.5 ? ('closed' as const) : ('open' as const),
+		shoulderLift: breath,
+		blink: drop > 0 ? 0 : blinkAt(t + 0.3, 2.7),
+		brow: {inner: -4 * drop, outer: 0},
+	};
 	return (
 		<>
 			<Sky />

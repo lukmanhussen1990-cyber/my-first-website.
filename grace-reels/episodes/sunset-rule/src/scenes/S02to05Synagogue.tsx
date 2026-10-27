@@ -198,7 +198,7 @@ const S5Content: React.FC<{t: number; d: number}> = ({t, d}) => {
 				res={1200}
 			/>
 			<Figure look={JESUS} pose={{...P.heal, yaw: 0.8}} at={[JESUS_AT[0] - 0.6, 0, JESUS_AT[2] - 0.2]} facing={-1} res={900} />
-			{out < 0.95 ? (
+			{out < 0.08 ? (
 				<Card2D
 					at={HAND_AT}
 					size={[0.62, 0.42]}
