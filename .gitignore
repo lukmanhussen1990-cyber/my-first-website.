@@ -20,3 +20,14 @@ grace-reels/episodes/never-died/audio/voice_track.wav
 grace-reels/episodes/never-died/out/chunks/
 # Full-size check stills (JPEG copies are committed)
 grace-reels/episodes/never-died/out/stills/*.png
+
+# Friend (idea 44): rebuilt work files and renders
+grace-reels/episodes/friend/audio/stems/
+grace-reels/episodes/friend/audio/voice_track.wav
+grace-reels/episodes/friend/audio/work/
+grace-reels/episodes/friend/out/*.mp4
+grace-reels/episodes/friend/out/chunks/
+grace-reels/episodes/friend/out/stills/*.png
+grace-reels/episodes/friend/.cache/
+# copy of audio/final_mix.wav made by npm run audio for Remotion
+grace-reels/episodes/friend/public/audio/
