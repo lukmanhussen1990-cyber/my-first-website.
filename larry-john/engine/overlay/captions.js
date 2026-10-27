@@ -29,8 +29,8 @@ export class Captions {
     this.words = []; this.labels = [];
   }
 
-  // words: [{text, s, e, key, shout, echo}] in time order
-  setWords(words) {
+  // words: [{text, s, e, key, shout, echo}] in time order; faces (optional): {step, frames: [[[x, y, r], ...], ...]}
+  setWords(words, faces = null) {
     const ws = words.map((w) => ({ ...w, disp: cleanWord(w.text) }));
     ws.forEach((w, i) => {
       const next = ws[i + 1];
@@ -40,6 +40,42 @@ export class Captions {
       w.cut = next && next.s - 0.02 <= w.b + 1e-3;      // replaced by the next word (no fade)
     });
     this.words = ws;
+    if (faces) this.placeWords(faces);
+  }
+
+  // Each word sits at subY unless a face is under it: then it steps up or down to the nearest clear spot
+  // (staying where the previous word was when possible, never into the label zone or the bottom 20%).
+  placeWords(faces) {
+    const o = this.o, c = this.ctx, k = this.k, aspect = this.W / this.H;
+    const cands = [o.subY, o.subY - 0.04, o.subY + 0.04, o.subY - 0.075, o.subY + 0.075, o.subY - 0.105, o.subY + 0.11];
+    let prev = o.subY;
+    for (const w of this.words) {
+      const boxes = [];
+      for (let t = Math.max(0, w.a); t < w.b; t += faces.step) {
+        const fr = faces.frames[Math.round(t / faces.step)];
+        if (fr) boxes.push(...fr);
+      }
+      if (!boxes.length) { w.y = prev; continue; }
+      const size = this.fitFont(w.disp, o.subFont, o.subWeight, o.subSize * k * (w.shout ? 1.5 : 1), o.subMaxW * this.W);
+      const hw = (c.measureText(w.disp).width / 2 + 14 * k) / this.W, hh = (size * 0.5 + 10 * k) / this.H;
+      const cost = (y) => {
+        let worst = 0;
+        for (const [fx, fy, fr] of boxes) {
+          const cx = Math.min(Math.max(fx, o.subX - hw), o.subX + hw), cy = Math.min(Math.max(fy, y - hh), y + hh);
+          const d = Math.hypot((cx - fx) * aspect, cy - fy), r = fr * 1.1;
+          if (d < r) worst = Math.max(worst, (r - d) / r);
+        }
+        return worst;
+      };
+      const order = [prev, ...cands.filter((y) => y !== prev)];
+      let best = order[0], bestCost = Infinity;
+      for (const y of order) {
+        const cst = cost(y);
+        if (cst === 0) { best = y; bestCost = 0; break; }
+        if (cst < bestCost - 1e-6) { best = y; bestCost = cst; }
+      }
+      w.y = best; prev = best;
+    }
   }
 
   // labels: [{text, color, at, dur, group, tilt}]
@@ -88,7 +124,7 @@ export class Captions {
     const scale = 0.6 + 0.4 * pop;
     let alpha = clamp(age / 0.04);
     if (!w.cut) alpha *= clamp((w.b - t) / 0.08);
-    let x = o.subX * this.W, y = o.subY * this.H - (1 - clamp(age / 0.13)) * 10 * k;
+    let x = o.subX * this.W, y = (w.y ?? o.subY) * this.H - (1 - clamp(age / 0.13)) * 10 * k;
     if (w.shout) {
       const sh = Math.exp(-age * 3.5);
       x += Math.sin(age * 95) * 9 * k * sh; y += Math.cos(age * 77) * 7 * k * sh;

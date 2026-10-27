@@ -51,7 +51,7 @@ export function shots05_10(T, W) {
       J.setHand('R', 'point');
       J.setFace('smug', { mouth: 'flat' }, t);
       R.lightSwitch.set(!flick);
-      W.cam.set(IN(0.42, 1.38, 0.2), IN(0.62, 1.3, 1.5), 50).push(clamp(t / d) * 0.12).shake(t, 0.4, 21);
+      W.cam.set(IN(0.15, 1.35, -0.45), IN(0.55, 1.22, 1.42), 50).push(clamp(t / d) * 0.25).shake(t, 0.4, 21);
       place(L, IN(-0.4, 0, -0.2), IN(0, 0, 1.6)); sheetLarry(t, 'happy');
       L.applyPose(P({ armL: { fwd: 30, out: 25, elbow: 50 } }));
     },

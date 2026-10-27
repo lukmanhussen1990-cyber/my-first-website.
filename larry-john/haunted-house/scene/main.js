@@ -4,6 +4,7 @@ import { Stage } from '../../engine/toon/stage.js';
 import { Timeline } from './timeline.js';
 import { buildWorld } from './world/index.js';
 import { buildShots } from './shots/index.js';
+import { coverFrame } from './shots/cover.js';
 
 const q = new URLSearchParams(location.search);
 const W = +q.get('w') || 1080, H = +q.get('h') || 1920, FPS = +q.get('fps') || 30;
@@ -59,7 +60,38 @@ async function main() {
     return Array.from({ length: n }, (_, k) => () => pose(t - shutter / 2 + (shutter * (k + 0.5)) / n));
   }
 
+  // where the faces are on screen (so subtitles can step around them): [x, y, r] in frame fractions (y down, r of height)
+  const _p = new THREE.Vector3(), _q = new THREE.Vector3(), _up = new THREE.Vector3();
+  function faceBoxes() {
+    const cam = stage.camera;
+    cam.updateMatrixWorld(); world.scene.updateMatrixWorld();
+    _up.set(0, 1, 0).applyQuaternion(cam.quaternion);
+    const out = [];
+    const add = (pos, r) => {
+      _q.copy(pos).applyMatrix4(cam.matrixWorldInverse);
+      if (_q.z > -cam.near) return;                       // behind the camera
+      _p.copy(pos).project(cam);
+      _q.copy(pos).addScaledVector(_up, r).project(cam);
+      const rr = Math.abs(_q.y - _p.y) / 2;
+      const x = (_p.x + 1) / 2, y = (1 - _p.y) / 2;
+      if (rr < 0.022 || x < -rr || x > 1 + rr || y < -rr || y > 1 + rr) return;
+      out.push([+x.toFixed(3), +y.toFixed(3), +rr.toFixed(3)]);
+    };
+    for (const ch of [...world.characters, ...world.crowd.filter(Boolean)]) {
+      if (!ch.visible || !ch.joints?.skull) continue;
+      ch.joints.skull.getWorldPosition(_p); add(_p.clone(), ch.spec.headR * ch.scale.y * 1.05);
+    }
+    const g = world.cast.ghost;
+    if (g.visible) add(g.localToWorld(new THREE.Vector3(0, 0.68, 0)), 0.4 * g.scale.y);
+    return out;
+  }
+
   window.APP = {
+    getFaces(step = 0.1) {
+      const frames = [];
+      for (let t = 0; t < T.duration; t += step) { pose(t); frames.push(faceBoxes()); }
+      return { step, frames };
+    },
     ready: true,
     info: () => ({ frames: T.frames, duration: T.duration, fps: FPS, shots: shots.map((s) => ({ id: s.id, beat: s.beat, at: +s.at.toFixed(3), end: +s.end.toFixed(3) })) }),
     async renderFrame(f) {
@@ -71,6 +103,15 @@ async function main() {
     async renderTime(t) { pose(t); stage.renderNow(); },
     async sendPixels(f) { await stage.sendPixels(f); },
     async sendPNG(rel) { await stage.sendPNG(rel); },
+    // the cover still (render.cjs --mode sheet)
+    async renderSheet() {
+      world.reset();
+      coverFrame(world);
+      world.cam.apply();
+      for (const f of world.after) f();
+      if (world.moon.visible) world.moon.lookAt(stage.camera.position);
+      stage.renderNow();
+    },
     getCues: () => ({
       duration: T.duration, fps: FPS,
       shots: shots.map((s) => ({ id: s.id, beat: s.beat, at: s.at, end: s.end })),

@@ -24,7 +24,10 @@ async function main() {
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const cap = new Captions(ctx, W, H);
-  cap.setWords(timing.words.map((w) => ({ ...w, echo: w.shout && echoBeats.has(w.beat) })));
+  // face positions from the 3D shots (tools/build_reel.py makes build/faces.json) keep subtitles off faces
+  let faces = null;
+  try { const r = await fetch(q.get('faces') || '/haunted-house/build/faces.json'); if (r.ok) faces = await r.json(); } catch (e) { faces = null; }
+  cap.setWords(timing.words.map((w) => ({ ...w, echo: w.shout && echoBeats.has(w.beat) })), faces);
   cap.setLabels(cues.labels);
   const frames = Math.round(timing.duration * FPS);
   window.APP = {
@@ -36,6 +39,15 @@ async function main() {
     async sendPixels(f) {
       const px = ctx.getImageData(0, 0, W, H).data;
       await fetch(`/sink?kind=frame&f=${f}`, { method: 'POST', body: px });
+    },
+    // the cover title (render.cjs --mode sheet)
+    async renderSheet() {
+      const c2 = new Captions(ctx, W, H, { labelSize: 300, labelY: 0.115, labelMaxW: 0.6 });
+      c2.setLabels([{ text: '$1', color: 'yellow', at: 0, dur: 9, tilt: -4 }]);
+      const c3 = new Captions(ctx, W, H, { labelSize: 170, labelY: 0.225, labelMaxW: 0.92 });
+      c3.setLabels([{ text: 'HAUNTED HOUSE', color: 'white', at: 0, dur: 9, tilt: -4 }]);
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+      c2.drawLabel(c2.labels[0], 3); c3.drawLabel(c3.labels[0], 3);
     },
     async sendPNG(rel) {
       const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));

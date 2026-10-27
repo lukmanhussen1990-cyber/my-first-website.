@@ -250,13 +250,18 @@ export function makeLarry() {
   larry.sheet = new Sheet();
   larry.joints.body.add(larry.sheet);
   larry.sheet.visible = false;
-  larry.setSheet = (on) => {
+  // hideBody: under the draped sheet his head, torso, arms and mittens are hidden (they would poke
+  // through the cloth); while the sheet is still flying down it stays false so he keeps his head
+  larry.setSheet = (on, hideBody = on) => {
     larry.sheet.visible = on;
-    // under the sheet his head and torso are hidden (they would poke through the cloth)
-    for (const n of ['skull', 'nose', 'shirt']) if (larry.parts[n]) larry.parts[n].visible = !on;
-    larry.joints.skull.visible = !on;
+    for (const n of ['skull', 'nose', 'shirt']) if (larry.parts[n]) larry.parts[n].visible = !hideBody;
+    larry.joints.skull.visible = !hideBody;
     for (const L of ['L', 'R']) {
-      larry.parts['sleeve' + L].visible = !on; larry.parts['upperArm' + L].visible = !on;
+      larry.parts['sleeve' + L].visible = !hideBody; larry.parts['upperArm' + L].visible = !hideBody;
+      larry.parts['forearm' + L].visible = !hideBody;
+      const h = larry.joints['hand' + L].userData.hands;
+      if (hideBody) for (const k in h) h[k].visible = false;
+      else if (!h.peace.visible && !h.point.visible) h.mitten.visible = true;
     }
   };
   return larry;

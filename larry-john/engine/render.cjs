@@ -65,8 +65,8 @@ async function main() {
   const info = await page.evaluate(() => window.APP.info());
   const t0 = Date.now();
 
-  if (a.mode === 'plates' || a.mode === 'overlay') {
-    const out = path.resolve(ROOT, a.out);
+  const openEncoder = (outRel) => {
+    const out = path.resolve(ROOT, outRel);
     fs.mkdirSync(path.dirname(out), { recursive: true });
     const enc = a.mode === 'plates'
       // lossless RGB intermediate (the final H.264 encode happens once, at the end)
@@ -75,9 +75,12 @@ async function main() {
       : ['-c:v', 'qtrle', '-pix_fmt', 'argb'];
     // WebGL pixels arrive bottom-up; 2D-canvas pages (the text overlay) say flipY: false
     const flip = info.flipY === false ? [] : ['-vf', 'vflip'];
-    ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(a.fps),
+    return spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(a.fps),
       '-i', '-', ...flip, ...enc, out], { stdio: ['pipe', 'inherit', 'inherit'] });
-  }
+  };
+  // one range per run (--from/--to/--out) or many (--jobfile: [{from, to, out}, ...]) in one browser session
+  const jobs = a.jobfile ? JSON.parse(fs.readFileSync(path.resolve(ROOT, a.jobfile), 'utf8'))
+    : [{ from: a.from, to: a.to >= 0 ? a.to : info.frames, out: a.out }];
 
   if (a.mode === 'cues') {
     const cues = await page.evaluate(() => window.APP.getCues());
@@ -85,6 +88,12 @@ async function main() {
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, JSON.stringify(cues, null, 1));
     console.log('cues written', out);
+  } else if (a.mode === 'faces') {
+    const faces = await page.evaluate(() => window.APP.getFaces(0.1));
+    const out = path.resolve(ROOT, a.out);
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, JSON.stringify(faces));
+    console.log('faces written', out, faces.frames.length);
   } else if (a.mode === 'stills') {
     const times = String(a.times).split(',').map(Number);
     const names = a.names ? String(a.names).split(',') : null;
@@ -98,20 +107,26 @@ async function main() {
   } else if (a.mode === 'sheet') {
     await page.evaluate(async (rel) => { await window.APP.renderSheet(); await window.APP.sendPNG(rel); }, a.out);
   } else {
-    const last = a.to >= 0 ? a.to : info.frames;
-    let tLast = Date.now();
-    for (let f = a.from; f < last; f++) {
-      await page.evaluate(async (f) => { await window.APP.renderFrame(f); await window.APP.sendPixels(f); }, f);
-      if ((f - a.from) % 30 === 29 || f === last - 1) {
-        const dt = (Date.now() - tLast) / 1000; tLast = Date.now();
-        const done = f - a.from + 1, total = last - a.from;
-        const eta = ((Date.now() - t0) / done) * (total - done) / 1000;
-        console.log(`${a.mode} frame ${f + 1}/${last}  ${(dt / 30).toFixed(2)} s/frame  eta ${(eta / 60).toFixed(1)} min`);
+    const total = jobs.reduce((n, j) => n + (j.to - j.from), 0);
+    let done = 0, tLast = Date.now(), sinceLog = 0;
+    for (const job of jobs) {
+      ff = openEncoder(job.out);
+      frameCount = 0;
+      for (let f = job.from; f < job.to; f++) {
+        await page.evaluate(async (f) => { await window.APP.renderFrame(f); await window.APP.sendPixels(f); }, f);
+        done++; sinceLog++;
+        if (sinceLog === 30 || done === total) {
+          const dt = (Date.now() - tLast) / 1000; tLast = Date.now();
+          const eta = ((Date.now() - t0) / done) * (total - done) / 1000;
+          console.log(`${a.mode} frame ${done}/${total}  ${(dt / sinceLog).toFixed(2)} s/frame  eta ${(eta / 60).toFixed(1)} min`);
+          sinceLog = 0;
+        }
       }
+      ff.stdin.end();
+      await new Promise((r) => ff.on('close', r));
+      console.log(`wrote ${frameCount} frames to ${job.out}`);
     }
-    ff.stdin.end();
-    await new Promise((r) => ff.on('close', r));
-    console.log(`wrote ${frameCount} frames to ${a.out} in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
+    console.log(`done ${total} frames in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
   }
   await browser.close();
   srv.close();

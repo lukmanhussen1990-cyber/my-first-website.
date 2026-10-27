@@ -54,7 +54,7 @@ export function shots01_04(T, W) {
       place(L, front, null, -0.42 + 0.35);
       const throwU = clamp((t - 0.25) / 1.0);
       const drape = smooth(clamp((t - 0.5) / 0.75));
-      L.setSheet(drape > 0.02 || t > 0.4);
+      L.setSheet(drape > 0.02 || t > 0.4, drape > 0.88);
       L.sheet.set({ drape: t < 0.4 ? 0 : drape, flatY: lerp(2.7, 1.55, easeInOut(throwU)), flatTilt: lerp(0.5, 0.0, throwU), t, sway: t * 2.5,
         lift: drape >= 1 ? wobble(t - 1.25, 3, 6) * 0.04 : 0 });
       L.sheet.position.x = lerp(-0.85, 0, easeOutCubic(throwU));
@@ -168,7 +168,8 @@ export function shots01_04(T, W) {
       L.chips.visible = false;
       W.sets.backyard.userData.shed.userData.door.rotation.y = 1.75;
       const tgt = shedXZ(W, 0, 1.6, 1.12);
-      W.cam.set(shedXZ(W, -0.15, 3.05, 0.22), tgt, 68, 0.05).push(u * 0.25).shake(t, 0.8, 14);
+      // low hero angle on the whole costume (arms up in the sheet), the shed behind him
+      W.cam.set(shedXZ(W, -0.25, 3.9, 0.42), shedXZ(W, 0, 1.6, 0.98), 60, 0.05).push(u * 0.35).shake(t, 0.8, 14);
       W.fx.confetti.show(shedXZ(W, -1.1, 2.5, 0.6), abs - congrats, [0.45, 1.0, -0.25]);
     },
   });
