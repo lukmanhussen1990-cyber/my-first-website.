@@ -198,10 +198,12 @@ class Story:
         self.sound(t_in, 'whoosh', 1.0)
         self.sound(t_in + 0.25, 'boom', 0.55)
 
-    def sticker(self, name, x, y, height, t_in, t_out, flip=False, anim='pop', bob=0.0, layer='screen'):
+    def sticker(self, name, x, y, height, t_in, t_out, flip=False, anim='pop', bob=0.0, layer='screen', cut_out=False):
         """GPT-image sticker: 'pop' (overshoot pop-in) or 'slide'/'slide_r'
         (slides in from the left/right edge with a bounce and back out)."""
         def fn(c, T, cam):
+            if cut_out and t_out is not None and T >= t_out:
+                return
             xx = x
             if anim in ('slide', 'slide_r'):
                 d = -1 if anim == 'slide' else 1
@@ -223,7 +225,7 @@ class Story:
             c.restore()
         (self.on_screen if layer == 'screen' else self.on_map)(t_in, (t_out or 1e9) + 0.6, fn)
         self.sound(t_in, 'pop' if anim == 'pop' else 'swoosh_up', 1.0)
-        if anim != 'pop' and t_out is not None:
+        if anim != 'pop' and t_out is not None and not cut_out:
             self.sound(t_out, 'swoosh_up', 0.6)
 
     def clouds(self, t0, t1):
@@ -333,7 +335,9 @@ class Story:
     def zf(self, cam, t_ref, k=0.7):
         return clamp((cam.s / self.ref_s(t_ref)) ** k, 0.45, 2.2)
 
-    def map_sticker(self, name, lon, lat, height, t_in, t_out, flip=False, k=0.7, alpha_fn=None):
+    def map_sticker(self, name, lon, lat, height, t_in, t_out, flip=False, k=0.7, alpha_fn=None, ref_t=None):
+        rt = t_in if ref_t is None else ref_t
+
         def fn(c, T, cam):
             x, y = cam.lonlat(lon, lat)
             sc = pop(T, t_in, t_out, din=0.38)
@@ -342,13 +346,16 @@ class Story:
             c.save()
             c.translate(x, y)
             c.scale(sx, sy)
-            core.sprite(c, self.sprites, name, 0, 0, height * self.zf(cam, t_in, k), scale=sc, flip=flip, alpha=a)
+            core.sprite(c, self.sprites, name, 0, 0, height * self.zf(cam, rt, k), scale=sc, flip=flip, alpha=a)
             c.restore()
         self.on_map(t_in, (t_out or 1e9) + 0.5, fn)
 
-    def walker(self, name, path, t0, t1, height, flip=False, k=0.7, alpha_fn=None, t_out=None):
-        """Sticker walking along a lon/lat path between t0 and t1."""
+    def walker(self, name, path, t0, t1, height, flip=False, k=0.7, alpha_fn=None, t_out=None, ref_t=None,
+               lead_arrow=False):
+        """Sticker walking along a lon/lat path between t0 and t1. ref_t: time whose
+        camera scale gives the sticker its nominal size (default t0)."""
         P = np.array([(lo, merc_y(la)) for lo, la in path])
+        rt = t0 if ref_t is None else ref_t
 
         def fn(c, T, cam):
             u = clamp((T - t0) / (t1 - t0))
@@ -364,12 +371,19 @@ class Story:
                 a *= alpha_fn(T)
             if t_out is not None:
                 a *= 1 - clamp((T - t_out) / 0.4)
+            hh = height * self.zf(cam, rt, k)
             bob = abs(math.sin(T * 7.0)) * 5
             c.save()
             c.translate(x, y - bob)
             c.rotate(math.sin(T * 7.0) * 2.0)
-            core.sprite(c, self.sprites, name, 0, 0, height * self.zf(cam, t0, k), flip=flip, alpha=a)
+            core.sprite(c, self.sprites, name, 0, 0, hh, flip=flip, alpha=a)
             c.restore()
+            if lead_arrow and a > 0.02:
+                d = 1 if P[-1][0] > P[0][0] else -1
+                img = self.sprites.get(name) if self.sprites else None
+                w = hh * (img.width() / img.height() if img is not None else 0.75)
+                ax, ay = x + d * (w / 2 + 12), y - hh * 0.42
+                core.arrow(c, [(ax, ay), (ax + d * 74, ay)], frac=1.0, width=10, head=30, alpha=a)
         self.on_map(t0, (t_out or t1) + 0.5, fn)
 
     def tag_on_map(self, text, lon, lat, t_in, t_out, size=44, bg=COL['tag'], split_at=None, k=0.6, dy=0):
@@ -441,20 +455,6 @@ class Story:
             self.on_map(t0, self.total, fn)
             self.sound(t0, 'scribble', 0.9, dur=d + 0.1)
 
-    def flow_arrows(self, pairs, t0, t1, period=1.7, color=(255, 255, 255)):
-        def fn(c, T, cam):
-            for i, ((lo0, la0), (lo1, la1)) in enumerate(pairs):
-                ph = ((T - t0) / period + i * 0.37) % 1.0
-                fade_all = clamp((T - t0) / 0.4) * (1 - clamp((T - t1) / 0.5))
-                if fade_all <= 0:
-                    continue
-                p0 = cam.lonlat(lo0, la0)
-                p1 = cam.lonlat(lo1, la1)
-                pts = core.bezier(p0, p1, 0.12 * (1 if i % 2 else -1))
-                a = (1 - clamp((ph - 0.65) / 0.35)) * fade_all
-                core.arrow(c, pts, frac=ease_out(min(1.0, ph * 1.5)), color=color, width=11, alpha=a, head=36)
-        self.on_map(t0, t1 + 0.6, fn)
-
     # -------------------------------------------------------------- parts
     def part3(self, p):
         S, E = self.S(p), self.E(p)
@@ -467,8 +467,9 @@ class Story:
         self.sound(t_raj + 0.2, 'thud', 1.0)
         self.tag_on_map('British India', 79.4, 20.6, t_raj + 0.3, t_do - 0.15, size=50)
         self.title3d([[('JUNE ', *WHITE3D), ('1947', *RED3D)]], t_june - 0.08, E - 0.15, y=340, size=150)
-        self.sticker('old_radio.png', 820, 1330, 300, t_elaan - 0.15, t_do - 0.1)
-        self.on_screen(t_elaan, t_do, lambda c, T, cam: core.sound_waves(c, 820, 1110, T, t_elaan, t_do - 0.1))
+        self.sticker('old_radio.png', 880, 1395, 260, t_elaan - 0.15, t_do - 0.1)
+        self.on_screen(t_elaan, t_do, lambda c, T, cam: core.sound_waves(c, 880, 1265, T, t_elaan, t_do - 0.1,
+                                                                        r0=150, r1=250))
         self.sound(t_angrez + 0.1, 'whoosh', 0.8)
         self.tag_on_map('INDIA ?', 79.6, 21.4, t_do, E - 0.1, size=50, bg=(205, 96, 18))
         self.tag_on_map('PAKISTAN ?', 70.9, 28.4, t_do + 0.18, E - 0.1, size=46, bg=(22, 118, 52))
@@ -480,7 +481,8 @@ class Story:
         t_brit, t_cyril = self.w(p, 'British'), self.w(p, 'Cyril')
         t_8, t_pehli = self.w(p, '8'), self.w(p, 'pehli')
         self.cam.move(S - 0.15, 0.7, 78.6, merc_y(26.2), 40.0)
-        self.sticker('radcliffe_pen.png', 800, 1330, 520, t_brit - 0.1, self.w(p5, 'karodon') - 0.2, anim='slide_r', bob=4)
+        self.sticker('radcliffe_pen.png', 800, 1330, 520, t_brit - 0.1, self.w(p5, 'karodon') - 0.2, anim='slide_r', bob=4,
+                     flip=True)
         t_kar = self.w(p5, 'karodon')
         self.tag_on_screen('Cyril Radcliffe', 790, 590, t_cyril, t_kar - 0.25, size=48)
         self.tag_on_screen('British lawyer', 790, 665, t_cyril + 0.25, t_8 + 0.3, size=32, bg=(40, 44, 52))
@@ -525,11 +527,10 @@ class Story:
             self.sound(t_paanch + 0.2 + i * 0.18, 'tick', 0.7)
         self.cam.move(t_kar - 0.25, 0.7, 80.6, merc_y(23.6), 27.0)
         self.sound(t_kar - 0.25, 'whoosh', 0.7)
-        spots = [(77.0, 28.6), (73.6, 31.0), (68.6, 26.2), (80.8, 25.4), (86.6, 23.4), (90.3, 24.1),
-                 (75.4, 21.0), (79.6, 17.4), (77.6, 12.6), (71.6, 23.3), (84.0, 20.6), (93.0, 26.4)]
+        spots = [(74.8, 30.6), (80.2, 27.0), (68.6, 26.0), (88.6, 23.6), (72.6, 22.2), (79.0, 19.6), (77.2, 13.4)]
         for i, (lo, la) in enumerate(spots):
-            t = t_kar + 0.05 + i * 0.09
-            self.map_sticker('crowd_group.png', lo, la, 92, t, E - 0.08 + i * 0.01, k=0.8)
+            t = t_kar + 0.05 + i * 0.1
+            self.map_sticker('crowd_group.png', lo, la, 105, t, E - 0.08 + i * 0.01, k=0.8, ref_t=t_kar + 0.45)
             self.sound(t, 'pop', 0.45, pitch=1.0 + 0.05 * (i % 4))
 
     def part6(self, p):
@@ -642,21 +643,19 @@ class Story:
         t_crore, t_paar = self.w(p, 'crore'), self.w(p, 'paar')
         t_aur, t_la = self.w(p, 'aur'), self.w(p, 'laakhon')
         self.mood(S - 0.3, 0.78, 0.8)
-        self.cam.move(S - 0.2, 0.7, 75.0, merc_y(30.95), 92.0, drift=0.01)
+        self.cam.move(S - 0.2, 0.7, 74.75, merc_y(31.15), 200.0, drift=0.01)
         self.sound(S - 0.2, 'whoosh', 0.7)
         self.title3d([[('1 CRORE', *WHITE3D), ('+', *GOLD3D)]], t_crore - 0.1, t_aur - 0.05, y=330, size=170)
         fade_out = lambda T: 1 - 0.85 * ease_in_out(prog(T, t_la, 1.4))
-        pairs = [((73.25, 31.95), (76.15, 31.7)), ((76.3, 31.2), (73.45, 31.45)),
-                 ((72.95, 30.85), (75.85, 30.45)), ((75.85, 29.95), (73.2, 30.35))]
-        self.flow_arrows(pairs, S + 0.2, t_la + 0.3)
-        self.walker('refugee_train.png', [(73.4, 31.62), (75.9, 31.7)], S + 0.3, E + 0.3, 120, flip=True,
-                    alpha_fn=fade_out)
-        self.walker('refugee_train.png', [(76.0, 30.78), (73.4, 30.92)], S + 0.8, E + 0.3, 120, flip=False,
-                    alpha_fn=fade_out)
-        self.walker('refugee_family.png', [(75.75, 30.32), (73.95, 30.5)], S + 0.5, E + 0.3, 92, flip=False,
-                    alpha_fn=fade_out)
-        self.walker('bullock_cart.png', [(73.55, 31.22), (75.4, 31.05)], S + 0.7, E + 0.3, 88, flip=True,
-                    alpha_fn=fade_out)
+        # Four lanes across the Punjab border, two each way; an arrow rides in front of each group.
+        ref = S + 0.5
+        lanes = [('refugee_train.png', (72.2, 77.3), 32.0, 118, S + 0.1, E + 0.8),
+                 ('refugee_family.png', (76.3, 72.9), 31.35, 118, S + 0.3, E + 0.6),
+                 ('refugee_train.png', (77.6, 72.3), 30.7, 118, S + 0.55, E + 0.9),
+                 ('bullock_cart.png', (72.8, 76.0), 30.05, 104, S + 0.4, E + 0.6)]
+        for name, (lo0, lo1), la, h, t0, t1 in lanes:
+            self.walker(name, [(lo0, la), (lo1, la)], t0, t1, h, flip=lo1 > lo0, alpha_fn=fade_out, ref_t=ref,
+                        lead_arrow=True)
         self.sound(S + 0.3, 'train', 0.55, dur=min(5.0, self.durations[p]))
         self.cam.move(t_aur - 0.1, 1.6, 79.5, merc_y(26.8), 40.0, drift=0.006)
         self.mood(t_aur, 0.95, 1.2)
@@ -669,7 +668,8 @@ class Story:
         t_phir, t_kabhi = self.w(p, 'phir'), self.w(p, 'kabhi')
         self.mood(S - 0.2, 0.3, 0.6)
         self.cam.move(S - 0.2, 0.8, 80.5, merc_y(24.2), 29.0)
-        self.sticker('radcliffe_thinking.png', 280, 1330, 520, t_rad - 0.2, t_phir - 0.02, anim='slide', bob=4)
+        # He turns and walks away on "phir": instant pose swap to the walking sticker.
+        self.sticker('radcliffe_thinking.png', 280, 1330, 520, t_rad - 0.2, t_phir, anim='slide', bob=4, cut_out=True)
 
         def fire(c, T, cam):
             sc = pop(T, t_kaag - 0.1, E - 0.12)
@@ -677,20 +677,21 @@ class Story:
                 return
             fl = 1 + 0.03 * math.sin(T * 23) + 0.02 * math.sin(T * 37)
             c.save()
-            c.translate(820, 1330)
+            c.translate(800, 1365)
             c.scale(fl, 2 - fl)
-            core.sprite(c, self.sprites, 'burning_papers.png', 0, 0, 300, scale=sc)
+            core.sprite(c, self.sprites, 'burning_papers.png', 0, 0, 270, scale=sc)
             c.restore()
-            core.embers(c, 820, 1080, T, t_kaag, E - 0.1, w=180)
+            core.embers(c, 800, 1130, T, t_kaag, E - 0.1, w=180)
         self.on_screen(t_kaag - 0.1, E + 0.5, fire)
         self.sound(t_kaag - 0.1, 'pop', 0.9)
         self.sound(t_kaag, 'crackle', 0.8, dur=max(1.0, E - t_kaag))
-        self.sticker('money_bag.png', 820, 900, 230, t_fees - 0.1, E - 0.12)
-        self.tag_on_screen('₹40,000', 820, 965, t_fees + 0.1, E - 0.12, size=40, bg=(196, 140, 10))
-        self.on_screen(t_mana, E + 0.4, lambda c, T, cam: core.stamp_x(c, 820, 800, T, t_mana, 170)
-                       if T < E - 0.1 else None)
+        # Fee: money bag with a price tag on it, then a red cross slams over it on "mana".
+        self.sticker('money_bag.png', 800, 975, 270, t_fees - 0.1, E - 0.12)
+        self.tag_on_screen('₹40,000', 800, 1012, t_fees + 0.1, E - 0.12, size=42, bg=(196, 140, 10))
+        self.on_screen(t_mana, E + 0.4, lambda c, T, cam: core.stamp_x(c, 800, 845, T, t_mana, 180)
+                       if T < E - 0.12 else None)
         self.sound(t_mana, 'stamp', 1.0)
-        self.walker_screen('radcliffe_walking.png', (280, 1330), (-320, 1330), t_phir - 0.02, E + 0.2, 520)
+        self.walker_screen('radcliffe_walking.png', (280, 1330), (-320, 1330), t_phir, E + 0.2, 520)
         self.title3d([([('KABHI ', *WHITE3D), ('NAHI', *RED3D)], 140), ([('LAUTA', *WHITE3D)], 140)],
                      t_kabhi - 0.08, E - 0.12, y=320, size=140)
 

@@ -1142,12 +1142,12 @@ def stamp_x(c, x, y, T, t0, size=160):
     c.restore()
 
 
-def sound_waves(c, x, y, T, t0, t1, color=(255, 255, 255)):
+def sound_waves(c, x, y, T, t0, t1, color=(255, 255, 255), r0=40, r1=160):
     if T < t0 or T > t1:
         return
     for k in range(3):
         ph = ((T - t0) * 1.6 + k / 3) % 1.0
-        r = 40 + ph * 120
+        r = r0 + ph * (r1 - r0)
         a = (1 - ph) * clamp((t1 - T) * 3)
         p = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=9, Color=rgba(color, a))
         p.setStrokeCap(skia.Paint.kRound_Cap)
