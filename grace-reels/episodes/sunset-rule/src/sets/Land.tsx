@@ -22,6 +22,8 @@ export const landH = (x: number, z: number) => {
 	const valley = -6 * Math.exp(-((z + 10) * (z + 10)) / (2 * 40 * 40));
 	return hillH(x, z) + near * (1 - smoothstep(-200, -700, z) * 0.6) + far + valley;
 };
+// ground height at the hilltop, where the cross stands
+export const HILL_GROUND = landH(HILL[0], HILL[2]);
 
 const grass = (x: number, z: number, y: number) => {
 	const f = fbm2(x / 40, z / 40, 17, 3);
@@ -102,8 +104,11 @@ const roadGeo = () => {
 
 export const Land: React.FC<{cross?: boolean; detail?: boolean}> = ({cross = true}) => {
 	const geo = useMemo(() => {
-		const near = terrain(420, 420, 140, 140, landH, grass, 3, 0.05);
+		// sample where the vertices end up (the patch is moved to z = -60), so the hill sits
+		// under the cross and the groves, rocks and cameras stand on the ground they were placed on
+		const near = terrain(420, 420, 140, 140, (x, z) => landH(x, z - 60), (x, z, y) => grass(x, z - 60, y), 3, 0.05);
 		near.translate(0, 0, -60);
+		// the far patch keeps its local sampling: the horizon the sun sets behind was timed against it
 		const far = terrain(3600, 1800, 90, 45, landH, grass, 4, 0.04);
 		far.translate(0, 0, -1100);
 		return {near, far, city: cityGeo(), groves: grovesGeo(), road: roadGeo()};
@@ -118,7 +123,7 @@ export const Land: React.FC<{cross?: boolean; detail?: boolean}> = ({cross = tru
 			<mesh geometry={geo.city} material={mat} castShadow receiveShadow />
 			<mesh geometry={geo.groves} material={mat} castShadow receiveShadow />
 			<mesh geometry={geo.road} material={mat} receiveShadow />
-			{cross ? <mesh geometry={crossGeo} material={mat} position={[HILL[0], HILL_TOP - 0.2, HILL[2]]} castShadow /> : null}
+			{cross ? <mesh geometry={crossGeo} material={mat} position={[HILL[0], HILL_GROUND - 0.2, HILL[2]]} castShadow /> : null}
 		</group>
 	);
 };

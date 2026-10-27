@@ -2,6 +2,7 @@
 // (JPEG, same settings as remotion.config.ts), so a container restart loses at most
 // the frames in flight. Encode the folder afterwards with tools/encode_frames.sh.
 //   node tools/render_frames.mjs <CompositionId> <outDir> [concurrency]
+//   FRAMES=10,250,900 node tools/render_frames.mjs ...   (only those frames, e.g. for a check)
 import fs from 'node:fs';
 import path from 'node:path';
 import {bundle} from '@remotion/bundler';
@@ -46,8 +47,9 @@ const browser = await openBrowser('chrome', {browserExecutable, chromiumOptions}
 const composition = await selectComposition({serveUrl, id, inputProps: {}, puppeteerInstance: browser, chromiumOptions});
 const total = composition.durationInFrames;
 const done = scan();
-const frames = Array.from({length: total}, (_, f) => f).filter((f) => !done.has(f));
-log(`${id}: ${total} frames, ${done.size} already on disk, ${frames.length} to render`);
+const wanted = process.env.FRAMES ? process.env.FRAMES.split(',').map(Number) : Array.from({length: total}, (_, f) => f);
+const frames = wanted.filter((f) => !done.has(f));
+log(`${id}: ${wanted.length} frames wanted, ${wanted.length - frames.length} already on disk, ${frames.length} to render`);
 
 if (frames.length) {
 	const t0 = Date.now();
@@ -70,12 +72,13 @@ if (frames.length) {
 			if (n % 10 === 0 || n === frames.length) {
 				const per = (Date.now() - t0) / 1000 / n;
 				const left = (frames.length - n) * per;
-				log(`frames ${done.size + n}/${total}  ${per.toFixed(2)} s/frame  ~${Math.ceil(left / 60)} min left`);
+				log(`frames ${wanted.length - frames.length + n}/${wanted.length}  ${per.toFixed(2)} s/frame  ~${Math.ceil(left / 60)} min left`);
 			}
 		},
 	});
 }
 await browser.close({silent: true});
-const missing = Array.from({length: total}, (_, f) => f).filter((f) => !scan().has(f));
-log(missing.length ? `MISSING ${missing.length} frames` : `ALL ${total} FRAMES DONE`);
+const have = scan();
+const missing = wanted.filter((f) => !have.has(f));
+log(missing.length ? `MISSING ${missing.length} frames` : `ALL ${wanted.length} FRAMES DONE`);
 process.exit(missing.length ? 1 : 0);

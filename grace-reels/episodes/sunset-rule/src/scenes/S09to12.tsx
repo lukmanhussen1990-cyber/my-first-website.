@@ -8,7 +8,7 @@ import {Atmosphere, SunLight} from '../../../../src/shared/three/world';
 import {clamp, ease, lerp, smoothstep} from '../../../../src/shared/math';
 import {useShot, type Cam} from '../../../../src/shared/three/shot';
 import {Street} from '../sets/Street';
-import {HILL, HILL_TOP, Land, landH} from '../sets/Land';
+import {HILL, HILL_GROUND, Land, landH} from '../sets/Land';
 import {TempleCourt} from '../sets/Temple';
 import {CROWD, JESUS, P} from '../cast';
 import {coinBurst, flipAngle} from '../action';
@@ -69,7 +69,7 @@ const camS10 = (t: number, d: number): Cam => {
 	const x = lerp(3.2, 2.2, k);
 	const z = lerp(78, 70, k);
 	const y = landH(x, z) + 1.8;
-	return {pos: [x, y, z], target: [HILL[0] + 0.4, HILL_TOP + 3.6 + lerp(1.2, 0.6, k), HILL[2]], fov: 21, far: 4000};
+	return {pos: [x, y, z], target: [HILL[0] + 0.4, HILL_GROUND + 3.6 + lerp(1.2, 0.6, k), HILL[2]], fov: 21, far: 4000};
 };
 const LandBase: React.FC<{cross?: boolean}> = ({cross = true}) => (
 	<>
