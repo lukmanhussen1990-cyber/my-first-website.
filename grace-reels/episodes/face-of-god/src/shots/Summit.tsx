@@ -108,6 +108,19 @@ export const HOOK: ShotDef = {
 	rays: () => ({at: HOLE_POS, strength: 0.85}),
 };
 
+// The thumbnail: the same moment, seen from lower and further left so the light breaks through at the
+// upper right with his raised hand reaching toward it (the title sits above, the reference below).
+export const COVER: ShotDef = {
+	id: 'COVER',
+	start: -3,
+	end: -2,
+	Content: HookContent,
+	camera: () => ({pos: [-3.82, -0.19, 6.75], target: [1.54, 2.08, -0.65], fov: 40, roll: -0.02, drift: 0}),
+	grade: () => stormGrade(1.4, 0, {contrast: 1.2, exposure: 0.97, bloom: 0.7}),
+	fog: stormFog,
+	rays: () => ({at: HOLE_POS, strength: 0.6}),
+};
+
 // ---------------- S2 you will die ----------------
 const DIE_DIR = norm([-0.3, -0.18, 0.94]);
 const DIE_HEAD: Vec3 = [0.85, 1.52, 0.3];

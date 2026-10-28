@@ -129,7 +129,7 @@ export const FACECU: ShotDef = {
 	grade: () => morningGrade({bloom: 0.45, bloomThreshold: 0.88, vignette: 0.5}),
 	fog: fogOf(MORNING),
 	rays: () => ({at: cuFace(), strength: 0.22, color: [1.0, 0.93, 0.76]}),
-	anchors: () => ({shiningFace: [CU_EYE[0] + 0.03, CU_EYE[1] - 0.1, CU_EYE[2]]}),
+	anchors: () => ({shiningFace: [CU_EYE[0] + 0.05, CU_EYE[1] - 0.05, CU_EYE[2]]}),
 };
 
 // ---------------- S9: the camp; Aaron and the people step back ----------------

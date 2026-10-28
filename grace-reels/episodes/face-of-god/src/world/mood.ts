@@ -171,3 +171,27 @@ export const CAMP_DAY: Mood = {
 	fogNear: 30,
 	fogFar: 420,
 };
+
+// Sunrise on a Galilee hillside: pink-gold sky over the lake, the low sun off to the left.
+export const GALILEE: Mood = {
+	skyTop: '#8aa6cc',
+	skyMid: '#d8c5c2',
+	skyHorizon: '#ffd5a0',
+	skyBottom: '#efc39a',
+	sunDir: [-0.62, 0.07, -0.78],
+	sunColor: '#fff0c4',
+	sunGlow: 1.0,
+	sunSize: 4,
+	light: '#ffe0b0',
+	lightI: 2.3,
+	hemiSky: '#f1e6d6',
+	hemiGround: '#7d7a4a',
+	hemiI: 1.05,
+	fog: '#f3d9b8',
+	fogNear: 60,
+	fogFar: 650,
+	stars: 0,
+	cloud: '#fff1df',
+	cloudShade: '#f1b9a0',
+	tint: '#fff3e4',
+};

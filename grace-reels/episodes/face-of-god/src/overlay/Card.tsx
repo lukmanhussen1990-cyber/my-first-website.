@@ -47,7 +47,7 @@ export const CARDS: CardDef[] = [
 		text: '“…to give the light of the knowledge of the glory of God in the **face of Jesus Christ**.”',
 		ref: '2 Corinthians 4:6',
 		keyAt: [word('14', 'face').start],
-		top: 980,
+		top: 1070,
 	},
 ]
 

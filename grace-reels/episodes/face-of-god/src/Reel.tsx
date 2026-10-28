@@ -8,10 +8,12 @@ import {Director} from './render/Director';
 import type {ShotDef, Transition} from './render/types';
 import {BACK, CLIFT, INSIDE} from './shots/Cleft';
 import {CAMP, DOWN, FACECU, VEIL} from './shots/Down';
+import {CTA, FACE, HIDE, HILL, LOOP, ROOM} from './shots/Jesus';
 import {BUSH, PLAGUES, SEA} from './shots/Montage';
-import {ANSWER, ASK, DARK, DIE, HOOK} from './shots/Summit';
+import {divider, SPLIT_IN, SPLIT_OUT} from './shots/split';
+import {ANSWER, ASK, COVER, DARK, DIE, HOOK} from './shots/Summit';
 
-export const SHOTS: ShotDef[] = [HOOK, DIE, DARK, BUSH, PLAGUES, SEA, ASK, ANSWER, CLIFT, INSIDE, BACK, DOWN, FACECU, CAMP, VEIL];
+export const SHOTS: ShotDef[] = [HOOK, DIE, DARK, BUSH, PLAGUES, SEA, ASK, ANSWER, CLIFT, INSIDE, BACK, DOWN, FACECU, CAMP, VEIL, ROOM, HIDE, HILL, FACE, CTA, LOOP, COVER];
 
 export const TRANSITIONS: Transition[] = [
 	{from: 'HOOK', to: 'DIE', at: B.s2, dur: 0, kind: 'cut'},
@@ -31,6 +33,14 @@ export const TRANSITIONS: Transition[] = [
 	{from: 'DOWN', to: 'FACECU', at: B.faceCU, dur: 0, kind: 'cut'},
 	{from: 'FACECU', to: 'CAMP', at: B.s9, dur: 0.3, kind: 'dissolve'},
 	{from: 'CAMP', to: 'VEIL', at: B.s10, dur: 0, kind: 'cut'},
+	// "Centuries later": a streak of light flies across into the upper room
+	{from: 'VEIL', to: 'ROOM', at: B.streak, dur: 2 * (B.streak - B.streakStart), kind: 'streak'},
+	// hidden in the dark | the face in the light; then the light takes the whole screen
+	{from: 'ROOM', to: 'HIDE', at: B.s12, dur: 0, kind: 'cut'},
+	{from: 'HIDE', to: 'HILL', at: (SPLIT_IN + SPLIT_OUT) / 2, dur: SPLIT_OUT - SPLIT_IN, kind: 'split', divider, slant: 0.05},
+	{from: 'HILL', to: 'FACE', at: B.s13, dur: 0.5, kind: 'dissolve'},
+	{from: 'FACE', to: 'CTA', at: B.s14, dur: 0.7, kind: 'haze'},
+	{from: 'CTA', to: 'LOOP', at: B.loopOut, dur: 0, kind: 'cut'},
 ];
 
 export type ReelProps = {lite: boolean; only?: string; noText?: boolean; muted?: boolean; atTime?: number; cover?: boolean};
