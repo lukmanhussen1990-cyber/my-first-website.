@@ -104,3 +104,29 @@ These choices come from the notes above. The full block is in `episodes/sunset-r
 - **Lines and shapes:** a dark brown outline (#2A1A10) of even thickness, simple shapes, and matte flat color with one soft shadow tone.
 - **People:** about 4.5 heads tall, with tube limbs, rounded mitten hands with a small thumb, simple rounded feet, and an almond eye, small nose and no mouth. We add simple short eyebrows so the acting can show anger and grief.
 - **Backgrounds:** soft, even light with no visible sun, because the sun direction, sky and shadows are added in code from `sunTime`.
+
+## 8. The ref_1 opening, measured frame by frame
+Added in Phase 1 of *3 Times a Day* (idea 51), which copies this opening's structure. Measured at 4 fps; positions converted to 1080×1920.
+
+| time | what happens |
+|---|---|
+| 0.00–2.50 s | An old man stands in a vertical gold god-ray beam, with a pool of light on the ground and dust floating. A big gold serif number counts 0 → 6 → 52 → 173 → … → 942 → 968 → **969**: fast at first, easing into the landing. |
+| 2.50 s | "YEARS OLD" appears under the number in small white letter-spaced caps. |
+| 2.50–3.75 s | A hold on "969 YEARS OLD" with a still camera (about 1.3 s). |
+| 3.75 s | A diagonal light-leak flash. |
+| 4.00 s | A hard cut to a modern person by a door in a grey, desaturated world. |
+| 4.25 s | The caption starts word by word ("And why did God make our lives so much SHORTER?"). |
+| 4.50 s | A two-line title fades in over about 0.25 s: "WHY SO" (cream) / "SHORT NOW?" (gold). It stays up until the next scene. |
+| 7.25 s | A cut to the next scene, the first story beat ("Methuselah"). |
+
+- **Layout:**
+  - The number is centered under the figure at y ≈ 1485, about 180 px cap height, in gold ochre with a soft dark drop shadow, and the label is at y ≈ 1620.
+  - The figure stands at about 40% of the frame height, with the light pool at y ≈ 1170.
+  - Dark blurred blobs in the bottom corners act as a vignette.
+  - The title lines are centered at y ≈ 1470 and 1580, about 120 px bold serif caps.
+  - The caption stays at the top (y ≈ 450), so caption and title are both on screen.
+- **Why it works:** one big number answers the question before it's asked. The hold lets it sink in, and the cut flips the world from warm gold to grey with a "WHY…NOW?" title the viewer finishes in their head. The first six seconds contain only two images.
+- **How we adapt it:**
+  - Daniel's number lands as 1… 2… 3, each a separate hit with a chime and a pulse of light. That contrasts with the phone's blur-fast odometer (0 → 37 → 86 → 100+).
+  - Our numbers sit higher (y ≈ 1050) and our title around y ≈ 1250, so both stay above the Instagram UI line at y = 1450.
+  - We keep the hold (about 1.8 s on "3 TIMES A DAY") and make the hard cut land on the first word of the next line.
