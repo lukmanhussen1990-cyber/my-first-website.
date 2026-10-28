@@ -1,5 +1,15 @@
 # Large source media (kept local, not pushed)
 reference/*.mp4
 reference/frames/
-episodes/*/out/*.mp4
+episodes/*/out/animatic*.mp4
+episodes/*/out/bench*
+episodes/*/out/review*/
+episodes/*/out/*.log
+episodes/*/out/*.png
+!episodes/*/out/cover_*.png
+episodes/*/audio/mix_prenorm.wav
+episodes/*/audio/music.wav
+episodes/*/audio/sfx.wav
 node_modules/
+episodes/*/public/final_mix.wav
+episodes/*/out/stills/
