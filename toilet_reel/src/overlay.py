@@ -249,7 +249,7 @@ def composite(frame_png, meta, chunks, out_png, size=None, t_override=None):
                         cy = min(cands, key=lambda y: abs(y - H * 0.58))
             draw_caption(img, c['text'], W / 2, cy, size, sc)
     watermark(img)
-    img.convert('RGB').save(out_png)
+    img.convert('RGB').save(out_png, compress_level=1)
 
 
 def main():

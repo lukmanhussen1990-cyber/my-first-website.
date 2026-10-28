@@ -1,7 +1,8 @@
 """Composite overlays on rendered frames and encode the reel with the audio mix.
 
-usage: python3 assemble.py <frames_dir> <work_dir> <audio.wav> <out.mp4> <W> <H> [step]
+usage: python3 assemble.py <frames_dir> <work_dir> <audio.wav> <out.mp4> <W> <H> [step] [maxrate]
 step: frame step of the rendered sequence (1 = every frame, 3 = draft at 10 fps).
+SKIP_EXISTING=1 reuses composited frames already in <work_dir>.
 """
 import os
 import sys
@@ -34,10 +35,12 @@ def main():
     chunks = OV.build_chunks(words)
     files = sorted(glob.glob(os.path.join(fdir, 'f_*.png')))
     files = [f for f in files if int(os.path.basename(f)[2:7]) % step == 0]
+    skip = os.environ.get('SKIP_EXISTING') == '1'
     jobs = []
-    for i, fp in enumerate(files):
-        out = os.path.join(wdir, f'seq_{i:05d}.png')
-        jobs.append((fp, out, (W, H), chunks))
+    for fp in files:
+        out = os.path.join(wdir, f'seq_{int(os.path.basename(fp)[2:7]) // step:05d}.png')
+        if not (skip and os.path.exists(out)):
+            jobs.append((fp, out, (W, H), chunks))
     with ProcessPoolExecutor(4) as ex:
         list(ex.map(job, jobs, chunksize=8))
     in_fps = FPS / step
