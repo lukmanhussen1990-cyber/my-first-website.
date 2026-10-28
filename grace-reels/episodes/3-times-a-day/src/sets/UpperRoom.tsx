@@ -153,22 +153,56 @@ const exteriorGeo = () => {
 	for (let i = 0; i < 18; i++) p.push(at(palmGeo(i + 3, 5 + r() * 3), (r() - 0.5) * 120, STREET_Y - 0.5, -18 - r() * 90));
 	// the ziggurat, far to the right
 	for (let k = 0; k < 6; k++) p.push(facet(at(box(46 - k * 7, 7, 46 - k * 7), 70, STREET_Y + 3.5 + k * 7, -190), k % 2 ? '#C9A97A' : '#BE9C6C', 0.03, 600 + k));
-	// far hills and Jerusalem on one of them
-	const hillsG = terrain(1800, 500, 60, 18, (x, z) => 18 + fbm2(x / 240, z / 240, 4, 3) * 26 + Math.exp(-((x - 40) ** 2 + (z + 20) ** 2) / (2 * 90 * 90)) * 50, () => '#8E7A64', 6, 0.03);
-	hillsG.translate(0, STREET_Y, -650);
+	// far hills; Jerusalem stands on the high one (jerusalemGeo)
+	const hillsG = terrain(1800, 500, 60, 18, hillH, () => '#8E7A64', 6, 0.03);
+	hillsG.translate(0, STREET_Y, HILLS_Z);
 	p.push(hillsG);
+	return merge(p);
+};
+
+const HILLS_Z = -650;
+const hillH = (x: number, z: number) => 18 + fbm2(x / 240, z / 240, 4, 3) * 26 + Math.exp(-((x - 40) ** 2 + (z + 20) ** 2) / (2 * 90 * 90)) * 50;
+const groundAt = (x: number, z: number) => STREET_Y + hillH(x, z - HILLS_Z);
+
+// Jerusalem: a small walled city on the far hilltop, small enough to read as far away. Each
+// piece reaches down into the slope so nothing floats where the hill falls off.
+const jerusalemGeo = () => {
+	const p: THREE.BufferGeometry[] = [];
+	const r = rng(31);
+	const S = 0.55;
 	const jx = 40;
-	const jz = -650 - 20;
-	const jy = STREET_Y + 18 + 50 + 4;
+	const jz = HILLS_Z - 20;
+	const sink = 1.5;
+	const piece = (w: number, h: number, d: number, x: number, z: number, ry: number, color: string, seed: number, lift = 0) => {
+		const y0 = groundAt(x, z) - sink + lift;
+		p.push(facet(at(box(w, h + sink, d), x, y0 + (h + sink) / 2, z, ry), color, 0.04, seed));
+	};
 	for (let i = 0; i < 20; i++) {
 		const a = (i / 20) * Math.PI * 2;
-		p.push(facet(at(box(16, 14, 5), jx + Math.cos(a) * 58, jy + 5, jz + Math.sin(a) * 30, -a), '#F0DCA8', 0.04, 700 + i));
-		if (i % 4 === 0) p.push(facet(at(box(9, 22, 9), jx + Math.cos(a) * 58, jy + 9, jz + Math.sin(a) * 30), '#F4E2B4', 0.04, 760 + i));
+		const x = jx + Math.cos(a) * 58 * S;
+		const z = jz + Math.sin(a) * 30 * S;
+		piece(16 * S, 14 * S, 5 * S, x, z, -a, '#F0DCA8', 700 + i);
+		if (i % 4 === 0) piece(9 * S, 22 * S, 9 * S, x, z, 0, '#F4E2B4', 760 + i);
 	}
-	p.push(facet(at(box(30, 24, 18), jx + 4, jy + 14, jz - 6), '#FAE8BC', 0.04, 730));
-	p.push(facet(at(box(32, 2.8, 20), jx + 4, jy + 27, jz - 6), '#E2B04E', 0.04, 731));
-	for (let i = 0; i < 16; i++) p.push(facet(at(box(9 + r() * 7, 7 + r() * 9, 9), jx + (r() - 0.5) * 90, jy + 5, jz + (r() - 0.5) * 44), '#EDD6A4', 0.05, 740 + i));
-	return merge(p);
+	for (let i = 0; i < 16; i++) piece((9 + r() * 7) * S, (7 + r() * 9) * S, 9 * S, jx + (r() - 0.5) * 90 * S, jz + (r() - 0.5) * 44 * S, 0, '#EDD6A4', 740 + i);
+	// the temple on the summit, with its gold roof
+	const tx = jx + 4 * S;
+	const tz = jz - 6 * S;
+	piece(30 * S, 28 * S, 18 * S, tx, tz, 0, '#FAE8BC', 730);
+	const top = groundAt(tx, tz) + 28 * S;
+	p.push(facet(at(box(32 * S, 2.8 * S, 20 * S), tx, top + 1 * S, tz), '#E2B04E', 0.04, 731));
+	// drawn unlit (the sun is behind it in every shot that sees it), so bake a soft light from
+	// the viewer's side into the colours, warmed a little: golden stone catching the light
+	const g = merge(p);
+	const L = new THREE.Vector3(-0.5, 0.55, 0.65).normalize();
+	const n = g.attributes.normal;
+	const c = g.attributes.color;
+	const v = new THREE.Vector3();
+	for (let i = 0; i < n.count; i++) {
+		const f = 0.62 + 0.38 * Math.max(0, v.fromBufferAttribute(n, i).dot(L));
+		c.setXYZ(i, c.getX(i) * f, c.getY(i) * f * 0.88, c.getZ(i) * f * 0.64);
+	}
+	return g;
 };
 
 // the tree just outside the window; its crown changes with the seasons (S7)
@@ -188,11 +222,12 @@ const crownGeo = () => {
 
 export const UpperRoom: React.FC<{open?: number; season?: number; exterior?: boolean}> = ({open = 1, season = 1, exterior = true}) => {
 	const shot = useShot();
-	const geo = useMemo(() => ({wall: backWall(), lattice: latticeGeo(), leafL: leafGeo(-1), leafR: leafGeo(1), inside: interiorGeo(), outside: exteriorGeo(), tree: treeGeo(), crown: crownGeo()}), []);
+	const geo = useMemo(() => ({wall: backWall(), lattice: latticeGeo(), leafL: leafGeo(-1), leafR: leafGeo(1), inside: interiorGeo(), outside: exteriorGeo(), jerusalem: jerusalemGeo(), tree: treeGeo(), crown: crownGeo()}), []);
 	useLayoutEffect(() => () => Object.values(geo).forEach((g) => g.dispose()), [geo]);
 	const mat = lambert();
 	const crownMat = useMemo(() => new THREE.MeshLambertMaterial({flatShading: true}), []);
-	useLayoutEffect(() => () => crownMat.dispose(), [crownMat]);
+	const cityMat = useMemo(() => new THREE.MeshBasicMaterial({vertexColors: true}), []);
+	useLayoutEffect(() => () => [crownMat, cityMat].forEach((m) => m.dispose()), [crownMat, cityMat]);
 	// season 0 spring .. 3 winter, continuous
 	const sIdx = ((season % 4) + 4) % 4;
 	const s0 = Math.floor(sIdx);
@@ -218,6 +253,7 @@ export const UpperRoom: React.FC<{open?: number; season?: number; exterior?: boo
 			{exterior ? (
 				<>
 					<mesh geometry={geo.outside} material={mat} receiveShadow />
+					<mesh geometry={geo.jerusalem} material={cityMat} />
 					<mesh geometry={geo.tree} material={mat} castShadow />
 					<mesh geometry={geo.crown} material={crownMat} castShadow scale={[1, 1 - bare * 0.65, 1]} position={[0, bare * -0.4, 0]} />
 				</>

@@ -88,7 +88,7 @@ const S6Content: React.FC<{t: number; d: number}> = ({t}) => {
 			<LiveBeam k={open} />
 			{/* before the shutters open: thin light through the slats */}
 			{open < 0.95 ? [0.25, 0.65, 1.05].map((y, i) => <LightShaft key={i} from={[WIN.x - 0.4 + i * 0.4, WIN.sill + y, WIN.z - 1]} to={[WIN.x + 0.5 + i * 0.3, 0.02, WIN.z + 2.2]} r0={0.02} r1={0.06} opacity={0.18 * (1 - open)} color="#FFD58A" />) : null}
-			<JerusalemGlow k={t >= c.out ? 1 : 0.4} />
+			<JerusalemGlow k={t >= c.out ? 0.5 : 0.4} />
 			<Figure look={DANIEL_OLD} pose={dn.pose} at={dn.at} facing={-1} res={1800} />
 		</>
 	);
@@ -102,9 +102,10 @@ const camS6 = (t: number, d: number): Cam => {
 		return {pos: [lerp(3.3, 1.35, k), lerp(2.6, 2.5, k), lerp(2.5, 2.7, k)], target: [lerp(2.1, 0.7, k), lerp(2.05, 1.65, k), lerp(-1.4, -2.0, k)], fov: 52};
 	}
 	if (t < c.street) {
-		// behind him, out through the window to Jerusalem on the horizon
+		// behind him and low, out through the window: Jerusalem sits on the far hills just in
+		// front of his face (a high eye would only see the street below the window)
 		const k = (t - c.out) / (c.street - c.out);
-		return {pos: [0.25, lerp(1.3, 1.26, k), lerp(2.6, 2.3, k)], target: [0.92, lerp(1.0, 0.98, k), -10], fov: 40};
+		return {pos: [-0.05, lerp(0.95, 0.93, k), lerp(2.15, 1.9, k)], target: [1.42, 1.58, -10], fov: 40};
 	}
 	if (t < c.back) {
 		const k = (t - c.street) / (c.back - c.street);
@@ -124,7 +125,7 @@ export const S06: SceneDef = {
 		const inStreet = t >= c.street && t < c.back;
 		return {
 			bloom: {intensity: 1.05, threshold: 0.74},
-			dof: inStreet ? {focusDistance: 8.5, focusRange: 5, bokehScale: 2.2} : t >= c.out && t < c.street ? {focusDistance: 2.6, focusRange: 1.4, bokehScale: 2.4} : {focusDistance: 4.6, focusRange: 2.4, bokehScale: 2.4},
+			dof: inStreet ? {focusDistance: 8.5, focusRange: 5, bokehScale: 2.2} : t >= c.out && t < c.street ? {focusDistance: 2.6, focusRange: 1.4, bokehScale: 0.8} : {focusDistance: 4.6, focusRange: 2.4, bokehScale: 2.4},
 			vignette: {offset: 0.26, darkness: 0.6},
 			grade: gradeFromSun(sun, {contrast: 1.06, warmth: inStreet ? 0.12 : 0.32, saturation: inStreet ? 0.9 : 1.1, exposure: inStreet ? 0.98 : 1.08}),
 		};
