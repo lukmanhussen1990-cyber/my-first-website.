@@ -11,14 +11,24 @@ Episode 60 of Grace in Motion (idea 60), made from GPT Image character pictures.
 | `out/preview_face-of-god.mp4` | The quick preview: half size, 15 fps, light effects, full sound |
 | `out/cover_face-of-god.png` | Cover: Moses on the stormy ledge, his hand raised into the light breaking through, "HE ASKED TO SEE / GOD'S FACE", "EXODUS 33:20" |
 | `out/caption_face-of-god.txt` | Instagram caption: hook line, three short lines, 2 Corinthians 4:6, the question, hashtags |
-| `out/stills/*.png` | The 10 check stills (storm opening, the sea split, the kneel, the river of light at the cleft, the trails of light, the shining face walking down, the camp stepping back, Jesus with Philip, the split screen, the call to action) |
+| `out/stills/*.jpg` | The 10 check stills: storm opening, the sea split, the kneel, the river of light at the cleft, the trails of light, the shining face walking down, the camp stepping back, Jesus with Philip, the split screen, the call to action. `contact_sheet.jpg` shows all 10; `tools/render_extras.sh` makes full-size PNGs |
 | `audio/final_mix.wav` | The final mix (your voice, music and effects) |
 | `KJV_CHECK.md` | Every quote, card and label checked against the KJV |
 | `../../ideas_used.md` | Episode list (this one is marked "GPT Image") |
 
 ## Checks on the final reel
 
-See the table filled in after the render (below).
+| Check | Result |
+|---|---|
+| Picture | 1080×1920, 30 fps, H.264 High, yuv420p, 1952 frames (CRF 18) |
+| Sound | AAC LC, 48 kHz, stereo |
+| Length | 65.07 s (target 60–90 s) |
+| Loudness | −13.9 LUFS integrated, loudness range 2.9 LU, true peak −1.2 dB |
+| Opening | The voice starts on frame 1: no logo, no intro, no fade from black |
+| Loop | The last frames flow back into the storm of the first shot |
+| Safe zones | All text sits above y = 1450 and left of x = 960 (the cover's text sits inside y 240–1680) |
+| Captions | The subtitle words come straight from the word timings of your recording |
+| File size | Master 312 MB (CRF 18 keeps the grain; Instagram re-encodes on upload); the 20 MB copy is 18.8 MB |
 
 ## How it was made
 
