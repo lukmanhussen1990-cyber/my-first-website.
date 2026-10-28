@@ -211,3 +211,27 @@ Style references for this episode (`episodes/face-of-god/style_refs/`, all from 
 Character references copied next to them: `ref_moses.png` (the never-died Moses, side view),
 `ref_jesus_turnaround.png` and `ref_jesus_poses_b.png` (Jesus from Friend), and `ref_disciples_seated.png`
 (the Friend disciples; Philip is the one in the mustard-yellow robe).
+
+---
+
+## 5. Idea 68 "Wheat and Weeds": the same look, drawn 100% in code
+
+Re-checked: the reference frames above and the character images and frames of `episodes/never-died/`
+(Elijah, Elisha, Enoch, Jesus, Peter), the reel that reached 62,000 views. This episode has no GPT
+pictures, so those characters are the target for the code drawings.
+
+| Item | never-died (the target) | How we draw it in code |
+|---|---|---|
+| Proportions | Head about 1 : 5.5 of the height, long arms, slim shoulders, big feet in sandals | Parametric body (height, build, belly, age) on a 2048 px-tall drawing grid |
+| Outline | Dark brown `#2B1D12`, even, round joins, on every cut-out part | Screen-space outline in the sprite shader, about 5 px whatever the zoom; inner lines (eyes, folds, strands) drawn in SVG |
+| Eyes | Big almond eye, white with a large dark pupil and a white catch-light; thick arched brow | Same, with separate brow and lid pieces so the face can blink, frown and raise the brows |
+| Nose and mouth | Soft rounded nose bump; a small closed mouth curve | Same; three mouth shapes (rest, smile, talk) for speaking |
+| Skin | Warm browns from tan to deep brown, a little rosy at the cheek | Palette `#C98B5A` `#B8743F` `#9C5C33` `#7E4A2B` with a soft cheek tint |
+| Hair and beard | Flat dark shapes (brown, black, grey) with 2–3 lighter wavy strand lines | Wavy SVG shapes with strand strokes in a lighter tone |
+| Robes | A-line robes and tunics with darker fold lines, a sash or belt, the far side a tone darker | Same, plus two-tone cel shading in the shader that follows the scene light |
+| Hands and feet | Mittens with a thumb; bare feet in strapped sandals | Same |
+| Shading | Soft, flat, two tones | Shader: a pseudo-normal from the blurred silhouette gives a hard-edged shadow side away from the light |
+
+World: the same warm low-poly diorama (long lens, slow camera, haze, god rays, gold dust), now with a
+night palette (silver moon, deep blue `#14203A` shadows, gold `#E7B85A` wheat) and a sunrise palette.
+Text: the same header, captions, labels, cards, call to action and end card as our other reels.
