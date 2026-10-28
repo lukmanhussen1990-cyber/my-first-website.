@@ -1038,6 +1038,110 @@
    },
    "eyes": [],
    "skin": "#2c2b33"
+  },
+  "macro": {
+   "scale": 3,
+   "heightPx": 6240,
+   "root": "arm_upper_near",
+   "sole": [
+    0,
+    0
+   ],
+   "order": [
+    "arm_upper_near",
+    "forearm_near",
+    "hand_near"
+   ],
+   "parts": {
+    "hand_near": {
+     "sprite": "enemy/macro/hand_near",
+     "pivot": [
+      274.9999999999999,
+      125.00000000000023
+     ],
+     "parent": "forearm_near",
+     "z": 59.8,
+     "variants": {
+      "relaxed": {
+       "sprite": "enemy/macro/hand_near.relaxed",
+       "pivot": [
+        274.9999999999999,
+        125.00000000000023
+       ]
+      },
+      "open": {
+       "sprite": "enemy/macro/hand_near.open",
+       "pivot": [
+        363,
+        126.99999999999977
+       ]
+      },
+      "fist": {
+       "sprite": "enemy/macro/hand_near.fist",
+       "pivot": [
+        229.9999999999999,
+        123.99999999999977
+       ]
+      },
+      "throw": {
+       "sprite": "enemy/macro/hand_near.throw",
+       "pivot": [
+        409.0000000000001,
+        126.99999999999977
+       ]
+      },
+      "hold": {
+       "sprite": "enemy/macro/hand_near.hold",
+       "pivot": [
+        229.9999999999999,
+        123.99999999999977
+       ]
+      },
+      "point": {
+       "sprite": "enemy/macro/hand_near.point",
+       "pivot": [
+        231,
+        123.99999999999977
+       ]
+      },
+      "splay": {
+       "sprite": "enemy/macro/hand_near.splay",
+       "pivot": [
+        400.0000000000001,
+        126.99999999999977
+       ]
+      }
+     },
+     "at": [
+      340.55999999999995,
+      1171.48
+     ]
+    },
+    "forearm_near": {
+     "sprite": "enemy/macro/forearm_near",
+     "pivot": [
+      222,
+      223.0000000000001
+     ],
+     "parent": "arm_upper_near",
+     "z": 59.9,
+     "at": [
+      239.79999999999984,
+      1261.8400000000001
+     ]
+    },
+    "arm_upper_near": {
+     "sprite": "enemy/macro/arm_upper_near",
+     "pivot": [
+      270.9999999999998,
+      226.0000000000001
+     ],
+     "parent": null,
+     "z": 60
+    }
+   },
+   "eyes": [],
+   "skin": "#2c2b33"
   }
  },
  "saul": {

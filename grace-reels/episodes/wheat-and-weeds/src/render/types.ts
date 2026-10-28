@@ -55,7 +55,12 @@ export type ShotDef = {
 	anchors?: (t: number) => Record<string, Vec3>;
 	// screen-space god rays streaming from a bright point in the world (the opening in the clouds, the sun)
 	rays?: (t: number) => {at: Vec3; strength: number; color?: Vec3} | null;
+	// depth of field: sharp from focus - range to focus + range (metres from the camera), blur grows outside
+	// it up to `max` px (1080 wide); `aperture` is the blur in px of something infinitely far away
+	dof?: (t: number) => Dof | null;
 };
+
+export type Dof = {focus: number; range?: number; aperture: number; max?: number};
 
 export type TransitionKind = 'cut' | 'dissolve' | 'haze' | 'cloak' | 'light' | 'whip' | 'fade' | 'swirl' | 'split' | 'streak';
 // A blend between two shots centred on `at`. For 'split' the two shots share the screen for the whole

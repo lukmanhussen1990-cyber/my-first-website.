@@ -5,7 +5,7 @@ import {useMemo, useRef} from 'react';
 import {useCurrentFrame, useVideoConfig} from 'remotion';
 import * as THREE from 'three';
 import {applyCamera, projectToScreen} from './camera';
-import {DEFAULT_GRADE, Grade, Inset, ShotDef, Transition} from './types';
+import {DEFAULT_GRADE, Dof, Grade, Inset, ShotDef, Transition} from './types';
 
 const VS = /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`;
 const HASH = /* glsl */ `
@@ -94,6 +94,54 @@ export const Director: React.FC<{
 		const hdr = {type: THREE.HalfFloatType, samples: lite ? 0 : 4, colorSpace: THREE.LinearSRGBColorSpace};
 		const rtA = new THREE.WebGLRenderTarget(w, h, hdr);
 		const rtB = new THREE.WebGLRenderTarget(w, h, hdr);
+		rtA.depthTexture = new THREE.DepthTexture(w, h);
+		rtB.depthTexture = new THREE.DepthTexture(w, h);
+		// depth of field: a half-size gather blur, then a composite back over the sharp picture
+		const rtDofHalf = new THREE.WebGLRenderTarget(Math.round(w / 2), Math.round(h / 2), {type: THREE.HalfFloatType});
+		const rtDofA = new THREE.WebGLRenderTarget(w, h, {type: THREE.HalfFloatType});
+		const rtDofB = new THREE.WebGLRenderTarget(w, h, {type: THREE.HalfFloatType});
+		const DOF_COMMON = `uniform sampler2D tColor, tDepth; uniform float uFocus, uRange, uAperture, uMax, uScale; uniform vec2 uRes;
+			float viewZ(float d){ float n = 0.1, f = 2000.0; return (2.0 * n * f) / (f + n - (d * 2.0 - 1.0) * (f - n)); }
+			float coc(float z){
+				if (abs(z - uFocus) <= uRange) return 0.0;
+				float e = z < uFocus ? uFocus - uRange : uFocus + uRange;
+				return clamp(uAperture * (1.0 - e / z), -uMax, uMax) * uScale;
+			}`;
+		const dofGather = new THREE.ShaderMaterial({
+			uniforms: {tColor: {value: null}, tDepth: {value: null}, uFocus: {value: 5}, uRange: {value: 0}, uAperture: {value: 10}, uMax: {value: 20}, uScale: {value: w / 1080}, uRes: {value: new THREE.Vector2(w, h)}},
+			vertexShader: VS,
+			fragmentShader: `${DOF_COMMON} varying vec2 vUv;
+				void main(){
+					float zc = viewZ(texture2D(tDepth, vUv).r);
+					float cc = coc(zc);
+					vec3 acc = texture2D(tColor, vUv).rgb; float ws = 1.0; float spread = abs(cc);
+					for (int i = 0; i < 44; i++) {
+						float fi = float(i);
+						float r = sqrt((fi + 0.5) / 44.0) * uMax * uScale;
+						float a = fi * 2.39996;
+						vec2 uv = vUv + vec2(cos(a), sin(a)) * r / uRes;
+						float zs = viewZ(texture2D(tDepth, uv).r);
+						float cs = coc(zs);
+						float m = abs(cs);
+						// something behind can't blur over something nearer than it
+						if (zs > zc) m = min(m, abs(cc));
+						float w = clamp(m - r + 1.0, 0.0, 1.0);
+						acc += texture2D(tColor, uv).rgb * w; ws += w;
+						if (cs < 0.0 && zs < zc) spread = max(spread, m * w);
+					}
+					gl_FragColor = vec4(acc / ws, spread);
+				}`,
+		});
+		const dofComposite = new THREE.ShaderMaterial({
+			uniforms: {tColor: {value: null}, tBlur: {value: null}, uScale: {value: w / 1080}},
+			vertexShader: VS,
+			fragmentShader: `uniform sampler2D tColor, tBlur; uniform float uScale; varying vec2 vUv;
+				void main(){
+					vec4 b = texture2D(tBlur, vUv);
+					float k = smoothstep(0.6, 2.6, b.a / uScale);
+					gl_FragColor = vec4(mix(texture2D(tColor, vUv).rgb, b.rgb, k), 1.0);
+				}`,
+		});
 		const rtMix = new THREE.WebGLRenderTarget(w, h, {type: THREE.HalfFloatType});
 		const k = w / 1080;
 		const rtInset = new THREE.WebGLRenderTarget(Math.round(INSET_PX[0] * k), Math.round(INSET_PX[1] * k), hdr);
@@ -318,7 +366,7 @@ export const Director: React.FC<{
 					#include <colorspace_fragment>
 				}`,
 		});
-		return {rtA, rtB, rtMix, rtInset, rtRays, levels, quad, qs, qc, mixMat, blurMat, raysMat, finalMat};
+		return {rtA, rtB, rtMix, rtInset, rtRays, levels, quad, qs, qc, mixMat, blurMat, raysMat, finalMat, rtDofHalf, rtDofA, rtDofB, dofGather, dofComposite};
 	}, [size.width, size.height, lite]);
 
 	const active = activeShots(shots, transitions, t);
@@ -336,7 +384,28 @@ export const Director: React.FC<{
 			gl.clear();
 			gl.render(scene, cam);
 		};
-		const {rtA, rtB, rtMix, rtInset, rtRays, levels, quad, qs, qc, mixMat, blurMat, raysMat, finalMat} = res;
+		const {rtA, rtB, rtMix, rtInset, rtRays, levels, quad, qs, qc, mixMat, blurMat, raysMat, finalMat, rtDofHalf, rtDofA, rtDofB, dofGather, dofComposite} = res;
+		// depth of field for one rendered shot; returns the picture to use
+		const withDof = (shot: ShotDef, src: THREE.WebGLRenderTarget, out: THREE.WebGLRenderTarget): THREE.Texture => {
+			const d: Dof | null | undefined = lite ? null : shot.dof?.(t);
+			if (!d || d.aperture <= 0.01) return src.texture;
+			const g = dofGather.uniforms;
+			g.tColor.value = src.texture;
+			g.tDepth.value = src.depthTexture;
+			g.uFocus.value = d.focus;
+			g.uRange.value = d.range ?? 0;
+			g.uAperture.value = d.aperture;
+			g.uMax.value = d.max ?? 22;
+			quad.material = dofGather;
+			gl.setRenderTarget(rtDofHalf);
+			gl.render(qs, qc);
+			dofComposite.uniforms.tColor.value = src.texture;
+			dofComposite.uniforms.tBlur.value = rtDofHalf.texture;
+			quad.material = dofComposite;
+			gl.setRenderTarget(out);
+			gl.render(qs, qc);
+			return out.texture;
+		};
 		// picture-in-picture first (it uses the same scene graph)
 		let insetRect = null;
 		for (const ins of insets) {
@@ -349,12 +418,14 @@ export const Director: React.FC<{
 			}
 		}
 		renderShot(active.a, rtA);
-		let base: THREE.Texture = rtA.texture;
+		const texA = withDof(active.a, rtA, rtDofA);
+		let base: THREE.Texture = texA;
 		if (active.b) {
 			renderShot(active.b, rtB);
+			const texB = withDof(active.b, rtB, rtDofB);
 			quad.material = mixMat;
-			mixMat.uniforms.tA.value = rtA.texture;
-			mixMat.uniforms.tB.value = rtB.texture;
+			mixMat.uniforms.tA.value = texA;
+			mixMat.uniforms.tB.value = texB;
 			mixMat.uniforms.uMix.value = active.mix;
 			mixMat.uniforms.uKind.value = KIND_ID[active.kind];
 			mixMat.uniforms.uSlant.value = active.slant;

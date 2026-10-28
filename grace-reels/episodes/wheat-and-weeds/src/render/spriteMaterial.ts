@@ -255,6 +255,9 @@ export type SpriteLook = {
 	outlineColor?: THREE.ColorRepresentation;
 	// two-tone cel shading: light direction in the part's own uv space (x right, y up), strength, shadow colour
 	cel?: {dir: [number, number]; amount: number; color?: THREE.ColorRepresentation; radius?: number; bias?: number};
+	// solid: drawn with the opaque things, alpha as multisample coverage, writing depth (so the depth of
+	// field and the wheat in front of a figure treat it as a real object); falls back to blending while faded
+	solid?: boolean;
 };
 
 const tmp = new THREE.Color();
@@ -278,6 +281,10 @@ export const applyLook = (m: ReturnType<typeof makeSpriteMaterial>, look: Sprite
 	u.uRimDir.value.set(rd[0], rd[1]);
 	u.uBlur.value = look.blur ?? 0;
 	m.depthTest = look.depthTest ?? true;
+	const solid = !!look.solid && (look.opacity ?? 1) > 0.999 && (look.dissolve ?? 0) <= 0 && m.depthTest;
+	m.transparent = !solid;
+	m.depthWrite = solid;
+	m.alphaToCoverage = solid;
 	const g = look.grad;
 	u.uGrad.value.set(g?.dir[0] ?? 1, g?.dir[1] ?? 0, g?.amount ?? 0, g?.soft ?? 0.5);
 	u.uGradColor.value.set(g?.color ?? '#ffffff');

@@ -93,7 +93,7 @@ const save = (name, r) => {
 for (const [id, plan] of Object.entries(PLAN)) {
 	if (only && !only.includes(id)) continue;
 	const spec = CAST[id];
-	rigs[id] = {};
+	rigs[id] = rigs[id] ?? {};
 	for (const view of plan.views) {
 		const {parts, sole} = assemble(spec, view);
 		const S = plan.scale;
@@ -152,6 +152,42 @@ for (const [id, plan] of Object.entries(PLAN)) {
 		};
 		console.log(`${id}/${view}: ${Object.keys(out).length} parts`);
 	}
+}
+
+// Close-ups: one arm chain drawn big (the enemy's hand throwing seed in the opening macro shot)
+const MACRO = {enemy: {view: 'side', scale: 3, parts: ['arm_upper_near', 'forearm_near', 'hand_near']}};
+for (const [id, mc] of Object.entries(MACRO)) {
+	if (!only || !only.includes('macro')) continue;
+	const spec = CAST[id];
+	const {parts} = assemble(spec, mc.view);
+	const S = mc.scale;
+	const crop = {};
+	const out = {};
+	for (const p of parts.filter((q) => mc.parts.includes(q.name))) {
+		// draw only the box around the part so the canvas stays small
+		const box = [700, 1100];
+		const origin = [p.joint[0] - 350, p.joint[1] - 300];
+		const name = `${id}/macro/${p.name}`;
+		const r = await raster(p.svg, S, box, origin);
+		save(name, r);
+		crop[p.name] = [r.ox, r.oy];
+		const variants = {};
+		for (const [k, svg] of Object.entries(p.variants ?? {})) {
+			const rv = await raster(svg, S, box, origin);
+			if (!rv) continue;
+			save(`${name}.${k}`, rv);
+			variants[k] = {sprite: `${name}.${k}`, pivot: [(p.joint[0] - rv.ox) * S, (p.joint[1] - rv.oy) * S]};
+		}
+		out[p.name] = {sprite: name, pivot: [(p.joint[0] - r.ox) * S, (p.joint[1] - r.oy) * S], parent: p.name === mc.parts[0] ? null : p.parent, z: p.z, ...(p.variants ? {variants} : {})};
+	}
+	for (const [n, def] of Object.entries(out)) {
+		if (!def.parent) continue;
+		const p = parts.find((q) => q.name === n);
+		const o = crop[def.parent];
+		def.at = [(p.joint[0] - o[0]) * S, (p.joint[1] - o[1]) * S];
+	}
+	rigs[id].macro = {scale: S, heightPx: metrics(spec).Hf * S, root: mc.parts[0], sole: [0, 0], order: mc.parts, parts: out, eyes: [], skin: spec.skin};
+	console.log(`${id}/macro: ${Object.keys(out).length} parts`);
 }
 
 // Props: one image each, the grip point at the part pivot

@@ -25,7 +25,7 @@ export type ViewRig = {
 	skin: string;
 };
 export type CharId = 'farmer' | 'jesus' | 'servantA' | 'servantB' | 'servantC' | 'enemy' | 'saul' | 'paul' | 'soldier' | 'reaper';
-export type View = 'side' | 'tq' | 'back';
+export type View = 'side' | 'tq' | 'back' | 'macro';
 export const RIGS = rigsJson as unknown as Record<CharId, Partial<Record<View, ViewRig>>>;
 
 export type PartWarp = {hem?: [number, number, number]; wave?: [number, number, number, number]; tilt?: [number, number, number, number]; breath?: number};
@@ -37,6 +37,8 @@ export type Pose = {
 	hide?: string[];
 	warps?: Record<string, PartWarp>;
 	shut?: number; // force the eyes shut (0..1)
+	// props held or worn: a prop sprite placed in a part's image px (its grip point at `at`), turned by `angle` degrees
+	props?: {part: string; sprite: string; at?: [number, number]; angle?: number; scale?: number; behind?: boolean; opacity?: number}[];
 };
 
 // figure px at scale 1 per metre (a 1960 px figure is 1.78 m)
@@ -85,6 +87,9 @@ const makeMesh = (sprite: string, pivot: [number, number], seg: [number, number]
 };
 
 export type PuppetLook = SpriteLook & {lightDir?: [number, number]; celAmount?: number; celColor?: THREE.ColorRepresentation};
+
+// Parts are stacked toward the camera in draw order (px), so a figure that writes depth stays in order.
+const Z_STEP = 1.5;
 
 export const Puppet: React.FC<{
 	id: CharId;
@@ -149,7 +154,9 @@ export const Puppet: React.FC<{
 			const on = m === active && !pose.hide?.includes(name);
 			m.mesh.visible = on && (look.opacity ?? 1) > 0.002;
 			if (!on) continue;
+			m.mesh.position.z = i * Z_STEP;
 			applyLook(m.mat, {
+				solid: true,
 				...look,
 				outline: NO_OUTLINE.has(name) ? 0 : look.outline ?? 5,
 				cel: {dir, amount: look.celAmount ?? 0.85, color: look.celColor ?? '#b4a2b6', radius: 46 * rig.scale, bias: 4.2},
@@ -187,12 +194,25 @@ export const Puppet: React.FC<{
 				{Object.values(p.variants).map((m, k) => (
 					<primitive key={k} object={m.mesh} />
 				))}
+				{(pose.props ?? [])
+					.filter((pr) => pr.part === name)
+					.map((pr, k) => (
+						<PropSprite
+							key={`prop${k}`}
+							prop={pr}
+							partPivot={def.pivot}
+							scale={rig.scale}
+							order={renderOrder + rig.order.indexOf(name) * 0.01 + (pr.behind ? -0.004 : 0.004)}
+							z={(rig.order.indexOf(name) + (pr.behind ? -0.5 : 0.5)) * Z_STEP}
+							look={look}
+						/>
+					))}
 				{name === 'head' &&
 					lids.map((l, k) => {
 						const e = rig.eyes[k];
 						const ih = e.h * 2.35;
 						// the lid comes down from the top of the eye
-						return <primitive key={`lid${k}`} object={l.mesh} position={[e.c[0] - def.pivot[0], -(e.c[1] - def.pivot[1]) + (ih / 2) * (1 - Math.max(0.02, shut)) - ih * 0.04, 0.1]} />;
+						return <primitive key={`lid${k}`} object={l.mesh} position={[e.c[0] - def.pivot[0], -(e.c[1] - def.pivot[1]) + (ih / 2) * (1 - Math.max(0.02, shut)) - ih * 0.04, rig.order.indexOf('head') * Z_STEP + Z_STEP * 0.5]} />;
 					})}
 				{kids.map(node)}
 			</group>
@@ -200,6 +220,23 @@ export const Puppet: React.FC<{
 	};
 	const lift = pose.lift ?? [0, 0];
 	return <group position={[-rig.sole[0] + lift[0], rig.sole[1] + lift[1], 0]}>{node(rig.root)}</group>;
+};
+
+// A held prop (sickle, scroll, sheaf, quill): its own sprite with the same outline and cel look.
+const PropSprite: React.FC<{prop: NonNullable<Pose['props']>[number]; partPivot: [number, number]; scale: number; order: number; z: number; look: PuppetLook}> = ({prop, partPivot, scale, order, z, look}) => {
+	const m = meta(prop.sprite) as ReturnType<typeof meta> & {pivot?: [number, number]};
+	const grip = m.pivot ?? [m.w / 2, m.h / 2];
+	const mm = useMemo(() => makeMesh(prop.sprite, grip, [1, 1]), [prop.sprite]);
+	applyLook(mm.mat, {solid: true, ...look, opacity: (look.opacity ?? 1) * (prop.opacity ?? 1), outline: look.outline ?? 5, cel: {dir: look.lightDir ?? [-0.6, 0.8], amount: (look.celAmount ?? 0.85) * 0.8, color: look.celColor ?? '#b4a2b6', radius: 30, bias: 4}});
+	mm.mesh.renderOrder = order;
+	mm.mesh.visible = (look.opacity ?? 1) * (prop.opacity ?? 1) > 0.002;
+	const at = prop.at ?? partPivot;
+	const s = (prop.scale ?? 1) * scale;
+	return (
+		<group position={[at[0] - partPivot[0], -(at[1] - partPivot[1]), z]} rotation-z={((prop.angle ?? 0) * Math.PI) / 180} scale={[s, s, 1]}>
+			<primitive object={mm.mesh} />
+		</group>
+	);
 };
 
 // A whole person standing in the world: feet on `position`, facing ±1 (drawn facing right), turned

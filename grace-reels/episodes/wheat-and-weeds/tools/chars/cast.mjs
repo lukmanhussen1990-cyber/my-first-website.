@@ -28,7 +28,7 @@ export const CAST = {
 		robe: {color: '#cdb38a', length: 'calf', sleeves: 'long', belt: {color: '#6b4a2e', width: 1.6, tail: true}},
 	},
 	enemy: {
-		id: 'enemy', height: 2080, build: 1.05, skin: '#2c2b33', hair: 'hood', wrapColor: '#2b2e3d', seed: 19, faceless: true,
+		id: 'enemy', height: 2080, build: 1.05, skin: '#2c2b33', splay: true, hair: 'hood', wrapColor: '#2b2e3d', seed: 19, faceless: true,
 		robe: {color: '#2b2e3d', length: 'ankle', sleeves: 'long'},
 	},
 	saul: {
@@ -115,7 +115,7 @@ export const assemble = (s, view) => {
 		const fore = sleeves === 'long' ? limb(M, A.elbow, A.wrist, rU * 0.98, rU * 1.0, c, {cuff: cuff ?? deep(c, 0.72)}) : limb(M, A.elbow, A.wrist, rU * 0.74, rU * 0.6, sk, {fold: false});
 		add(`forearm_${tag}`, fore, A.elbow, `arm_upper_${tag}`, z0 - 0.1);
 		const variants = {};
-		for (const k of ['relaxed', 'open', 'fist', 'throw', 'hold', 'point']) variants[k] = hand(M, sk, A.wrist, A.dir, k, view === 'side' ? 1 : tag === 'near' ? -1 : 1);
+		for (const k of ['relaxed', 'open', 'fist', 'throw', 'hold', 'point', ...(s.splay ? ['splay'] : [])]) variants[k] = hand(M, sk, A.wrist, A.dir, k, view === 'side' ? 1 : tag === 'near' ? -1 : 1);
 		add(`hand_${tag}`, variants.relaxed, A.wrist, `forearm_${tag}`, z0 - 0.2, {variants});
 	};
 	// ---- legs ----

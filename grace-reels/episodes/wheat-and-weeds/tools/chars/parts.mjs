@@ -577,6 +577,26 @@ export const hand = (M, skin, wrist, dirDeg, kind = 'relaxed', side = 1) => {
 		pts = [at(-0.3, -1.7), at(1.6, -2.3), at(3.9, -2.2), at(4.9, -0.6), at(4.6, 1.5), at(2.4, 2.2), at(0.0, 1.8)];
 		thumb = [at(1.4, 1.6), at(3.2, 2.5), at(4.4, 1.6), at(3.2, 0.7)];
 		extra = line([at(3.6, -1.9), at(4.4, -0.4), at(4.1, 1.2)], dk, lw * 0.8);
+	} else if (kind === 'splay') {
+		// fingers spread wide, flinging (drawn for the close-ups): palm, four tapering fingers, the thumb
+		pts = [at(-0.3, -1.9), at(1.8, -2.4), at(3.6, -2.2), at(3.9, 0.0), at(3.5, 2.1), at(1.6, 2.4), at(0.0, 1.9)];
+		const finger = (a0, c0, angDeg, len, w) => {
+			const fa = (angDeg * Math.PI) / 180;
+			const da = Math.cos(fa);
+			const dc = Math.sin(fa);
+			const tip = [a0 + da * len, c0 + dc * len];
+			const mid = [a0 + da * len * 0.55, c0 + dc * len * 0.55];
+			const n = [-dc, da];
+			const P = (q, k) => at(q[0] + n[0] * k, q[1] + n[1] * k);
+			return blob([P([a0, c0], -w), P(mid, -w * 0.92), P(tip, -w * 0.62), at(tip[0] + da * w * 0.55, tip[1] + dc * w * 0.55), P(tip, w * 0.62), P(mid, w * 0.92), P([a0, c0], w)], skin);
+		};
+		extra =
+			finger(3.0, -1.65, -30, 3.1, 0.52) +
+			finger(3.4, -0.55, -10, 3.6, 0.55) +
+			finger(3.4, 0.55, 9, 3.4, 0.54) +
+			finger(3.0, 1.55, 27, 2.6, 0.48) +
+			line([at(1.2, -0.6), at(2.6, -0.5)], deep(skin, 0.7), lw * 0.6, {opacity: 0.6});
+		thumb = [at(1.0, 1.6), at(1.6, 3.4), at(2.3, 4.6), at(3.0, 4.6), at(2.9, 3.4), at(2.4, 1.7)];
 	} else if (kind === 'point') {
 		pts = [at(-0.3, -1.7), at(1.6, -2.3), at(3.6, -2.2), at(4.3, -1.6), at(7.6, -1.4), at(8.0, -0.6), at(7.4, -0.1), at(4.4, -0.1), at(4.2, 1.5), at(2.2, 2.2), at(0.0, 1.8)];
 		thumb = [at(1.4, 1.6), at(3.0, 2.4), at(4.0, 1.6), at(3.0, 0.8)];

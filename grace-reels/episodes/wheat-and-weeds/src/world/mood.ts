@@ -195,3 +195,100 @@ export const GALILEE: Mood = {
 	cloudShade: '#f1b9a0',
 	tint: '#fff3e4',
 };
+
+// ---- Wheat and Weeds ----
+// Moonlit night over the field: a big silver moon, deep blue sky, the wheat glowing silver-gold.
+export const FIELD_NIGHT: Mood = {
+	skyTop: '#0a1124',
+	skyMid: '#152040',
+	skyHorizon: '#2d3c66',
+	skyBottom: '#141a2c',
+	sunDir: [0.3, 0.5, -0.81],
+	sunColor: '#f6f0de',
+	sunGlow: 0.022, // the halo adds in linear light: keep it faint or the night sky turns grey
+	sunSize: 2.6,
+	light: '#b4c6ee',
+	lightI: 1.55,
+	hemiSky: '#3e4f80',
+	hemiGround: '#1c1a24',
+	hemiI: 0.8,
+	fog: '#1b2544',
+	fogNear: 18,
+	fogFar: 170,
+	stars: 1,
+	cloud: '#2c3a62',
+	cloudShade: '#19223e',
+	tint: '#b9c6e2',
+};
+
+// Sunrise: the sun just over the hills behind the farm, long warm light across the rows.
+export const FIELD_SUNRISE: Mood = {
+	skyTop: '#7896c0',
+	skyMid: '#e4b8a2',
+	skyHorizon: '#ffcf88',
+	skyBottom: '#e6b48a',
+	sunDir: [-0.42, 0.1, -0.9],
+	sunColor: '#fff0c0',
+	sunGlow: 1.1,
+	sunSize: 4.2,
+	light: '#ffd49c',
+	lightI: 2.2,
+	hemiSky: '#efd6c8',
+	hemiGround: '#7d5f44',
+	hemiI: 1.0,
+	fog: '#f0c79e',
+	fogNear: 40,
+	fogFar: 320,
+	stars: 0,
+	cloud: '#ffe6d0',
+	cloudShade: '#e9a98e',
+	tint: '#ffeedd',
+};
+
+// A clear afternoon: the field in full, warm light.
+export const FIELD_DAY: Mood = {
+	skyTop: '#6a9bcb',
+	skyMid: '#a6c5e2',
+	skyHorizon: '#f2e2bc',
+	skyBottom: '#e6cfa4',
+	sunDir: [-0.62, 0.52, -0.38],
+	sunColor: '#fff3d6',
+	sunGlow: 0.3,
+	sunSize: 1.6,
+	light: '#fff0cf',
+	lightI: 2.4,
+	hemiSky: '#e8ecf2',
+	hemiGround: '#a08060',
+	hemiI: 1.1,
+	fog: '#efe2c8',
+	fogNear: 50,
+	fogFar: 360,
+	stars: 0,
+	cloud: '#ffffff',
+	cloudShade: '#dfd2c4',
+	tint: '#fff7ec',
+};
+
+// Golden hour: the low sun turning everything amber (grow together, the hard truth, patience).
+export const FIELD_GOLDEN: Mood = {
+	skyTop: '#8098c0',
+	skyMid: '#e2bea0',
+	skyHorizon: '#ffcd86',
+	skyBottom: '#e6b68a',
+	sunDir: [-0.74, 0.17, -0.65],
+	sunColor: '#ffe3a8',
+	sunGlow: 0.95,
+	sunSize: 3.6,
+	light: '#ffd49a',
+	lightI: 2.3,
+	hemiSky: '#f0dac0',
+	hemiGround: '#7a5a3a',
+	hemiI: 1.0,
+	fog: '#efcca0',
+	fogNear: 40,
+	fogFar: 300,
+	stars: 0,
+	cloud: '#ffe8cc',
+	cloudShade: '#e6b090',
+	tint: '#fff0de',
+};
