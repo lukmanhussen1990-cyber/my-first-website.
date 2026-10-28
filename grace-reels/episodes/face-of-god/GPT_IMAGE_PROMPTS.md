@@ -374,7 +374,7 @@ BACKGROUND: fully transparent (PNG with a real alpha channel). Nothing behind th
 
 FORMAT: landscape 3:2 (1536×1024).
 
-AVOID: text, letters, numbers, writing, carvings or symbols on the tablets, people, hands, faces, frames, borders, cast shadows.
+AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.
 ```
 
 ### 12. `prop_burning_bush.png` · MUST-HAVE
@@ -387,7 +387,7 @@ AVOID: text, letters, numbers, writing, carvings or symbols on the tablets, peop
 ```text
 Flat 2D paper-cut illustration for a cinematic 2.5D animated Bible story. Characters and props: simple bold shapes with a clean, even, dark brown outline (#2B1D12) and rounded joins; matte flat colors with exactly one soft shadow tone per color (far-side arm and leg one shade darker); no gradients on characters, no texture, no noise, no 3D rendering, no realism. Expressive but minimal cartoon faces, like our earlier episodes: one almond-shaped eye (white with a round dark pupil) and a simple eyebrow that shows the feeling, a small rounded nose bump on the profile, usually no mouth; hair and beards are flat shapes. Bodies about 5.5 heads tall, tube-like arms ending in rounded mitten hands (no separate fingers), simple rounded feet, robes as clean A-line shapes. Scenery: a warm low-poly diorama look, with mountains, rocks, tents, hills and trees built from large flat-shaded triangular facets, no outlines, soft haze and cinematic lighting. Warm biblical palette: sand #D9B27C, ochre #C98A4B, terracotta #B4643C, olive #8A8F45, sage #A3A36E, dusty blue #6F8FA0, cream #F3ECDF, deep brown #2B1D12, and storm blues #1B2440, #2A2F4A and #3B3F5C for the night storm. High detail but clean and readable, crisp edges. No text, no letters, no numbers, no watermark, no signature, no logo, no frame, no border.
 
-ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly bushes, rocks and level of detail, never its people, trees or scene. Also attached: our approved MOSES sheet, only to match the outline style and the scale (do not draw Moses).
+ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly rocks and level of detail, never its people, palm trees or scene. Also attached: our approved MOSES sheet, only to match the outline style and the scale (do not draw Moses).
 
 IMAGE: a props sheet, every item a separate flat piece with wide empty space around it: (1) a desert thornbush: a low, wide shrub with twisted brown branches (#6B4A2E) and small clusters of dull green leaves (#7A8A55), about waist-high to a man, front view, standing on a small mound of sand (include the mound); (2) a large faceted desert rock in sand and ochre colors; (3) a smaller faceted desert rock; (4) a small tuft of dry desert grass. No fire, no flames, no smoke, no glow (fire is added later in animation).
 
@@ -397,7 +397,7 @@ BACKGROUND: fully transparent (PNG with a real alpha channel). Nothing behind th
 
 FORMAT: landscape 3:2 (1536×1024).
 
-AVOID: text, letters, numbers, writing, carvings or symbols on the tablets, people, hands, faces, frames, borders, cast shadows.
+AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.
 ```
 
 ### 13. `prop_plagues.png` · NICE-TO-HAVE
@@ -420,7 +420,7 @@ BACKGROUND: fully transparent (PNG with a real alpha channel). Nothing behind th
 
 FORMAT: landscape 3:2 (1536×1024).
 
-AVOID: text, letters, numbers, writing, carvings or symbols on the tablets, people, hands, faces, frames, borders, cast shadows.
+AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.
 ```
 
 ## Backgrounds (layers)
@@ -435,7 +435,7 @@ AVOID: text, letters, numbers, writing, carvings or symbols on the tablets, peop
 ```text
 Flat 2D paper-cut illustration for a cinematic 2.5D animated Bible story. Characters and props: simple bold shapes with a clean, even, dark brown outline (#2B1D12) and rounded joins; matte flat colors with exactly one soft shadow tone per color (far-side arm and leg one shade darker); no gradients on characters, no texture, no noise, no 3D rendering, no realism. Expressive but minimal cartoon faces, like our earlier episodes: one almond-shaped eye (white with a round dark pupil) and a simple eyebrow that shows the feeling, a small rounded nose bump on the profile, usually no mouth; hair and beards are flat shapes. Bodies about 5.5 heads tall, tube-like arms ending in rounded mitten hands (no separate fingers), simple rounded feet, robes as clean A-line shapes. Scenery: a warm low-poly diorama look, with mountains, rocks, tents, hills and trees built from large flat-shaded triangular facets, no outlines, soft haze and cinematic lighting. Warm biblical palette: sand #D9B27C, ochre #C98A4B, terracotta #B4643C, olive #8A8F45, sage #A3A36E, dusty blue #6F8FA0, cream #F3ECDF, deep brown #2B1D12, and storm blues #1B2440, #2A2F4A and #3B3F5C for the night storm. High detail but clean and readable, crisp edges. No text, no letters, no numbers, no watermark, no signature, no logo, no frame, no border.
 
-ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its flat, low-poly look and soft haze, never its people, trees or scene.
+ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its flat, low-poly look and soft haze, never its people, palm trees or scene.
 
 IMAGE: the SKY layer of a night storm over a high mountain, filling the whole image: heavy, dark, rolling thunderclouds built from large soft low-poly facets (#1B2440, #2A2F4A, #3B3F5C) swirling around one round opening in the clouds near the top center, where the sky behind is only a little paler (#4A5578); thin slanted streaks of rain in the lower half. Huge, dramatic and still. Sky only.
 
@@ -573,7 +573,7 @@ AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figu
 ```text
 Flat 2D paper-cut illustration for a cinematic 2.5D animated Bible story. Characters and props: simple bold shapes with a clean, even, dark brown outline (#2B1D12) and rounded joins; matte flat colors with exactly one soft shadow tone per color (far-side arm and leg one shade darker); no gradients on characters, no texture, no noise, no 3D rendering, no realism. Expressive but minimal cartoon faces, like our earlier episodes: one almond-shaped eye (white with a round dark pupil) and a simple eyebrow that shows the feeling, a small rounded nose bump on the profile, usually no mouth; hair and beards are flat shapes. Bodies about 5.5 heads tall, tube-like arms ending in rounded mitten hands (no separate fingers), simple rounded feet, robes as clean A-line shapes. Scenery: a warm low-poly diorama look, with mountains, rocks, tents, hills and trees built from large flat-shaded triangular facets, no outlines, soft haze and cinematic lighting. Warm biblical palette: sand #D9B27C, ochre #C98A4B, terracotta #B4643C, olive #8A8F45, sage #A3A36E, dusty blue #6F8FA0, cream #F3ECDF, deep brown #2B1D12, and storm blues #1B2440, #2A2F4A and #3B3F5C for the night storm. High detail but clean and readable, crisp edges. No text, no letters, no numbers, no watermark, no signature, no logo, no frame, no border.
 
-ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly look, flat facets and soft haze, never its people, trees or scene.
+ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly look, flat facets and soft haze, never its people, palm trees or scene.
 
 IMAGE: the Red Sea parted, seen from the start of the path: a straight path of dry, dark wet sand leads away into the distance through the middle of the image, between two towering vertical walls of deep water on the left and the right, built from large flat-shaded low-poly facets of deep teal and blue (#1F5F6E, #2E7F8A, #5FA7B0) with foam-white crests along their tops and fine spray; a few shells and pebbles on the sand; a deep blue-violet dusk sky in the narrow gap far above. Huge and awe-inspiring. No people.
 
@@ -596,7 +596,7 @@ AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figu
 ```text
 Flat 2D paper-cut illustration for a cinematic 2.5D animated Bible story. Characters and props: simple bold shapes with a clean, even, dark brown outline (#2B1D12) and rounded joins; matte flat colors with exactly one soft shadow tone per color (far-side arm and leg one shade darker); no gradients on characters, no texture, no noise, no 3D rendering, no realism. Expressive but minimal cartoon faces, like our earlier episodes: one almond-shaped eye (white with a round dark pupil) and a simple eyebrow that shows the feeling, a small rounded nose bump on the profile, usually no mouth; hair and beards are flat shapes. Bodies about 5.5 heads tall, tube-like arms ending in rounded mitten hands (no separate fingers), simple rounded feet, robes as clean A-line shapes. Scenery: a warm low-poly diorama look, with mountains, rocks, tents, hills and trees built from large flat-shaded triangular facets, no outlines, soft haze and cinematic lighting. Warm biblical palette: sand #D9B27C, ochre #C98A4B, terracotta #B4643C, olive #8A8F45, sage #A3A36E, dusty blue #6F8FA0, cream #F3ECDF, deep brown #2B1D12, and storm blues #1B2440, #2A2F4A and #3B3F5C for the night storm. High detail but clean and readable, crisp edges. No text, no letters, no numbers, no watermark, no signature, no logo, no frame, no border.
 
-ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly trees, hills and soft haze, never its people, trees or scene.
+ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly look, rounded hills and soft haze, never its people, palm trees or scene.
 
 IMAGE: a gentle green hillside in Galilee at sunrise, filling the whole image: a soft grassy slope in the lower half (#8A8F45, #A3A36E) with a few low-poly olive trees and small cream and gold wildflowers, a pale footpath curving up the slope, an open grassy area in the lower middle where people can stand, distant soft hills; a warm sunrise sky glowing gold and peach (#F2B544, #F7D9A0, #F3ECDF) low behind the far hills and fading to soft blue at the top. Peaceful and welcoming. The ground reaches the bottom edge.
 
@@ -665,7 +665,7 @@ AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figu
 ```text
 Flat 2D paper-cut illustration for a cinematic 2.5D animated Bible story. Characters and props: simple bold shapes with a clean, even, dark brown outline (#2B1D12) and rounded joins; matte flat colors with exactly one soft shadow tone per color (far-side arm and leg one shade darker); no gradients on characters, no texture, no noise, no 3D rendering, no realism. Expressive but minimal cartoon faces, like our earlier episodes: one almond-shaped eye (white with a round dark pupil) and a simple eyebrow that shows the feeling, a small rounded nose bump on the profile, usually no mouth; hair and beards are flat shapes. Bodies about 5.5 heads tall, tube-like arms ending in rounded mitten hands (no separate fingers), simple rounded feet, robes as clean A-line shapes. Scenery: a warm low-poly diorama look, with mountains, rocks, tents, hills and trees built from large flat-shaded triangular facets, no outlines, soft haze and cinematic lighting. Warm biblical palette: sand #D9B27C, ochre #C98A4B, terracotta #B4643C, olive #8A8F45, sage #A3A36E, dusty blue #6F8FA0, cream #F3ECDF, deep brown #2B1D12, and storm blues #1B2440, #2A2F4A and #3B3F5C for the night storm. High detail but clean and readable, crisp edges. No text, no letters, no numbers, no watermark, no signature, no logo, no frame, no border.
 
-ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly look and soft haze, never its people, trees or scene. Also attached: our approved bush props (do not draw the bush; leave room for it).
+ATTACHED: 1 style reference screenshot from our earlier episode. Copy only its low-poly look and soft haze, never its people, palm trees or scene. Also attached: our approved bush props (do not draw the bush; leave room for it).
 
 IMAGE: a quiet desert valley at the foot of a rocky mountain, filling the whole image: sand dunes and faceted rocks, a few small dry shrubs far away, the mountain slope behind; an open sandy spot in the center front, about a third of the way up from the bottom, where a bush will be placed later. The ground reaches the bottom edge.
 

@@ -55,7 +55,7 @@ const LIGHT = {
 
 const AVOID = {
 	char: 'AVOID: text, letters, numbers, labels, arrows, guide lines, grid lines, frames, borders; extra fingers, extra arms or legs, mouths (unless a pose allows a smile), realistic faces, halos, glows, cast shadows, gradients.',
-	prop: 'AVOID: text, letters, numbers, writing, carvings or symbols on the tablets, people, hands, faces, frames, borders, cast shadows.',
+	prop: 'AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.',
 	scene: 'AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.',
 	sky: 'AVOID: text, letters, numbers, ground, mountains, trees, buildings, people, birds, frames, borders; any figure, face, hand or eye in the clouds; light beams, sun discs, lightning bolts.',
 };
@@ -63,7 +63,7 @@ const AVOID = {
 // ChatGPT cannot see file names, so the "ATTACHED" sentences describe what is attached.
 const A = {
 	refs: (n, what = 'drawing style (outline, flat colors, minimal faces, proportions)') =>
-		`ATTACHED: ${n} style reference screenshot${n > 1 ? 's' : ''} from our earlier episode. Copy only ${n > 1 ? 'their' : 'its'} ${what}, never ${n > 1 ? 'their' : 'its'} people, trees or scene.`,
+		`ATTACHED: ${n} style reference screenshot${n > 1 ? 's' : ''} from our earlier episode. Copy only ${n > 1 ? 'their' : 'its'} ${what}, never ${n > 1 ? 'their' : 'its'} people, palm trees or scene.`,
 	moses: (bits = 'face, white hair, beard, robe, sash') => `ATTACHED: our approved MOSES character sheet. Keep his ${bits}, colors, proportions and scale exactly the same.`,
 	anchor: (who) =>
 		`ATTACHED: our approved MOSES character sheet as a STYLE MATCH and SCALE. Use the exact same drawing style, outline weight, proportions and level of detail, but draw ${who} as described below, not Moses.`,
@@ -141,7 +141,7 @@ const assets = [
 	{group: 'prop', file: 'prop_burning_bush.png', size: 'L', bg: 'clear', light: 'neutral', prio: 'MUST',
 		attach: ['style_ref_2.png', 'char_moses_turnaround.png'],
 		use: 'S3 the burning bush (the fire is added in code); the FIRE badge',
-		lines: [`${A.refs(1, 'low-poly bushes, rocks and level of detail')} Also attached: our approved MOSES sheet, only to match the outline style and the scale (do not draw Moses).`,
+		lines: [`${A.refs(1, 'low-poly rocks and level of detail')} Also attached: our approved MOSES sheet, only to match the outline style and the scale (do not draw Moses).`,
 			'IMAGE: a props sheet, every item a separate flat piece with wide empty space around it: (1) a desert thornbush: a low, wide shrub with twisted brown branches (#6B4A2E) and small clusters of dull green leaves (#7A8A55), about waist-high to a man, front view, standing on a small mound of sand (include the mound); (2) a large faceted desert rock in sand and ochre colors; (3) a smaller faceted desert rock; (4) a small tuft of dry desert grass. No fire, no flames, no smoke, no glow (fire is added later in animation).'], avoid: 'prop'},
 	{group: 'prop', file: 'prop_plagues.png', size: 'L', bg: 'clear', light: 'neutral', prio: 'NICE',
 		attach: ['char_moses_turnaround.png'],
@@ -188,7 +188,7 @@ const assets = [
 	{group: 'bg', file: 'bg_hillside_sunrise.png', size: 'P', bg: 'full', light: 'sunrise', prio: 'MUST',
 		attach: ['style_ref_2.png'],
 		use: 'S12 right half: Jesus and the people in warm light, S13 the 2 Corinthians 4:6 card at sunrise, S14 background glow',
-		lines: [A.refs(1, 'low-poly trees, hills and soft haze'),
+		lines: [A.refs(1, 'low-poly look, rounded hills and soft haze'),
 			'IMAGE: a gentle green hillside in Galilee at sunrise, filling the whole image: a soft grassy slope in the lower half (#8A8F45, #A3A36E) with a few low-poly olive trees and small cream and gold wildflowers, a pale footpath curving up the slope, an open grassy area in the lower middle where people can stand, distant soft hills; a warm sunrise sky glowing gold and peach (#F2B544, #F7D9A0, #F3ECDF) low behind the far hills and fading to soft blue at the top. Peaceful and welcoming. The ground reaches the bottom edge.'], avoid: 'scene'},
 	{group: 'bg', file: 'bg_rock_crack_inside.png', size: 'P', bg: 'hole', light: 'cleft', prio: 'NICE',
 		attach: ['bg_rock_crack.png', 'style_ref_2.png'],
