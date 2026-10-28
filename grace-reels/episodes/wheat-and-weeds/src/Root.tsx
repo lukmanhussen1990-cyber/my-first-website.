@@ -12,6 +12,8 @@ export const RemotionRoot: React.FC = () => (
 		<Composition id="TestNight" component={Test} durationInFrames={300} fps={30} width={1080} height={1920} defaultProps={{which: 'NIGHT'}} />
 		<Composition id="Reel" component={Reel} durationInFrames={DURATION_FRAMES} fps={30} width={1080} height={1920} defaultProps={{lite: false, muted: true}} />
 		<Composition id="Draft" component={Reel} durationInFrames={DURATION_FRAMES} fps={30} width={1080} height={1920} defaultProps={{lite: false, muted: true, noText: true}} />
+		{/* the thumbnail: the moonlit field, the weeds risen, the shadow walking away, with the title */}
+		<Composition id="Cover" component={Reel} durationInFrames={1} fps={30} width={1080} height={1920} defaultProps={{lite: false, cover: true, atTime: -99.5, only: 'COVER'}} />
 		<Composition id="SheetClose" component={Sheet} durationInFrames={1} fps={30} width={2400} height={900} defaultProps={{close: true}} />
 	</>
 );

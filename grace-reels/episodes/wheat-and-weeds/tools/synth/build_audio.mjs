@@ -147,7 +147,10 @@ function goertzelPower(x, from, to, f) {
 
 function main() {
   const tl = JSON.parse(readFileSync(P('timeline.json'), 'utf8'));
-  const b = computeBeats(tl);
+  // every voice cue and every beat, the same table the picture uses (src/lib/timeline.ts)
+  const b = { ...tl.cues, ...computeBeats(tl) };
+  // the exact length in frames (durationInSeconds is rounded to the millisecond)
+  b.total = tl.durationInFrames / tl.fps;
   const N = Math.round((tl.durationInFrames / tl.fps) * SR);
   mkdirSync(P('audio', 'stems'), { recursive: true });
   mkdirSync(P('audio', 'work'), { recursive: true });

@@ -8,8 +8,11 @@ import {Overlay} from './overlay/Overlay';
 import type {ShotDef, Transition} from './render/types';
 import {COVER, ENEMY, LOOP, OPEN} from './shots/Night';
 import {CTA, GROW, HARVEST, HOURGLASS, PULL, SOW, SPOTS, TALK, TOGETHER} from './shots/Day';
+import {PAUL, ROAD} from './shots/Road';
+import {ROOTS} from './shots/Roots';
+import {SHORE_SHOT} from './shots/Shore';
 
-export const SHOTS: ShotDef[] = [OPEN, SOW, ENEMY, GROW, TALK, PULL, TOGETHER, SPOTS, HOURGLASS, HARVEST, CTA, LOOP, COVER];
+export const SHOTS: ShotDef[] = [OPEN, SHORE_SHOT, SOW, ENEMY, GROW, TALK, PULL, ROOTS, TOGETHER, SPOTS, HOURGLASS, ROAD, PAUL, HARVEST, CTA, LOOP, COVER];
 
 export const TRANSITIONS: Transition[] = [
 	{from: 'OPEN', to: 'SHORE', at: B.s2, dur: 0.4, kind: 'dissolve'},

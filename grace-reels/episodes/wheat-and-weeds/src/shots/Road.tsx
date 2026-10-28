@@ -236,11 +236,11 @@ const buildRoom = () => {
 	return mergePlaced(parts.map((geo) => ({geo, pos: [0, 0, 0] as Vec3})));
 };
 
-const PAUL_AT: Vec3 = [-0.55, 0, -0.1];
+const PAUL_AT: Vec3 = [-0.42, 0, -0.1];
 const LAMP: Vec3 = [0.85, 0.72, -0.4];
 const paulCam = (t: number): CamState => {
 	const k = easeInOut(seg(t, B.paulCut - 0.4, B.s12 + 0.3, (u) => u));
-	return {pos: [lerp(1.4, 1.05, k), lerp(1.45, 1.35, k), lerp(3.4, 2.7, k)], target: [lerp(0.1, 0.15, k), 0.95, -0.4], fov: 40, drift: 0.7};
+	return {pos: [lerp(0.25, 0.1, k), lerp(1.45, 1.38, k), lerp(4.4, 3.8, k)], target: [-0.05, 0.92, -0.3], fov: 40, drift: 0.7};
 };
 
 // each new letter: a rolled scroll slides from the desk onto the growing pile
@@ -323,7 +323,7 @@ export const PAUL: ShotDef = {
 	camera: paulCam,
 	grade: () => ({exposure: 1.05, contrast: 1.1, saturation: 1.05, gain: [1.08, 0.98, 0.88], lift: [0.012, 0.008, 0.01], vignette: 0.6, bloom: 0.45, bloomThreshold: 0.85, grain: 0.02}),
 	fog: () => fogOf(ROOM),
-	dof: () => ({focus: 2.9, range: 0.5, aperture: 10, max: 14}),
+	dof: () => ({focus: 4.1, range: 0.7, aperture: 9, max: 12}),
 };
 
 void clamp;

@@ -81,8 +81,9 @@ export function renderMusic(b, tl) {
   block([[b.s7, b.shouldWe, CH.Dm9], [b.shouldWe, b.nay, CH.A7sus4]], { gain: 0.036, cutoff: 1300 });
   strings(str, [57, 62, 64], b.shouldWe - 0.2, b.nay, { att: 0.3, rel: 0.05, gain: 0.02, trem: 11, cutoff: 2600, cresc: tens, hard: true });
   for (let t = b.shouldWe, k = 0; t < b.nay - 0.1; t += 0.25, k++) pluck(low, k % 2 ? 45 : 38, t, 0.3 + 0.03 * k, { bright: 0.4 });
-  timp(fx, b.nay, 0.7, 49);
-  subHit(fx, b.nay, { gain: 0.4, f0: 70, f1: 32, decay: 1.4, click: 0.2 });
+  // the hit lands just after the word's attack, so "Nay" itself stays clear
+  timp(fx, b.nay + 0.12, 0.45, 49);
+  subHit(fx, b.nay + 0.12, { gain: 0.26, f0: 70, f1: 32, decay: 1.4, click: 0.2 });
   block([[b.nay, b.underground, CH.Dmlow], [b.underground, b.taresRip, CH.Gm], [b.taresRip, b.wheatRip, CH.EbD], [b.wheatRip, b.s8, CH.Gm9Bb]], { gain: 0.034, cutoff: 900 });
   strings(str, [62, 65], b.pull, b.wheatRip + 0.4, { att: 0.4, rel: 0.6, gain: 0.014, trem: 7, cutoff: 2400, cresc: tens });
   piano(pno, 74, b.wheatRip, 0.26, { dur: 1.0 });

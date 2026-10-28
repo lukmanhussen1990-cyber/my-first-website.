@@ -474,7 +474,7 @@ export function renderSfx(b, tl) {
   // ---- S7: the button, the cursor, the NAY stamp; the dive; the roots strain and tear ----
   pop(hits, b.buttonIn, 520, 0.06, 0);
   tick(hits, b.cursorHover, 0.05, 2400, 0.2);
-  stamp(hits, b.nay, 0.4);
+  stamp(hits, b.nay + 0.1, 0.28);
   whoosh(hits, b.diveStart + 0.55, { pre: 0.5, post: 0.45, f0: 900, fPeak: 300, f1: 80, gain: 0.14, panFrom: 0, panTo: 0, body: 1.2, seed: 'dive' });
   creak(hits, b.pull, b.taresRip - b.pull, { gain: 0.06, f0: 16, f1: 34, fc: 650, seed: 'strain' });
   rootTear(hits, b.taresRip, { gain: 0.16, seed: 'tear-tares' });

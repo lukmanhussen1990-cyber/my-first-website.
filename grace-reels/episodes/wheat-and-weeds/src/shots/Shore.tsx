@@ -75,7 +75,8 @@ const buildShore = () => {
 	for (let i = 0; i < 26; i++) {
 		const x = (hash(63, i) - 0.5) * 60;
 		const z = -1.5 + hash(64, i) * 14;
-		if (Math.abs(x) < 6 && z < 8) continue;
+		// keep the beach between the camera and the boat clear
+		if (Math.abs(x) < 16 && z > -3) continue;
 		rocks.push({geo: rock(400 + i, '#a8977c'), pos: [x, shoreHeight(x, z), z], rot: hash(65, i) * 6, scale: 0.4 + hash(66, i) * 0.7});
 	}
 	const clouds: Parameters<typeof mergePlaced>[0] = [];
@@ -192,7 +193,8 @@ const crowdSpots = (): CrowdSpot[] => {
 const BOAT_AT: Vec3 = [0.4, 0, -6.2];
 const shoreCam = (t: number): CamState => {
 	const k = easeInOut(seg(t, B.s2 - 0.3, B.s3 + 0.3, (x) => x));
-	return {pos: [lerp(1.6, 0.9, k), 2.25, lerp(17.5, 16.6, k)], target: [lerp(0.6, 0.4, k), 1.05, BOAT_AT[2]], fov: 19, drift: 0.8};
+	// high enough to look over the crowd's heads at the boat
+	return {pos: [lerp(1.6, 0.9, k), 4.0, lerp(17.5, 16.6, k)], target: [lerp(0.6, 0.4, k), 0.8, BOAT_AT[2]], fov: 19, drift: 0.8};
 };
 
 const ShoreContent: React.FC<{t: number; lite: boolean}> = ({t, lite}) => {
@@ -265,5 +267,5 @@ export const SHORE_SHOT: ShotDef = {
 	grade: () => ({...GOLDEN_GRADE, exposure: 1.0}),
 	fog: () => fogOf(SHORE),
 	anchors: () => ({boat: [BOAT_AT[0] + 0.3, 1.6, BOAT_AT[2]]}),
-	dof: () => ({focus: 23.5, range: 3, aperture: 7, max: 12}),
+	dof: () => ({focus: 19, range: 6, aperture: 6, max: 10}),
 };
