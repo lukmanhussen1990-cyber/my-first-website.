@@ -4,6 +4,7 @@ import '@fontsource/cormorant-garamond/700.css';
 import '@fontsource/cormorant-garamond/700-italic.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
 
 export const BRAND = {
 	cream: '#F3ECDF',
@@ -28,4 +29,5 @@ export const FONT_FACES = [
 	`italic 700 66px "Cormorant Garamond"`,
 	`normal 500 22px Inter`,
 	`normal 600 22px Inter`,
+	`normal 700 22px Inter`,
 ];

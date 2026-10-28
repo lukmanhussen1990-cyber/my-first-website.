@@ -5,6 +5,8 @@ import {Lab} from '../scratch/Lab';
 import {SunsetRule} from '../episodes/sunset-rule/src/Episode';
 import {TL} from '../episodes/sunset-rule/src/timeline';
 import {SunsetRuleCover} from '../episodes/sunset-rule/src/Cover';
+import {ThreeTimesADay} from '../episodes/3-times-a-day/src/Episode';
+import {TL as TL3} from '../episodes/3-times-a-day/src/timeline';
 
 export const RemotionRoot: React.FC = () => (
 	<>
@@ -17,5 +19,6 @@ export const RemotionRoot: React.FC = () => (
 		<Composition id="Lab" component={Lab} durationInFrames={1} fps={30} width={1080} height={1920} />
 		<Composition id="SunsetRule" component={SunsetRule} durationInFrames={TL.durationInFrames} fps={30} width={1080} height={1920} />
 		<Still id="SunsetRuleCover" component={SunsetRuleCover} width={1080} height={1920} />
+		<Composition id="ThreeTimesADay" component={ThreeTimesADay} durationInFrames={TL3.durationInFrames} fps={30} width={1080} height={1920} />
 	</>
 );

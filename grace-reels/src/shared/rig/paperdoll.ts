@@ -16,7 +16,7 @@ export type Look = {
 	beard?: 'none' | 'short' | 'full';
 	beardColor?: string;
 	grey?: number;
-	head?: 'none' | 'cloth' | 'wrap';
+	head?: 'none' | 'cloth' | 'wrap' | 'crown';
 	headColor?: string;
 	headBand?: string;
 	outfit?: 'robe' | 'hoodie';
@@ -24,6 +24,7 @@ export type Look = {
 	sleeves?: 'long' | 'elbow' | 'cap';
 	sleeveColor?: string;
 	sash?: string;
+	trim?: string; // a band along the robe hem, neckline and cuffs
 	rope?: string;
 	pants?: string;
 	shoes?: string;
@@ -39,6 +40,7 @@ export type Pose = {
 	lean?: number;
 	sit?: boolean;
 	crouch?: number;
+	kneel?: number; // 0 standing .. 1 kneeling upright (blends, for a slow kneel)
 	headTilt?: number;
 	yaw?: number;
 	gaze?: V;
@@ -189,9 +191,11 @@ type Skel = {
 	kneeF?: V;
 	sit: boolean;
 	b: number;
+	kneel: number;
 };
 
-const skeleton = (look: Look, pose: Pose): Skel => {
+const skeleton = (look: Look, pose: Pose): Skel => kneeling(look, pose);
+const skeletonStand = (look: Look, pose: Pose): Skel => {
 	const H = 1000 * (look.height ?? 1);
 	const hs = look.headScale ?? 1;
 	const b = look.build ?? 1;
@@ -224,13 +228,46 @@ const skeleton = (look: Look, pose: Pose): Skel => {
 		kneeN = [footN[0] * 0.55 + 10 + crouch * 40, kh];
 		kneeF = [footF[0] * 0.55 - 6 + crouch * 30, kh];
 	}
-	return {H, hip, shoulderC, neck, head, shN, shF, lean, footN, footF, kneeN, kneeF, sit, b};
+	return {H, hip, shoulderC, neck, head, shN, shF, lean, footN, footF, kneeN, kneeF, sit, b, kneel: 0};
+};
+
+// upright kneeling: thighs down to knees on the ground, shins and feet back along the floor
+const kneeling = (look: Look, pose: Pose): Skel => {
+	const k = skeletonStand(look, pose);
+	const q = Math.max(0, Math.min(1, pose.kneel ?? 0));
+	if (q <= 0 || k.sit) return k;
+	const H = k.H;
+	const L = (a: V, b: V): V => [a[0] + (b[0] - a[0]) * q, a[1] + (b[1] - a[1]) * q];
+	const hip = L(k.hip, [-12, -0.285 * H]);
+	const dy = hip[1] - k.hip[1];
+	const up = (p: V): V => [p[0], p[1] + dy];
+	return {
+		...k,
+		hip,
+		shoulderC: up(k.shoulderC),
+		neck: up(k.neck),
+		head: up(k.head),
+		shN: up(k.shN),
+		shF: up(k.shF),
+		kneeN: L(k.kneeN!, [26, -0.045 * H]),
+		kneeF: L(k.kneeF!, [6, -0.042 * H]),
+		footN: L(k.footN, [-0.24 * H, -0.02 * H]),
+		footF: L(k.footF, [-0.26 * H, -0.018 * H]),
+		kneel: q,
+	};
 };
 
 // ---------- feet, legs ----------
-const drawFoot = (g: Ctx, o: DrawOpts, look: Look, at: V, far: boolean, lift = 0) => {
+const drawFoot = (g: Ctx, o: DrawOpts, look: Look, at: V, far: boolean, lift = 0, kneel = 0) => {
 	const s = 1;
 	const skin = far ? shadowTone(look.skin) : look.skin;
+	if (look.outfit === 'hoodie' && kneel > 0.5) {
+		const shoe = look.shoes ?? '#F1EEE6';
+		const pts: V[] = [[at[0] - 58, at[1] - 2], [at[0] + 14, at[1] - 2], [at[0] + 18, at[1] - 36], [at[0] - 14, at[1] - 78], [at[0] - 62, at[1] - 62]];
+		paint(g, o, shapeOf(pts, 0.4), far ? shadowTone(shoe) : shoe, 40);
+		strokeLine(g, [[at[0] - 56, at[1] - 8], [at[0] + 12, at[1] - 8]], o.ol * 0.7, OUTLINE);
+		return;
+	}
 	if (look.outfit === 'hoodie') {
 		const shoe = look.shoes ?? '#F1EEE6';
 		const pts: V[] = [
@@ -295,15 +332,19 @@ const robePoints = (k: Skel, pose: Pose) => {
 		] as V[];
 	}
 	const hemY = -0.034 * H;
+	const q = k.kneel;
+	const kn = k.kneeN!;
+	const ft = k.footF;
+	const hem = (s0: V, s1: V): V => [s0[0] + (s1[0] - s0[0]) * q, s0[1] + (s1[1] - s0[1]) * q];
 	return [
 		R([32, -8]),
 		R([60 * b, 8]),
 		R([74 * b, 84]),
 		W([84 * b, -40]),
-		[148 * b + sw, hemY + 6] as V,
-		[70 + sw * 0.8, hemY + 18] as V,
-		[-60 + sw * 0.6, hemY + 16] as V,
-		[-140 * b + sw * 0.5, hemY + 4] as V,
+		hem([148 * b + sw, hemY + 6], [kn[0] + 72 * b, -12]),
+		hem([70 + sw * 0.8, hemY + 18], [kn[0] - 10, 2]),
+		hem([-60 + sw * 0.6, hemY + 16], [ft[0] + 70, 2]),
+		hem([-140 * b + sw * 0.5, hemY + 4], [ft[0] - 46 * b, -20]),
 		W([-92 * b, -40]),
 		R([-82 * b, 90]),
 		R([-70 * b, 8]),
@@ -321,7 +362,11 @@ const drawRobe = (g: Ctx, o: DrawOpts, look: Look, k: Skel, pose: Pose) => {
 	const fold = shadowTone(look.robe);
 	const {hip, H} = k;
 	const sw = (pose.sway ?? 0) * 18 + (pose.stride ?? 0) * 22;
-	if (!k.sit) {
+	if (!k.sit && k.kneel > 0.5) {
+		const kn = k.kneeN!;
+		strokeCurve(g, [add(hip, [40, 20]), [kn[0] + 30, kn[1] - 60]], o.ol * 0.9, fold, 0.8);
+		strokeCurve(g, [add(hip, [-40, 60]), [kn[0] - 120, -40], [k.footF[0] + 40, -14]], o.ol * 0.8, fold, 0.7);
+	} else if (!k.sit) {
 		const hemY = -0.034 * H;
 		strokeCurve(g, [add(hip, [40, 10]), add(hip, [64 + sw * 0.3, 0.2 * H]), [96 + sw * 0.7, hemY + 4]], o.ol * 0.9, fold, 0.9);
 		strokeCurve(g, [add(hip, [-10, 30]), add(hip, [-6 + sw * 0.3, 0.22 * H]), [4 + sw * 0.6, hemY + 14]], o.ol * 0.9, fold, 0.8);
@@ -330,6 +375,11 @@ const drawRobe = (g: Ctx, o: DrawOpts, look: Look, k: Skel, pose: Pose) => {
 		const kn = k.kneeN!;
 		strokeCurve(g, [[kn[0] - 30, kn[1] + 10], [kn[0] - 10, kn[1] + 120], [kn[0] - 20, -50]], o.ol * 0.8, fold, 0.8);
 		strokeCurve(g, [add(hip, [40, -30]), [kn[0] - 60, kn[1] - 20]], o.ol * 0.8, fold, 0.6);
+	}
+	if (look.trim) {
+		// gold band along the hem and the neckline (half of the stroke falls inside the clip)
+		strokeCurve(g, [pts[3], pts[4], pts[5], pts[6], pts[7], pts[8]], 44, look.trim, 1);
+		strokeCurve(g, [pts[11], pts[0]], 30, look.trim, 1);
 	}
 	g.restore();
 	return pts;
@@ -462,6 +512,7 @@ const drawArm = (g: Ctx, o: DrawOpts, look: Look, k: Skel, sh: V, ap: ArmPose, f
 		if (look.outfit !== 'hoodie') {
 			const cuff = shapeOf([add(wrist, mul(n, -w * 0.62)), add(add(wrist, mul(d, 14)), mul(n, -w * 0.7)), add(add(wrist, mul(d, 14)), mul(n, w * 0.7)), add(wrist, mul(n, w * 0.62)), add(wrist, mul(d, -30))], 0.3);
 			paint(g, o, cuff, sleeve, 40);
+			if (look.trim) strokeLine(g, [add(add(wrist, mul(d, 2)), mul(n, -w * 0.62)), add(add(wrist, mul(d, 2)), mul(n, w * 0.62))], 16, far ? shadowTone(look.trim) : look.trim, 'butt');
 		} else {
 			strokeLine(g, [add(wrist, mul(n, -w * 0.5)), add(wrist, mul(n, w * 0.5))], o.ol, OUTLINE);
 		}
@@ -679,6 +730,20 @@ const drawHead = (g: Ctx, o: DrawOpts, look: Look, h: HeadGeo, pose: Pose) => {
 	if (look.head === 'cloth') {
 		const band = look.headBand ?? shadowTone(look.headColor ?? '#CDB890');
 		strokeCurve(g, [[lonX(h, -1.4, 1.0), C[1] - ry * 0.28], [lonX(h, -0.4, 1.0), C[1] - ry * 0.52], [lonX(h, 0.6, 1.02), C[1] - ry * 0.4]], 14, band);
+	} else if (look.head === 'crown') {
+		// a tall gold crown, slightly flared, with a crenellated rim and one jewel
+		const col = look.headColor ?? '#D8A64A';
+		const x0 = lonX(h, -1.0, 0.9);
+		const x1 = lonX(h, 1.0, 0.9);
+		const yb = C[1] - ry * 0.5;
+		const yt = C[1] - ry * 1.95;
+		const teeth: V[] = [];
+		for (let i = 0; i <= 8; i++) teeth.push([x1 + (x0 - x1 - 16) * (i / 8) + 8, yt - (i % 2 ? 0 : 26)]);
+		const crown = shapeOf([[x0 - 6, yb], [x1 + 6, yb], [x1 + 8, yt], ...teeth, [x0 - 8, yt]], 0.05);
+		paint(g, o, crown, col, rx * 1.8);
+		strokeLine(g, [[x0 - 2, yb - 26], [x1 + 2, yb - 26]], o.ol * 0.8, OUTLINE);
+		const jx = lonX(h, 0.1, 0.92);
+		paint(g, o, ellipse([jx, (yb + yt) / 2 + 6], 13, 16), '#B23A48', 16);
 	} else if (look.head === 'wrap') {
 		const col = look.headColor ?? '#D9C9A0';
 		const wrap = shapeOf([[C[0] - rx * 1.02, C[1] - ry * 0.32], [C[0] - rx * 0.7, C[1] - ry * 1.18], [C[0] + rx * 0.4, C[1] - ry * 1.24], [C[0] + rx * 1.04, C[1] - ry * 0.4], [C[0] + rx * 0.2, C[1] - ry * 0.5]], 0.5);
@@ -848,13 +913,15 @@ export const drawFigure = (g: Ctx, look: Look, pose: Pose, o: DrawOpts): FigureI
 	if (!pose.backHand && !pose.noArms) farInfo = farArm();
 	if (hoodie) {
 		drawLeg(g, o, look, add(k.hip, [-20, 0]), k.kneeF!, k.footF, true);
-		drawFoot(g, o, look, add(k.footF, [-30, 0]), true);
+		drawFoot(g, o, look, add(k.footF, [-30, 0]), true, 0, k.kneel);
 		drawLeg(g, o, look, add(k.hip, [20, 0]), k.kneeN!, k.footN, false);
-		drawFoot(g, o, look, add(k.footN, [-26, 0]), false);
+		drawFoot(g, o, look, add(k.footN, [-26, 0]), false, 0, k.kneel);
 		drawHoodie(g, o, look, k);
 	} else {
-		drawFoot(g, o, look, k.footF, true, pose.stride && pose.stride < 0 ? 0 : 0);
-		drawFoot(g, o, look, k.footN, false);
+		if (k.kneel < 0.6) {
+			drawFoot(g, o, look, k.footF, true, pose.stride && pose.stride < 0 ? 0 : 0);
+			drawFoot(g, o, look, k.footN, false);
+		}
 		drawRobe(g, o, look, k, pose);
 		drawSash(g, o, look, k, pose);
 	}
