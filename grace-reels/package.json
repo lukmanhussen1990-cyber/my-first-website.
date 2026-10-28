@@ -1,0 +1,28 @@
+{
+  "name": "grace-reels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GRACE IN MOTION reels — 100% code motion graphics (Remotion)",
+  "scripts": {
+    "studio": "remotion studio",
+    "audio": "node scripts/synth.mjs",
+    "stills": "node scripts/stills.mjs",
+    "render:vertical": "remotion render ThankYou1KVertical out/thank-you-1k_vertical.mp4 --codec=h264 --crf=16 --pixel-format=yuv420p --audio-codec=aac --gl=swangle",
+    "render:square": "remotion render ThankYou1KSquare out/thank-you-1k_square.mp4 --codec=h264 --crf=16 --pixel-format=yuv420p --audio-codec=aac --gl=swangle",
+    "render": "npm run audio && npm run render:vertical && npm run render:square"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "5.3.0",
+    "@fontsource/inter": "5.3.0",
+    "@remotion/cli": "4.0.539",
+    "@remotion/fonts": "4.0.539",
+    "@remotion/motion-blur": "4.0.539",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "7.0.2"
+  }
+}
