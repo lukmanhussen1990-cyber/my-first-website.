@@ -160,3 +160,54 @@ cinematic light:
   shapes with silver-green leaves where the moon touches them, and a line of torches in warm orange.
 - **Feast (daytime):** the reference's bright, warm palette.
 - **Jesus** is always the calmest and brightest point in the frame.
+
+## 10. "The Face of God" (episode 60): storm, holy light and lessons from "Friend"
+
+Re-checked for this episode: the 89 reference frames (1 per second) and our own "They Never Died" render
+(73 frames, 1 per second). What made never-died work, and what we keep:
+- **A dramatic first frame with the title on top**, the voice from frame 0, no intro.
+- **Holy light is the brightest thing on screen**: a warm white-gold beam with bloom, gold dust and a
+  glowing pool on the ground; people are lit by it at the edges (rim light).
+- **The badge tracker** under the captions (round gold-ringed badges that fill one by one), reused here as
+  three badges: FIRE, SEA and FACE.
+- Characters in side profile, low-poly palms and rocks, warm haze, long soft shadows.
+
+New looks for this episode (same paper-cut people, same low-poly world):
+- **Night storm on Sinai:** storm blues `#1B2440`, `#2A2F4A`, `#3B3F5C`; granite `#4A4440` to `#6B625A`
+  with cool blue edge light; lightning as white-blue flashes `#DCE8FF` that light the rock edges for a
+  frame or two; slanted rain streaks and wind-blown dust.
+- **God's glory (code only):** a white-gold core `#FFF7E2` falling off through `#FFD98A` and `#F2B544` to
+  amber, with god rays, bloom, a heat-shimmer edge and floating gold specks. **Never a figure, face, hand
+  or eye**, never a shape in the clouds. In the clift it is a wide rushing river of light; afterwards,
+  long fading trails like a comet's tail.
+- **Moses' shining face:** a soft, pulsing white-gold glow on the face only, which also lights the faces
+  of the people near him.
+- **Morning on the mountain path and in the camp:** warm sand and ochre, a pale blue sky, long soft
+  shadows (the reference's daytime palette).
+- **The upper room (John 14):** reuse the Friend room by lamplight.
+- **The end (2 Corinthians 4:6):** a warm gold sunrise, the warmest grade of the reel.
+
+Lessons from "Friend" for the prompts:
+1. **Paint the ground down to the bottom edge** of every scenery layer and keep painted paths clearly
+   visible; in Friend the torch line first floated above the trees and the room had a black strip under the
+   floor until they were rebuilt in code.
+2. **No painted moon, sun or bright spot where a head will be.** A bright disc behind a head reads as a
+   halo. Here, the light in the sky is only an opening in the clouds; the glow is added in code.
+3. Ask for **big, sharp close-ups** of faces that the camera pushes in on (close-ups go soft when enlarged).
+4. Keep **one figure height** across a character's sheets, with the feet on one ground line.
+5. Leave **holes as transparency** (for example the inside of the rock cleft), or flat magenta `#FF00FF` if
+   transparency fails, so a character can stand inside them.
+6. Draw characters and props in **neutral, even light**; storm light, lightning, glory and sunrise are
+   added in animation.
+
+Style references for this episode (`episodes/face-of-god/style_refs/`, all from never-died, no text):
+
+| File | Frame | Shows |
+|---|---|---|
+| `style_ref_1.png` | 44 s | Close-up: a bearded man looking up with one hand raised, mitten hands, flat robe |
+| `style_ref_2.png` | 21 s | Wide diorama: river, palms, faceted rocks, two figures walking, soft haze |
+| `style_ref_3.png` | 56 s | Group: Moses (white hair and beard, red-brown robe), Jesus and Elijah on a rocky height |
+
+Character references copied next to them: `ref_moses.png` (the never-died Moses, side view),
+`ref_jesus_turnaround.png` and `ref_jesus_poses_b.png` (Jesus from Friend), and `ref_disciples_seated.png`
+(the Friend disciples; Philip is the one in the mustard-yellow robe).
