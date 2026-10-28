@@ -398,7 +398,7 @@ def s1_props(t, char):
         return
     arm.hide_render = False
     ob('NeighbourCuff').hide_render = False
-    M = cam.matrix_world
+    M = cam.matrix_basis
     right = M.to_3x3() @ Vector((1, 0, 0))
     up = M.to_3x3() @ Vector((0, 1, 0))
     fwd = M.to_3x3() @ Vector((0, 0, -1))
@@ -1138,7 +1138,7 @@ def studio_props(t):
     a3.scale = (0.8, 0.8, ease(clamp01((t - 30.80) / 0.2), 'back') * 0.8)
     so = O_['S_Stream']
     if tip > 25:
-        M = O_['S_Tank'].matrix_world
+        M = O_['S_Tank'].matrix_basis
         lip = M @ Vector((0, -0.75, 0.42))
         pts = []
         for k in range(24):
@@ -1182,7 +1182,7 @@ def s9c_char(t):
 
 def flush_fx(t, t_on, t_off, strength=1.0):
     if t_on <= t <= t_off:
-        M = ob('Tank').matrix_world
+        M = ob('Tank').matrix_basis
         lip = M @ Vector((0, -0.40, 0.42))
         stream('Stream', t, lip, (0.0, -0.02, SEAT_TOP + 0.02), 0.035 * strength, wobble=0.02)
         splash(t, t_on + 0.15, t_off, (0.0, 0.0, SEAT_TOP + 0.03), int(160 * strength), speed=1.5 * strength,
@@ -1222,7 +1222,7 @@ def s10_props(t, char):
     d = fxp('drops')
     P = np.zeros((d.n, 3)); S = np.zeros(d.n)
     vis = False
-    M = ob('Tank').matrix_world
+    M = ob('Tank').matrix_basis
     lip = M @ Vector((0, -0.40, 0.40))
     for k in range(3):
         tb = 33.10 + k * 0.22
@@ -1272,14 +1272,14 @@ def s11_props(t, char):
     for k, seg in enumerate(segs):
         t_in = 36.30 + (len(segs) - 1 - k) * 0.062
         if t_in - 0.02 <= t <= t_in + 0.45 and k % 3 == 0:
-            poof(k_poof % 5, t, t_in, tuple(seg.matrix_world.to_translation()), size=0.9, dur=0.45)
+            poof(k_poof % 5, t, t_in, tuple(seg.matrix_basis.to_translation()), size=0.9, dur=0.45)
             k_poof += 1
     # huge blast of water
     if 37.30 <= t <= 38.55:
         flush_fx(t, 37.30, 38.55, strength=2.2)
         o = ob('Jet')
         o.hide_render = False
-        a = segs[-1].matrix_world.to_translation() if segs else Vector((0, 0.45, 2.4))
+        a = segs[-1].matrix_basis.to_translation() if segs else Vector((0, 0.45, 2.4))
         pts = [tuple(Vector(a).lerp(Vector((0.0, 0.0, TANK_Z + 0.4)), u)) for u in np.linspace(0, 1, 24)]
         FX.set_curve(o, pts, radius=1.0, radii=[0.06] * 24)
         splash(t, 37.30, 38.4, (0.0, -0.1, SEAT_TOP + 0.4), 260, speed=3.2, size=0.022, seed=19, spread=1.6, up=1.6)

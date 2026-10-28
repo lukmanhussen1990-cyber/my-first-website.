@@ -81,7 +81,14 @@ for n, f in enumerate(frames):
     t = f / A.FPS
     sh = S.shot_at(t)
     # spring pre-roll when entering a shot or jumping
-    if sh is not cur_shot or last_f is None or f != last_f + 1:
+    if sh is cur_shot and last_f is not None and last_f < f <= last_f + 8 and not NOSIM:
+        # small skip inside the same shot: just advance the springs through the skipped frames
+        for ff in range(last_f + 1, f):
+            tt = ff / A.FPS
+            Pp = sh.char(tt) if sh.char else None
+            if Pp is not None:
+                char.pose(tt, Pp, sim=True)
+    elif sh is not cur_shot or last_f is None or f != last_f + 1:
         char.springs.reset()
         if not NOSIM:
             t_pre = max(sh.t0 - 0.5, t - 1.2)
@@ -101,7 +108,8 @@ for n, f in enumerate(frames):
         sk = char.pose(t, P, sim=not NOSIM)
         sk.apply()
     S.apply_shot(t, sh, char)
-    bpy.context.view_layer.update()
+    if os.environ.get('FULL_UPDATE'):
+        bpy.context.view_layer.update()
     # overlay anchors
     ov = []
     fpx = cam.data.lens / cam.data.sensor_height * scn.render.resolution_y
@@ -113,14 +121,19 @@ for n, f in enumerate(frames):
     for o in items:
         d = dict(o)
         if 'world' in d:
-            co = world_to_camera_view(scn, cam, Vector(d['world']))
-            d['x'] = co.x * scn.render.resolution_x
-            d['y'] = (1 - co.y) * scn.render.resolution_y
-            d['behind'] = co.z < 0
-            d['depth'] = co.z
+            # project with the camera's own basis (no depsgraph update needed)
+            Mc = cam.matrix_basis
+            v = Mc.inverted() @ Vector(d['world'])
+            zc = -v.z
+            Hr, Wr = scn.render.resolution_y, scn.render.resolution_x
+            fz = fpx / max(1e-4, zc)
+            d['x'] = Wr / 2 + v.x * fz
+            d['y'] = Hr / 2 - v.y * fz
+            d['behind'] = zc < 0
+            d['depth'] = zc
             d['fpx'] = fpx
             if d.get('type') == 'face':
-                d['r'] = d['radius'] * fpx / max(0.05, co.z)
+                d['r'] = d['radius'] * fpx / max(0.05, zc)
             del d['world']
         ov.append(d)
     with open(os.path.join(OUT, f'f_{f:05d}.json'), 'w') as fh:
