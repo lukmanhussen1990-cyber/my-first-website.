@@ -1,0 +1,29 @@
+{
+  "name": "grace-reels-friend",
+  "private": true,
+  "description": "Grace in Motion · Friend (idea 44, GPT Image episode)",
+  "scripts": {
+    "studio": "remotion studio",
+    "audio": "node tools/synth/build_audio.mjs",
+    "typecheck": "tsc --noEmit",
+    "animatic": "remotion render Animatic out/animatic_friend.mp4 --gl=swangle --codec=h264 --crf=23",
+    "render": "remotion render Reel out/reel_friend.mp4 --gl=swangle --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "5.3.0",
+    "@fontsource/inter": "5.3.0",
+    "@react-three/fiber": "9.8.2",
+    "@remotion/cli": "4.0.539",
+    "@remotion/motion-blur": "4.0.539",
+    "@remotion/three": "4.0.539",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.539",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/three": "0.186.0",
+    "typescript": "5.9.3"
+  }
+}

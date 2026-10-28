@@ -1,0 +1,399 @@
+[
+  {
+    "n": 1,
+    "group": "char",
+    "file": "char_moses_turnaround.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "ref_moses.png",
+      "ref_jesus_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "design master for Moses and the style anchor for every new image; S1–S15"
+  },
+  {
+    "n": 2,
+    "group": "char",
+    "file": "char_moses_poses_a.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "char_moses_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S1 the opening on the ledge, S2 shielding his eyes, S4 kneeling to ask, S5 bowed low; the cover"
+  },
+  {
+    "n": 3,
+    "group": "char",
+    "file": "char_moses_poses_b.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "char_moses_turnaround.png",
+      "char_moses_poses_a.png"
+    ],
+    "use": "S6 pressed into the cleft, S7 peeking out, S8 walking down with the tablets, S10 the veil, S12 hidden in the rock"
+  },
+  {
+    "n": 4,
+    "group": "char",
+    "file": "char_moses_parts.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "char_moses_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "bone rig: breathing, head turns, the beard, hair, sash and robe hem whipping in the storm wind"
+  },
+  {
+    "n": 5,
+    "group": "char",
+    "file": "char_aaron.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "char_moses_turnaround.png",
+      "style_ref_3.png"
+    ],
+    "use": "S9 the camp: Aaron stops, steps back and shields his eyes"
+  },
+  {
+    "n": 6,
+    "group": "char",
+    "file": "char_israelites_group1.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "char_moses_turnaround.png",
+      "char_aaron.png",
+      "style_ref_3.png"
+    ],
+    "use": "S9 the people step back and shield their eyes; a child peeks out from behind her mother"
+  },
+  {
+    "n": 7,
+    "group": "char",
+    "file": "char_jesus_poses_c.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "ref_jesus_turnaround.png",
+      "ref_jesus_poses_b.png"
+    ],
+    "use": "S11 at the table pointing to himself, S12 facing us with open hands and a child in his arms, S13 the push-in on his face, the FACE badge"
+  },
+  {
+    "n": 8,
+    "group": "char",
+    "file": "char_moses_glowing.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "glowface",
+    "priority": "MUST",
+    "source": "gpt",
+    "attach": [
+      "char_moses_turnaround.png",
+      "char_moses_poses_b.png"
+    ],
+    "use": "S8 the close-up of his shining face on the way down, S9 the camp, S10 just before the veil"
+  },
+  {
+    "n": 9,
+    "group": "char",
+    "file": "char_israelites_group2.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "source": "gpt",
+    "attach": [
+      "char_israelites_group1.png",
+      "char_moses_turnaround.png"
+    ],
+    "use": "S9 the camp before they see his face; S12 people walking up to Jesus, unafraid"
+  },
+  {
+    "n": 10,
+    "group": "char",
+    "file": "char_philip.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "source": "gpt",
+    "attach": [
+      "ref_disciples_seated.png",
+      "ref_jesus_turnaround.png"
+    ],
+    "use": "S11 Philip at the supper (\"Shew us the Father\"); the other disciples are reused from Friend"
+  },
+  {
+    "n": 11,
+    "group": "prop",
+    "file": "prop_tablets_veil.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "char_moses_turnaround.png",
+      "style_ref_1.png"
+    ],
+    "use": "S8 the two tablets, S10 the veil (animated as cloth), S1–S5 the staff"
+  },
+  {
+    "n": 12,
+    "group": "prop",
+    "file": "prop_burning_bush.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "style_ref_2.png",
+      "char_moses_turnaround.png"
+    ],
+    "use": "S3 the burning bush (the fire is added in code); the FIRE badge"
+  },
+  {
+    "n": 13,
+    "group": "prop",
+    "file": "prop_plagues.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "clear",
+    "light": "neutral",
+    "priority": "NICE",
+    "source": "code",
+    "attach": [
+      "char_moses_turnaround.png"
+    ],
+    "use": "S3 the quick flash of plagues: frogs and hail"
+  },
+  {
+    "n": 14,
+    "group": "bg",
+    "file": "bg_sinai_storm_sky.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "stormsky",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "style_ref_2.png"
+    ],
+    "use": "S1, S2, S4, S5 the night storm over Sinai (the glory light breaks through the opening in code); the cover"
+  },
+  {
+    "n": 15,
+    "group": "bg",
+    "file": "bg_sinai_storm_far.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "stormrock",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "bg_sinai_storm_sky.png",
+      "style_ref_2.png"
+    ],
+    "use": "S1, S2, S4, S5 distant peaks behind the summit (parallax)"
+  },
+  {
+    "n": 16,
+    "group": "bg",
+    "file": "bg_sinai_ledge.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "stormrock",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "bg_sinai_storm_far.png",
+      "style_ref_2.png"
+    ],
+    "use": "S1 Moses on the ledge (the speed-ramp push-in), S2, S4 kneeling, S5; the cover"
+  },
+  {
+    "n": 17,
+    "group": "bg",
+    "file": "bg_rock_crack.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "hole",
+    "light": "cleft",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "bg_sinai_ledge.png",
+      "style_ref_2.png"
+    ],
+    "use": "S6 the clift of the rock (Moses inside, the river of light rushing past), S7, S12 left half"
+  },
+  {
+    "n": 18,
+    "group": "bg",
+    "file": "bg_mountain_path.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "full",
+    "light": "morning",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "bg_sinai_ledge.png",
+      "style_ref_2.png"
+    ],
+    "use": "S8 Moses walks down the mountain path (slow tracking shot)"
+  },
+  {
+    "n": 19,
+    "group": "bg",
+    "file": "bg_camp_mid.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "morning",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "bg_mountain_path.png",
+      "style_ref_2.png"
+    ],
+    "use": "S9 the camp steps back, S10 the veil"
+  },
+  {
+    "n": 20,
+    "group": "bg",
+    "file": "bg_sea_walls.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "sea",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "style_ref_2.png"
+    ],
+    "use": "S3 the sea split in two (the water moves in code); the SEA badge"
+  },
+  {
+    "n": 21,
+    "group": "bg",
+    "file": "bg_hillside_sunrise.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "sunrise",
+    "priority": "MUST",
+    "source": "code",
+    "attach": [
+      "style_ref_2.png"
+    ],
+    "use": "S12 right half: Jesus and the people in warm light, S13 the 2 Corinthians 4:6 card at sunrise, S14 background glow"
+  },
+  {
+    "n": 22,
+    "group": "bg",
+    "file": "bg_rock_crack_inside.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "hole",
+    "light": "cleft",
+    "priority": "NICE",
+    "source": "code",
+    "attach": [
+      "bg_rock_crack.png",
+      "style_ref_2.png"
+    ],
+    "use": "S6 the tight shot from inside the cleft, looking out at the river of light"
+  },
+  {
+    "n": 23,
+    "group": "bg",
+    "file": "bg_camp_far.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "full",
+    "light": "morning",
+    "priority": "NICE",
+    "source": "code",
+    "attach": [
+      "bg_camp_mid.png",
+      "bg_mountain_path.png"
+    ],
+    "use": "S9 the mountain and the plain behind the camp (parallax)"
+  },
+  {
+    "n": 24,
+    "group": "bg",
+    "file": "bg_desert_bush.png",
+    "width": 1024,
+    "height": 1536,
+    "background": "full",
+    "light": "desert",
+    "priority": "NICE",
+    "source": "code",
+    "attach": [
+      "prop_burning_bush.png",
+      "style_ref_2.png"
+    ],
+    "use": "S3 the desert behind the burning bush"
+  },
+  {
+    "n": 25,
+    "group": "bg",
+    "file": "bg_sinai_near_rocks.png",
+    "width": 1536,
+    "height": 1024,
+    "background": "layer",
+    "light": "stormrock",
+    "priority": "NICE",
+    "source": "code",
+    "attach": [
+      "bg_sinai_ledge.png"
+    ],
+    "use": "S1, S4, S6 foreground rocks close to the lens (blurred in code)"
+  }
+]

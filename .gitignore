@@ -1,0 +1,54 @@
+node_modules/
+
+# Reference reel and its 1 fps frames stay local: third-party video, only needed for the style study.
+grace-reels/reference/*.mp4
+grace-reels/reference/frames/
+
+# Remotion / audio work files
+grace-reels/episodes/never-died/audio/work/
+grace-reels/episodes/never-died/out/*.mp4
+grace-reels/episodes/never-died/.cache/
+
+__pycache__/
+*.pyc
+
+# Large intermediate audio (rebuilt by tools/build_voice_timeline.py and npm run audio)
+grace-reels/episodes/never-died/audio/stems/
+grace-reels/episodes/never-died/audio/voice_track.wav
+
+# Final render chunks (joined into out/reel_never-died.mp4)
+grace-reels/episodes/never-died/out/chunks/
+# Full-size check stills (JPEG copies are committed)
+grace-reels/episodes/never-died/out/stills/*.png
+
+# Friend (idea 44): rebuilt work files and renders
+grace-reels/episodes/friend/audio/stems/
+grace-reels/episodes/friend/audio/voice_track.wav
+grace-reels/episodes/friend/audio/work/
+grace-reels/episodes/friend/out/*.mp4
+grace-reels/episodes/friend/out/chunks/
+grace-reels/episodes/friend/out/stills/*.png
+grace-reels/episodes/friend/.cache/
+# copy of audio/final_mix.wav made by npm run audio for Remotion
+grace-reels/episodes/friend/public/audio/
+
+# The Face of God: large intermediate audio and render outputs
+grace-reels/episodes/face-of-god/audio/stems/
+grace-reels/episodes/face-of-god/audio/voice_track.wav
+grace-reels/episodes/face-of-god/audio/work/
+grace-reels/episodes/face-of-god/out/*.mp4
+grace-reels/episodes/face-of-god/out/chunks/
+grace-reels/episodes/face-of-god/out/stills/*.png
+grace-reels/episodes/face-of-god/.cache/
+grace-reels/episodes/face-of-god/public/audio/
+
+# Wheat and Weeds: large intermediate audio and render outputs
+grace-reels/episodes/wheat-and-weeds/audio/stems/
+grace-reels/episodes/wheat-and-weeds/audio/voice_track.wav
+grace-reels/episodes/wheat-and-weeds/audio/work/
+grace-reels/episodes/wheat-and-weeds/out/*.mp4
+grace-reels/episodes/wheat-and-weeds/out/chunks/
+grace-reels/episodes/wheat-and-weeds/out/stills/*.png
+grace-reels/episodes/wheat-and-weeds/.cache/
+grace-reels/episodes/wheat-and-weeds/public/audio/
+grace-reels/episodes/wheat-and-weeds/characters/work/

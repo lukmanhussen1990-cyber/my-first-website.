@@ -1,0 +1,339 @@
+{
+	"elijah": {
+		"heightM": 1.8,
+		"root": "torso",
+		"order": [
+			"cloak",
+			"forearm_far",
+			"arm_upper_far",
+			"leg_far",
+			"leg_near",
+			"torso",
+			"head",
+			"hair",
+			"beard",
+			"forearm_near",
+			"arm_upper_near"
+		],
+		"parts": {
+			"torso": {
+				"sprite": "elijah/rig/torso",
+				"pivot": [
+					165,
+					440
+				],
+				"parent": null,
+				"at": [
+					0,
+					0
+				]
+			},
+			"head": {
+				"sprite": "elijah/rig/head",
+				"pivot": [
+					72,
+					208
+				],
+				"parent": "torso",
+				"at": [
+					185,
+					33
+				]
+			},
+			"hair": {
+				"sprite": "elijah/rig/hair",
+				"pivot": [
+					210,
+					152
+				],
+				"parent": "head",
+				"at": [
+					88,
+					130
+				]
+			},
+			"beard": {
+				"sprite": "elijah/rig/beard",
+				"pivot": [
+					40,
+					30
+				],
+				"parent": "head",
+				"at": [
+					100,
+					148
+				]
+			},
+			"cloak": {
+				"sprite": "elijah/rig/cloak",
+				"pivot": [
+					265,
+					60
+				],
+				"parent": "torso",
+				"at": [
+					128,
+					72
+				]
+			},
+			"arm_upper_near": {
+				"sprite": "elijah/rig/arm_upper_near",
+				"pivot": [
+					83,
+					38
+				],
+				"parent": "torso",
+				"at": [
+					96,
+					118
+				]
+			},
+			"forearm_near": {
+				"sprite": "elijah/rig/forearm_near",
+				"pivot": [
+					46,
+					36
+				],
+				"parent": "arm_upper_near",
+				"at": [
+					57,
+					178
+				]
+			},
+			"arm_upper_far": {
+				"sprite": "elijah/rig/arm_upper_far",
+				"pivot": [
+					64,
+					36
+				],
+				"parent": "torso",
+				"at": [
+					122,
+					112
+				]
+			},
+			"forearm_far": {
+				"sprite": "elijah/rig/forearm_far",
+				"pivot": [
+					79,
+					36
+				],
+				"parent": "arm_upper_far",
+				"at": [
+					60,
+					176
+				]
+			},
+			"leg_near": {
+				"sprite": "elijah/rig/leg_near",
+				"pivot": [
+					80,
+					45
+				],
+				"parent": "torso",
+				"at": [
+					178,
+					445
+				]
+			},
+			"leg_far": {
+				"sprite": "elijah/rig/leg_far",
+				"pivot": [
+					57,
+					45
+				],
+				"parent": "torso",
+				"at": [
+					148,
+					440
+				]
+			}
+		}
+	},
+	"enoch": {
+		"heightM": 1.75,
+		"root": "torso",
+		"order": [
+			"forearm_far",
+			"arm_upper_far",
+			"leg_far",
+			"leg_near",
+			"torso",
+			"head",
+			"beard",
+			"forearm_near",
+			"arm_upper_near"
+		],
+		"parts": {
+			"torso": {
+				"sprite": "enoch/rig/torso",
+				"pivot": [
+					197,
+					470
+				],
+				"parent": null,
+				"at": [
+					0,
+					0
+				]
+			},
+			"head": {
+				"sprite": "enoch/rig/head",
+				"pivot": [
+					130,
+					255
+				],
+				"parent": "torso",
+				"at": [
+					196,
+					29
+				]
+			},
+			"beard": {
+				"sprite": "enoch/rig/beard",
+				"pivot": [
+					20,
+					20
+				],
+				"parent": "head",
+				"at": [
+					150,
+					192
+				]
+			},
+			"arm_upper_near": {
+				"sprite": "enoch/rig/arm_upper_near",
+				"pivot": [
+					48,
+					50
+				],
+				"parent": "torso",
+				"at": [
+					132,
+					135
+				]
+			},
+			"forearm_near": {
+				"sprite": "enoch/rig/forearm_near",
+				"pivot": [
+					54,
+					40
+				],
+				"parent": "arm_upper_near",
+				"at": [
+					86,
+					228
+				]
+			},
+			"arm_upper_far": {
+				"sprite": "enoch/rig/arm_upper_far",
+				"pivot": [
+					44,
+					50
+				],
+				"parent": "torso",
+				"at": [
+					150,
+					130
+				]
+			},
+			"forearm_far": {
+				"sprite": "enoch/rig/forearm_far",
+				"pivot": [
+					53,
+					40
+				],
+				"parent": "arm_upper_far",
+				"at": [
+					90,
+					228
+				]
+			},
+			"leg_near": {
+				"sprite": "enoch/rig/leg_near",
+				"pivot": [
+					103,
+					50
+				],
+				"parent": "torso",
+				"at": [
+					205,
+					476
+				]
+			},
+			"leg_far": {
+				"sprite": "enoch/rig/leg_far",
+				"pivot": [
+					60,
+					50
+				],
+				"parent": "torso",
+				"at": [
+					185,
+					470
+				]
+			}
+		}
+	},
+	"elisha": {
+		"heightM": 1.72,
+		"root": "body",
+		"order": [
+			"foot_far",
+			"foot_near",
+			"body",
+			"arm"
+		],
+		"parts": {
+			"body": {
+				"sprite": "elisha/rig/body",
+				"pivot": [
+					150,
+					600
+				],
+				"parent": null,
+				"at": [
+					0,
+					0
+				]
+			},
+			"arm": {
+				"sprite": "elisha/rig/arm",
+				"pivot": [
+					77,
+					51
+				],
+				"parent": "body",
+				"at": [
+					150,
+					272
+				]
+			},
+			"foot_near": {
+				"sprite": "elisha/rig/foot",
+				"pivot": [
+					44,
+					12
+				],
+				"parent": "body",
+				"at": [
+					150,
+					905
+				]
+			},
+			"foot_far": {
+				"sprite": "elisha/rig/foot",
+				"pivot": [
+					44,
+					12
+				],
+				"parent": "body",
+				"at": [
+					136,
+					903
+				],
+				"shade": 0.8
+			}
+		}
+	}
+}
