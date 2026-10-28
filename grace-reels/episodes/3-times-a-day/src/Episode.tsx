@@ -121,7 +121,7 @@ const Opening: React.FC<{T: number}> = ({T}) => {
 					<Odometer value={v} speed={speed} plus={plus} T={T} at={span.start + 0.05} />
 					<NumberLabel text="TIMES A DAY" T={T} at={wordAt('S2', 'times').start} color="#CFE0FF" icon="phone" />
 				</div>
-				<OpeningTitle T={T} at={titleAt} />
+				<OpeningTitle T={T} at={titleAt + 0.25} />
 			</>
 		);
 	}
