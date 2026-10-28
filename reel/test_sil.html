@@ -1,0 +1,18 @@
+<!doctype html><html><body style="margin:0;background:#000">
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="js/lib.js"></script><script src="js/sil.js"></script>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+const P=new URLSearchParams(location.search); const t=parseFloat(P.get('t')||'0'); const lift=parseFloat(P.get('lift')||'0');
+const names=(P.get('n')||'mother,bird,cat,horse').split(',');
+x.fillStyle='#0E1A33';x.fillRect(0,0,1080,1920);
+const rows=names.length, rh=1920/rows;
+names.forEach((n,i)=>{
+  const s=SIL[n]; const [x0,y0,x1,y1]=s.bbox; const sc=Math.min(1000/(x1-x0), (rh-60)/(y1-y0));
+  const cx=540-(x0+x1)/2*sc, cy=rh*(i+1)-30;
+  const g=x.createRadialGradient(540,cy-(y1-y0)*sc*0.5,0,540,cy-(y1-y0)*sc*0.5,500);g.addColorStop(0,'rgba(242,196,109,0.6)');g.addColorStop(1,'rgba(242,196,109,0)');
+  x.fillStyle=g;x.fillRect(0,rh*i,1080,rh);
+  x.fillStyle='#0a1229';x.fillRect(0,cy,1080,30);
+  SIL.render(x,null,s,t,cx,cy,sc,1,{walk:t*40,lift});
+});
+</script></body></html>
