@@ -1,0 +1,78 @@
+{
+ "title": "Bean gas shelter",
+ "voices": {
+  "narrator": {
+   "description": "calm, serious, documentary-style adult male voice, medium-deep, clear, a bit fast-paced, neutral accent (totally serious, which makes it funny)",
+   "recording": {
+    "file": "assets/vo/source/voiceover.mp3",
+    "name": "the supplied voiceover recording (all eight lines in one file)"
+   },
+   "elevenlabs": {
+    "voice_id": "QZA1myOcnbLYY9uuhixV",
+    "name": "Dean - steady American",
+    "model_id": "eleven_multilingual_v2",
+    "voice_settings": {
+     "stability": 0.55,
+     "similarity_boost": 0.8,
+     "style": 0.15,
+     "use_speaker_boost": true,
+     "speed": 0.98
+    }
+   },
+   "kokoro": {
+    "voice": "am_fenrir",
+    "speed": 0.95
+   },
+   "piper": {
+    "model": "en_US-ryan-high.onnx",
+    "length_scale": 1.0
+   },
+   "espeak": {
+    "voice": "en-us+m3",
+    "words_per_minute": 150
+   }
+  }
+ },
+ "lines": [
+  {
+   "id": "n1",
+   "speaker": "narrator",
+   "text": "Your little brother just ate three cans of beans. You have five minutes. Here's how to survive."
+  },
+  {
+   "id": "n2",
+   "speaker": "narrator",
+   "text": "Dig a shelter, fast. But be careful: the worst smelly gas is heavier than air, so it sinks right into holes."
+  },
+  {
+   "id": "n3",
+   "speaker": "narrator",
+   "text": "So you need an airtight door, with rubber seals all around it."
+  },
+  {
+   "id": "n4",
+   "speaker": "narrator",
+   "text": "But you still need to breathe. So you add a tall pipe that takes clean air from high up, above the cloud."
+  },
+  {
+   "id": "n5",
+   "speaker": "narrator",
+   "text": "Then you add a carbon filter, the same thing used in gas masks. It traps the smell and lets clean air through."
+  },
+  {
+   "id": "n6",
+   "speaker": "narrator",
+   "text": "And a fan pushes clean air in, so the pressure inside is higher. Now the gas can't sneak through any gaps."
+  },
+  {
+   "id": "n7",
+   "speaker": "narrator",
+   "text": "Time's up. The cloud spreads fifty meters in every direction. But underground, you're completely safe."
+  },
+  {
+   "id": "n8",
+   "speaker": "narrator",
+   "text": "Unless the danger is already inside."
+  }
+ ]
+}
