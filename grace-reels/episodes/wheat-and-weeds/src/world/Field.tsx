@@ -753,7 +753,7 @@ export const FarmWorld: React.FC<FarmProps> = ({
 			<mesh geometry={g.house} material={m.lambert} position={FARMHOUSE_AT} castShadow receiveShadow />
 			{showBarn && <mesh geometry={g.barn} material={m.lambert} position={BARN_AT} castShadow receiveShadow />}
 			<mesh geometry={g.clouds} material={m.cloud} rotation-y={t * cloudDrift} />
-			{wheat && <Wheat patch={patch} state={wheat} colors={wheatColors} eye={eye} lod={lod ?? (lite ? 11 : 26)} castShadow={wheatShadow} light={{dir: mood.sunDir, color: mood.sunColor, back: backlight}} />}
+			{wheat && <Wheat patch={patch} state={wheat} colors={wheatColors} eye={eye} lod={lod ?? (lite ? 0 : 26)} castShadow={wheatShadow} light={{dir: mood.sunDir, color: mood.sunColor, back: backlight}} />}
 			{hero && <Wheat patch={hero} state={heroState ?? wheat!} colors={wheatColors} castShadow={wheatShadow} light={{dir: mood.sunDir, color: mood.sunColor, back: backlight}} />}
 		</>
 	);
