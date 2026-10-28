@@ -18,7 +18,7 @@ const N = tl.durationInFrames;
 
 const serveUrl = await bundle({entryPoint: path.resolve('src/index.ts'), publicDir: path.resolve('public')});
 const browser = await openBrowser('chrome', {chromiumOptions: {gl: 'swangle'}});
-const composition = await selectComposition({serveUrl, id: 'Reel', inputProps: props, puppeteerInstance: browser, chromiumOptions: {gl: 'swangle'}});
+const composition = await selectComposition({serveUrl, id: 'Reel', inputProps: props, puppeteerInstance: browser, chromiumOptions: {gl: 'swangle'}, timeoutInMilliseconds: 300000});
 const chunks = [];
 for (let k = 0, f0 = 0; f0 < N; k++, f0 += CHUNK) {
 	const f1 = Math.min(N, f0 + CHUNK) - 1;
@@ -38,6 +38,8 @@ for (let k = 0, f0 = 0; f0 < N; k++, f0 += CHUNK) {
 		frameRange: [f0, f1],
 		muted: true,
 		concurrency: 4,
+		// every tab loads all the sprites and compiles every scene's shaders before its first frame
+		timeoutInMilliseconds: 300000,
 		puppeteerInstance: browser,
 		chromiumOptions: {gl: 'swangle'},
 		onProgress: ({renderedFrames}) => {
