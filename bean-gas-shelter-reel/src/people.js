@@ -665,7 +665,7 @@ export function build(ctx) {
       if (stand <= 0) {
         // down in the pit -> hanging on the edge -> up over it
         const yawW = angLerp(-1.2, Math.PI, turn);
-        const pA = V(xs, PF + LEG, -1.75);
+        const pA = V(xs, PF + LEG, lerp(-1.3, -1.75, turn)); // from where he dug, turning to the wall
         const pB = V(xs, -0.88, -2.08);
         const pC = V(xs, 0.3, -2.62);
         const el = easeOutCubic(leap), pl = smooth(pull);
@@ -681,8 +681,8 @@ export function build(ctx) {
         // legs: dangling, then one knee up onto the lawn
         const dang = el * (1 - pl);
         P.feet = [
-          { x: xs - 0.12, y: lerp(lerp(PF, pel.y - 0.95, dang), 0.0, pl), z: lerp(-1.75, -2.55, pl), yaw: yawW, pitch: 0.6 * dang },
-          { x: xs + 0.12, y: lerp(lerp(PF, pel.y - 0.9, dang), 0.15 * pl, pl), z: lerp(-1.75, -2.2, pl), yaw: yawW, pitch: 0.8 * dang },
+          { x: xs - 0.12, y: lerp(lerp(PF, pel.y - 0.95, dang), 0.0, pl), z: lerp(lerp(-1.3, -1.75, turn), -2.55, pl), yaw: yawW, pitch: 0.6 * dang },
+          { x: xs + 0.12, y: lerp(lerp(PF, pel.y - 0.9, dang), 0.15 * pl, pl), z: lerp(lerp(-1.3, -1.75, turn), -2.2, pl), yaw: yawW, pitch: 0.8 * dang },
         ];
         P.feet.forEach((f) => (f.y = Math.max(f.y, PF)));
         P.head.pitch = -0.4 * (1 - pl);

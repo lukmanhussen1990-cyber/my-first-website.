@@ -1446,7 +1446,7 @@ def main():
 
     stems = {
         "vo": np.stack([vo, vo]),
-        "sfx": sfx_bus * (1 - 0.3 * talk) + hits,
+        "sfx": (sfx_bus * (1 - 0.3 * talk) + hits) * 1.4,
         "music": carve(music) * 0.62,
         "ambience": (bird * 0.05 + breeze * 0.05) * (1 - 0.75 * inside) * (1 - 0.3 * talk) + room * 0.03 * inside,
         "fan": fan * 0.09 * (1 - 0.3 * talk),
