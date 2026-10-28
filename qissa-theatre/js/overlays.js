@@ -2,7 +2,8 @@
 // and paper grain. Everything is a pure function of t.
 const OV = (() => {
   let TL, capRoot, groups = [], fx = {}, dustCtx, specks, source;
-  const CAP_Y = { title: 1236, moral: 560, end: 860 };
+  // caption height by script line, so a caption never jumps when a cut lands mid-phrase
+  const CAP_Y = { 2: 1236, 12: 560, 13: 860 };
 
   function initCaptions() {
     capRoot = document.getElementById('captions');
@@ -32,13 +33,13 @@ const OV = (() => {
   }
 
   function updateCaptions(t, sc) {
-    const big = sc.id === 'moral' || sc.id === 'end';
     for (const G of groups) {
       const { g, div, spans } = G;
       const on = t >= g.s - 0.05 && t < g.hide;
       if (!on) { if (div.style.display !== 'none') div.style.display = 'none'; continue; }
       div.style.display = '';
-      const y = CAP_Y[sc.id] || 470;
+      const y = CAP_Y[g.line] || 470;
+      const big = g.line >= 12;
       const out = 1 - smooth(seg(t, g.hide - 0.16, g.hide));
       div.style.opacity = out.toFixed(3);
       div.style.fontSize = (G.fear ? 96 : big ? 80 : 70) + 'px';
