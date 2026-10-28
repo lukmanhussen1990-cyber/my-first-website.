@@ -911,8 +911,8 @@ def build_cues():
     cue(14.55, sfx("shovel_land"), -20, 5.0)
     # 3 - the rebar cages, the pour, the roof slab, the backfill
     for i in range(6):
-        cue(T["rebar0"] + i * T["rebarGap"], sfx("cage"), -12, [-0.4, -1.6, 0.0, 1.45, 2.8, 4.0][i])
-    cue(T["slab"] - 0.45, sfx("cage"), -12, -0.4)
+        cue(T["rebar0"] + i * T["rebarGap"] + 0.06, sfx("cage"), -12, [-0.4, -1.6, 0.0, 1.45, 2.8, 4.0][i])
+    cue(T["slab"] - 0.45 + 0.06, sfx("cage"), -12, -0.4)
     cue(T["pour0"] - 0.1, sfx("pour", T["pour1"] - T["pour0"] + 1.0), -9, None, p=0.0)
     cue(T["label30"] + 0.12, sfx("label"), -15, duck=False)
     cue(T["slab"] - 0.15, sfx("whoosh", 0.3, 250, 900), -22, -0.2)
@@ -941,29 +941,30 @@ def build_cues():
     walk(38.4, 40.8, [(0.5, -1.25), (1.0, -0.62), (1.75, -0.6), (STEP6, -0.6)], 1.2, gain=-22)
     for k in range(2):
         cue(T["weak0"] + 0.15 + 0.7 * k, sfx("pulse"), -22, 3.0)
-    cue(T["door"] - 0.3, sfx("door_drop"), -6, 3.05, duck=False, verb=0.2)
+    cue(T["doorShut"] - 0.3, sfx("door_drop"), -6, 3.05, duck=False, verb=0.2)  # whoosh as it drops, clang as it lands
     for k, b in enumerate(T["bolts"]):
         cue(b - 0.11, sfx("bolt", 0.11, 1.0 - 0.04 * k), -6, 3.05 + [-0.55, 0, 0.55][k], duck=False, verb=0.25)
     # 7 - inside: dark and stuffy; the vents; air
     walk(44.55, 46.0, [(STEP6, -0.6), (1.75, -0.62), (1.0, -0.9), (0.25, -1.2)], 1.2, gain=-23)
     cue(T["stuffy0"], sfx("click"), -26, -0.15)
     for i in range(2):
-        cue(T["vent"][i] - 0.1, sfx("vent_pop"), -12, [-0.85, 0.75][i])
-        cue(T["cap"][i], sfx("cap"), -13, [-0.85, 0.75][i])
+        cue(T["vent"][i] - 0.04, sfx("vent_pop"), -12, [-0.85, 0.75][i])
+        cue(T["cap"][i] + 0.08, sfx("cap"), -13, [-0.85, 0.75][i])
     cue(T["bounce"] - 0.5, sfx("bits", 1.0, 16), -15, 0.0)
     cue(T["air0"] - 0.2, sfx("air", T["air1"] - T["air0"] + 1.6), -10, None, p=0.0)
     # 8 - benches, shelves, supplies
-    cue(T["bench"], sfx("bench"), -12, -0.6)
+    # things pop in with an overshoot: they touch down about 0.1 s after they appear
+    cue(T["bench"] + 0.13, sfx("bench"), -12, -0.6)
     walk(T["bench"] + 0.3, T["bench"] + 1.0, [(0.25, -1.2), (SEAT["k"], SEAT_Z)], 1.0, gain=-25)
     cue(T["bench"] + 1.05, sfx("creak", 0.4, 140, 220, 0.8), -24, SEAT["k"])
-    cue(T["shelf"], sfx("shelf"), -12, 0.8)
-    cue(T["shelf"] + 0.25, sfx("cans"), -18, 0.6)
-    cue(T["water"], sfx("bottles"), -10, 0.5)
-    cue(T["light"], sfx("plastic", 1.3), -12, 0.55)
-    cue(T["aid"], sfx("plastic", 0.8), -12, 1.05)
-    cue(T["aid"] + 0.05, sfx("thud", 0.4), -24, 1.05)
-    cue(T["radio"], sfx("plastic", 1.0), -12, 0.8)
-    cue(T["radio"] + 0.12, sfx("radio"), -22, 0.8)
+    cue(T["shelf"] + 0.13, sfx("shelf"), -12, 0.8)
+    cue(T["shelf"] + 0.38, sfx("cans"), -18, 0.6)
+    cue(T["water"] + 0.1, sfx("bottles"), -10, 0.5)
+    cue(T["light"] + 0.1, sfx("plastic", 1.3), -12, 0.55)
+    cue(T["aid"] + 0.1, sfx("plastic", 0.8), -12, 1.05)
+    cue(T["aid"] + 0.15, sfx("thud", 0.4), -24, 1.05)
+    cue(T["radio"] + 0.1, sfx("plastic", 1.0), -12, 0.8)
+    cue(T["radio"] + 0.22, sfx("radio"), -22, 0.8)
     for k in ("water", "light", "radio"):
         cue(T[k] + 0.05, sfx("label"), -19, duck=False)
     # 9 - the storm breaks; up and out; the family runs in; down; the door; the bolts
