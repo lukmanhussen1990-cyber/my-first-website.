@@ -7,14 +7,15 @@ import {Caption, CommentBox, EndCard, FontGate, Header, Label, ScriptureCard, Ta
 import {FPS, TL, sceneAt, scene, wordAt, wordsOf, type Page} from './timeline';
 import type {SceneDef} from './sceneKit';
 import {SceneView, W, H} from './View';
-import {LandingNumber, NumberLabel, Odometer, OpeningTitle, Scoreboard} from './texts';
+import {BLUE, LandingNumber, NumberLabel, Odometer, OpeningTitle, Scoreboard} from './texts';
 import {LANDS, S01} from './scenes/S01Window';
 import {S02} from './scenes/S02Sofa';
 import {Montage} from './Montage';
 import {S04, S05, cutsS5} from './scenes/S04S05Court';
 import {AGE_CUTS, S06, S07} from './scenes/S06S07Window';
+import {S08L, S08R, S09, S10, S11, S12} from './scenes/S08to12';
 
-export const SCENES: Record<string, SceneDef> = {S1: S01, S2: S02, S4: S04, S5: S05, S6: S06, S7: S07};
+export const SCENES: Record<string, SceneDef> = {S1: S01, S2: S02, S4: S04, S5: S05, S6: S06, S7: S07, S9: S09, S10: S10, S11: S11, S12: S12};
 
 // ---------- 3D layer ----------
 const World: React.FC<{T: number}> = ({T}) => {
@@ -33,6 +34,22 @@ const World: React.FC<{T: number}> = ({T}) => {
 		);
 	}
 	if (span.id === 'S3') return <Montage t={t} d={d} />;
+	if (span.id === 'S8') {
+		return (
+			<>
+				<div style={{position: 'absolute', left: 0, top: 0, width: 540, height: H, overflow: 'hidden'}}>
+					<SceneView def={S08L} t={t} d={d} T={T} width={540} height={H} />
+				</div>
+				<div style={{position: 'absolute', left: 540, top: 0, width: 540, height: H, overflow: 'hidden'}}>
+					<SceneView def={S08R} t={t} d={d} T={T} width={540} height={H} />
+				</div>
+				<div style={{position: 'absolute', left: 538, top: 0, width: 4, height: H, background: `linear-gradient(180deg, rgba(242,181,68,0), ${BRAND.gold} 22%, ${BLUE} 78%, rgba(111,168,255,0))`}} />
+			</>
+		);
+	}
+	if (span.id === 'S13') {
+		return <div style={{position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 46%, #3A2818 0%, #1E150F 55%, #120D0A 100%)'}} />;
+	}
 	const def = SCENES[span.id];
 	if (!def) return <div style={{position: 'absolute', inset: 0, background: '#2A2420'}} />;
 	return <SceneView def={def} t={t} d={d} T={T} />;
@@ -111,6 +128,43 @@ const Opening: React.FC<{T: number}> = ({T}) => {
 	return null;
 };
 
+// S8: thin glowing lines pulled from the phone into the eyes
+const AttentionLines: React.FC<{t: number; d: number; T: number}> = ({t, d, T}) => {
+	const a = S08R.anchors!(t, d);
+	const cam = S08R.camera(t, d);
+	const ph = project(cam, a.phone, 540, H);
+	const ey = project(cam, a.eye, 540, H);
+	const on = smoothstep(0.3, 0.8, t);
+	const pull = smoothstep(wordAt('S8', 'attention').start - 0.4, wordAt('S8', 'attention').start + 0.2, T);
+	const lines = [-38, -12, 14, 40];
+	return (
+		<svg width={1080} height={H} style={{position: 'absolute', left: 0, top: 0, opacity: on}}>
+			<defs>
+				<filter id="lglow" x="-50%" y="-50%" width="200%" height="200%">
+					<feGaussianBlur stdDeviation="5" />
+				</filter>
+			</defs>
+			{lines.map((off, i) => {
+				const x0 = 540 + ph.x;
+				const y0 = ph.y + off * 0.4;
+				const x1 = 540 + ey.x;
+				const y1 = ey.y;
+				const mx = (x0 + x1) / 2 + off * (1.2 - pull * 0.8);
+				const my = (y0 + y1) / 2 + off * 0.6;
+				const dpath = `M ${x0} ${y0} Q ${mx} ${my} ${x1} ${y1}`;
+				const dash = 18;
+				const flow = -((t * 120 + i * 13) % (dash * 2.4));
+				return (
+					<g key={i}>
+						<path d={dpath} fill="none" stroke={BLUE} strokeWidth={9} opacity={0.35 + 0.3 * pull} filter="url(#lglow)" />
+						<path d={dpath} fill="none" stroke="#D8E8FF" strokeWidth={2.6} strokeDasharray={`${dash} ${dash * 1.4}`} strokeDashoffset={flow} opacity={0.9} />
+					</g>
+				);
+			})}
+		</svg>
+	);
+};
+
 // S4: a quick gold count of the princes on "a hundred and twenty"
 const PrincesCounter: React.FC<{T: number}> = ({T}) => {
 	const at = wordAt('S4', 'hundred').start - 0.1;
@@ -159,12 +213,13 @@ const Texts: React.FC<{T: number}> = ({T}) => {
 				<ScriptureCard text={page.card!.text} reference={page.card!.ref} keyTimes={cardKeyTimes(page)} T={T} appear={page.start} top={250} size={page.card!.text.length > 100 ? 50 : 56} float={Math.sin((T - page.start) * 0.9) * 6} />
 			) : null}
 			<Header title="3 TIMES A DAY" />
-			{scoreOn ? <Scoreboard prayer="3" phone="100+" k={scoreK} opacity={cardUp ? 0 : 1} /> : null}
+			{scoreOn ? <Scoreboard prayer="3" phone="100+" k={scoreK} opacity={cardUp ? 0 : 1} glow={span.id === 'S12' ? smoothstep(0.3, 1.0, t) * (0.8 + 0.2 * Math.sin(t * 5)) : 0} /> : null}
 			{span.id === 'S4' ? <PrincesCounter T={T} /> : null}
 			{span.id === 'S4' ? <Label text="DANIEL 6:3 · OVER THE WHOLE REALM" anchor={anchor('daniel')} dx={0} dy={-200} opacity={smoothstep(wordAt('S4', 'busiest').start - 0.25, wordAt('S4', 'busiest').start + 0.15, T)} /> : null}
 			{span.id === 'S5' && t >= cutsS5().seal && t < cutsS5().den ? <Label text="DANIEL 6:7" anchor={anchor('scroll')} dx={140} dy={-260} opacity={smoothstep(cutsS5().seal + 0.15, cutsS5().seal + 0.45, t)} /> : null}
 			{span.id === 'S7' ? <div style={{position: 'absolute', inset: 0, background: '#FFE9C2', opacity: AGE_CUTS.reduce((a, c) => a + 0.55 * Math.exp(-Math.abs(t - c) * 22), 0), pointerEvents: 'none'}} /> : null}
 			{span.id === 'S7' ? <Label text="ALREADY PRAYING" anchor={anchor('daniel')} dx={-60} dy={-220} opacity={smoothstep(wordAt('S7', 'already').start - 0.3, wordAt('S7', 'already').start + 0.1, T)} /> : null}
+			{span.id === 'S8' ? <AttentionLines t={t} d={d} T={T} /> : null}
 			{span.id === 'S8' ? (
 				<div style={{position: 'absolute', left: 0, right: 0, top: 1240, display: 'flex', justifyContent: 'center', opacity: smoothstep(wordAt('S8', 'attention').start - 0.2, wordAt('S8', 'attention').start + 0.15, T)}}>
 					<Tag bg="rgba(111,168,255,0.92)" color={BRAND.ink} size={30}>ATTENTION</Tag>

@@ -119,7 +119,7 @@ export const Scoreboard: React.FC<{prayer: string; phone: string; k?: number; bi
 	const row = (label: string, value: string, color: string, g: number): React.ReactNode => (
 		<div style={{display: 'flex', alignItems: 'center', gap: size * 0.42, justifyContent: big > 0.5 ? 'center' : 'flex-start'}}>
 			<div style={{width: size * 0.36, height: size * 0.36, borderRadius: size, background: color, boxShadow: `0 0 ${10 + g * 40}px ${color}`}} />
-			<span style={{fontFamily: SANS, fontWeight: 700, fontSize: size, letterSpacing: '0.12em', color, textShadow: `0 0 ${g * 36}px ${color}, 0 2px 10px rgba(0,0,0,0.6)`}}>
+			<span style={{fontFamily: SANS, fontWeight: 700, fontSize: size, letterSpacing: '0.12em', whiteSpace: 'nowrap', color, textShadow: `0 0 ${g * 36}px ${color}, 0 2px 10px rgba(0,0,0,0.6)`}}>
 				{label}: {value}
 			</span>
 		</div>

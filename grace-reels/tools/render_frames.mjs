@@ -3,6 +3,7 @@
 // the frames in flight. Encode the folder afterwards with tools/encode_frames.sh.
 //   node tools/render_frames.mjs <CompositionId> <outDir> [concurrency]
 //   FRAMES=10,250,900 node tools/render_frames.mjs ...   (only those frames, e.g. for a check)
+//   STEP=2 SCALE=0.333 node tools/render_frames.mjs ...  (every 2nd frame, a third of the size: a quick preview)
 import fs from 'node:fs';
 import path from 'node:path';
 import {bundle} from '@remotion/bundler';
@@ -47,7 +48,8 @@ const browser = await openBrowser('chrome', {browserExecutable, chromiumOptions}
 const composition = await selectComposition({serveUrl, id, inputProps: {}, puppeteerInstance: browser, chromiumOptions});
 const total = composition.durationInFrames;
 const done = scan();
-const wanted = process.env.FRAMES ? process.env.FRAMES.split(',').map(Number) : Array.from({length: total}, (_, f) => f);
+const step = Number(process.env.STEP ?? 1);
+const wanted = process.env.FRAMES ? process.env.FRAMES.split(',').map(Number) : Array.from({length: Math.ceil(total / step)}, (_, f) => f * step);
 const frames = wanted.filter((f) => !done.has(f));
 log(`${id}: ${wanted.length} frames wanted, ${wanted.length - frames.length} already on disk, ${frames.length} to render`);
 
@@ -66,6 +68,7 @@ if (frames.length) {
 		puppeteerInstance: browser,
 		chromiumOptions,
 		timeoutInMilliseconds: 120000,
+		scale: Number(process.env.SCALE ?? 1),
 		onStart: () => log('rendering'),
 		onFrameUpdate: () => {
 			n++;
