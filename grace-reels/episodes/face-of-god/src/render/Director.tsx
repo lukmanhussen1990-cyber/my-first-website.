@@ -4,7 +4,7 @@ import {useFrame, useThree} from '@react-three/fiber';
 import {useMemo, useRef} from 'react';
 import {useCurrentFrame, useVideoConfig} from 'remotion';
 import * as THREE from 'three';
-import {applyCamera} from './camera';
+import {applyCamera, projectToScreen} from './camera';
 import {DEFAULT_GRADE, Grade, Inset, ShotDef, Transition} from './types';
 
 const VS = /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`;
@@ -13,7 +13,7 @@ float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 float vn(vec2 p){ vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.-2.*f);
 	return mix(mix(h21(i),h21(i+vec2(1,0)),u.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),u.x), u.y); }`;
 
-const KIND_ID: Record<string, number> = {cut: 0, dissolve: 1, haze: 2, cloak: 3, light: 4, whip: 5, fade: 6, swirl: 7, split: 8};
+const KIND_ID: Record<string, number> = {cut: 0, dissolve: 1, haze: 2, cloak: 3, light: 4, whip: 5, fade: 6, swirl: 7, split: 8, streak: 9};
 
 export type ShotRender = {shot: ShotDef; t: number};
 
@@ -160,6 +160,23 @@ export const Director: React.FC<{
 						c = mix(ca, cb, smoothstep(0.45, 0.62, m)) / 7.;
 						c += vec3(1.0, 0.78, 0.46) * pow(s, 3.0) * 0.6 * exp(-r * 2.2);
 					}
+					else if (uKind > 8.5) {
+						// a streak of light flies across the screen on a slight arc: the new picture opens behind its
+						// head, with a hot core and a long warm tail
+						float asp = uRes.x / uRes.y;
+						float hx = mix(-0.25, 1.25, m);
+						float hy = 0.56 + 0.07 * sin(3.14159 * m);
+						vec2 p = vec2((vUv.x - hx) * asp, vUv.y - hy);
+						float behind = max(0., -p.x);
+						float trail = step(p.x, 0.) * exp(-behind * 2.0);
+						float thick = 0.005 + behind * 0.03;
+						float band = exp(-pow(p.y / thick, 2.)) * trail;
+						float core = exp(-dot(p, p) / 0.0007);
+						float halo = exp(-abs(p.y) * 8.) * trail * 0.3 + exp(-length(p) * 5.) * 0.45;
+						float reveal = smoothstep(0.04, -0.1, vUv.x - hx);
+						vec3 w = vec3(1.3, 1.06, 0.72);
+						c = mix(a, b, reveal) + w * (band * 2.2 + core * 3.5 + halo) + w * sin(3.14159 * m) * 0.08;
+					}
 					else {
 						// split screen: A left of a slanted divider, B right, a thin gold seam with a soft shadow
 						float x = (vUv.x - (m + uSlant * (vUv.y - 0.5))) * uRes.x;
@@ -179,6 +196,27 @@ export const Director: React.FC<{
 					if(threshold>0.){ float l = max(max(s.r,s.g),s.b); s *= smoothstep(threshold, threshold + 0.35, l); }
 					c += s*w[i<0?-i:i]; }
 				gl_FragColor = vec4(c,1.); }`,
+		});
+		// god rays: a radial blur of the bright parts of the picture toward the light's place on screen
+		const rtRays = new THREE.WebGLRenderTarget(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)), {type: THREE.HalfFloatType});
+		const raysMat = new THREE.ShaderMaterial({
+			uniforms: {tex: {value: null}, uLight: {value: new THREE.Vector2(0.5, 0.5)}, uThr: {value: 0.9}, uAsp: {value: w / h}},
+			vertexShader: VS,
+			fragmentShader: `uniform sampler2D tex; uniform vec2 uLight; uniform float uThr, uAsp; varying vec2 vUv;
+				void main(){
+					vec2 d = (vUv - uLight) * (0.92 / 56.0);
+					vec2 uv = vUv; float decay = 1.0; vec3 acc = vec3(0.);
+					for (int i = 0; i < 56; i++) {
+						uv -= d;
+						vec3 s = texture2D(tex, clamp(uv, 0.0, 1.0)).rgb;
+						float l = max(max(s.r, s.g), s.b);
+						acc += s * smoothstep(uThr, uThr + 0.7, l) * decay;
+						decay *= 0.962;
+					}
+					// fade the rays out at the light itself so the core is not doubled
+					vec2 q = (vUv - uLight) * vec2(uAsp, 1.0);
+					gl_FragColor = vec4(acc / 56.0 * smoothstep(0.0, 0.08, length(q)), 1.);
+				}`,
 		});
 		const finalMat = new THREE.ShaderMaterial({
 			uniforms: {
@@ -205,6 +243,9 @@ export const Director: React.FC<{
 				uTime: {value: 0},
 				uRes: {value: new THREE.Vector2(w, h)},
 				tInset: {value: null},
+				tRays: {value: null},
+				uRays: {value: 0},
+				uRaysColor: {value: new THREE.Vector3(1, 0.86, 0.6)},
 				uInsetOn: {value: 0},
 				uInsetC: {value: new THREE.Vector2()},
 				uInsetS: {value: new THREE.Vector2()},
@@ -213,7 +254,8 @@ export const Director: React.FC<{
 			},
 			vertexShader: VS,
 			fragmentShader: `${HASH}
-				uniform sampler2D tBase, b0, b1, b2, b3, b4, tInset;
+				uniform sampler2D tBase, b0, b1, b2, b3, b4, tInset, tRays;
+				uniform float uRays; uniform vec3 uRaysColor;
 				uniform float uInsetOn, uInsetRot, uInsetAge; uniform vec2 uInsetC, uInsetS;
 				uniform float uExposure, uContrast, uSat, uVignette, uBloom, uGrain, uFlash, uDesat, uShimmer, uRewind, uTime;
 				uniform vec3 uGain, uLift, uFlashColor; uniform vec4 uShimmerRect; uniform vec2 uRes;
@@ -239,6 +281,7 @@ export const Director: React.FC<{
 					}
 					vec3 bl = texture2D(b0, uv).rgb * 0.45 + texture2D(b1, uv).rgb * 0.6 + texture2D(b2, uv).rgb * 0.75 + texture2D(b3, uv).rgb * 0.85 + texture2D(b4, uv).rgb;
 					c += bl * uBloom * 0.42;
+					if (uRays > 0.) c += texture2D(tRays, uv).rgb * uRaysColor * uRays * 2.4;
 					c *= uExposure * uGain;
 					c += uLift;
 					float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -275,7 +318,7 @@ export const Director: React.FC<{
 					#include <colorspace_fragment>
 				}`,
 		});
-		return {rtA, rtB, rtMix, rtInset, levels, quad, qs, qc, mixMat, blurMat, finalMat};
+		return {rtA, rtB, rtMix, rtInset, rtRays, levels, quad, qs, qc, mixMat, blurMat, raysMat, finalMat};
 	}, [size.width, size.height, lite]);
 
 	const active = activeShots(shots, transitions, t);
@@ -293,7 +336,7 @@ export const Director: React.FC<{
 			gl.clear();
 			gl.render(scene, cam);
 		};
-		const {rtA, rtB, rtMix, rtInset, levels, quad, qs, qc, mixMat, blurMat, finalMat} = res;
+		const {rtA, rtB, rtMix, rtInset, rtRays, levels, quad, qs, qc, mixMat, blurMat, raysMat, finalMat} = res;
 		// picture-in-picture first (it uses the same scene graph)
 		let insetRect = null;
 		for (const ins of insets) {
@@ -334,8 +377,29 @@ export const Director: React.FC<{
 			gl.render(qs, qc);
 			src = b.texture;
 		});
+		// god rays from the dominant shot's light (fading with the transition)
+		const raysOf = (shot: ShotDef | null, w: number) => {
+			const r = shot?.rays?.(t);
+			if (!shot || !r || r.strength * w <= 0.001) return null;
+			const p = projectToScreen(shot.camera(t), t, r.at);
+			return p ? {x: p.x / 1080, y: 1 - p.y / 1920, s: r.strength * w, color: r.color ?? ([1, 0.86, 0.6] as [number, number, number])} : null;
+		};
+		const ra = raysOf(active.a, 1 - active.wB);
+		const rb = raysOf(active.b, active.wB);
+		const rays = ra && rb ? {...(ra.s >= rb.s ? ra : rb), s: ra.s + rb.s} : (ra ?? rb);
+		if (rays) {
+			quad.material = raysMat;
+			raysMat.uniforms.tex.value = base;
+			raysMat.uniforms.uLight.value.set(rays.x, rays.y);
+			raysMat.uniforms.uThr.value = 0.85;
+			gl.setRenderTarget(rtRays);
+			gl.render(qs, qc);
+		}
 		const u = finalMat.uniforms;
 		u.tBase.value = base;
+		u.tRays.value = rtRays.texture;
+		u.uRays.value = rays ? rays.s : 0;
+		if (rays) u.uRaysColor.value.set(...rays.color);
 		levels.forEach(([, b], i) => (u[`b${i}`].value = b.texture));
 		u.uExposure.value = grade.exposure;
 		u.uContrast.value = grade.contrast;

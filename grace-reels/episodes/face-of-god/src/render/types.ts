@@ -53,9 +53,11 @@ export type ShotDef = {
 	grade?: (t: number) => Partial<Grade>;
 	fog?: (t: number) => FogState | null;
 	anchors?: (t: number) => Record<string, Vec3>;
+	// screen-space god rays streaming from a bright point in the world (the opening in the clouds, the sun)
+	rays?: (t: number) => {at: Vec3; strength: number; color?: Vec3} | null;
 };
 
-export type TransitionKind = 'cut' | 'dissolve' | 'haze' | 'cloak' | 'light' | 'whip' | 'fade' | 'swirl' | 'split';
+export type TransitionKind = 'cut' | 'dissolve' | 'haze' | 'cloak' | 'light' | 'whip' | 'fade' | 'swirl' | 'split' | 'streak';
 // A blend between two shots centred on `at`. For 'split' the two shots share the screen for the whole
 // window and `divider(t)` is the x position (0..1) of the dividing line; `slant` tilts it.
 export type Transition = {from: string; to: string; at: number; dur: number; kind: TransitionKind; divider?: (t: number) => number; slant?: number};

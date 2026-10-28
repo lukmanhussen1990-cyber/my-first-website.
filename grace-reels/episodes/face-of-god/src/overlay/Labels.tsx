@@ -1,4 +1,4 @@
-// Name/verse tags with a thin leader line that sticks to a point in the 3D scene (projected every frame).
+// Verse tags with a thin leader line that sticks to a point in the 3D scene (projected every frame).
 import {clamp, easeOut, seg, smooth} from '../lib/ease';
 import {B} from '../lib/timeline';
 import {projectToScreen} from '../render/camera';
@@ -9,12 +9,11 @@ import {C, SAFE, SANS} from './theme';
 type LabelDef = {text: string; from: number; to: number; anchor: string; dx: number; dy: number};
 
 export const LABELS: LabelDef[] = [
-	{text: 'Matthew 26:15', from: B.labelDeal, to: B.silver + 0.6, anchor: 'palm', dx: -150, dy: -330},
-	{text: 'The price of a slave', from: B.labelSlave, to: B.s8 - 0.05, anchor: 'chain', dx: -40, dy: -250},
-	{text: 'Matthew 26:47', from: B.labelGarden, to: B.swordsUp + 0.6, anchor: 'judas9', dx: -60, dy: -190},
-	{text: 'The same night', from: B.labelSameNight, to: B.warmTakesOver + 1.4, anchor: 'sameNight', dx: -40, dy: -260},
-	{text: 'A friend of publicans and sinners · Luke 7:34', from: B.labelSinners, to: B.right + 0.35, anchor: 'feastJesus', dx: -430, dy: -230},
-];
+	{text: 'A clift of the rock · Exodus 33:22', from: B.labelClift, to: B.gloryRush - 0.1, anchor: 'cleft', dx: -380, dy: -250},
+	{text: 'Exodus 33:23', from: B.labelBack, to: B.dawn - 0.1, anchor: 'peek', dx: -40, dy: -230},
+	{text: 'He didn’t know', from: B.labelKnow, to: B.s9 - 0.05, anchor: 'shiningFace', dx: -300, dy: 230},
+	{text: 'Exodus 34:33', from: B.labelVeil, to: B.keyChange - 0.1, anchor: 'veil', dx: -260, dy: -200},
+]
 
 const TAG_H = 46;
 const estWidth = (s: string) => s.length * 18.5 + 34;

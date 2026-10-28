@@ -6,35 +6,25 @@ import {CoverTitle} from './overlay/CoverTitle';
 import {Overlay} from './overlay/Overlay';
 import {Director} from './render/Director';
 import type {ShotDef, Transition} from './render/types';
-import {COINSPIN, DEAL, SCALE} from './shots/Deal';
-import {CTA, FEAST, SAMENIGHT} from './shots/Feast';
-import {GARDEN2, S10, S9} from './shots/Garden';
-import {CU_IN, LOOP, S1, S11} from './shots/Kiss';
-import {COVER, JUDAS_SHOT, POUR, ROOM, TWELVE, WASH} from './shots/Room';
-import {divider, SPLIT_IN, SPLIT_OUT} from './shots/split';
+import {BACK, CLIFT, INSIDE} from './shots/Cleft';
+import {BUSH, PLAGUES, SEA} from './shots/Montage';
+import {ANSWER, ASK, DARK, DIE, HOOK} from './shots/Summit';
 
-export const SHOTS: ShotDef[] = [S1, ROOM, POUR, WASH, TWELVE, JUDAS_SHOT, DEAL, SCALE, COINSPIN, S9, S10, S11, GARDEN2, SAMENIGHT, FEAST, CTA, LOOP, COVER];
+export const SHOTS: ShotDef[] = [HOOK, DIE, DARK, BUSH, PLAGUES, SEA, ASK, ANSWER, CLIFT, INSIDE, BACK];
 
 export const TRANSITIONS: Transition[] = [
-	// the rewind: the kiss runs backwards and twists into the upper room
-	{from: 'S1', to: 'ROOM', at: B.rewindPeak, dur: 1.0, kind: 'swirl'},
-	{from: 'ROOM', to: 'POUR', at: B.pourStart, dur: 0, kind: 'cut'},
-	{from: 'POUR', to: 'WASH', at: B.washStart, dur: 0, kind: 'cut'},
-	{from: 'WASH', to: 'TWELVE', at: B.s4, dur: 0, kind: 'cut'},
-	{from: 'TWELVE', to: 'JUDAS', at: B.s5, dur: 0, kind: 'cut'},
-	// into the flashback, a whip to the scale, a cut to the coin, a dip to black into the garden
-	{from: 'JUDAS', to: 'DEAL', at: B.s6, dur: 0.6, kind: 'haze'},
-	{from: 'DEAL', to: 'SCALE', at: B.s7 + 0.05, dur: 0.36, kind: 'whip'},
-	{from: 'SCALE', to: 'COINSPIN', at: B.s8, dur: 0, kind: 'cut'},
-	{from: 'COINSPIN', to: 'S9', at: B.s9 + 0.05, dur: 0.7, kind: 'fade'},
-	{from: 'S9', to: 'S10', at: B.s10, dur: 0, kind: 'cut'},
-	{from: 'S10', to: 'S11', at: CU_IN, dur: 0, kind: 'cut'},
-	{from: 'S11', to: 'GARDEN2', at: SPLIT_IN - 0.25, dur: 0.5, kind: 'dissolve'},
-	{from: 'SAMENIGHT', to: 'GARDEN2', at: (SPLIT_IN + SPLIT_OUT) / 2, dur: SPLIT_OUT - SPLIT_IN, kind: 'split', divider, slant: 0.05},
-	{from: 'SAMENIGHT', to: 'GARDEN2', at: B.s13, dur: 0.6, kind: 'light'},
-	{from: 'GARDEN2', to: 'FEAST', at: B.s14, dur: 0.6, kind: 'dissolve'},
-	{from: 'FEAST', to: 'CTA', at: B.s15, dur: 0.7, kind: 'haze'},
-	{from: 'CTA', to: 'LOOP', at: B.loopOut, dur: 0, kind: 'cut'},
+	{from: 'HOOK', to: 'DIE', at: B.s2, dur: 0, kind: 'cut'},
+	// the hard cut on "die": from the blinding light to stillness
+	{from: 'DIE', to: 'DARK', at: B.hardCut, dur: 0, kind: 'cut'},
+	// the montage of what Moses had already seen: whip cuts
+	{from: 'DARK', to: 'BUSH', at: B.s3 + 0.02, dur: 0.24, kind: 'whip'},
+	{from: 'BUSH', to: 'PLAGUES', at: B.whipPlagues, dur: 0.22, kind: 'whip'},
+	{from: 'PLAGUES', to: 'SEA', at: B.whipSea, dur: 0.22, kind: 'whip'},
+	{from: 'SEA', to: 'ASK', at: B.s4, dur: 0.24, kind: 'whip'},
+	{from: 'ASK', to: 'ANSWER', at: B.s5, dur: 0, kind: 'cut'},
+	{from: 'ANSWER', to: 'CLIFT', at: B.s6, dur: 0.5, kind: 'dissolve'},
+	{from: 'CLIFT', to: 'INSIDE', at: B.inside, dur: 0, kind: 'cut'},
+	{from: 'INSIDE', to: 'BACK', at: B.s7, dur: 0.4, kind: 'dissolve'},
 ];
 
 export type ReelProps = {lite: boolean; only?: string; noText?: boolean; muted?: boolean; atTime?: number; cover?: boolean};
@@ -45,7 +35,7 @@ export const Reel: React.FC<ReelProps> = ({lite, only, noText, muted, atTime, co
 	const shots = only ? SHOTS.filter((s) => s.id === only) : SHOTS;
 	if (!ready) return null;
 	return (
-		<AbsoluteFill style={{backgroundColor: '#14100d'}}>
+		<AbsoluteFill style={{backgroundColor: '#0d0b10'}}>
 			<ThreeCanvas
 				width={width}
 				height={height}

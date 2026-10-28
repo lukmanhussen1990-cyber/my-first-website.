@@ -92,33 +92,37 @@ export const PoseSprite: React.FC<{
 	return <primitive object={mesh} position={[m.w / 2 - ax, ay - m.h / 2, 0]} />;
 };
 
-// Pixels per metre for every sheet, so each pose of a character shares one scale
-// (standing height: Jesus 1.80 m, Judas 1.75 m; seated and close-up sheets matched by eye).
+// Pixels per metre for every sheet, so each pose of a character shares one scale (standing height:
+// Moses 1.75 m, Aaron 1.68 m, the Israelite adults about 1.7 m, Jesus 1.80 m; close-ups matched by eye).
 export const PX_PER_M: Record<string, number> = {
+	// poses sheet A (wind) and the parts sheet
+	'moses/raise': 394,
+	'moses/shield': 394,
+	'moses/kneel_ask': 394,
+	'moses/bow': 394,
+	'moses/rig': 394,
+	// poses sheet B
+	'moses/press': 371,
+	'moses/peek': 371,
+	'moses/tablets_walk': 371,
+	'moses/veil': 371,
+	// the shining-face sheet
+	'moses/walk_glow': 464,
+	'moses/bust': 1450,
+	'moses/bust_glow': 1450,
+	aaron: 485,
+	people: 410,
 	'jesus/side': 559,
 	'jesus/threequarter': 559,
-	'jesus/back': 555,
 	'jesus/stand': 399,
-	'jesus/robe_off': 399,
-	'jesus/towel_tie': 399,
-	'jesus/pour': 399,
-	'jesus/kiss_stand': 462,
-	'jesus/kneel_wash': 462,
-	'jesus/kneel_lookup': 462,
 	'jesus/laugh_sit': 462,
-	'judas/side': 569,
-	'judas/threequarter': 569,
-	'judas/back': 563,
-	'judas/palm': 398,
-	'judas/walk': 398,
-	'judas/lean': 398,
-	'judas/sit_stiff': 398,
-	'judas/sit_away': 398,
-	kiss: 1500,
+	'jesus/closeup': 1500,
 	disciples: 372,
-	crowd: 262,
 	'guests/seated': 470,
 	'guests/g5': 323,
 };
 export const pxPerM = (sprite: string) =>
-	PX_PER_M[sprite] ?? PX_PER_M[sprite.split('/')[0]] ?? (sprite.startsWith('guests/') ? PX_PER_M['guests/seated'] : 500);
+	PX_PER_M[sprite] ??
+	PX_PER_M[sprite.split('/').slice(0, 2).join('/')] ??
+	PX_PER_M[sprite.split('/')[0]] ??
+	(sprite.startsWith('guests/') ? PX_PER_M['guests/seated'] : 500);

@@ -31,6 +31,8 @@ export function computeBeats(tl) {
     total: tl.durationInSeconds,
     // ---- S1 the opening: storm on Sinai, fast push-in that ramps into slow motion ----
     s1: 0,
+    hookTitleIn: 0,                      // the title is up from the first frame (no fade from black)
+    hookTitleFly: c.face + 0.32,         // ...then flies up into the caption spot after "face"
     lightning1: 0.16,
     rampEnd: 0.72,                       // the push-in slows into slow motion here
     titleOut: c.godSaid - 0.2,
@@ -65,9 +67,9 @@ export function computeBeats(tl) {
     // ---- S6 the clift: pressed into the rock; the covering shadow; the river of light ----
     s6: c.hid - 0.1,
     rockScrape: c.hid + 0.05,
-    cardLiveOut: c.clift - 0.3,
+    cardLiveOut: c.clift + 0.05,
     labelClift: c.clift - 0.05,
-    inside: c.covered - 0.18,            // cut to inside the clift
+    inside: c.gloryPassed - 0.18,        // cut to inside the clift as the glory passes
     cover: c.covered,                    // the covering shadow falls over the opening
     gloryRush: c.gloryPassed - 0.12,     // the roaring river of light rushes past
     gloryPeak: c.passedBy + 0.12,
@@ -99,7 +101,7 @@ export function computeBeats(tl) {
     streak: c.centuries + 0.62,          // centre of the light-streak transition
     streakStart: c.centuries + 0.12,
     room: c.centuries + 0.62,
-    cardJohnIn: c.jesusSaid - 0.05,
+    cardJohnIn: c.centuries + 0.87,      // as the upper room settles
     me: c.me,
     father: c.father,
     faceGlow: c.me,                      // the FACE "?" glows brighter

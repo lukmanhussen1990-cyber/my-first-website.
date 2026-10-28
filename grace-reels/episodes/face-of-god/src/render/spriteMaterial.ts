@@ -53,6 +53,7 @@ uniform float uSeed;
 uniform float uSil;
 uniform vec3 uSilColor;
 uniform float uRim;
+uniform float uRimLight;
 uniform vec3 uRimColor;
 uniform vec2 uRimDir;
 uniform vec2 uTexel;
@@ -92,11 +93,13 @@ void main() {
 		col *= mix(vec3(1.0), uGradColor, g * uGrad.z);
 	}
 	float alpha = c.a * uOpacity;
-	if (uSil > 0.0) {
+	if (uSil > 0.0 || uRimLight > 0.0) {
 		float n = texture2D(map, vUv + uRimDir * uTexel * 7.0).a;
 		float n2 = texture2D(map, vUv + uRimDir * uTexel * 14.0).a;
 		float edge = clamp(c.a - min(n, n2), 0.0, 1.0);
 		col = mix(col, uSilColor + uRimColor * edge * uRim, uSil);
+		// a rim of light on the edges facing the light, without darkening the figure
+		col += uRimColor * edge * uRimLight;
 	}
 	col = mix(col, uLightColor, uLight);
 	col += uLightColor * uGlow;
@@ -139,6 +142,7 @@ export type SpriteUniforms = {
 	uSil: {value: number};
 	uSilColor: {value: THREE.Color};
 	uRim: {value: number};
+	uRimLight: {value: number};
 	uRimColor: {value: THREE.Color};
 	uRimDir: {value: THREE.Vector2};
 };
@@ -170,6 +174,7 @@ export const makeSpriteMaterial = (texture: THREE.Texture, w: number, h: number)
 		uSil: {value: 0},
 		uSilColor: {value: new THREE.Color('#1b130e')},
 		uRim: {value: 0},
+		uRimLight: {value: 0},
 		uRimColor: {value: new THREE.Color('#ffe7b0')},
 		uRimDir: {value: new THREE.Vector2(0, 1)},
 	};
@@ -197,6 +202,7 @@ export type SpriteLook = {
 	sil?: number;
 	silColor?: THREE.ColorRepresentation;
 	rim?: number;
+	rimLight?: number; // rim of light on the edges facing rimDir, without the silhouette
 	rimColor?: THREE.ColorRepresentation;
 	rimDir?: [number, number];
 	blur?: number; // depth-of-field blur radius in texels
@@ -218,6 +224,7 @@ export const applyLook = (m: ReturnType<typeof makeSpriteMaterial>, look: Sprite
 	u.uSil.value = look.sil ?? 0;
 	u.uSilColor.value.set(look.silColor ?? tmp.set('#1b130e'));
 	u.uRim.value = look.rim ?? 0;
+	u.uRimLight.value = look.rimLight ?? 0;
 	u.uRimColor.value.set(look.rimColor ?? '#ffe7b0');
 	const rd = look.rimDir ?? [0, 1];
 	u.uRimDir.value.set(rd[0], rd[1]);

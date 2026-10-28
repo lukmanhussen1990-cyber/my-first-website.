@@ -4,43 +4,52 @@ import {clamp, easeOutBack, seg, smooth} from '../lib/ease';
 import {B, word} from '../lib/timeline';
 import {C, SAFE, SANS, SERIF} from './theme';
 
-type CardDef = {from: number; to: number; text: string; ref: string; keyAt: number; top: number};
+// keyAt: when each keyword phrase is said (one time per **phrase**, in order)
+type CardDef = {from: number; to: number; text: string; ref: string; keyAt: number[]; top: number};
 
 // **words** mark a keyword (one or more words).
 export const CARDS: CardDef[] = [
 	{
-		from: B.pouchGlint + 0.35,
-		to: B.s6 + 0.4,
-		text: '“For he knew who should **betray** him; therefore said he, Ye are not all clean.”',
-		ref: 'John 13:11',
-		keyAt: B.betray,
-		top: 1060,
+		from: B.cardGloryIn,
+		to: B.cardGloryOut,
+		text: '“And he said, I beseech thee, shew me thy **glory**.”',
+		ref: 'Exodus 33:18',
+		keyAt: [B.glory],
+		top: 1120,
 	},
 	{
-		from: B.coinsLanded - 0.4,
-		to: B.chainDrop - 0.05,
-		text: '“If the ox shall push a manservant or a maidservant; he shall give unto their master **thirty shekels of silver**…”',
-		ref: 'Exodus 21:32',
-		keyAt: B.shekels,
-		top: 500,
-	},
-	{
-		from: B.cardMatthewIn - 0.2,
-		to: B.s12 + 0.35,
-		text: '“And Jesus said unto him, **Friend**, wherefore art thou come?…”',
-		ref: 'Matthew 26:50',
-		keyAt: word('12a', 'friend').start,
-		top: 1060,
-	},
-	{
-		from: B.cardRomansIn,
-		to: B.cardRomansOut,
-		text: '“For if, when we were **enemies**, we were reconciled to God by the death of his Son…”',
-		ref: 'Romans 5:10',
-		keyAt: B.enemies,
+		from: B.cardLiveIn,
+		to: B.cardLiveOut,
+		text: '“…Thou canst not see my face: for there shall no man see me, and **live**.”',
+		ref: 'Exodus 33:20',
+		keyAt: [B.live],
 		top: 760,
 	},
-];
+	{
+		from: B.cardShoneIn,
+		to: B.cardShoneOut,
+		text: '“…Moses wist not that the skin of his face **shone**… and they were **afraid** to come nigh him.”',
+		ref: 'Exodus 34:29–30',
+		keyAt: [word('09b', 'shone').start, B.gasp2],
+		top: 760,
+	},
+	{
+		from: B.cardJohnIn,
+		to: B.cardJohnOut,
+		text: '“…hast thou not known me, Philip? he that hath seen **me** hath seen the **Father**…”',
+		ref: 'John 14:9',
+		keyAt: [B.me, B.father],
+		top: 1000,
+	},
+	{
+		from: B.cardFaceIn,
+		to: B.cardFaceOut,
+		text: '“…to give the light of the knowledge of the glory of God in the **face of Jesus Christ**.”',
+		ref: '2 Corinthians 4:6',
+		keyAt: [word('14', 'face').start],
+		top: 980,
+	},
+]
 
 // Warm paper: a faint fibre grain over a cream wash.
 const GRAIN = `url("data:image/svg+xml;utf8,${encodeURIComponent(
@@ -64,7 +73,6 @@ export const ScriptureCard: React.FC<{t: number; card: CardDef}> = ({t, card}) =
 	const scale = (0.95 + 0.05 * easeOutBack(inP, 1.4)) * (1 + 0.025 * life);
 	const float = Math.sin((t - card.from) * 1.1) * 3;
 	const tilt = Math.sin((t - card.from) * 0.7) * 0.35;
-	const glow = t > card.keyAt ? Math.exp(-(t - card.keyAt) * 1.6) : 0;
 	const parts = card.text.split(/\*\*(.+?)\*\*/);
 	return (
 		<div
@@ -88,9 +96,11 @@ export const ScriptureCard: React.FC<{t: number; card: CardDef}> = ({t, card}) =
 				{parts.map((p, i) => {
 					if (i % 2 === 0) return <span key={i}>{p}</span>;
 					// a keyword phrase: each word is its own block so a long phrase can wrap; the underline runs
-					// across the words one after another
+					// across the words one after another when the voice says it
+					const at = card.keyAt[(i - 1) / 2] ?? card.keyAt[0];
+					const glow = t > at ? Math.exp(-(t - at) * 1.6) : 0;
 					const ws = p.split(' ');
-					const k = clamp((t - card.keyAt) / 0.35) * ws.length;
+					const k = clamp((t - at) / 0.35) * ws.length;
 					return (
 						<span key={i}>
 							{ws.map((w, j) => (

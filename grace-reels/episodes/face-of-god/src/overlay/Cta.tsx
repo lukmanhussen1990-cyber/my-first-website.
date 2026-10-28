@@ -1,11 +1,11 @@
-// S15 call to action (drawn over the glowing basin) and S16 end card (on a dark warm background).
+// S14 call to action (over a dark warm background) and S15 end card.
 import {clamp, easeOut, easeOutBack, seg, smooth} from '../lib/ease';
 import {hash} from '../lib/random';
 import {B, COMMENT_TEXT} from '../lib/timeline';
 import {Logo} from './Logo';
 import {C, SAFE, SANS, SERIF} from './theme';
 
-const END_IN = B.s16;
+const END_IN = B.s15;
 
 const Heart: React.FC<{x: number; y: number; size: number; color: string; opacity: number; rot: number}> = ({x, y, size, color, opacity, rot}) => (
 	<svg width={size} height={size} viewBox="0 0 24 24" style={{position: 'absolute', left: x - size / 2, top: y - size / 2, opacity, transform: `rotate(${rot}deg)`}}>
@@ -13,60 +13,18 @@ const Heart: React.FC<{x: number; y: number; size: number; color: string; opacit
 	</svg>
 );
 
-// A YES / NO answer chip: pops in with a little overshoot and a ring that widens once.
-const Choice: React.FC<{t: number; at: number; x: number; label: string; yes: boolean}> = ({t, at, x, label, yes}) => {
-	const p = seg(t, at - 0.04, at + 0.32);
-	if (p <= 0) return null;
-	const s = easeOutBack(p, 2.4);
-	const ring = clamp((t - at) / 0.6);
-	const w = 300;
-	return (
-		<div style={{position: 'absolute', left: x - w / 2, top: CHOICE_Y - 56, width: w, height: 112, transform: `scale(${s})`, opacity: smooth(p / 0.4)}}>
-			<div style={{position: 'absolute', inset: -14 * ring, borderRadius: 70, border: `3px solid ${yes ? C.gold : C.cream}`, opacity: 0.6 * (1 - ring)}} />
-			<div
-				style={{
-					position: 'absolute',
-					inset: 0,
-					borderRadius: 56,
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					gap: 18,
-					background: yes ? C.gold : 'rgba(20,16,13,0.82)',
-					border: yes ? 'none' : `3px solid ${C.cream}`,
-					boxSizing: 'border-box',
-					boxShadow: '0 14px 34px rgba(0,0,0,0.45)',
-				}}
-			>
-				<svg width={44} height={44} viewBox="0 0 24 24">
-					{yes ? (
-						<path d="M5 12.5 L10 17.5 L19 7.5" stroke={C.ink} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-					) : (
-						<path d="M6.5 6.5 L17.5 17.5 M17.5 6.5 L6.5 17.5" stroke={C.cream} strokeWidth={3.2} strokeLinecap="round" fill="none" />
-					)}
-				</svg>
-				<span style={{fontFamily: SANS, fontWeight: 700, fontSize: 46, letterSpacing: '0.14em', color: yes ? C.ink : C.cream}}>{label}</span>
-			</div>
-		</div>
-	);
-};
-
-const CHOICE_Y = 1040;
 const BOX_Y = 1250;
 
-// S15: the question is in the captions; YES and NO pop in as they are said, then a comment types itself
-// and hearts float up from it. The picture behind is the glowing basin and towel.
+// S14: the question is in the captions; a comment types itself and hearts float up from it.
 export const CallToAction: React.FC<{t: number}> = ({t}) => {
 	const out = seg(t, END_IN - 0.25, END_IN + 0.1);
-	if (t < B.yes - 0.1 || out >= 1) return null;
+	if (t < B.s14 - 0.1 || out >= 1) return null;
 	const typed = [...COMMENT_TEXT].slice(0, clamp(Math.floor((t - B.typingStart) * B.typingCps), 0, [...COMMENT_TEXT].length)).join('');
 	const cursorOn = Math.floor(t * 2.2) % 2 === 0 || (t > B.typingStart && t < B.typingEnd);
 	const boxIn = seg(t, B.typingStart - 0.45, B.typingStart - 0.05);
 	const tap = Math.exp(-Math.max(0, t - B.typingEnd) * 6) * (t > B.typingEnd ? 1 : 0);
 	return (
 		<div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, opacity: 1 - out}}>
-			<Choice t={t} at={B.yes} x={(SAFE.left + SAFE.right) / 2 - 170} label="YES" yes />
-			<Choice t={t} at={B.no} x={(SAFE.left + SAFE.right) / 2 + 170} label="NO" yes={false} />
 			{/* the comment box typing an answer */}
 			<div
 				style={{
@@ -100,7 +58,7 @@ export const CallToAction: React.FC<{t: number}> = ({t}) => {
 				const born = B.hearts + k * 0.18;
 				const age = t - born;
 				if (age < 0 || age > 2.2) return null;
-				// up the right edge, clear of the YES / NO words
+				// up the right edge
 				const x = 905 + (hash(91, k) - 0.5) * 90 + Math.sin(age * 3 + k) * 18;
 				const y = BOX_Y - age * 240;
 				const size = 34 + hash(92, k) * 26;

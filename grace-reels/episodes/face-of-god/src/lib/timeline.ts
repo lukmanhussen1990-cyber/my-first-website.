@@ -31,14 +31,11 @@ export const DURATION_FRAMES = TL.durationInFrames;
 const RAW = computeBeats(TL) as Record<string, unknown>;
 // Every beat time in seconds (see src/beats.mjs).
 export const B = RAW as unknown as Record<string, number> & {
-	dots: number[];
-	coins: number[];
-	coinLand: number[];
-	heart: number[];
-	steps: {judas: number[]};
+	frogs: number[];
+	steps: {moses: number[]};
 };
 export const COMMENT_TEXT = RAW.commentText as string;
-export const WALK: Record<'judas', {period: number; phase: number}> = WALKS;
+export const WALK: Record<'moses', {period: number; phase: number}> = WALKS;
 
 export const SCENE = Object.fromEntries(TL.scenes.map((s) => [s.id, s])) as Record<string, Scene>;
 
