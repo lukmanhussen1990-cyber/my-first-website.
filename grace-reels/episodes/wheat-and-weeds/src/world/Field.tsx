@@ -241,10 +241,12 @@ export type FieldPatch = {
 	clear?: [number, number, number]; // x, z, radius left empty (where a camera stands in the wheat)
 	path?: boolean; // leave the footpath across the field (default true)
 	chunk?: number; // chunk size in metres (each chunk is culled on its own)
+	rot?: number; // fixed turn of every stalk (a single hero stalk turned to the camera)
+	flat?: boolean; // stand on y = 0 instead of the farm's ground (sets of their own, like the cutaway)
 };
 
 // the main field (in front of the farmhouse)
-export const MAIN: FieldPatch = {x0: -16, x1: 16, z0: -21, z1: 7, row: 0.33, step: 0.19, tare: 0.18, seed: 5};
+export const MAIN: FieldPatch = {x0: -16, x1: 16, z0: -21, z1: 7, row: 0.27, step: 0.16, tare: 0.18, seed: 5};
 export const onPath = (x: number, z: number) => Math.abs(x - 3.2 - 0.1 * z) < 0.45;
 
 type Inst = {x: number; z: number; y: number; rot: number; s: number; rand: number; phase: number; tare: number};
@@ -261,7 +263,7 @@ const instancesOf = (f: FieldPatch, height: (x: number, z: number) => number) =>
 			if (f.path !== false && onPath(px, pz)) continue;
 			if (f.hole && px > f.hole[0] && px < f.hole[1] && pz > f.hole[2] && pz < f.hole[3]) continue;
 			if (f.clear && Math.hypot(px - f.clear[0], pz - f.clear[1]) < f.clear[2]) continue;
-			out.push({x: px, z: pz, y: height(px, pz), rot: hash(f.seed, i, 3) * 6.283, s: 0.82 + hash(f.seed, i, 4) * 0.36, rand: hash(f.seed, i, 5), phase: hash(f.seed, i, 6), tare: hash(f.seed, i, 7) < f.tare ? 1 : 0});
+			out.push({x: px, z: pz, y: height(px, pz), rot: f.rot ?? hash(f.seed, i, 3) * 6.283, s: 0.82 + hash(f.seed, i, 4) * 0.36, rand: hash(f.seed, i, 5), phase: hash(f.seed, i, 6), tare: hash(f.seed, i, 7) < f.tare ? 1 : 0});
 		}
 	}
 	return out;
@@ -279,7 +281,7 @@ const shareInto = (base: THREE.BufferGeometry, inst: Record<string, THREE.Instan
 };
 
 const buildChunks = (f: FieldPatch): ChunkData[] => {
-	const list = instancesOf(f, farmHeight);
+	const list = instancesOf(f, f.flat ? () => 0 : farmHeight);
 	const size = f.chunk ?? 4;
 	const hero = f.detail === 'hero';
 	const bases = {
@@ -358,9 +360,9 @@ const wheatUniforms = (): Record<string, THREE.IUniform> => ({
 
 // The under-canopy: a low wavy sheet the colour of shaded stalks, a little under the heads, so from above
 // the field reads as dense as real wheat instead of showing the soil between the instanced stalks.
-const CANOPY_H = 0.8;
+const CANOPY_H = 0.72;
 const buildCanopy = (f: FieldPatch) => {
-	const step = 0.45;
+	const step = 0.32;
 	const inset = 0.3;
 	const x0 = f.x0 + inset;
 	const x1 = f.x1 - inset;
@@ -397,7 +399,7 @@ const buildCanopy = (f: FieldPatch) => {
 	return g;
 };
 const canopyMaterial = (u: Record<string, THREE.IUniform>) => {
-	const m = new THREE.MeshLambertMaterial({flatShading: true});
+	const m = new THREE.MeshLambertMaterial();
 	m.onBeforeCompile = (sh) => {
 		Object.assign(sh.uniforms, u);
 		sh.vertexShader = sh.vertexShader
@@ -410,16 +412,22 @@ const canopyMaterial = (u: Record<string, THREE.IUniform>) => {
 				vCW = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
 		sh.fragmentShader = sh.fragmentShader
 			.replace('#include <common>', `#include <common>
-				uniform float uRipe, uBack, uGrow; uniform vec3 uStemGreen, uStemGold, uHeadGreen, uHeadGold, uSunDir, uBackColor; varying vec2 vR; varying vec3 vCW;`)
+				uniform float uRipe, uBack, uGrow; uniform vec3 uStemGreen, uStemGold, uHeadGreen, uHeadGold, uSunDir, uBackColor; varying vec2 vR; varying vec3 vCW;
+				float ch(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+				float cvn(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+					return mix(mix(ch(i), ch(i + vec2(1, 0)), u.x), mix(ch(i + vec2(0, 1)), ch(i + vec2(1, 1)), u.x), u.y); }`)
 			.replace('#include <color_fragment>', `#include <color_fragment>
 				vec3 hc = mix(uHeadGreen, uHeadGold, uRipe);
-				vec3 c = mix(mix(uStemGreen, uStemGold, uRipe * 0.9), hc, 0.45 + 0.4 * vR.y);
-				// deep inside the stalks: mostly in shade
-				diffuseColor.rgb = c * (0.2 + 0.12 * vR.y);`)
+				vec3 c = mix(mix(uStemGreen, uStemGold, uRipe * 0.9), hc, 0.55 + 0.3 * vR.y);
+				// a busy texture of heads and shadows between them, so the sheet never reads as a floor
+				vec2 q = vCW.xz;
+				float n = cvn(q * vec2(7.0, 12.0)) * 0.6 + cvn(q * vec2(19.0, 31.0)) * 0.4;
+				float heads = smoothstep(0.42, 0.72, n);
+				diffuseColor.rgb = c * mix(0.12, 0.48, heads) * (0.85 + 0.3 * vR.y);`)
 			.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 				// the sea of heads lights up against the sun or moon like the stalks above it
 				float bl = pow(max(0.0, dot(normalize(vCW - cameraPosition), normalize(uSunDir))), 3.0) * uBack;
-				totalEmissiveRadiance += hc * uBackColor * bl * (0.16 + 0.12 * vR.y) * smoothstep(0.3, 0.8, uGrow);`);
+				totalEmissiveRadiance += hc * uBackColor * bl * (0.08 + 0.4 * heads) * smoothstep(0.3, 0.8, uGrow);`);
 	};
 	m.customProgramCacheKey = () => 'wheatCanopy';
 	return m;
@@ -589,35 +597,59 @@ const house = () => {
 };
 const mergePlacedRaw = (parts: THREE.BufferGeometry[]) => mergePlaced(parts.map((geo) => ({geo, pos: [0, 0, 0] as [number, number, number]})));
 
-// the barn for the harvest: big doors open on a warm inside (the glow is added by the shot)
+// the barn for the harvest: a gabled timber barn, big doors open on a warm inside (the glow is added by the shot)
 const barn = () => {
 	const parts: THREE.BufferGeometry[] = [];
-	const add = (g: THREE.BufferGeometry, c: string, seed: number) => parts.push(paintFaces(g, (x, y, z, ny) => new THREE.Color(c).multiplyScalar(0.9 + 0.1 * ny), 0.04, seed));
-	const back = new THREE.BoxGeometry(9, 4.2, 0.3);
-	back.translate(0, 2.1, -3.2);
-	add(back, '#a8865e', 1);
-	for (const sx of [-1, 1]) {
-		const side = new THREE.BoxGeometry(0.3, 4.2, 6.6);
-		side.translate(sx * 4.5, 2.1, 0);
-		add(side, '#a8865e', 2 + sx);
-		const front = new THREE.BoxGeometry(2.6, 4.2, 0.3);
-		front.translate(sx * 3.2, 2.1, 3.2);
-		add(front, '#a8865e', 5 + sx);
+	const add = (g: THREE.BufferGeometry, c: string, seed: number, j = 0.04) => parts.push(paintFaces(g, (x, y, z, ny) => new THREE.Color(c).multiplyScalar(0.88 + 0.12 * ny), j, seed));
+	const W = 8;
+	const D = 6.4;
+	const HW = 3.6;
+	const HR = 5.8;
+	const wall = '#a07c55';
+	const box = (w: number, h: number, d: number, x: number, y: number, z: number, c: string, seed: number) => {
+		const g = new THREE.BoxGeometry(w, h, d);
+		g.translate(x, y, z);
+		add(g, c, seed);
+	};
+	box(W, HW, 0.3, 0, HW / 2, -D / 2, wall, 1);
+	box(0.3, HW, D, -W / 2, HW / 2, 0, wall, 2);
+	box(0.3, HW, D, W / 2, HW / 2, 0, wall, 3);
+	const door = 3.8;
+	const side = (W - door) / 2;
+	box(side, HW, 0.3, -(door / 2 + side / 2), HW / 2, D / 2, wall, 4);
+	box(side, HW, 0.3, door / 2 + side / 2, HW / 2, D / 2, wall, 5);
+	box(door + 0.2, 0.5, 0.34, 0, HW - 0.25, D / 2, '#7c5a3a', 6);
+	// vertical boards on the front
+	for (let k = 0; k < 9; k++) {
+		const x = -W / 2 + 0.25 + k * 0.48;
+		if (Math.abs(x) < door / 2 + 0.1) continue;
+		box(0.05, HW - 0.1, 0.06, x, HW / 2, D / 2 + 0.17, '#8a6a46', 20 + k);
 	}
-	const lintel = new THREE.BoxGeometry(4.2, 1.0, 0.3);
-	lintel.translate(0, 3.7, 3.2);
-	add(lintel, '#9a7a54', 8);
-	const roofL = new THREE.BoxGeometry(5.4, 0.25, 7.4);
-	roofL.rotateZ(0.38);
-	roofL.translate(-2.4, 5.1, 0);
-	add(roofL, '#7a5a3a', 9);
-	const roofR = roofL.clone();
-	roofR.rotateZ(-0.76);
-	roofR.translate(4.8, 0, 0);
-	add(roofR, '#7a5a3a', 10);
-	const floor = new THREE.BoxGeometry(9, 0.1, 6.6);
-	floor.translate(0, 0.05, 0);
-	add(floor, '#8a6a44', 11);
+	// the gables: a triangle at each end
+	for (const z of [-D / 2, D / 2]) {
+		const shape = new THREE.Shape();
+		shape.moveTo(-W / 2, 0);
+		shape.lineTo(W / 2, 0);
+		shape.lineTo(0, HR - HW);
+		shape.lineTo(-W / 2, 0);
+		const g = new THREE.ExtrudeGeometry(shape, {depth: 0.3, bevelEnabled: false});
+		g.translate(0, HW, z - 0.15);
+		add(g, '#9a774f', 7 + (z > 0 ? 1 : 0));
+	}
+	// the roof: two sloping boards meeting at the ridge, with an overhang
+	const over = 0.5;
+	const run = W / 2 + over;
+	const rise = (HR - HW) * (run / (W / 2));
+	const L = Math.hypot(run, rise);
+	const ang = Math.atan2(rise, run);
+	for (const sx of [-1, 1]) {
+		const g = new THREE.BoxGeometry(L, 0.22, D + 1.0);
+		g.rotateZ(-sx * ang);
+		g.translate((sx * run) / 2, HR - rise / 2 + 0.12, 0);
+		add(g, '#6e4f33', 9 + sx, 0.06);
+	}
+	box(0.3, 0.3, D + 1.0, 0, HR + 0.1, 0, '#5e422a', 12);
+	box(W, 0.1, D, 0, 0.05, 0, '#8a6a44', 13);
 	return mergePlacedRaw(parts);
 };
 

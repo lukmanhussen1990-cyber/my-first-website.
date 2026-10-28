@@ -9,9 +9,9 @@ import type {CamState, FogState, Grade, Vec3} from '../render/types';
 import type {Mood} from '../world/mood';
 
 export const NIGHT_GRADE: Partial<Grade> = {exposure: 1.06, contrast: 1.1, saturation: 1.0, gain: [0.92, 0.98, 1.1], lift: [0.002, 0.004, 0.012], vignette: 0.55, bloom: 0.2, bloomThreshold: 1.05, grain: 0.02};
-export const SUNRISE_GRADE: Partial<Grade> = {exposure: 1.03, contrast: 1.05, saturation: 1.06, gain: [1.05, 1.0, 0.94], lift: [0.012, 0.008, 0.01], vignette: 0.42, bloom: 0.5, bloomThreshold: 0.8, grain: 0.016};
+export const SUNRISE_GRADE: Partial<Grade> = {exposure: 1.0, contrast: 1.07, saturation: 1.06, gain: [1.05, 1.0, 0.94], lift: [0.01, 0.006, 0.008], vignette: 0.45, bloom: 0.32, bloomThreshold: 0.95, grain: 0.016};
 export const DAY_GRADE: Partial<Grade> = {exposure: 1.0, contrast: 1.05, saturation: 1.05, gain: [1.02, 1.0, 0.97], vignette: 0.36, bloom: 0.3, bloomThreshold: 0.86, grain: 0.014};
-export const GOLDEN_GRADE: Partial<Grade> = {exposure: 1.02, contrast: 1.07, saturation: 1.07, gain: [1.06, 1.0, 0.92], lift: [0.012, 0.007, 0.004], vignette: 0.44, bloom: 0.5, bloomThreshold: 0.78, grain: 0.015};
+export const GOLDEN_GRADE: Partial<Grade> = {exposure: 0.98, contrast: 1.08, saturation: 1.06, gain: [1.05, 1.0, 0.93], lift: [0.008, 0.005, 0.003], vignette: 0.46, bloom: 0.32, bloomThreshold: 0.95, grain: 0.015};
 
 export const fogOf = (m: Mood, k = 1): FogState => ({color: m.fog, near: m.fogNear * k, far: m.fogFar * k});
 
@@ -128,7 +128,7 @@ export const Seeds: React.FC<{
 };
 
 // Each grain leaves a fading streak of light along its path (additive points sampled back in time).
-const TRAIL_N = 14;
+const TRAIL_N = 26;
 const SeedTrails: React.FC<{specs: SeedSpec[]; t: number; g: number; len: number; color: string; px: number; opacity: number}> = ({specs, t, g, len, color, px, opacity}) => {
 	const {geo, mat} = useMemo(() => {
 		const n = specs.length * TRAIL_N;

@@ -205,7 +205,7 @@ export const Dust: React.FC<{
 						vec3 w = uCenter + (p - 0.5) * uSize;
 						vec4 mv = modelViewMatrix * vec4(w, 1.);
 						gl_Position = projectionMatrix * mv;
-						gl_PointSize = uPx * (0.5 + aR) * (30.0 / -mv.z);
+						gl_PointSize = min(18.0, uPx * (0.5 + aR) * (30.0 / -mv.z));
 						vA = smoothstep(0.0, 0.15, p.y) * smoothstep(1.0, 0.8, p.y) * (0.55 + 0.45 * sin(uT * 2.0 + aR * 50.0));
 					}`,
 				fragmentShader: `uniform sampler2D uMap; uniform vec3 uColor; uniform float uOpacity; varying float vA;

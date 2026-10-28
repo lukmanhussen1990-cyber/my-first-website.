@@ -28,8 +28,8 @@ export const TL = timelineJson as unknown as Timeline;
 export const FPS = TL.fps;
 export const DURATION_FRAMES = TL.durationInFrames;
 
-const RAW = computeBeats(TL) as Record<string, unknown>;
-// Every beat time in seconds (see src/beats.mjs).
+// Every voice cue (timeline.json) and every beat (src/beats.mjs), in seconds; a beat wins on a clash.
+const RAW = {...TL.cues, ...(computeBeats(TL) as Record<string, unknown>)} as Record<string, unknown>;
 export const B = RAW as unknown as Record<string, number> & {
 	scrolls: number[];
 	steps: {farmer: number[]; enemy: number[]; saul: number[]};

@@ -5,8 +5,9 @@ import {usePreloadTextures} from './lib/textures';
 import {Director} from './render/Director';
 import type {ShotDef, Transition} from './render/types';
 import {COVER, ENEMY, LOOP, OPEN} from './shots/Night';
+import {CTA, GROW, HARVEST, HOURGLASS, PULL, SOW, SPOTS, TALK, TOGETHER} from './shots/Day';
 
-export const SHOTS: ShotDef[] = [OPEN, ENEMY, LOOP, COVER];
+export const SHOTS: ShotDef[] = [OPEN, SOW, ENEMY, GROW, TALK, PULL, TOGETHER, SPOTS, HOURGLASS, HARVEST, CTA, LOOP, COVER];
 
 export const TRANSITIONS: Transition[] = [{from: 'OPEN', to: 'ENEMY', at: B.s4, dur: 0, kind: 'cut'}];
 
