@@ -430,6 +430,27 @@ export function build(ctx) {
   });
 
   // -------------------------------------------------------------------------
+  // the soil round the shelter: dark faces just outside its walls, roof and floor.
+  // Only the hairline gaps where the corrugated sheets meet the cut face (and the
+  // troughs under the roof sheet) look onto them; without them those gaps would show
+  // the sky (or the gas outside) through the ground
+  // -------------------------------------------------------------------------
+  {
+    const soilBack = new THREE.MeshStandardMaterial({ color: SRC('#2e2218'), roughness: 1 });
+    const zf = -0.003, top = SHEET.roof + CORR.amp + 0.03;
+    const g = [
+      G.boxMM(OUT.x0 - 0.2, FLOOR_B - 0.2, OUT.zb - 0.06, OUT.x1 + 0.2, -0.003, OUT.zb - 0.04), // behind the back walls
+      G.boxMM(OUT.x0 - 0.08, FLOOR_B - 0.2, OUT.zb - 0.06, OUT.x0 - 0.06, -0.003, zf), // left of the left wall
+      G.boxMM(OUT.x1 + 0.06, FLOOR_B - 0.2, OUT.zb - 0.06, OUT.x1 + 0.08, -0.003, zf), // right of the right wall
+      G.boxMM(OUT.x0 - 0.08, top, OUT.zb - 0.06, SHEET.shared - 0.04, top + 0.02, zf), // over the room's roof
+      G.boxMM(OUT.x0 - 0.08, FLOOR_B - 0.22, OUT.zb - 0.06, OUT.x1 + 0.08, FLOOR_B - 0.2, zf), // under the slab
+    ];
+    const m = mesh(G.mergeAll(g), soilBack, false, false);
+    scene.add(m);
+    updaters.push((t) => { m.visible = t > S0 + 0.7; });
+  }
+
+  // -------------------------------------------------------------------------
   // the room: a bench along the back wall, a caged lamp, the stuffy haze
   // -------------------------------------------------------------------------
   const benchWood = MAT.woodMaterial('bench', '#9c7550', 'abs(n.y) > 0.5 ? vec2(p.x, p.z) : (abs(n.x) > 0.5 ? vec2(p.z, p.y) : vec2(p.x, p.y))', 0.14, 0.7);
