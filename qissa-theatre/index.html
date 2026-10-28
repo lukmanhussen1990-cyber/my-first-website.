@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Qissa Theatre</title>
+<style>
+  @font-face { font-family: 'Cinzel'; src: url(fonts/Cinzel-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: 'Cinzel'; src: url(fonts/Cinzel-Bold.ttf); font-weight: 700; }
+  @font-face { font-family: 'Amiri'; src: url(fonts/Amiri-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: 'Amiri'; src: url(fonts/Amiri-Bold.ttf); font-weight: 700; }
+  @font-face { font-family: 'Aref Ruqaa'; src: url(fonts/ArefRuqaa-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: 'Aref Ruqaa'; src: url(fonts/ArefRuqaa-Bold.ttf); font-weight: 700; }
+  html, body { margin: 0; padding: 0; background: #000; width: 1080px; height: 1920px; overflow: hidden; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #07080d; }
+  #root > * { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .o { stroke: #3B2414; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .str { stroke: #1E120A; stroke-opacity: 0.5; stroke-width: 1.7; fill: none; }
+  .lstr { stroke: #E9D9B4; stroke-opacity: 0.22; stroke-width: 1.4; fill: none; }
+  #spot { background: radial-gradient(ellipse 62% 44% at 50% 56%, rgba(232,168,92,0.30), rgba(232,168,92,0.10) 55%, rgba(232,168,92,0) 75%); mix-blend-mode: screen; pointer-events: none; }
+  #vignette { background:
+      radial-gradient(ellipse 78% 62% at 50% 52%, rgba(0,0,0,0) 52%, rgba(0,0,0,0.55) 80%, rgba(0,0,0,0.92) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0) 12%, rgba(0,0,0,0) 86%, rgba(0,0,0,0.5)); }
+  #grain { mix-blend-mode: overlay; opacity: 0.16; }
+  #captions { pointer-events: none; }
+  .cap { position: absolute; left: 50px; width: 980px; text-align: center; font-family: 'Cinzel', serif; font-weight: 700;
+    color: #F3E6C8; font-size: 70px; line-height: 1.22; letter-spacing: 0.5px;
+    text-shadow: 0 0 18px rgba(243,230,200,0.42), 0 0 14px rgba(20,12,6,0.55), 0 3px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9); }
+  .cap .w { display: inline-block; white-space: pre; will-change: transform, opacity; }
+  .cap .hl { color: #7FD8C9; text-shadow: 0 0 20px rgba(127,216,201,0.55), 0 0 14px rgba(8,20,18,0.6), 0 3px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9); }
+  .cap .pbuh { font-family: 'Amiri', serif; font-weight: 400; font-size: 1.25em; line-height: 0.8; vertical-align: -0.08em; }
+  .cap.src { top: 1000px; font-size: 32px; font-weight: 400; letter-spacing: 1px; color: #E9D9B4; }
+  #cover { pointer-events: none; text-align: center; }
+  #cover > div { position: absolute; left: 0; width: 1080px; }
+  .cv-small { top: 330px; font-family: 'Cinzel'; font-weight: 700; font-size: 40px; letter-spacing: 12px; color: #D4AF37;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
+  .cv-ar { top: 377px; font-family: 'Aref Ruqaa'; font-weight: 700; font-size: 200px; line-height: 1.2; color: #E9C35A; direction: rtl;
+    text-shadow: 0 0 24px rgba(240,200,90,0.6), 0 0 6px rgba(240,200,90,0.5), 0 4px 10px rgba(0,0,0,0.9); }
+  .cv-en { top: 640px; font-family: 'Cinzel'; font-weight: 700; font-size: 66px; color: #F3E6C8;
+    text-shadow: 0 0 18px rgba(243,230,200,0.45), 0 3px 8px rgba(0,0,0,0.95); }
+  #wm { left: auto; top: auto; right: 34px; bottom: 30px; width: auto; height: auto; font-family: 'Cinzel', serif; font-weight: 700;
+    font-size: 30px; color: #F3E6C8; opacity: 0.6; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+</style>
+</head>
+<body>
+<div id="root">
+  <svg id="stage" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <defs id="defs">
+      <radialGradient id="shadowGrad"><stop offset="0" stop-color="#000" stop-opacity="0.55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+      <radialGradient id="lampGlow"><stop offset="0" stop-color="#FFC774" stop-opacity="0.55"/><stop offset="0.35" stop-color="#E8A85C" stop-opacity="0.22"/><stop offset="1" stop-color="#E8A85C" stop-opacity="0"/></radialGradient>
+      <radialGradient id="moonGlow"><stop offset="0.35" stop-color="#F3E6C8" stop-opacity="0.28"/><stop offset="1" stop-color="#F3E6C8" stop-opacity="0"/></radialGradient>
+      <radialGradient id="starGlow"><stop offset="0" stop-color="#FFE7A0" stop-opacity="0.5"/><stop offset="1" stop-color="#FFE7A0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="goldGlow"><stop offset="0" stop-color="#FFD978" stop-opacity="0.6"/><stop offset="1" stop-color="#FFD978" stop-opacity="0"/></radialGradient>
+      <radialGradient id="duaGlow"><stop offset="0" stop-color="#FFF1CC" stop-opacity="0.55"/><stop offset="0.5" stop-color="#F3E6C8" stop-opacity="0.18"/><stop offset="1" stop-color="#F3E6C8" stop-opacity="0"/></radialGradient>
+      <linearGradient id="flameGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF4D0"/><stop offset="0.6" stop-color="#FFC266"/><stop offset="1" stop-color="#E8903C"/></linearGradient>
+    </defs>
+    <g id="world"></g>
+  </svg>
+  <div id="spot"></div>
+  <canvas id="dust" width="1080" height="1920"></canvas>
+  <div id="vignette"></div>
+  <svg id="fx" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="captions"></div>
+  <canvas id="grain" width="1080" height="1920"></canvas>
+  <div id="wm">@noortoon_si</div>
+</div>
+<script src="timeline/words.js"></script>
+<script src="js/util.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/puppets.js"></script>
+<script src="js/backgrounds.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/overlays.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
