@@ -28,6 +28,7 @@ def main():
     fdir, wdir, wav, out_mp4, W, H = sys.argv[1:7]
     W, H = int(W), int(H)
     step = int(sys.argv[7]) if len(sys.argv) > 7 else 1
+    maxrate = sys.argv[8] if len(sys.argv) > 8 else None      # e.g. '3.2M' keeps a 44 s reel < 20 MB
     os.makedirs(wdir, exist_ok=True)
     words = json.load(open(os.path.join(os.path.dirname(HERE), 'data', 'words.json')))
     chunks = OV.build_chunks(words)
@@ -42,8 +43,10 @@ def main():
     in_fps = FPS / step
     cmd = ['ffmpeg', '-v', 'error', '-y', '-framerate', f'{in_fps}', '-i', os.path.join(wdir, 'seq_%05d.png'),
            '-i', wav, '-map', '0:v', '-map', '1:a',
-           '-vf', f'fps={FPS},format=yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18',
-           '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-shortest', '-movflags', '+faststart', out_mp4]
+           '-vf', f'fps={FPS},format=yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18']
+    if maxrate:
+        cmd += ['-maxrate', maxrate, '-bufsize', str(float(maxrate.rstrip('M')) * 2) + 'M']
+    cmd += ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-shortest', '-movflags', '+faststart', out_mp4]
     subprocess.run(cmd, check=True)
     print('wrote', out_mp4, len(files), 'frames')
 

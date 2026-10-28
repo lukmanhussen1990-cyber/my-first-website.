@@ -278,6 +278,9 @@ def apply_story(t, sh):
     hide_tree(sv, t < 5.5)
     sv.matrix_world = (Matrix.Translation((0.95, 0.55, 0.0)) @ Matrix.Rotation(math.radians(-25), 4, 'Y')
                        @ Matrix.Rotation(math.radians(20), 4, 'X'))
+    # poop: in the hole from the stink scene until the seat covers it; beside the bush in scene 1
+    hide(ob('Poop'), not (8.30 <= t < 17.92))
+    hide(ob('PoopBush'), not (t < 6.75))
     # small props hidden by default
     for nm in ('HammerRock', 'PotL', 'PotR', 'Yoke', 'NeighbourArm', 'NeighbourCuff'):
         if nm in bpy.data.objects:

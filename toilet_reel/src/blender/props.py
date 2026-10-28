@@ -562,3 +562,54 @@ def cliff_and_waterfall(coll, rock_mat, y0=34.0, top=19.0, fall_x=1.5):
                              loc=(fall_x + rng.uniform(-3.5, 3.5), y0 - 1.5 + rng.uniform(-1.5, 1.0), rng.uniform(0.3, 2.5)))
         mist.append(s)
     return dict(cliff=cliff, plateau=plateau, waterfall=wf, wf_mat=wm, pool=pool, mist=mist)
+
+
+def mat_poop(name='poop'):
+    """very dark (near black) glossy brown so the swirl reads against dirt and grass."""
+    m = new_mat(name, lin((0.10, 0.06, 0.035)), 0.30)
+    nb = NB(m)
+    b = principled(m)
+    p = nb.node('ShaderNodeTexCoord').outputs['Object']
+    n = nb.node('ShaderNodeTexNoise', {'Vector': p, 'Scale': 45.0, 'Detail': 2.0})
+    col = nb.mix(nb.maprange(n.outputs['Fac'], 0.35, 0.65, 0, 1), nb.rgb(lin((0.06, 0.035, 0.02))),
+                 nb.rgb(lin((0.16, 0.09, 0.05))))
+    nb.link(col, b.inputs['Base Color'])
+    b.inputs['Coat Weight'].default_value = 0.6
+    b.inputs['Coat Roughness'].default_value = 0.15
+    bump = nb.node('ShaderNodeBump', {'Strength': 0.35, 'Distance': 0.004})
+    nb.link(n.outputs['Fac'], bump.inputs['Height'])
+    nb.link(bump.outputs['Normal'], b.inputs['Normal'])
+    return m
+
+
+def poop(name, coll, mat, size=1.0):
+    """classic cartoon soft-serve swirl: a tapered tube coiling upwards to a curled tip."""
+    pts = []
+    rads = []
+    n = 90
+    for i in range(n):
+        u = i / (n - 1)
+        ang = 2 * math.pi * 2.7 * u
+        R = 0.072 * (1 - 0.88 * u ** 0.9)
+        z = 0.030 + 0.105 * u ** 0.95
+        x, y = R * math.cos(ang), R * math.sin(ang)
+        if u > 0.92:                      # little curl at the tip
+            k = (u - 0.92) / 0.08
+            x += 0.012 * k
+            z += 0.010 * k
+        pts.append((x * size, y * size, z * size))
+        rads.append((0.034 * (1 - 0.62 * u) + 0.004) * size)
+    cu = bpy.data.curves.new(name, 'CURVE')
+    cu.dimensions = '3D'
+    sp = cu.splines.new('POLY')
+    sp.points.add(n - 1)
+    for p, q, r in zip(sp.points, pts, rads):
+        p.co = (*q, 1)
+        p.radius = r / 0.034
+    cu.bevel_depth = 0.034
+    cu.bevel_resolution = 4
+    cu.use_fill_caps = True
+    ob = bpy.data.objects.new(name, cu)
+    coll.objects.link(ob)
+    cu.materials.append(mat)
+    return ob

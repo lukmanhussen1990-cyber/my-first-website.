@@ -138,6 +138,14 @@ for k in range(n_seg):
         sp.parent = seg
         sp.matrix_parent_inverse = seg.matrix_world.inverted()
 
+# poop: one in the dug hole, one beside the hiding bush (scene 1)
+pmat = PR.mat_poop()
+pp = PR.poop('Poop', prp, pmat, size=1.25)
+pp.location = (HOLE[0] + 0.02, HOLE[1] + 0.01, EN.ground_height(*HOLE) - 0.012)
+pb = PR.poop('PoopBush', prp, pmat, size=1.0)
+pb.location = (BUSH[0] - 0.62, BUSH[1] + 0.40, EN.ground_height(BUSH[0] - 0.62, BUSH[1] + 0.40) - 0.01)
+pb.rotation_euler = (0, 0, 1.2)
+
 # ------------------------------------------------------------------ effects objects (hidden by default)
 FX.build_all(fxc)
 
