@@ -63,8 +63,8 @@ const roomGeo = () => {
 	p.push(facet(at(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 16), tx, 0.62, tz), '#7A5A40', 0.04, 50));
 	p.push(facet(at(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8), tx, 0.3, tz), '#4A3828', 0.04, 51));
 	p.push(facet(at(new THREE.CylinderGeometry(0.2, 0.22, 0.03, 12), tx, 0.015, tz), '#4A3828', 0.04, 52));
-	p.push(facet(at(new THREE.CylinderGeometry(0.04, 0.06, 0.32, 8), tx + 0.16, 0.8, tz - 0.2), '#3A3230', 0.04, 53));
-	p.push(facet(at(new THREE.ConeGeometry(0.15, 0.17, 10, 1, true), tx + 0.16, 1.02, tz - 0.2), '#EADFC8', 0.04, 54));
+	p.push(facet(at(new THREE.CylinderGeometry(0.04, 0.06, 0.32, 8), tx + 0.18, 0.8, tz - 0.2), '#3A3230', 0.04, 53));
+	p.push(facet(at(new THREE.ConeGeometry(0.15, 0.17, 10, 1, true), tx + 0.18, 1.02, tz - 0.2), '#EADFC8', 0.04, 54));
 	p.push(facet(at(new THREE.CylinderGeometry(0.18, 0.14, 0.34, 8), -2.6, 0.17, -2.1), '#A2603E', 0.05, 55));
 	for (let i = 0; i < 5; i++) p.push(facet(at(blob(0.2, 60 + i, 0.25, 0), -2.6 + Math.cos(i) * 0.15, 0.5 + (i % 3) * 0.16, -2.1 + Math.sin(i) * 0.15), '#5E7A4A', 0.06, 60 + i));
 	p.push(facet(at(blob(0.26, 9, 0.12, 1, 0.45), -1.6, 0.12, -1.2), '#7E5E8A', 0.05, 70));

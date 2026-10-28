@@ -38,7 +38,7 @@ const Court: React.FC<{t: number}> = ({t}) => (
 const S4Content: React.FC<{t: number; d: number}> = ({t}) => (
 	<>
 		<SunLight target={[0, 0, -9]} extent={20} dist={60} mapSize={2048} fill={0.9} />
-		<Atmosphere near={14} far={120} />
+		<Atmosphere near={20} far={170} />
 		<Hall />
 		<Court t={t} />
 		<Dust box={[[-7, 0.5, -24], [7, 8, 6]]} count={260} size={0.05} opacity={0.45} color="#FFE2B0" speed={0.25} />

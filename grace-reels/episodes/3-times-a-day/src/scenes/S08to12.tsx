@@ -93,7 +93,7 @@ export const S09: SceneDef = {
 		const k = ease.inOut(clamp(t / d));
 		return {pos: [lerp(-0.4, 0.1, k), 1.95, lerp(2.9, 2.6, k)], target: [lerp(3.0, 2.8, k), 1.75, -0.35], fov: 52};
 	},
-	post: (t, d, sun) => ({bloom: {intensity: 1.0, threshold: 0.65}, dof: {focusDistance: 3.6, focusRange: 2.2, bokehScale: 2.2}, vignette: {offset: 0.26, darkness: 0.66}, grade: gradeFromSun(sun, {warmth: -0.2, exposure: 1.1})}),
+	post: (t, d, sun) => ({bloom: {intensity: 1.0, threshold: 0.65}, dof: {focusDistance: 3.6, focusRange: 2.2, bokehScale: 2.2}, vignette: {offset: 0.26, darkness: 0.62}, grade: gradeFromSun(sun, {warmth: -0.2, exposure: 1.32})}),
 	Content: ({t}) => {
 		const p = person9(t);
 		const door = 1 - ease.inOut(clamp((t - SHUT0) / (SHUT1 - SHUT0)));
@@ -135,7 +135,7 @@ export const S10: SceneDef = {
 		const c = cutsS10();
 		if (t < c.wide) {
 			const k = ease.out(clamp(t / c.wide));
-			return {pos: [lerp(1.05, 1.15, k), lerp(1.05, 1.0, k), lerp(0.7, 0.55, k)], target: [TABLE_AT[0] - 0.15, 0.86, TABLE_AT[2]], fov: 44};
+			return {pos: [TABLE_AT[0] + lerp(0.95, 0.85, k), lerp(1.08, 1.02, k), TABLE_AT[2] + lerp(1.05, 0.95, k)], target: [TABLE_AT[0] - 0.12, 0.74, TABLE_AT[2] + 0.06], fov: 42};
 		}
 		return MATCH(0);
 	},
@@ -175,13 +175,13 @@ export const S10: SceneDef = {
 				<Figure look={MODERN} pose={person10(t)} at={kneelAt} facing={t < c.wide ? 1 : -1} res={1600} tint={new THREE.Color('#8C9CC4').lerp(new THREE.Color('#F0D2B0'), warm)} />
 				{/* the phone, face down on the table once it is placed; its light dies */}
 				{t >= DOWN_T ? (
-					<mesh position={[TABLE_AT[0] - 0.05, 0.652, TABLE_AT[2] + 0.06]} rotation={[0, 0.3, 0]} castShadow>
+					<mesh position={[TABLE_AT[0] - 0.12, 0.652, TABLE_AT[2] + 0.12]} rotation={[0, 0.3, 0]} castShadow>
 						<boxGeometry args={[0.16, 0.012, 0.075]} />
 						<meshLambertMaterial color="#26222E" />
 					</mesh>
 				) : null}
-				<PhoneGlow at={t < DOWN_T ? [standAt[0] + 0.42, lerp(1.02, 0.7, ease.in(clamp(t / DOWN_T))), standAt[2]] : [TABLE_AT[0] - 0.05, 0.64, TABLE_AT[2] + 0.06]} k={glow} />
-				<Glow at={[TABLE_AT[0] + 0.16, 1.0, TABLE_AT[2] - 0.2]} size={0.7} color="#FFC27A" opacity={0.75 * warm} />
+				<PhoneGlow at={t < DOWN_T ? [lerp(standAt[0] + 0.42, TABLE_AT[0] - 0.12, ease.inOut(clamp(t / DOWN_T))), lerp(1.02, 0.67, ease.in(clamp(t / DOWN_T))), lerp(standAt[2], TABLE_AT[2] + 0.12, ease.inOut(clamp(t / DOWN_T)))] : [TABLE_AT[0] - 0.12, 0.64, TABLE_AT[2] + 0.12]} k={glow} />
+				<Glow at={[TABLE_AT[0] + 0.18, 1.0, TABLE_AT[2] - 0.2]} size={0.7} color="#FFC27A" opacity={0.75 * warm} />
 			</>
 		);
 	},
@@ -218,9 +218,9 @@ export const S11: SceneDef = {
 	},
 	camera: (t, d) => {
 		const k = ease.inOut(clamp(t / d));
-		return {pos: [WIN.x + lerp(0.15, -0.15, k), 5.6, WIN.z - 0.6], target: [WIN.x, lerp(5.6 + 14, 5.6 + 15, k), -100], fov: 70, far: 3000};
+		return {pos: [WIN.x + lerp(0.15, -0.15, k), 9.5, WIN.z - 0.6], target: [WIN.x, lerp(9.5 + 12, 9.5 + 13, k), -100], fov: 70, far: 3000};
 	},
-	post: (t, d, sun) => ({bloom: {intensity: 1.0, threshold: 0.76}, vignette: {offset: 0.3, darkness: 0.5}, grade: gradeFromSun(sun, {contrast: 1.1, saturation: sun.saturation * 1.15, exposure: sun.exposure * 0.94})}),
+	post: (t, d, sun) => ({bloom: {intensity: 1.0, threshold: 0.76}, vignette: {offset: 0.3, darkness: 0.55}, grade: gradeFromSun(sun, {contrast: 1.14, saturation: sun.saturation * 1.25, exposure: sun.exposure * 0.9})}),
 	Content: () => (
 		<>
 			<Sky />
@@ -244,7 +244,8 @@ export const S12: SceneDef = {
 			<Atmosphere near={12} far={70} />
 			<QuietRoom lamp={0.5} />
 			<Ceiling />
-			<Beam pulse={0.3 + 0.2 * Math.sin(t * 2)} />
+			<Beam k={1.7} pulse={0.5 + 0.3 * Math.sin(t * 2)} />
+			<Glow at={[WIN.x, (WIN.sill + WIN.rectTop) / 2 + 0.2, WIN.z - 0.15]} size={2.2} color="#FFD58A" opacity={0.55} />
 			<Figure look={MODERN} pose={{...P.pray, breath: Math.sin(t * 1.4) * 0.5 + 0.5}} at={KNEEL_AT} facing={-1} res={1700} tint={new THREE.Color('#F4DCBC')} />
 		</>
 	),

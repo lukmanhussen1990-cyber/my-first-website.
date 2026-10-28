@@ -33,7 +33,7 @@ export const LiveBeam: React.FC<{k?: number}> = ({k = 1}) => {
 };
 
 // Jerusalem catching the light on the far horizon
-const JerusalemGlow: React.FC<{k?: number}> = ({k = 1}) => <Glow at={[42, STREET_Y + 80, -672]} size={[190, 80]} color="#FFD28A" opacity={0.55 * k} depthTest={false} />;
+const JerusalemGlow: React.FC<{k?: number}> = ({k = 1}) => <Glow at={[44, STREET_Y + 84, -690]} size={[260, 110]} color="#FFD28A" opacity={0.6 * k} />;
 
 // ---------- S6: the window ----------
 const cutsS6 = () => ({out: tOf('S6', 'times') - 0.25, street: tOf('S6', 'and', 1) + 0.15, back: tOf('S6', 'thanks') + 0.25});
@@ -82,7 +82,7 @@ const S6Content: React.FC<{t: number; d: number}> = ({t}) => {
 		<>
 			<Sky />
 			<SunLight target={[KNEEL_AT[0], 0.8, KNEEL_AT[2]]} extent={6} dist={30} mapSize={2048} fill={0.75} />
-			{t >= c.out ? <Atmosphere near={40} far={1500} color={new THREE.Color('#FFE6B8')} mix={0.45} /> : <Atmosphere near={6} far={60} color={new THREE.Color('#FFE6B8')} mix={0.7} />}
+			{t >= c.out ? <Atmosphere near={60} far={2600} color={new THREE.Color('#FFE6B8')} mix={0.25} /> : <Atmosphere near={6} far={60} color={new THREE.Color('#FFE6B8')} mix={0.7} />}
 			<UpperRoom open={open} season={1} />
 			<Ceiling />
 			<LiveBeam k={open} />

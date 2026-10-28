@@ -154,19 +154,20 @@ const exteriorGeo = () => {
 	// the ziggurat, far to the right
 	for (let k = 0; k < 6; k++) p.push(facet(at(box(46 - k * 7, 7, 46 - k * 7), 70, STREET_Y + 3.5 + k * 7, -190), k % 2 ? '#C9A97A' : '#BE9C6C', 0.03, 600 + k));
 	// far hills and Jerusalem on one of them
-	const hillsG = terrain(1800, 500, 60, 18, (x, z) => 18 + fbm2(x / 240, z / 240, 4, 3) * 26 + Math.exp(-((x - 40) ** 2 + (z + 20) ** 2) / (2 * 90 * 90)) * 50, () => '#B79C7A', 6, 0.03);
+	const hillsG = terrain(1800, 500, 60, 18, (x, z) => 18 + fbm2(x / 240, z / 240, 4, 3) * 26 + Math.exp(-((x - 40) ** 2 + (z + 20) ** 2) / (2 * 90 * 90)) * 50, () => '#8E7A64', 6, 0.03);
 	hillsG.translate(0, STREET_Y, -650);
 	p.push(hillsG);
 	const jx = 40;
 	const jz = -650 - 20;
 	const jy = STREET_Y + 18 + 50 + 4;
-	for (let i = 0; i < 16; i++) {
-		const a = (i / 16) * Math.PI * 2;
-		p.push(facet(at(box(9, 7, 3), jx + Math.cos(a) * 30, jy + 2, jz + Math.sin(a) * 18, -a), '#E8D3A6', 0.04, 700 + i));
+	for (let i = 0; i < 20; i++) {
+		const a = (i / 20) * Math.PI * 2;
+		p.push(facet(at(box(16, 14, 5), jx + Math.cos(a) * 58, jy + 5, jz + Math.sin(a) * 30, -a), '#F0DCA8', 0.04, 700 + i));
+		if (i % 4 === 0) p.push(facet(at(box(9, 22, 9), jx + Math.cos(a) * 58, jy + 9, jz + Math.sin(a) * 30), '#F4E2B4', 0.04, 760 + i));
 	}
-	p.push(facet(at(box(16, 12, 10), jx + 2, jy + 7, jz - 4), '#F0DDB0', 0.04, 730));
-	p.push(facet(at(box(17, 1.4, 11), jx + 2, jy + 13.6, jz - 4), '#D8A64A', 0.04, 731));
-	for (let i = 0; i < 12; i++) p.push(facet(at(box(5 + r() * 4, 4 + r() * 5, 5), jx + (r() - 0.5) * 44, jy + 3, jz + (r() - 0.5) * 24), '#E2CB9C', 0.05, 740 + i));
+	p.push(facet(at(box(30, 24, 18), jx + 4, jy + 14, jz - 6), '#FAE8BC', 0.04, 730));
+	p.push(facet(at(box(32, 2.8, 20), jx + 4, jy + 27, jz - 6), '#E2B04E', 0.04, 731));
+	for (let i = 0; i < 16; i++) p.push(facet(at(box(9 + r() * 7, 7 + r() * 9, 9), jx + (r() - 0.5) * 90, jy + 5, jz + (r() - 0.5) * 44), '#EDD6A4', 0.05, 740 + i));
 	return merge(p);
 };
 

@@ -215,7 +215,7 @@ export const Hall: React.FC<{fire?: number}> = ({fire = 1}) => {
 				const y = 8.2;
 				const k = y / Math.max(sd.y, 0.05);
 				const to: Vec3 = [-8 - sd.x * k, 0.02, wz - sd.z * k];
-				return <LightShaft key={wz} from={[-8, y, wz]} to={to} r0={0.6} r1={1.2} opacity={0.11} color="#FFE2B0" />;
+				return <LightShaft key={wz} from={[-8, y, wz]} to={to} r0={0.6} r1={1.2} opacity={0.07} color="#FFE2B0" />;
 			})}
 			{[-1, 1].map((sx) => (
 				<group key={sx}>
