@@ -10,9 +10,9 @@ type LabelDef = {text: string; from: number; to: number; anchor: string; dx: num
 
 export const LABELS: LabelDef[] = [
 	{text: 'A clift of the rock · Exodus 33:22', from: B.labelClift, to: B.gloryRush - 0.1, anchor: 'cleft', dx: -380, dy: -250},
-	{text: 'Exodus 33:23', from: B.labelBack, to: B.dawn - 0.1, anchor: 'peek', dx: -40, dy: -230},
+	{text: 'Exodus 33:23', from: B.labelBack, to: B.dawn - 0.1, anchor: 'peek', dx: -200, dy: 160},
 	{text: 'He didn’t know', from: B.labelKnow, to: B.s9 - 0.05, anchor: 'shiningFace', dx: -300, dy: 230},
-	{text: 'Exodus 34:33', from: B.labelVeil, to: B.keyChange - 0.1, anchor: 'veil', dx: -260, dy: -200},
+	{text: 'Exodus 34:33', from: B.labelVeil, to: B.keyChange - 0.1, anchor: 'veil', dx: -330, dy: 200},
 ]
 
 const TAG_H = 46;

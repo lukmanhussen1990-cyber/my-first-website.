@@ -157,7 +157,7 @@ export const CaptionScrim: React.FC<{t: number; strength?: number}> = ({t, stren
 				width: 1080,
 				height: 560,
 				opacity: a,
-				background: `radial-gradient(ellipse 76% 46% at 42% 34%, rgba(46,22,6,${k(0.28)}) 0%, rgba(46,22,6,${k(0.18)}) 55%, rgba(46,22,6,0) 100%)`,
+				background: `radial-gradient(ellipse 88% 50% at 44% 35%, rgba(46,22,6,${k(0.27)}) 0%, rgba(46,22,6,${k(0.17)}) 50%, rgba(46,22,6,${k(0.06)}) 78%, rgba(46,22,6,0) 100%)`,
 			}}
 		/>
 	);

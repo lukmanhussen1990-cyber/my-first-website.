@@ -12,14 +12,17 @@ import {Rain, StormSky, Vec3} from './storm';
 
 // The cleft: centred on x = CLEFT_X, CLEFT_W wide, CLEFT_H tall, CLEFT_D deep (the face is at z ~ 0).
 export const CLEFT_X = 0.3;
-export const CLEFT_W = 0.84;
-export const CLEFT_H = 2.7;
-export const CLEFT_D = 1.35;
+export const CLEFT_W = 1.3;
+export const CLEFT_H = 3.3;
+export const CLEFT_D = 1.25;
 
 const sstep = (a: number, b: number, x: number) => {
 	const u = Math.min(1, Math.max(0, (x - a) / (b - a)));
 	return u * u * (3 - 2 * u);
 };
+
+// Half the width of the cleft at height y (the same profile outside and in the crevice behind it).
+const cleftHalf = (y: number, top = CLEFT_H) => (CLEFT_W / 2) * (1 - sstep(0.9, top, y) * 0.94);
 
 // How far the rock face stands out (+z) at (x, y). Negative = recessed. The face turns away at the
 // right edge (the corner of the outcrop) so there is open sky beyond it.
@@ -27,9 +30,9 @@ export const faceDepth = (x: number, y: number) => {
 	const relief = 0.28 * fbm2(x * 0.45, y * 0.45, 31) + 0.12 * fbm2(x * 1.3, y * 1.3, 32);
 	const lean = -0.06 * Math.max(0, y - 1);
 	const corner = x > 1.5 ? -((x - 1.5) ** 2) * 3.2 : 0;
-	// the cleft: a jagged slot that narrows to a point at the top
-	const top = CLEFT_H + 0.25 * fbm2(x * 3, 5, 33);
-	const half = (CLEFT_W / 2) * (1 - sstep(CLEFT_H - 1.0, top, y) * 0.95) + 0.05 * fbm2(y * 4, 1, 34);
+	// the cleft: a jagged crack, wide enough for a man at the bottom, narrowing to a point at the top
+	const top = CLEFT_H + 0.3 * fbm2(x * 3, 5, 33);
+	const half = cleftHalf(y, top) + 0.05 * fbm2(y * 4, 1, 34);
 	const inside = (1 - sstep(half - 0.04, half + 0.05, Math.abs(x - CLEFT_X))) * (1 - sstep(top - 0.15, top, y)) * sstep(-0.6, -0.4, y);
 	return relief + lean + corner - inside * CLEFT_D;
 };
@@ -52,7 +55,7 @@ const build = () => {
 			const n = fbm2(x * 0.5, y * 0.5, 7) + 0.5;
 			const c = g1.clone().lerp(g2, Math.min(1, Math.max(0, n)));
 			// the inner walls of the cleft are darker
-			if (h < -0.2) c.lerp(g3, Math.min(1, -h / CLEFT_D) * 0.8);
+			if (h < -0.2) c.lerp(g3, Math.min(1, -h / CLEFT_D) * 0.6);
 			return c;
 		},
 	});
@@ -89,29 +92,39 @@ const build = () => {
 
 export const cleftGeometry = () => cached('cleftGeo', build);
 
-// The view from inside: a long narrow crevice behind the opening (only used by the inside shot), two
-// jagged walls that lean together into a roof.
+// The view from inside: a long narrow crevice behind the opening (only used by the inside shot): two
+// jagged walls with the same profile as the cleft, meeting overhead, and a floor.
 const buildCrevice = () => {
 	const parts: THREE.BufferGeometry[] = [];
-	const c1 = new THREE.Color('#5d5650');
-	const c2 = new THREE.Color('#6f6760');
+	const c1 = new THREE.Color('#4b4d57');
+	const c2 = new THREE.Color('#67666e');
 	for (const side of [-1, 1]) {
-		const g = new THREE.PlaneGeometry(4.6, 3.6, 26, 18);
+		// coarse cells with every corner knocked about: broken granite facets, not smooth folds
+		const g = new THREE.PlaneGeometry(4.6, 3.8, 13, 11);
 		const pos = g.attributes.position as THREE.BufferAttribute;
+		const sd = side > 0 ? 51 : 52;
 		for (let i = 0; i < pos.count; i++) {
-			const u = pos.getX(i); // along the crevice (-2.3..2.3)
-			const v = pos.getY(i) + 1.8; // height 0..3.6
+			const u0 = pos.getX(i);
+			const v0 = pos.getY(i);
+			const edge = Math.abs(u0) > 2.29 || Math.abs(v0) > 1.89;
+			const u = u0 + (edge ? 0 : (hash(sd, i, 1) - 0.5) * 0.24); // along the crevice (-2.3..2.3)
+			const v = v0 + 1.9 + (edge ? 0 : (hash(sd, i, 2) - 0.5) * 0.22); // height 0..3.8
 			const z = u - 2.3; // from the opening (z 0) back to z -4.6
-			const lean = 0.18 * Math.max(0, v - 1.6) ** 1.6; // the walls lean in toward the top
-			const x = CLEFT_X + side * (0.36 + 0.07 * fbm2(z * 1.7, v * 1.7, side > 0 ? 51 : 52) + 0.04 * Math.sin(z * 3.1 + v) - lean);
+			const half = cleftHalf(v);
+			const amp = Math.min(1, half / 0.3);
+			const x = CLEFT_X + side * (half + amp * (0.12 * fbm2(z * 0.6, v * 0.6, sd) + (hash(sd, i, 3) - 0.5) * 0.16) + 0.03);
 			pos.setXYZ(i, x, v - 0.1, z);
 		}
-		parts.push(paintFaces(g, (x, y, z) => c1.clone().lerp(c2, Math.min(1, Math.max(0, 0.5 + fbm2(y * 2, z * 2, 53)))).multiplyScalar(0.75 + 0.35 * Math.min(1, (z + 4.6) / 4.6)), 0.08, side > 0 ? 54 : 55));
+		parts.push(paintFaces(g.toNonIndexed(), (x, y, z) => c1.clone().lerp(c2, Math.min(1, Math.max(0, 0.5 + fbm2(y * 2, z * 2, 53)))).multiplyScalar(0.75 + 0.35 * Math.min(1, (z + 4.6) / 4.6)), 0.16, side > 0 ? 54 : 55));
 	}
-	const back = new THREE.PlaneGeometry(1.4, 3.6, 4, 6);
-	back.translate(CLEFT_X, 1.7, -4.55);
+	const floor = new THREE.PlaneGeometry(2.4, 4.8, 6, 12);
+	floor.rotateX(-Math.PI / 2);
+	floor.translate(CLEFT_X, -0.03, -2.3);
+	parts.push(paintFaces(floor, () => new THREE.Color('#3e3936'), 0.12, 59));
+	const back = new THREE.PlaneGeometry(1.6, 3.8, 4, 6);
+	back.translate(CLEFT_X, 1.8, -4.55);
 	parts.push(paintFaces(back, () => c1.clone().multiplyScalar(0.5), 0.05, 56));
-	return mergeGeometries(parts)!;
+	return mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!;
 };
 export const creviceGeometry = () => cached('creviceGeo', buildCrevice);
 
@@ -130,11 +143,12 @@ const riverMaterial = () =>
 				// streaks rushing sideways, stretched along the flow
 				vec2 p = vec2(vUv.x * 3.0 - uT * 2.6 * uFlow, vUv.y * 14.0);
 				float s = fbm(vec2(p.x, p.y * 0.35)) * 0.7 + fbm(vec2(p.x * 2.3 - uT * 1.4, p.y)) * 0.5;
+				s = smoothstep(0.35, 1.05, s);
 				float band = exp(-pow((vUv.y - 0.5) / 0.22, 2.0));
 				float core = exp(-pow((vUv.y - 0.5) / 0.07, 2.0));
 				float edge = smoothstep(0.0, 0.12, vUv.x) * smoothstep(1.0, 0.88, vUv.x);
 				vec3 gold = vec3(1.0, 0.86, 0.55), white = vec3(1.0, 0.97, 0.9);
-				vec3 c = gold * band * (0.35 + 0.9 * s) + white * core * (1.2 + 0.8 * s);
+				vec3 c = gold * band * (0.15 + 1.2 * s) + white * core * (0.5 + 1.2 * s);
 				gl_FragColor = vec4(c * edge * uI, 1.0);
 			}`,
 		transparent: true,
@@ -188,13 +202,15 @@ export const CoveringShadow: React.FC<{position: Vec3; size: [number, number]; c
 
 const trailMaterial = () =>
 	new THREE.ShaderMaterial({
-		uniforms: {uHead: {value: 0}, uLen: {value: 0.4}, uI: {value: 1}},
+		uniforms: {uHead: {value: 0}, uLen: {value: 0.4}, uI: {value: 1}, uW: {value: 0.012}},
 		vertexShader: `uniform float uW; attribute vec3 aDir; varying vec2 vUv;
 			void main(){
 				vUv = uv;
 				vec3 P = position;
-				vec3 side = normalize(cross(aDir, normalize(cameraPosition - P)));
-				P += side * uv.y * (0.08 + 0.9 * uv.x);
+				vec3 toCam = cameraPosition - P;
+				vec3 side = normalize(cross(aDir, normalize(toCam)));
+				// about the same width on screen all along, thinning toward the far end
+				P += side * uv.y * uW * length(toCam) * (1.0 - 0.55 * uv.x);
 				gl_Position = projectionMatrix * viewMatrix * vec4(P, 1.0);
 			}`,
 		fragmentShader: `uniform float uHead, uLen, uI; varying vec2 vUv;
@@ -202,10 +218,11 @@ const trailMaterial = () =>
 				// bright at the head (moving away along the curve), a long tail behind it
 				float d = uHead - vUv.x;
 				float tail = d < 0.0 ? 0.0 : exp(-d / uLen);
-				float head = exp(-pow(d / 0.012, 2.0));
+				float head = exp(-pow(d / 0.015, 2.0)) * 0.6;
 				float across = exp(-vUv.y * vUv.y * 3.0);
+				float ends = smoothstep(0.0, 0.06, vUv.x) * (1.0 - smoothstep(0.86, 1.0, vUv.x));
 				vec3 c = vec3(1.0, 0.86, 0.58) * tail * across + vec3(1.0, 0.97, 0.9) * head * 2.0 * across;
-				gl_FragColor = vec4(c * uI, 1.0);
+				gl_FragColor = vec4(c * uI * ends, 1.0);
 			}`,
 		transparent: true,
 		blending: THREE.AdditiveBlending,
@@ -215,7 +232,7 @@ const trailMaterial = () =>
 	});
 
 // Long trails of light curving away into the distance, like a comet's tail (all that Moses saw).
-export const LightTrails: React.FC<{curves: Vec3[][]; head: number; intensity: number}> = ({curves, head, intensity}) => {
+export const LightTrails: React.FC<{curves: Vec3[][]; head: number; intensity: number; len?: number; width?: number}> = ({curves, head, intensity, len = 0.45, width = 0.012}) => {
 	const items = useMemo(
 		() =>
 			curves.map((pts) => {
@@ -250,7 +267,8 @@ export const LightTrails: React.FC<{curves: Vec3[][]; head: number; intensity: n
 		<>
 			{items.map(({g, mat}, k) => {
 				mat.uniforms.uHead.value = head * (1 - 0.08 * k);
-				mat.uniforms.uLen.value = 0.16 + 0.05 * k;
+				mat.uniforms.uLen.value = len * (1 + 0.25 * k);
+				mat.uniforms.uW.value = width * (1 - 0.2 * k);
 				mat.uniforms.uI.value = intensity * (1 - 0.25 * k);
 				return <mesh key={k} geometry={g} material={mat} renderOrder={905} frustumCulled={false} visible={intensity > 0.001} />;
 			})}
@@ -265,14 +283,22 @@ export type CleftLook = {
 	storm: number;
 };
 
-export const CleftWorld: React.FC<{t: number; look: CleftLook; rainBox?: {center: Vec3; size: Vec3}; glowFrom?: Vec3; face?: boolean}> = ({t, look, rainBox, glowFrom = [9, 6, 6], face = true}) => {
+export const CleftWorld: React.FC<{t: number; look: CleftLook; rainBox?: {center: Vec3; size: Vec3}; glowFrom?: Vec3; face?: boolean; holeDir?: Vec3; holeSize?: number}> = ({
+	t,
+	look,
+	rainBox,
+	glowFrom = [9, 6, 6],
+	face = true,
+	holeDir = [0.62, 0.42, -0.66],
+	holeSize = 1,
+}) => {
 	const g = cleftGeometry();
 	const s = sinaiGeometry();
 	const m = cached('cleftMat', () => new THREE.MeshLambertMaterial({vertexColors: true, flatShading: true, side: THREE.DoubleSide}));
 	const target = cached('cleftTarget', () => new THREE.Object3D());
 	return (
 		<>
-			<StormSky t={t} holeDir={[0.62, 0.42, -0.66]} hole={look.hole} top="#121831" mid="#353a58" low="#262b45" swirl={1} />
+			<StormSky t={t} holeDir={holeDir} hole={look.hole} holeSize={holeSize} top="#121831" mid="#353a58" low="#262b45" swirl={1} />
 			<primitive object={target} position={[CLEFT_X, 1.2, -0.4]} />
 			<hemisphereLight args={['#6c7cb4', '#1a1f33', 1.4 * look.storm]} />
 			<directionalLight position={[-20, 25, 40]} target={target} color="#8ea2d8" intensity={0.5 * look.storm} />

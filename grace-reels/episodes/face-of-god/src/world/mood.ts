@@ -132,3 +132,42 @@ export const DAY: Mood = {
 	cloudShade: '#dfd2c4',
 	tint: '#fff8ee',
 };
+
+// Morning on Sinai after the storm: a clear pale sky, the low sun behind the ridge, warm haze below.
+export const MORNING: Mood = {
+	skyTop: '#6d92c0',
+	skyMid: '#b8c3d3',
+	skyHorizon: '#ffd9a4',
+	skyBottom: '#e8c49c',
+	sunDir: [-0.55, 0.14, -0.82],
+	sunColor: '#fff0c8',
+	sunGlow: 0.95,
+	sunSize: 3.4,
+	light: '#ffe2b4',
+	lightI: 2.3,
+	hemiSky: '#dfe3ec',
+	hemiGround: '#9a7a5a',
+	hemiI: 1.05,
+	fog: '#ead3b6',
+	fogNear: 70,
+	fogFar: 900,
+	stars: 0,
+	cloud: '#fff1e0',
+	cloudShade: '#e2b8a2',
+	tint: '#fff2e2',
+};
+
+// The camp below the mountain later that morning: the same sun, higher, the valley floor bright.
+export const CAMP_DAY: Mood = {
+	...MORNING,
+	skyTop: '#6e98c6',
+	skyMid: '#a9c0d8',
+	skyHorizon: '#f6dfba',
+	skyBottom: '#e3caa2',
+	sunDir: [-0.5, 0.32, -0.8],
+	sunGlow: 0.6,
+	lightI: 2.4,
+	fog: '#ecdcc2',
+	fogNear: 30,
+	fogFar: 420,
+};

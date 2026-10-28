@@ -56,6 +56,15 @@ export const cameraBasis = (cam: CamState, t: number) => {
 
 const DEG = Math.PI / 180;
 
+// The world point at a normalised screen position (sx, sy in -1..1, y up) at distance d along the view, so
+// things like trails of light can be laid out where they will surely be seen.
+export const screenPoint = (cam: CamState, t: number, sx: number, sy: number, d: number): [number, number, number] => {
+	const b = cameraBasis(cam, t);
+	const ty = Math.tan((cam.fov * DEG) / 2);
+	const p = b.pos.clone().addScaledVector(b.fwd, d).addScaledVector(b.right, sx * ty * ASPECT * d).addScaledVector(b.up, sy * ty * d);
+	return [p.x, p.y, p.z];
+};
+
 // Camera on a sphere around a target: pitch looks down (deg), yaw swings the camera toward +x (deg).
 // Characters standing in such a shot use yaw = camera yaw and lean = camera pitch to face it.
 export const orbit = (target: [number, number, number], dist: number, pitchDeg: number, yawDeg: number, fov: number, extra: Partial<CamState> = {}): CamState => {

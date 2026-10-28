@@ -206,6 +206,7 @@ export type SpriteLook = {
 	rimColor?: THREE.ColorRepresentation;
 	rimDir?: [number, number];
 	blur?: number; // depth-of-field blur radius in texels
+	depthTest?: boolean; // false: always drawn over the set (a foreground figure that must not clip into rock)
 	grad?: {dir: [number, number]; color: THREE.ColorRepresentation; amount: number; soft?: number}; // side light across the sprite
 };
 
@@ -229,6 +230,7 @@ export const applyLook = (m: ReturnType<typeof makeSpriteMaterial>, look: Sprite
 	const rd = look.rimDir ?? [0, 1];
 	u.uRimDir.value.set(rd[0], rd[1]);
 	u.uBlur.value = look.blur ?? 0;
+	m.depthTest = look.depthTest ?? true;
 	const g = look.grad;
 	u.uGrad.value.set(g?.dir[0] ?? 1, g?.dir[1] ?? 0, g?.amount ?? 0, g?.soft ?? 0.5);
 	u.uGradColor.value.set(g?.color ?? '#ffffff');

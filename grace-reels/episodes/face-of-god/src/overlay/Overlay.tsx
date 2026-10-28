@@ -28,7 +28,7 @@ export const Overlay: React.FC<{shots: ShotDef[]; transitions: Transition[]}> = 
 	return (
 		<AbsoluteFill style={{pointerEvents: 'none'}}>
 			<div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, transform: `scale(${width / 1080})`, transformOrigin: '0 0'}}>
-				<CaptionScrim t={t} strength={1 + 1.6 * brightness(t)} />
+				<CaptionScrim t={t} strength={1 + 1.1 * brightness(t)} />
 				<Header opacity={headerOn} />
 				<Labels t={t} shots={shots} transitions={transitions} />
 				<Tracker t={t} />

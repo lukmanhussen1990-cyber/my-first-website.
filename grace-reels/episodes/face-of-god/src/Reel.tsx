@@ -7,10 +7,11 @@ import {Overlay} from './overlay/Overlay';
 import {Director} from './render/Director';
 import type {ShotDef, Transition} from './render/types';
 import {BACK, CLIFT, INSIDE} from './shots/Cleft';
+import {CAMP, DOWN, FACECU, VEIL} from './shots/Down';
 import {BUSH, PLAGUES, SEA} from './shots/Montage';
 import {ANSWER, ASK, DARK, DIE, HOOK} from './shots/Summit';
 
-export const SHOTS: ShotDef[] = [HOOK, DIE, DARK, BUSH, PLAGUES, SEA, ASK, ANSWER, CLIFT, INSIDE, BACK];
+export const SHOTS: ShotDef[] = [HOOK, DIE, DARK, BUSH, PLAGUES, SEA, ASK, ANSWER, CLIFT, INSIDE, BACK, DOWN, FACECU, CAMP, VEIL];
 
 export const TRANSITIONS: Transition[] = [
 	{from: 'HOOK', to: 'DIE', at: B.s2, dur: 0, kind: 'cut'},
@@ -25,6 +26,11 @@ export const TRANSITIONS: Transition[] = [
 	{from: 'ANSWER', to: 'CLIFT', at: B.s6, dur: 0.5, kind: 'dissolve'},
 	{from: 'CLIFT', to: 'INSIDE', at: B.inside, dur: 0, kind: 'cut'},
 	{from: 'INSIDE', to: 'BACK', at: B.s7, dur: 0.4, kind: 'dissolve'},
+	// the night lifts into morning
+	{from: 'BACK', to: 'DOWN', at: B.dawn, dur: 0.6, kind: 'light'},
+	{from: 'DOWN', to: 'FACECU', at: B.faceCU, dur: 0, kind: 'cut'},
+	{from: 'FACECU', to: 'CAMP', at: B.s9, dur: 0.3, kind: 'dissolve'},
+	{from: 'CAMP', to: 'VEIL', at: B.s10, dur: 0, kind: 'cut'},
 ];
 
 export type ReelProps = {lite: boolean; only?: string; noText?: boolean; muted?: boolean; atTime?: number; cover?: boolean};
