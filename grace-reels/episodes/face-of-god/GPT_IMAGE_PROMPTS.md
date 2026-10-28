@@ -1,10 +1,15 @@
 # The Face of God: GPT Image prompts
 
-Idea 60, GPT Image episode. **25 images: 18 MUST-HAVE, 7 NICE-TO-HAVE.** Characters come first.
-Make the **MUST** images first, in number order, then the NICE ones. Later prompts attach earlier images
-as references. Every NICE image has a code fallback, so skipping one is fine. If time runs short,
-**#1, #2, #3, #7, #11, #14, #16 and #17 matter most** (Moses and his poses, Jesus, the tablets, the storm
-sky, the summit and the rock cleft).
+Idea 60, GPT Image episode. **You make only the 10 character images (#1–#10): 8 MUST-HAVE,
+2 NICE-TO-HAVE.** Make the MUST images first, in number order, then the NICE ones. Later prompts attach
+earlier images as references. If time runs short, **#1, #2, #3 and #7 matter most** (Moses, his two poses
+sheets and Jesus). Without #9 and #10 I reuse the first Israelites sheet, and Philip from the Friend
+disciples sheet.
+
+**Every background and prop is built in code**, the same way as in They Never Died: the storm over Sinai,
+the summit and the rock cleft, the mountain path, the camp, the parted sea, the Galilee hillside, the
+burning bush, the frogs, the hail and the tablets. Their prompts stay at the end of this file only as
+optional extras; skip them.
 
 Reused from earlier episodes, so **no new image is needed**: Jesus (turnaround, poses and parts from
 Friend), the twelve at the table and the upper room by lamplight (Friend), and the look of Moses
@@ -24,12 +29,12 @@ Friend), the twelve at the table and the upper room by lamplight (Friend), and t
 4. Save each result as a full-size PNG (download it, don't screenshot it) and **rename it to the exact
    file name** shown.
 5. Re-roll any image that has text, letters, a frame, a border, a mouth (except where a pose allows a
-   smile), extra fingers, a halo, writing on the tablets, or **anything that looks like a figure, face or
-   hand in the sky or the light**. God is never drawn: his glory is light that I make in code.
+   smile), extra fingers, a halo, or writing on the tablets. God is never drawn: his glory is light that
+   I make in code.
 
 Tips: use one ChatGPT chat for Moses (#1–#4, #8) so he stays consistent, one for the people (#5, #6, #9),
-and a new chat for each background scene. Characters and props are drawn in plain, even light on purpose:
-I add the storm, the lightning, the glory and the sunrise in animation.
+and one for Jesus and Philip (#7, #10). The characters are drawn in plain, even light on purpose: I add
+the storm, the lightning, the glory and the sunrise in animation.
 
 ## If transparency fails
 
@@ -40,8 +45,7 @@ transparency. Then send the same prompt again, but **replace the whole BACKGROUN
 BACKGROUND: plain solid flat magenta (#FF00FF) filling all empty areas, no shadow on the background, no gradient, no ground.
 ```
 
-For the rock cleft (#17 and #22), only the inside of the opening should be magenta. I remove the magenta
-in code.
+I remove the magenta in code.
 
 ## Where to put them
 
@@ -66,7 +70,7 @@ Then type **DONE**.
 - PHILIP: one of the twelve disciples, a man of about thirty with warm brown skin (#B07A50); long dark-brown hair (#3B271A) tied back at the neck and a short dark beard; one almond eye with a dark pupil and an earnest, curious look, a small rounded nose, no mouth; a mustard-yellow robe (#D3A33A) over a cream tunic, and a brown belt. About 5.5 heads tall.
 - GOD is never drawn as a person, a face or a hand. His glory is only light, made in code.
 
-## All images at a glance
+## Your images at a glance
 
 | # | File | Size | Transparent | Priority | Attach | Used in |
 |---|---|---|---|---|---|---|
@@ -80,25 +84,11 @@ Then type **DONE**.
 | 8 | `char_moses_glowing.png` | 1536×1024 | yes | MUST | char_moses_turnaround.png, char_moses_poses_b.png | S8 the close-up of his shining face on the way down, S9 the camp, S10 just before the veil |
 | 9 | `char_israelites_group2.png` | 1536×1024 | yes | NICE | char_israelites_group1.png, char_moses_turnaround.png | S9 the camp before they see his face; S12 people walking up to Jesus, unafraid |
 | 10 | `char_philip.png` | 1536×1024 | yes | NICE | ref_disciples_seated.png, ref_jesus_turnaround.png | S11 Philip at the supper ("Shew us the Father"); the other disciples are reused from Friend |
-| 11 | `prop_tablets_veil.png` | 1536×1024 | yes | MUST | char_moses_turnaround.png, style_ref_1.png | S8 the two tablets, S10 the veil (animated as cloth), S1–S5 the staff |
-| 12 | `prop_burning_bush.png` | 1536×1024 | yes | MUST | style_ref_2.png, char_moses_turnaround.png | S3 the burning bush (the fire is added in code); the FIRE badge |
-| 13 | `prop_plagues.png` | 1536×1024 | yes | NICE | char_moses_turnaround.png | S3 the quick flash of plagues: frogs and hail |
-| 14 | `bg_sinai_storm_sky.png` | 1024×1536 | no | MUST | style_ref_2.png | S1, S2, S4, S5 the night storm over Sinai (the glory light breaks through the opening in code); the cover |
-| 15 | `bg_sinai_storm_far.png` | 1536×1024 | yes (around the scenery) | MUST | bg_sinai_storm_sky.png, style_ref_2.png | S1, S2, S4, S5 distant peaks behind the summit (parallax) |
-| 16 | `bg_sinai_ledge.png` | 1536×1024 | yes (around the scenery) | MUST | bg_sinai_storm_far.png, style_ref_2.png | S1 Moses on the ledge (the speed-ramp push-in), S2, S4 kneeling, S5; the cover |
-| 17 | `bg_rock_crack.png` | 1024×1536 | only inside the opening | MUST | bg_sinai_ledge.png, style_ref_2.png | S6 the clift of the rock (Moses inside, the river of light rushing past), S7, S12 left half |
-| 18 | `bg_mountain_path.png` | 1536×1024 | no | MUST | bg_sinai_ledge.png, style_ref_2.png | S8 Moses walks down the mountain path (slow tracking shot) |
-| 19 | `bg_camp_mid.png` | 1536×1024 | yes (around the scenery) | MUST | bg_mountain_path.png, style_ref_2.png | S9 the camp steps back, S10 the veil |
-| 20 | `bg_sea_walls.png` | 1024×1536 | no | MUST | style_ref_2.png | S3 the sea split in two (the water moves in code); the SEA badge |
-| 21 | `bg_hillside_sunrise.png` | 1024×1536 | no | MUST | style_ref_2.png | S12 right half: Jesus and the people in warm light, S13 the 2 Corinthians 4:6 card at sunrise, S14 background glow |
-| 22 | `bg_rock_crack_inside.png` | 1024×1536 | only inside the opening | NICE | bg_rock_crack.png, style_ref_2.png | S6 the tight shot from inside the cleft, looking out at the river of light |
-| 23 | `bg_camp_far.png` | 1536×1024 | no | NICE | bg_camp_mid.png, bg_mountain_path.png | S9 the mountain and the plain behind the camp (parallax) |
-| 24 | `bg_desert_bush.png` | 1024×1536 | no | NICE | prop_burning_bush.png, style_ref_2.png | S3 the desert behind the burning bush |
-| 25 | `bg_sinai_near_rocks.png` | 1536×1024 | yes (around the scenery) | NICE | bg_sinai_ledge.png | S1, S4, S6 foreground rocks close to the lens (blurred in code) |
 
-Made in code, so no image is needed: God's glory (the light, the river of light, the light trails), the
-storm (lightning, rain, wind), fire, the moving sea, Moses' glow, dust and sparks, the light-streak
-transition, the split screen, the three badges, the end card, the comment box and every word on screen.
+Made in code, so no image is needed: every background and prop, God's glory (the light, the river of
+light, the light trails), the storm (lightning, rain, wind), fire, the moving sea, Moses' glow, dust and
+sparks, the light-streak transition, the split screen, the three badges, the end card, the comment box and
+every word on screen.
 
 ## Characters
 
@@ -352,9 +342,15 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, labels, arrows, guide lines, grid lines, frames, borders; extra fingers, extra arms or legs, mouths (unless a pose allows a smile), realistic faces, halos, glows, cast shadows, gradients.
 ```
 
-## Props
+## Optional extras: not needed
 
-### 11. `prop_tablets_veil.png` · MUST-HAVE
+I build every one of these in code, as in They Never Died. The prompts stay here only in case you ever
+want painted versions. If you make the rock cleft (#17 or #22) and transparency fails, only the inside of
+the opening should be magenta.
+
+### Props
+
+#### 11. `prop_tablets_veil.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes
@@ -377,7 +373,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.
 ```
 
-### 12. `prop_burning_bush.png` · MUST-HAVE
+#### 12. `prop_burning_bush.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes
@@ -400,7 +396,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.
 ```
 
-### 13. `prop_plagues.png` · NICE-TO-HAVE
+#### 13. `prop_plagues.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes
@@ -423,9 +419,9 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, writing, carvings or symbols, people, hands, human faces, frames, borders, cast shadows.
 ```
 
-## Backgrounds (layers)
+### Backgrounds (layers)
 
-### 14. `bg_sinai_storm_sky.png` · MUST-HAVE
+#### 14. `bg_sinai_storm_sky.png` · OPTIONAL (built in code)
 
 - **Size:** 1024×1536 (portrait 2:3)
 - **Transparent:** no
@@ -448,7 +444,7 @@ FORMAT: portrait 2:3 (1024×1536).
 AVOID: text, letters, numbers, ground, mountains, trees, buildings, people, birds, frames, borders; any figure, face, hand or eye in the clouds; light beams, sun discs, lightning bolts.
 ```
 
-### 15. `bg_sinai_storm_far.png` · MUST-HAVE
+#### 15. `bg_sinai_storm_far.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes (around the scenery)
@@ -471,7 +467,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 16. `bg_sinai_ledge.png` · MUST-HAVE
+#### 16. `bg_sinai_ledge.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes (around the scenery)
@@ -494,7 +490,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 17. `bg_rock_crack.png` · MUST-HAVE
+#### 17. `bg_rock_crack.png` · OPTIONAL (built in code)
 
 - **Size:** 1024×1536 (portrait 2:3)
 - **Transparent:** only inside the opening
@@ -517,7 +513,7 @@ FORMAT: portrait 2:3 (1024×1536).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 18. `bg_mountain_path.png` · MUST-HAVE
+#### 18. `bg_mountain_path.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** no
@@ -540,7 +536,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 19. `bg_camp_mid.png` · MUST-HAVE
+#### 19. `bg_camp_mid.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes (around the scenery)
@@ -563,7 +559,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 20. `bg_sea_walls.png` · MUST-HAVE
+#### 20. `bg_sea_walls.png` · OPTIONAL (built in code)
 
 - **Size:** 1024×1536 (portrait 2:3)
 - **Transparent:** no
@@ -586,7 +582,7 @@ FORMAT: portrait 2:3 (1024×1536).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 21. `bg_hillside_sunrise.png` · MUST-HAVE
+#### 21. `bg_hillside_sunrise.png` · OPTIONAL (built in code)
 
 - **Size:** 1024×1536 (portrait 2:3)
 - **Transparent:** no
@@ -609,7 +605,7 @@ FORMAT: portrait 2:3 (1024×1536).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 22. `bg_rock_crack_inside.png` · NICE-TO-HAVE
+#### 22. `bg_rock_crack_inside.png` · OPTIONAL (built in code)
 
 - **Size:** 1024×1536 (portrait 2:3)
 - **Transparent:** only inside the opening
@@ -632,7 +628,7 @@ FORMAT: portrait 2:3 (1024×1536).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 23. `bg_camp_far.png` · NICE-TO-HAVE
+#### 23. `bg_camp_far.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** no
@@ -655,7 +651,7 @@ FORMAT: landscape 3:2 (1536×1024).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 24. `bg_desert_bush.png` · NICE-TO-HAVE
+#### 24. `bg_desert_bush.png` · OPTIONAL (built in code)
 
 - **Size:** 1024×1536 (portrait 2:3)
 - **Transparent:** no
@@ -678,7 +674,7 @@ FORMAT: portrait 2:3 (1024×1536).
 AVOID: text, letters, numbers, people, animals, signs, frames, borders; any figure, face, hand or eye in the sky, clouds, light or rocks; light beams, sun discs, lightning bolts, halos.
 ```
 
-### 25. `bg_sinai_near_rocks.png` · NICE-TO-HAVE
+#### 25. `bg_sinai_near_rocks.png` · OPTIONAL (built in code)
 
 - **Size:** 1536×1024 (landscape 3:2)
 - **Transparent:** yes (around the scenery)

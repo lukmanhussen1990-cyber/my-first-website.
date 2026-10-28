@@ -214,18 +214,29 @@ const assets = [
 assets.forEach((a, i) => (a.n = i + 1));
 
 const prompt = (a) => [STYLE, ...a.lines, LIGHT[a.light], BG[a.bg], SIZE[a.size].format, AVOID[a.avoid] ?? a.avoid].join('\n\n');
-const must = assets.filter((a) => a.prio === 'MUST');
-const nice = assets.filter((a) => a.prio === 'NICE');
+// The user makes only the character images; every prop and background is built in code, as in They Never
+// Died. Their prompts stay at the end of GPT_IMAGE_PROMPTS.md as optional extras.
+const CODE_BUILT = new Set(['prop', 'bg']);
+const wanted = assets.filter((a) => !CODE_BUILT.has(a.group));
+const extras = assets.filter((a) => CODE_BUILT.has(a.group));
+const must = wanted.filter((a) => a.prio === 'MUST');
+const nice = wanted.filter((a) => a.prio === 'NICE');
 const GROUP_TITLE = {char: 'Characters', prop: 'Props', bg: 'Backgrounds (layers)'};
+const label = (a) => (CODE_BUILT.has(a.group) ? 'OPTIONAL (built in code)' : a.prio === 'MUST' ? 'MUST-HAVE' : 'NICE-TO-HAVE');
 
 const md = [];
 md.push(`# The Face of God: GPT Image prompts
 
-Idea 60, GPT Image episode. **${assets.length} images: ${must.length} MUST-HAVE, ${nice.length} NICE-TO-HAVE.** Characters come first.
-Make the **MUST** images first, in number order, then the NICE ones. Later prompts attach earlier images
-as references. Every NICE image has a code fallback, so skipping one is fine. If time runs short,
-**#1, #2, #3, #7, #11, #14, #16 and #17 matter most** (Moses and his poses, Jesus, the tablets, the storm
-sky, the summit and the rock cleft).
+Idea 60, GPT Image episode. **You make only the ${wanted.length} character images (#1–#${wanted.length}): ${must.length} MUST-HAVE,
+${nice.length} NICE-TO-HAVE.** Make the MUST images first, in number order, then the NICE ones. Later prompts attach
+earlier images as references. If time runs short, **#1, #2, #3 and #7 matter most** (Moses, his two poses
+sheets and Jesus). Without #9 and #10 I reuse the first Israelites sheet, and Philip from the Friend
+disciples sheet.
+
+**Every background and prop is built in code**, the same way as in They Never Died: the storm over Sinai,
+the summit and the rock cleft, the mountain path, the camp, the parted sea, the Galilee hillside, the
+burning bush, the frogs, the hail and the tablets. Their prompts stay at the end of this file only as
+optional extras; skip them.
 
 Reused from earlier episodes, so **no new image is needed**: Jesus (turnaround, poses and parts from
 Friend), the twelve at the table and the upper room by lamplight (Friend), and the look of Moses
@@ -245,12 +256,12 @@ Friend), the twelve at the table and the upper room by lamplight (Friend), and t
 4. Save each result as a full-size PNG (download it, don't screenshot it) and **rename it to the exact
    file name** shown.
 5. Re-roll any image that has text, letters, a frame, a border, a mouth (except where a pose allows a
-   smile), extra fingers, a halo, writing on the tablets, or **anything that looks like a figure, face or
-   hand in the sky or the light**. God is never drawn: his glory is light that I make in code.
+   smile), extra fingers, a halo, or writing on the tablets. God is never drawn: his glory is light that
+   I make in code.
 
 Tips: use one ChatGPT chat for Moses (#1–#4, #8) so he stays consistent, one for the people (#5, #6, #9),
-and a new chat for each background scene. Characters and props are drawn in plain, even light on purpose:
-I add the storm, the lightning, the glory and the sunrise in animation.
+and one for Jesus and Philip (#7, #10). The characters are drawn in plain, even light on purpose: I add
+the storm, the lightning, the glory and the sunrise in animation.
 
 ## If transparency fails
 
@@ -261,8 +272,7 @@ transparency. Then send the same prompt again, but **replace the whole BACKGROUN
 ${MAGENTA_LINE}
 \`\`\`
 
-For the rock cleft (#17 and #22), only the inside of the opening should be magenta. I remove the magenta
-in code.
+I remove the magenta in code.
 
 ## Where to put them
 
@@ -283,21 +293,19 @@ Then type **DONE**.
 ${Object.values(BIBLE).map((b) => `- ${b}`).join('\n')}
 - GOD is never drawn as a person, a face or a hand. His glory is only light, made in code.
 
-## All images at a glance
+## Your images at a glance
 
 | # | File | Size | Transparent | Priority | Attach | Used in |
 |---|---|---|---|---|---|---|
-${assets.map((a) => `| ${a.n} | \`${a.file}\` | ${SIZE[a.size].w}×${SIZE[a.size].h} | ${BG_KIND[a.bg]} | ${a.prio} | ${a.attach.join(', ')} | ${a.use} |`).join('\n')}
+${wanted.map((a) => `| ${a.n} | \`${a.file}\` | ${SIZE[a.size].w}×${SIZE[a.size].h} | ${BG_KIND[a.bg]} | ${a.prio} | ${a.attach.join(', ')} | ${a.use} |`).join('\n')}
 
-Made in code, so no image is needed: God's glory (the light, the river of light, the light trails), the
-storm (lightning, rain, wind), fire, the moving sea, Moses' glow, dust and sparks, the light-streak
-transition, the split screen, the three badges, the end card, the comment box and every word on screen.
+Made in code, so no image is needed: every background and prop, God's glory (the light, the river of
+light, the light trails), the storm (lightning, rain, wind), fire, the moving sea, Moses' glow, dust and
+sparks, the light-streak transition, the split screen, the three badges, the end card, the comment box and
+every word on screen.
 `);
 
-for (const g of ['char', 'prop', 'bg']) {
-	md.push(`## ${GROUP_TITLE[g]}\n`);
-	for (const a of assets.filter((x) => x.group === g)) {
-		md.push(`### ${a.n}. \`${a.file}\` · ${a.prio === 'MUST' ? 'MUST-HAVE' : 'NICE-TO-HAVE'}
+const section = (a, h) => `${h} ${a.n}. \`${a.file}\` · ${label(a)}
 
 - **Size:** ${SIZE[a.size].label}
 - **Transparent:** ${BG_KIND[a.bg]}
@@ -307,8 +315,16 @@ for (const g of ['char', 'prop', 'bg']) {
 \`\`\`text
 ${prompt(a)}
 \`\`\`
+`;
+md.push(`## ${GROUP_TITLE.char}\n`, ...wanted.map((a) => section(a, '###')));
+md.push(`## Optional extras: not needed
+
+I build every one of these in code, as in They Never Died. The prompts stay here only in case you ever
+want painted versions. If you make the rock cleft (#17 or #22) and transparency fails, only the inside of
+the opening should be magenta.
 `);
-	}
+for (const g of ['prop', 'bg']) {
+	md.push(`### ${GROUP_TITLE[g]}\n`, ...extras.filter((a) => a.group === g).map((a) => section(a, '####')));
 }
 
 writeFileSync(join(EP, 'GPT_IMAGE_PROMPTS.md'), md.join('\n'));
@@ -320,12 +336,14 @@ Upload the finished PNGs here with these exact names. Prompts: \`../../GPT_IMAGE
 
 | # | File | Size | Transparent | Priority |
 |---|---|---|---|---|
-${assets.map((a) => `| ${a.n} | \`${a.file}\` | ${SIZE[a.size].w}×${SIZE[a.size].h} | ${BG_KIND[a.bg]} | ${a.prio} |`).join('\n')}
+${wanted.map((a) => `| ${a.n} | \`${a.file}\` | ${SIZE[a.size].w}×${SIZE[a.size].h} | ${BG_KIND[a.bg]} | ${a.prio} |`).join('\n')}
+
+No backgrounds or props are needed: they are built in code.
 `);
 
 writeFileSync(join(EP, 'assets_manifest.json'), JSON.stringify(assets.map((a) => ({
 	n: a.n, group: a.group, file: a.file, width: SIZE[a.size].w, height: SIZE[a.size].h, background: a.bg, light: a.light,
-	priority: a.prio, attach: a.attach, use: a.use,
+	priority: a.prio, source: CODE_BUILT.has(a.group) ? 'code' : 'gpt', attach: a.attach, use: a.use,
 })), null, 2) + '\n');
 
-console.log(`${assets.length} prompts (${must.length} MUST, ${nice.length} NICE) written to ${EP}`);
+console.log(`${wanted.length} character prompts (${must.length} MUST, ${nice.length} NICE) and ${extras.length} optional extras written to ${EP}`);
