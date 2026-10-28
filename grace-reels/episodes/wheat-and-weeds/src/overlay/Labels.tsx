@@ -6,14 +6,15 @@ import {activeShots} from '../render/Director';
 import type {ShotDef, Transition, Vec3} from '../render/types';
 import {C, SAFE, SANS} from './theme';
 
-type LabelDef = {text: string; from: number; to: number; anchor: string; dx: number; dy: number};
+// `text2`/`at2`: the tag turns over to a second text (WHO PLANTED IT? -> AN ENEMY)
+type LabelDef = {text: string; from: number; to: number; anchor: string; dx: number; dy: number; text2?: string; at2?: number};
 
 export const LABELS: LabelDef[] = [
-	{text: 'A clift of the rock · Exodus 33:22', from: B.labelClift, to: B.gloryRush - 0.1, anchor: 'cleft', dx: -380, dy: -250},
-	{text: 'Exodus 33:23', from: B.labelBack, to: B.dawn - 0.1, anchor: 'peek', dx: -200, dy: 160},
-	{text: 'He didn’t know', from: B.labelKnow, to: B.s9 - 0.05, anchor: 'shiningFace', dx: -300, dy: 230},
-	{text: 'Exodus 34:33', from: B.labelVeil, to: B.keyChange - 0.1, anchor: 'veil', dx: -330, dy: 200},
-]
+	{text: 'Matthew 13', from: B.labelMt13, to: B.s3 - 0.2, anchor: 'boat', dx: -240, dy: -230},
+	{text: 'Tares look like wheat at first', from: B.labelTaresIn, to: B.labelTaresOut, anchor: 'tare', dx: -420, dy: 190},
+	{text: 'Who planted it?', from: B.tagWho, to: B.tagOut, anchor: 'tare', dx: -260, dy: 170, text2: 'An enemy', at2: B.tagEnemy},
+	{text: 'Acts 9', from: B.labelActsIn, to: B.labelActsOut, anchor: 'saul', dx: 90, dy: -150},
+];
 
 const TAG_H = 46;
 const estWidth = (s: string) => s.length * 18.5 + 34;
@@ -37,7 +38,7 @@ export const Labels: React.FC<{t: number; shots: ShotDef[]; transitions: Transit
 			if (!pt) return null;
 			const inP = seg(t, l.from, l.from + 0.35, easeOut);
 			const out = smooth((t - l.to) / 0.3);
-			const w = estWidth(l.text);
+			const w = estWidth(l.text2 && l.at2 !== undefined && t > l.at2 ? l.text2 : l.text);
 			const x = clamp(pt.x + l.dx, SAFE.left, SAFE.right - w);
 			const y = clamp(pt.y + l.dy, 720, SAFE.bottom - TAG_H - 40);
 			// leader from the tag's nearest bottom/top edge point to the anchor dot
@@ -76,7 +77,11 @@ export const Labels: React.FC<{t: number; shots: ShotDef[]; transitions: Transit
 							transformOrigin: '50% 100%',
 						}}
 					>
-						{l.text}
+						{l.text2 && l.at2 !== undefined && t > l.at2 ? (
+							<span style={{display: 'inline-block', transform: `rotateX(${90 * (1 - smooth((t - l.at2) / 0.2))}deg)`, color: C.gold}}>{l.text2}</span>
+						) : (
+							<span style={{display: 'inline-block', transform: l.at2 !== undefined ? `rotateX(${90 * smooth((t - (l.at2 - 0.2)) / 0.2)}deg)` : undefined}}>{l.text}</span>
+						)}
 					</div>
 				</div>
 			);

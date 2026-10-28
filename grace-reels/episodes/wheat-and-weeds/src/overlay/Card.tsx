@@ -1,7 +1,7 @@
 // Cream scripture cards: the exact KJV words centred in italic serif, keywords in deep-gold capitals that
 // light up when the voice says them, the reference in small spaced capitals. They drift slowly while held.
 import {clamp, easeOutBack, seg, smooth} from '../lib/ease';
-import {B, word} from '../lib/timeline';
+import {B} from '../lib/timeline';
 import {C, SAFE, SANS, SERIF} from './theme';
 
 // keyAt: when each keyword phrase is said (one time per **phrase**, in order)
@@ -10,46 +10,54 @@ type CardDef = {from: number; to: number; text: string; ref: string; keyAt: numb
 // **words** mark a keyword (one or more words).
 export const CARDS: CardDef[] = [
 	{
-		from: B.cardGloryIn,
-		to: B.cardGloryOut,
-		text: '“And he said, I beseech thee, shew me thy **glory**.”',
-		ref: 'Exodus 33:18',
-		keyAt: [B.glory],
-		top: 1120,
+		from: B.cardEnemyIn,
+		to: B.cardEnemyOut,
+		text: '“But while men slept, his **enemy** came and sowed tares among the wheat, and went his way.”',
+		ref: 'Matthew 13:25',
+		keyAt: [B.enemy1],
+		top: 1030,
 	},
 	{
-		from: B.cardLiveIn,
-		to: B.cardLiveOut,
-		text: '“…Thou canst not see my face: for there shall no man see me, and **live**.”',
-		ref: 'Exodus 33:20',
-		keyAt: [B.live],
-		top: 760,
+		from: B.cardSirIn,
+		to: B.cardSirOut,
+		text: '“Sir, didst not thou sow good seed in thy field?… An **enemy** hath done this.”',
+		ref: 'Matthew 13:27–28',
+		keyAt: [B.enemy2],
+		top: 1060,
 	},
 	{
-		from: B.cardShoneIn,
-		to: B.cardShoneOut,
-		text: '“…Moses wist not that the skin of his face **shone**… and they were **afraid** to come nigh him.”',
-		ref: 'Exodus 34:29–30',
-		keyAt: [word('09b', 'shone').start, B.gasp2],
-		top: 760,
+		from: B.cardNayIn,
+		to: B.cardNayOut,
+		text: '“**Nay**; lest while ye gather up the tares, ye root up also the **wheat** with them.”',
+		ref: 'Matthew 13:29',
+		keyAt: [B.nay, B.wheat],
+		top: 1080,
 	},
 	{
-		from: B.cardJohnIn,
-		to: B.cardJohnOut,
-		text: '“…hast thou not known me, Philip? he that hath seen **me** hath seen the **Father**…”',
-		ref: 'John 14:9',
-		keyAt: [B.me, B.father],
-		top: 1000,
+		from: B.cardHarvestIn,
+		to: B.cardHarvestOut,
+		text: '“Let both grow together until the **harvest**…”',
+		ref: 'Matthew 13:30',
+		keyAt: [B.harvest1],
+		top: 1100,
 	},
 	{
-		from: B.cardFaceIn,
-		to: B.cardFaceOut,
-		text: '“…to give the light of the knowledge of the glory of God in the **face of Jesus Christ**.”',
-		ref: '2 Corinthians 4:6',
-		keyAt: [word('14', 'face').start],
-		top: 1070,
+		from: B.cardSinnedIn,
+		to: B.cardSinnedOut,
+		text: '“For all have **sinned**, and come short of the glory of God.”',
+		ref: 'Romans 3:23',
+		keyAt: [B.sinned],
+		top: 1080,
 	},
-]
+	{
+		from: B.cardPerishIn,
+		to: B.cardPerishOut,
+		text: '“…not willing that any should **perish**, but that all should come to repentance.”',
+		ref: '2 Peter 3:9',
+		keyAt: [B.perish],
+		top: 1090,
+	},
+];
 
 // Warm paper: a faint fibre grain over a cream wash.
 const GRAIN = `url("data:image/svg+xml;utf8,${encodeURIComponent(

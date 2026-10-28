@@ -107,6 +107,8 @@ export function computeBeats(tl) {
 		s10: S.S10.start,
 		hourglassIn: c.notSlow - 0.1,
 		craneUp: S.S10.start,
+		// the warm lift into D major starts on "He's not slow"
+		keyChange: tl.sentences.find((x) => x.sid === '13a').start - 0.05,
 		cardPerishIn: c.patient + 0.75,
 		cardPerishOut: S.S11.start,
 		// ---- S11 Saul ----

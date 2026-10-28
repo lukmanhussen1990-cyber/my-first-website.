@@ -1,21 +1,19 @@
-"""Build the narration for "Wheat and Weeds": one edge-tts clip per sentence, joined with the brief's pauses.
+"""Build the narration for "Wheat and Weeds" from the user's own recording (audio/vo/user_full.mp3).
 
-Voice: no ElevenLabs voice_id was given, so this uses the same voice as the earlier code-voiced reels
-("Friend"): edge-tts en-US-AndrewMultilingualNeural (backup en-US-ChristopherNeural), rate -5%, with
-WordBoundary events for word timing. Clips are cached in audio/vo/ (mp3 + boundary json), so a rebuild
-only calls the service for changed sentences.
+The recording is cut into one clip per sentence at its natural pauses (found from the loudness), and
+the clips are joined again with the brief's pauses: 0.3 s between sentences, 0.6 s after "God didn't
+plant the evil", 0.8 s before "But notice", 0.8 s after "who would be left?" and 0.6 s before the last
+line. Inside a sentence the speaker's own timing is kept.
 
-Every word is timed by the TTS engine itself and checked against faster-whisper (the two must agree
-within 0.15 s on average). Display text and keywords come from the approved script.
+Word times come from faster-whisper (audio/vo/user_full_asr.json, small.en with word timestamps),
+snapped to the real pauses where a word touches one. Display text and keywords come from the approved
+script. The finished track is transcribed again as a check.
 
-Outputs: audio/vo/*.mp3|json, audio/voice_track.wav (48 kHz), timeline.json and public/timeline.json.
-Run: python tools/build_voice.py   (needs edge-tts, numpy, faster-whisper; ffmpeg on PATH)
+Outputs: audio/voice_track.wav (48 kHz), timeline.json and public/timeline.json.
+Run: python tools/build_voice.py   (needs numpy, faster-whisper; ffmpeg on PATH)
 """
-import asyncio
 import json
-import os
 import re
-import ssl
 import subprocess
 from pathlib import Path
 
@@ -25,9 +23,7 @@ EP = Path(__file__).resolve().parent.parent
 VO = EP / 'audio' / 'vo'
 SR = 48000
 FPS = 30
-VOICE = 'en-US-AndrewMultilingualNeural'
-BACKUP_VOICE = 'en-US-ChristopherNeural'
-RATE = '-5%'
+SOURCE = VO / 'user_full.mp3'
 
 # Approved script split into sentences; *word* marks a caption keyword.
 # (id, line, scene, text). Long lines are split into separate clips.
@@ -62,7 +58,7 @@ SCENE_NAMES = {
     'S14': 'End card',
 }
 
-LEAD_IN = 0.04            # the voice starts on frame 1
+LEAD_IN = 0.10            # the first word starts on frame 3 (a breath of room before it)
 GAP = 0.30                # silence between sentences (last word end -> next first word)
 GAP_AFTER = {'07': 0.60,   # after "God didn't plant the evil"
              '08': 0.80,   # before "But notice"
@@ -70,6 +66,8 @@ GAP_AFTER = {'07': 0.60,   # after "God didn't plant the evil"
              '15': 0.60}   # before the last line
 CTA_HOLD = 2.60           # the comment box keeps typing after "Yes, or not yet?"
 END_CARD = 3.00
+QUIET_DB = -45.0          # a pause is at least 80 ms below this level
+EDGE_IN, EDGE_OUT = 0.05, 0.14   # room kept before the first and after the last word of a clip
 
 
 def plain(text):
@@ -84,73 +82,54 @@ def tokens(text):
     return [{'text': tok.replace('*', ''), 'keyword': '*' in tok} for tok in text.split()]
 
 
-async def synth(text, voice, mp3, js):
-    import edge_tts
-    import edge_tts.communicate as ec
-    # The session proxy re-terminates TLS, so trust its CA bundle (falls back to the default store).
-    ca = '/root/.ccr/ca-bundle.crt'
-    if os.path.exists(ca):
-        ec._SSL_CTX = ssl.create_default_context(cafile=ca)
-    c = edge_tts.Communicate(text, voice, rate=RATE, boundary='WordBoundary', proxy=os.environ.get('HTTPS_PROXY'))
-    audio, words = bytearray(), []
-    async for ch in c.stream():
-        if ch['type'] == 'audio':
-            audio += ch['data']
-        elif ch['type'] == 'WordBoundary':
-            words.append({'text': ch['text'], 'start': ch['offset'] / 1e7, 'dur': ch['duration'] / 1e7})
-    mp3.write_bytes(bytes(audio))
-    js.write_text(json.dumps({'text': text, 'voice': voice, 'rate': RATE, 'words': words}, indent=1, ensure_ascii=False) + '\n')
-
-
-def get_clip(sid, text):
-    mp3, js = VO / f's{sid}.mp3', VO / f's{sid}.json'
-    if not (mp3.exists() and js.exists() and json.loads(js.read_text())['text'] == text):
-        for attempt in range(4):
-            try:
-                asyncio.run(synth(text, VOICE if attempt < 3 else BACKUP_VOICE, mp3, js))
-                break
-            except Exception as e:  # network hiccup: retry, then the backup voice
-                print(f'  {sid}: attempt {attempt + 1} failed: {e}')
-        else:
-            raise SystemExit(f'could not synthesize sentence {sid}')
-    meta = json.loads(js.read_text())
-    x = np.frombuffer(subprocess.run(['ffmpeg', '-v', 'error', '-i', str(mp3), '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'],
-                                     check=True, capture_output=True).stdout, dtype=np.float32).copy()
-    return x, meta
-
-
 def write_wav(path, x):
     y = np.clip(x, -1, 1)
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '1', '-i', '-',
                     '-c:a', 'pcm_s24le', str(path)], input=y.astype(np.float32).tobytes(), check=True)
 
 
-def align(toks, bounds, sid):
-    """Give each script token the time of its WordBoundary word (punctuation-only tokens are merged)."""
-    bw = [b for b in bounds if norm(b['text'])]
-    out, j = [], 0
-    for t in toks:
-        n = norm(t['text'])
-        if not n:
+def load(path):
+    return np.frombuffer(subprocess.run(['ffmpeg', '-v', 'error', '-i', str(path), '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'],
+                                        check=True, capture_output=True).stdout, dtype=np.float32).copy()
+
+
+def pauses(x):
+    """Quiet runs of at least 80 ms, as (start, end) in seconds, from a 10 ms loudness envelope."""
+    hop = SR // 100
+    n = len(x) // hop
+    db = 20 * np.log10(np.sqrt((x[:n * hop].reshape(n, hop) ** 2).mean(axis=1)) + 1e-9)
+    quiet = np.concatenate([[False], db < QUIET_DB, [False]])
+    edges = np.flatnonzero(np.diff(quiet.astype(int)))
+    return [(a / 100, b / 100) for a, b in zip(edges[::2], edges[1::2]) if b - a >= 8]
+
+
+def heard_words():
+    return [{'w': norm(w['w']), 's': w['s'], 'e': w['e']} for w in json.loads((VO / 'user_full_asr.json').read_text()) if norm(w['w'])]
+
+
+def snap(toks, quiet):
+    """Whisper lets words run on into pauses. Give each real pause to the word boundary it belongs to
+    (a sentence break first, then a comma or other punctuation, then a plain gap between words when
+    whisper's boundary is close) and move the two word edges onto the pause."""
+    rank = {'sentence': 0, 'punct': 1, 'word': 2}
+    bounds = [(k, 'sentence' if toks[k]['first'] else 'punct' if re.search(r'[,:;.…”?!]$', toks[k - 1]['text']) else 'word')
+              for k in range(1, len(toks))]
+    for a, b in quiet:
+        if b - a < 0.12:
             continue
-        # a boundary word can cover several tokens ("twelve." is one) or one token can span two
-        # boundary words (rare); match greedily on the normalized letters
-        acc, k = '', j
-        while k < len(bw) and len(acc) < len(n):
-            acc += norm(bw[k]['text'])
-            k += 1
-        assert acc == n, f'{sid}: script word {t["text"]!r} vs TTS {[b["text"] for b in bw[j:k]]}'
-        out.append({**t, 's': bw[j]['start'], 'e': bw[k - 1]['start'] + bw[k - 1]['dur']})
-        j = k
-    assert j == len(bw), f'{sid}: TTS words left over: {[b["text"] for b in bw[j:]]}'
-    return out
-
-
-def speech_bounds(x, thresh_db=-50.0):
-    hop = SR // 200
-    rms = np.array([np.sqrt(np.mean(x[i:i + hop] ** 2) + 1e-12) for i in range(0, len(x) - hop, hop)])
-    on = np.nonzero(20 * np.log10(rms) > thresh_db)[0]
-    return on[0] * hop / SR, (on[-1] + 1) * hop / SR
+        c = (a + b) / 2
+        near = [(k, kind, abs((toks[k - 1]['e'] + toks[k]['s']) / 2 - c)) for k, kind in bounds]
+        near = [n for n in near if n[2] <= (b - a) / 2 + 0.5 and (n[1] != 'word' or n[2] < 0.2)]
+        if not near:
+            continue
+        k, _, _ = min(near, key=lambda n: (rank[n[1]], n[2]))
+        prev, nxt = toks[k - 1], toks[k]
+        prev['e'] = max(a, prev['s'] + 0.05)
+        nxt['s'] = min(b, nxt['e'] - 0.05) if nxt['e'] > b + 0.05 else b
+        nxt['e'] = max(nxt['e'], nxt['s'] + 0.08)
+    for p, n in zip(toks, toks[1:]):
+        p['e'] = min(p['e'], n['s'])
+    return toks
 
 
 def whisper_check(track, words):
@@ -173,27 +152,41 @@ def whisper_check(track, words):
 
 
 def main():
-    VO.mkdir(parents=True, exist_ok=True)
-    clips = {}
+    x = load(SOURCE)
+    quiet = pauses(x)
+    heard = heard_words()
+
+    # Match the script's words to what was heard, in order.
+    j, order_clips, every = 0, [], []
     for sid, line, scene, text in SENTENCES:
-        x, meta = get_clip(sid, plain(text))
-        toks = align(tokens(text), meta['words'], sid)
-        # Trim the clip to its speech, keeping a short breath of room on each side.
-        s, e = speech_bounds(x)
-        s = min(s, toks[0]['s'])
-        e = max(e, toks[-1]['e'])
-        a, b = max(0, int((s - 0.03) * SR)), min(len(x), int((e + 0.10) * SR))
-        x = x[a:b].copy()
-        fi, fo = int(0.006 * SR), int(0.03 * SR)
-        x[:fi] *= np.linspace(0, 1, fi)
-        x[-fo:] *= np.linspace(1, 0, fo)
-        for t in toks:
-            t['s'] -= a / SR
-            t['e'] -= a / SR
-        speech = (max(0.0, s - a / SR), e - a / SR)
-        clips[sid] = {'audio': x, 'tokens': toks, 'speech': speech, 'line': line, 'scene': scene, 'text': text,
-                      'voice': meta['voice']}
-        print(f'{sid:>3}: {len(x) / SR:5.2f}s  {plain(text)}')
+        toks = [t for t in tokens(text) if norm(t['text'])]
+        for i, t in enumerate(toks):
+            n = norm(t['text'])
+            assert heard[j]['w'] == n, f'{sid}: script {t["text"]!r} vs heard {heard[j]["w"]!r}'
+            t['s'], t['e'], t['first'] = heard[j]['s'], heard[j]['e'], i == 0
+            j += 1
+        order_clips.append({'sid': sid, 'line': line, 'scene': scene, 'text': text, 'tokens': toks})
+        every += toks
+    assert j == len(heard), f'words left over: {[w["w"] for w in heard[j:]]}'
+    snap(every, quiet)
+
+    # Cut each sentence out of the recording, from just before its first word to just after its last,
+    # never past the middle of the pause on either side.
+    clips = {}
+    for k, c in enumerate(order_clips):
+        s, e = c['tokens'][0]['s'], c['tokens'][-1]['e']
+        lo = 0.0 if k == 0 else (order_clips[k - 1]['tokens'][-1]['e'] + s) / 2
+        hi = len(x) / SR if k == len(order_clips) - 1 else (e + order_clips[k + 1]['tokens'][0]['s']) / 2
+        a0, b0 = int(max(lo, s - EDGE_IN) * SR), int(min(hi, e + EDGE_OUT) * SR)
+        y = x[a0:b0].copy()
+        fi, fo = int(0.006 * SR), int(0.04 * SR)
+        y[:fi] *= np.linspace(0, 1, fi)
+        y[-fo:] *= np.linspace(1, 0, fo)
+        for t in c['tokens']:
+            t['s'] -= a0 / SR
+            t['e'] -= a0 / SR
+        clips[c['sid']] = {**c, 'audio': y}
+        print(f"{c['sid']:>3}: {s:6.2f}–{e:6.2f}  {plain(c['text'])}")
 
     # Place the clips so the silence between one sentence's last word and the next one's first word
     # equals the planned pause.
@@ -208,9 +201,10 @@ def main():
     total = frames / FPS
     track = np.zeros(int(total * SR) + SR, np.float32)
     for sid, c in clips.items():
-        a = int(round(place[sid] * SR))
-        track[a:a + len(c['audio'])] += c['audio']
+        a0 = max(0, int(round(place[sid] * SR)))
+        track[a0:a0 + len(c['audio'])] += c['audio'][: len(track) - a0]
     track = track[:int(total * SR)]
+    (EP / 'audio').mkdir(exist_ok=True)
     write_wav(EP / 'audio' / 'voice_track.wav', track)
 
     words, sentences = [], []
@@ -303,7 +297,7 @@ def main():
     }
     timeline = {
         'fps': FPS, 'durationInSeconds': round(total, 3), 'durationInFrames': frames,
-        'voice': {'engine': 'edge-tts', 'voice': sorted({c['voice'] for c in clips.values()}), 'rate': RATE},
+        'voice': {'engine': 'recording', 'source': 'audio/vo/user_full.mp3', 'timing': 'faster-whisper small.en, snapped to pauses'},
         'leadIn': LEAD_IN, 'voiceEnd': round(voice_end, 3),
         'sentences': sentences, 'words': words, 'scenes': scenes, 'cues': cues,
         'pauses': {'default': GAP, 'after': GAP_AFTER, 'ctaHold': CTA_HOLD, 'endCard': END_CARD},

@@ -285,16 +285,16 @@ function main() {
     const pc = (m0) => [0, 1, 2].reduce((acc, o) => acc + goertzelPower(mono, i0, i1, 440 * 2 ** ((m0 + 12 * o - 69) / 12)), 0);
     return { F: pc(53), Fs: pc(54) };
   };
-  const minorWin = thirds(b.s4 + 0.3, b.glory), majorWin = thirds(b.keyChange + 0.3, b.keyChange + 3.8);
+  const minorWin = thirds(b.s4 + 0.3, b.s5), majorWin = thirds(b.keyChange + 0.3, b.keyChange + 3.8);
   const justBefore = thirds(b.keyChange - 0.6, b.keyChange - 0.1), justAfter = thirds(b.keyChange + 0.1, b.keyChange + 0.6);
   const minorRatio = toDb(Math.sqrt(minorWin.F / minorWin.Fs)), majorRatio = toDb(Math.sqrt(majorWin.Fs / majorWin.F));
   const fsJump = toDb(Math.sqrt(justAfter.Fs / justBefore.Fs));
   const keyOk = minorRatio > 6 && majorRatio > 6 && fsJump > 6;
 
   // clicks: in the music and SFX stems, biggest second-difference spike near each hit vs its surroundings
-  const hitsList = [['lightning1', b.lightning1], ['hardCut', b.hardCut], ['s3', b.s3], ['fire', b.fire], ['split', b.split], ['glory', b.glory],
-    ['live', b.live], ['gloryRush', b.gloryRush], ['keyChange', b.keyChange], ['streak', b.streak], ['faceFill', b.faceFill], ['christ', b.christ],
-    ['typingStart', b.typingStart], ['s15', b.s15], ['loopOut', b.loopOut]];
+  const hitsList = [['throw1', b.throw1], ['burst', b.burst], ['s2', b.s2], ['sow1', b.sow1], ['enemy1', b.enemy1], ['enemy2', b.enemy2],
+    ['nay', b.nay], ['taresRip', b.taresRip], ['wheatRip', b.wheatRip], ['keyChange', b.keyChange], ['lightFlash', b.lightFlash],
+    ['barnGlow', b.barnGlow], ['typingStart', b.typingStart], ['s14', b.s14], ['loopOut', b.loopOut]];
   const sfxMono = new Float32Array(N);
   for (let i = 0; i < N; i++) sfxMono[i] = sumL[i] + sumR[i];
   const clickRatio = (x, t) => {
@@ -315,16 +315,15 @@ function main() {
     return `| ${sc.id} ${sc.name} | ${sc.start.toFixed(2)}–${sc.end.toFixed(2)} | ${f(part(voice))} | ${f(part(musicMix))} | ${f(part(sfxMix))} |`;
   });
 
-  const sil0 = Math.round((b.hardCut + 0.05) * SR), sil1 = Math.round((b.s3 - 0.05) * SR);
-  const silenceMusic = rmsDb(musicMix, sil0, sil1) - voiceMed, silenceSfx = rmsDb(sfxMix, sil0, sil1) - voiceMed;
-  const preCut = (x) => rmsDb(x, Math.round((b.hardCut - 0.45) * SR), Math.round((b.hardCut - 0.05) * SR)) - voiceMed;
-  const cutDrop = Math.min(preCut(musicMix) - silenceMusic, preCut(sfxMix) - silenceSfx);
-  log(`the hard cut on "die" (${b.hardCut.toFixed(2)} s): music ${preCut(musicMix).toFixed(1)} -> ${silenceMusic.toFixed(1)} dB, sfx ${preCut(sfxMix).toFixed(1)} -> ${silenceSfx.toFixed(1)} dB re the voice (drop ${cutDrop.toFixed(1)} dB)`);
-  const ok = Math.abs(I - TARGET_I) <= 0.3 && TP <= TARGET_TP + 1e-9 && st.duration_ts === N && peak < 1 && keyOk && cutDrop > 15 && Math.abs(dcL) < 1e-3 && Math.abs(dcR) < 1e-3;
+  // the NAY lands hard: music + sfx just after it vs just before it
+  const around = (x, a, e) => rmsDb(x, Math.round(a * SR), Math.round(e * SR));
+  const nayLift = around(musicMix, b.nay, b.nay + 0.25) + 0 - around(musicMix, b.nay - 0.6, b.nay - 0.3);
+  log(`the NAY (${b.nay.toFixed(2)} s): music rises ${nayLift.toFixed(1)} dB on the hit`);
+  const ok = Math.abs(I - TARGET_I) <= 0.3 && TP <= TARGET_TP + 1e-9 && st.duration_ts === N && peak < 1 && keyOk && Math.abs(dcL) < 1e-3 && Math.abs(dcR) < 1e-3;
   log(`final: I ${I} LUFS, TP ${TP} dBTP, LRA ${LRA} LU, ${st.codec_name} ${st.sample_rate} Hz ${st.channels} ch, ${st.duration_ts} samples (${(st.duration_ts / SR).toFixed(4)} s)`);
   log(`while speaking, voice over music: median ${med('music').toFixed(1)} dB, worst ${worst('music').toFixed(1)} dB (${worstSpan('music').a.toFixed(2)}s); over sfx: median ${med('sfx').toFixed(1)} dB, worst ${worst('sfx').toFixed(1)} dB (${worstSpan('sfx').a.toFixed(2)}s)`);
   log(`in the ${gaps.length} pauses >= 0.5 s, music sits a median ${(-pauseMed).toFixed(1)} dB under the voice's speaking level`);
-  log(`key: S4 F over F# ${minorRatio.toFixed(1)} dB, S11 F# over F ${majorRatio.toFixed(1)} dB, F# jump at ${b.keyChange}s ${fsJump.toFixed(1)} dB -> ${keyOk ? 'D minor -> D major OK' : 'CHECK'}`);
+  log(`key: S4 F over F# ${minorRatio.toFixed(1)} dB, S10 F# over F ${majorRatio.toFixed(1)} dB, F# jump at ${b.keyChange}s ${fsJump.toFixed(1)} dB -> ${keyOk ? 'D minor -> D major OK' : 'CHECK'}`);
   log(`sample peak ${toDb(peak).toFixed(2)} dBFS, DC L ${dcL.toExponential(1)} R ${dcR.toExponential(1)}, loop seam step ${seam.toExponential(2)}`);
   log(`click ratios music/sfx (max |d2| / rms |d2| in ±50 ms): ${clicks.map(([k, a, c]) => `${k} ${a.toFixed(1)}/${c.toFixed(1)}`).join(', ')}`);
   log(['| Scene | Time (s) | Voice LUFS | Music LUFS | SFX LUFS |', '|---|---|---|---|---|', ...sceneRows].join('\n'));
@@ -332,7 +331,7 @@ function main() {
 
   copyFileSync(finalMix, P('public', 'audio', 'final_mix.wav'));
 
-  writeFileSync(P('audio', 'MIX_NOTES.md'), `# Mix notes: The Face of God
+  writeFileSync(P('audio', 'MIX_NOTES.md'), `# Mix notes: Wheat and Weeds
 
 Built by \`npm run audio\` (tools/synth/build_audio.mjs). It is deterministic: seeded noise and no
 timers, so the same inputs always give the same file. Every hit comes from \`src/beats.mjs\`, so re-run
@@ -340,42 +339,38 @@ after changing beats or the timeline.
 
 ## Voice
 
-The user's own recording (\`audio/vo/moses_full.mp3\`), cut into one clip per sentence at its natural pauses
-and joined again with the brief's pauses (tools/build_voice.py): 0.3 s between sentences, 0.7 s after "you
-will die", 0.8 s before "But notice", 0.6 s after "That was just from being near God" and 0.6 s before the
+The user's own recording (\`audio/vo/user_full.mp3\`), cut into one clip per sentence at its natural pauses
+and joined again with the brief's pauses (tools/build_voice.py): 0.3 s between sentences, 0.6 s after "God
+didn't plant the evil", 0.8 s before "But notice", 0.8 s after "who would be left?" and 0.6 s before the
 last line. A 75 Hz high-pass clears the rumble under the voice.
 
 ## Stems (48 kHz stereo, 32-bit float, at mix level before ducking)
 
-- \`audio/stems/music.wav\`: deep pads, low strings, choir, felt piano, timpani hits and rolls, a D drone and a
-  5.2 s hall.
-  - The storm: low tremolo strings and a dark choir grow under the lightning, a riser and a timpani roll
-    swell into "you will die", then a **hard cut** at ${b.hardCut.toFixed(2)} s: "die" lands in near silence.
-  - The montage: a driving low pulse, a hit on every whip cut and a big D minor hit when the sea splits
-    (${b.split.toFixed(2)} s).
-  - The summit: the request rises to a bright F chord on "glory"; E-flat over D and a timpani roll grow to "live".
-  - The clift: quiet tension, then choir and strings swell on a luminous B-flat as the glory passes, with a long echo.
-  - Coming down and the camp: tender, a soft piano line, a twinkle on "shining".
-  - D minor until **${b.keyChange.toFixed(2)} s** ("Now here's the best part"), then a warm D major swell; warmest
-    at Jesus' face, peaking on "Christ" (${b.christ.toFixed(2)} s).
+- \`audio/stems/music.wav\`: soft pads, felt piano, gentle strings, a low D drone, choir in the bright parts
+  and a 5.4 s hall.
+  - Night (D minor): a dark low pad, high shimmering strings, a felt-piano note as the hand opens, a low swell
+    as the weeds burst up.
+  - The storyteller and the sowing: warmer; a golden arpeggio on each throw of seed.
+  - The enemy: a cold E-flat over D, low plucks on his steps.
+  - "Pull them up?": tremolo and a ticking pulse build to the **NAY** at ${b.nay.toFixed(2)} s, which lands on a
+    timpani hit; strain under the pull; a sad falling line as the wheat roots tear.
+  - D minor until **${b.keyChange.toFixed(2)} s** ("He's not slow"), then a warm D major lift with the hourglass.
+  - The Damascus road: a proud low march, then a huge bright swell for the light (${b.lightFlash.toFixed(2)} s).
+  - The harvest: the brightest moment, full D major with choir (${b.barnGlow.toFixed(2)} s).
 - \`audio/stems/sfx.wav\`:
-  - The storm: a howling gale, rain, thunder after every flash, the robe and beard flapping, a rising tone as
-    the light breaks through, and a swell that stops dead on the hard cut (then only faint wind).
-  - The montage: a fire whoosh, the bush roaring and crackling, whips, three frog croaks, hail, the sea's roar
-    and a surge as it splits.
-  - The clift: a rock scrape, a low whoosh as the shadow covers him, the roaring rush of light (a filtered
-    noise sweep over a low roar) and its soft echo.
-  - Coming down: footsteps on gravel, a morning breeze, a shimmer around the face.
-  - The camp: murmurs and gasps without words, people stepping back, a child's shuffle. The veil: soft cloth.
-  - A whoosh for the light streak; lamps and room tone in the upper room; birds and a breeze on the hillside.
-  - Badges: a pop and a chime as FIRE and SEA fill, a bright chord when FACE fills. Soft taps and heart pops
-    for the call to action; a sparkle as the logo draws itself.
+  - Wind through the wheat that swells with the camera moves; crickets at night.
+  - Seeds: a dull rattle and soft thuds for the black seed, a bright shimmer for the golden seed.
+  - The enemy's soft footsteps going away and a cold low tone; the time-lapse rustle.
+  - The NAY: a wooden stamp. Underground: roots creak, then tear with soil spilling.
+  - A quiet low tone for each dark spot; falling sand in the hourglass.
+  - Marching on gravel, the light's swell, the fall on dust; the lamp and paper sliding onto the pile.
+  - The harvest: birds, a joyful murmur, sickle swishes. Soft taps, typing and heart pops for the question.
 
 ## Loop seam
 
-The storm's wind, rain, pad, strings and drone start 0.6 s before t = 0. That pre-roll is cross-faded onto the
-last 0.6 s (from loopOut = ${b.loopOut.toFixed(2)} s), so the end flows into the start. Matching 8 ms
-fades at both ends avoid a click on first play; at the loop point they make a 16 ms dip.
+The night's crickets, wind, pad, strings and drone start 0.6 s before t = 0. That pre-roll is cross-faded
+onto the last 0.6 s (from loopOut = ${b.loopOut.toFixed(2)} s), so the end flows into the start. Matching
+8 ms fades at both ends avoid a click on first play; at the loop point they make a 16 ms dip.
 
 ## Mix
 
@@ -388,7 +383,7 @@ fades at both ends avoid a click on first play; at the loop point they make a 16
 - **While speaking:** the voice is a median ${med('music').toFixed(1)} dB over the music (worst phrase
   ${worst('music').toFixed(1)} dB) and ${med('sfx').toFixed(1)} dB over the SFX (worst ${worst('sfx').toFixed(1)} dB).
 - **In the pauses** (${gaps.length} gaps of 0.5 s or more) the music comes up to a median ${(-pauseMed).toFixed(1)} dB under the voice's speaking level.
-- **The hard cut on "die":** music falls from ${preCut(musicMix).toFixed(1)} to ${silenceMusic.toFixed(1)} dB and SFX from ${preCut(sfxMix).toFixed(1)} to ${silenceSfx.toFixed(1)} dB relative to the voice (only faint wind is left).
+- **The NAY:** the music rises ${nayLift.toFixed(1)} dB on the hit.
 - **Pre-master:** levelled to −14 LUFS, then a true-peak limiter at −1.6 dBTP (max ${limited.maxGrDb.toFixed(1)} dB
   of reduction, more than 0.5 dB on ${(limited.over05 * 100).toFixed(2)}% of samples).
 - **Loudnorm:** two passes (I −14, TP −1, LRA ${TARGET_LRA}). Pass 2 ran in **${p2.normalization_type}** mode.

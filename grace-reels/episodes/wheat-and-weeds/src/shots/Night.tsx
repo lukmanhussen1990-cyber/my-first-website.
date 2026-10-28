@@ -293,7 +293,8 @@ const enemyCam = (t: number): CamState => {
 };
 // the three throws: each is one sow cycle ending at its release time
 const THROWS = [B.blackSow1, B.blackSow2, B.blackSow3];
-const SOW_T = 0.78;
+// one sow cycle per throw; a quick pair of throws gets shorter cycles so they never overlap
+const SOW_T = Math.min(0.78, B.blackSow2 - B.blackSow1 - 0.02, B.blackSow3 - B.blackSow2 - 0.02);
 const throwPhase = (t: number) => {
 	for (const r of THROWS) {
 		const a = r - SOW_RELEASE * SOW_T;

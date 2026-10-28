@@ -9,7 +9,7 @@ import path from 'node:path';
 const [outFile, list, ...rest] = process.argv.slice(2);
 const opt = Object.fromEntries(rest.map((a) => a.replace(/^--/, '').split(/=(.*)/s).slice(0, 2)));
 const scale = Number(opt.scale ?? 0.5);
-const props = {lite: false, muted: true, noText: true};
+const props = {lite: opt.lite === '1', muted: true, noText: true};
 const work = path.resolve('out/chunks/preview');
 fs.mkdirSync(work, {recursive: true});
 const segs = list.split(',').map((s) => s.split('-').map(Number));
@@ -23,7 +23,27 @@ for (const [i, [a, b]] of segs.entries()) {
 	const f1 = Math.round(b * 30) - 1;
 	const video = path.join(work, `seg${i}.mp4`);
 	const t0 = performance.now();
-	await renderMedia({serveUrl, composition, codec: 'h264', outputLocation: video, inputProps: props, frameRange: [f0, f1], scale, concurrency: 2, crf: 20, muted: true, puppeteerInstance: browser, chromiumOptions: {gl: 'swangle'}});
+	let shown = 0;
+	await renderMedia({
+		serveUrl,
+		composition,
+		codec: 'h264',
+		outputLocation: video,
+		inputProps: props,
+		frameRange: [f0, f1],
+		scale,
+		concurrency: Number(opt.concurrency ?? 2),
+		crf: 20,
+		muted: true,
+		puppeteerInstance: browser,
+		chromiumOptions: {gl: 'swangle'},
+		onProgress: ({renderedFrames}) => {
+			if (renderedFrames >= shown + 10) {
+				shown = renderedFrames;
+				console.log(`  segment ${i}: ${renderedFrames}/${f1 - f0 + 1} frames, ${((performance.now() - t0) / 1000).toFixed(0)} s`);
+			}
+		},
+	});
 	// the voice for the same stretch
 	const withVoice = path.join(work, `segv${i}.mp4`);
 	execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', video, '-ss', String(f0 / 30), '-t', String((f1 - f0 + 1) / 30), '-i', 'audio/voice_track.wav', '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-af', 'afade=t=in:d=0.04,apad', '-shortest', withVoice]);

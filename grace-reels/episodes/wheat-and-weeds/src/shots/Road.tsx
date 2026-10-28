@@ -162,6 +162,7 @@ export const ROAD: ShotDef = {
 		return {exposure: 1.0, contrast: 1.06, saturation: 1.0, gain: [1.04, 1.0, 0.95], vignette: 0.36, bloom: 0.35 + w * 0.6, bloomThreshold: 0.92 - w * 0.25, grain: 0.015, flash: w, flashColor: [1, 0.97, 0.88]};
 	},
 	fog: () => fogOf(ROAD_MOOD),
+	anchors: (t) => ({saul: [saulX(t) + 0.1, 1.95, 0]}),
 	rays: (t) => ({at: [saulX(B.lightFlash), 40, 0], strength: 0.9 * smooth((t - B.lightFlash) / 0.25), color: [1, 0.95, 0.82]}),
 	dof: (t) => ({focus: 6.4, range: 1.6, aperture: 6, max: 10}),
 };
@@ -286,7 +287,7 @@ const PaulContent: React.FC<{t: number; lite: boolean}> = ({t, lite}) => {
 			<mesh position={[LAMP[0], LAMP[1] - 0.03, LAMP[2]]} material={mats.lamp} castShadow>
 				<sphereGeometry args={[0.07, 7, 5]} />
 			</mesh>
-			<Flame position={[LAMP[0] + 0.07, LAMP[1] + 0.02, LAMP[2]]} t={t} seed={3} size={0.09} intensity={1.2} />
+			<Flame position={[LAMP[0] + 0.07, LAMP[1] + 0.02, LAMP[2]]} t={t} seed={3} height={0.09} intensity={1.2} glow={0} />
 			<FlameLight position={[LAMP[0], LAMP[1] + 0.25, LAMP[2] + 0.1]} t={t} seed={3} intensity={9} distance={6} />
 			<Glow position={[LAMP[0] + 0.07, LAMP[1] + 0.08, LAMP[2]]} size={0.9} color="#ffb060" intensity={0.5} />
 			<Person id="paul" view="tq" position={PAUL_AT} pose={pose} t={t} facing={1} yaw={fc.yaw} lean={fc.lean * 0.5} look={lookIn(ROOM, cam, {lightDir: [0.9, 0.3], rimLight: 0.6, rimColor: '#ffb36a', rimDir: [1, 0.2]})} blinkSeed={14} renderOrder={30} shadow={{w: 0.8, d: 0.4, opacity: 0.3}} />

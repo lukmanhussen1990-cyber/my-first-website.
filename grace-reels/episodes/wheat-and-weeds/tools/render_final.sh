@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p out/chunks
-N=1952
+N=$(node -p "require('./timeline.json').durationInFrames")
 SIZE=440
 i=0
 for start in $(seq 0 $SIZE $((N - 1))); do
@@ -20,5 +20,5 @@ for start in $(seq 0 $SIZE $((N - 1))); do
 done
 (cd out/chunks && ls chunk_*.mp4 | grep -v part | sed "s/.*/file '&'/" > list.txt)
 ffmpeg -y -v error -f concat -safe 0 -i out/chunks/list.txt -c copy out/chunks/video.mp4
-ffmpeg -y -v error -i out/chunks/video.mp4 -i audio/final_mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 256k -ar 48000 -shortest -movflags +faststart out/reel_face-of-god.mp4
-echo "$(date +%T) done: out/reel_face-of-god.mp4"
+ffmpeg -y -v error -i out/chunks/video.mp4 -i audio/final_mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 256k -ar 48000 -shortest -movflags +faststart out/reel_wheat-and-weeds.mp4
+echo "$(date +%T) done: out/reel_wheat-and-weeds.mp4"

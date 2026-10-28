@@ -1,11 +1,11 @@
-// S14 call to action (over a dark warm background) and S15 end card.
+// S13 call to action (over the warm dusk by the barn) and S14 end card.
 import {clamp, easeOut, easeOutBack, seg, smooth} from '../lib/ease';
 import {hash} from '../lib/random';
 import {B, COMMENT_TEXT} from '../lib/timeline';
 import {Logo} from './Logo';
 import {C, SAFE, SANS, SERIF} from './theme';
 
-const END_IN = B.s15;
+const END_IN = B.s14;
 
 const Heart: React.FC<{x: number; y: number; size: number; color: string; opacity: number; rot: number}> = ({x, y, size, color, opacity, rot}) => (
 	<svg width={size} height={size} viewBox="0 0 24 24" style={{position: 'absolute', left: x - size / 2, top: y - size / 2, opacity, transform: `rotate(${rot}deg)`}}>
@@ -13,12 +13,13 @@ const Heart: React.FC<{x: number; y: number; size: number; color: string; opacit
 	</svg>
 );
 
-const BOX_Y = 1250;
+const BOX_Y = 1180;
 
-// S14: the question is in the captions; a comment types itself and hearts float up from it.
+// S13: the question is in the captions and the meter (READY? YES / NOT YET); a comment types itself and
+// hearts float up from it.
 export const CallToAction: React.FC<{t: number}> = ({t}) => {
 	const out = seg(t, END_IN - 0.25, END_IN + 0.1);
-	if (t < B.s14 - 0.1 || out >= 1) return null;
+	if (t < B.s13 - 0.1 || out >= 1) return null;
 	const typed = [...COMMENT_TEXT].slice(0, clamp(Math.floor((t - B.typingStart) * B.typingCps), 0, [...COMMENT_TEXT].length)).join('');
 	const cursorOn = Math.floor(t * 2.2) % 2 === 0 || (t > B.typingStart && t < B.typingEnd);
 	const boxIn = seg(t, B.typingStart - 0.45, B.typingStart - 0.05);

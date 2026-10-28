@@ -1,6 +1,7 @@
-// Sound effects for "The Face of God", each placed on its beat from src/beats.mjs. Two buses so the mix
-// can treat them differently: "beds" (storm wind and rain, the sea, fire, camp murmur, room, breeze) duck
-// hard under the voice; "hits" (thunder, whooshes, steps, gasps, chimes, taps) duck lightly.
+// Sound effects for "Wheat and Weeds", each placed on its beat from src/beats.mjs. Two buses so the mix
+// can treat them differently: "beds" (wind through the wheat, crickets, the lake, sand, room tone, the
+// harvest murmur) duck hard under the voice; "hits" (seeds, steps, the stamp, roots, swells, taps) duck
+// lightly.
 // Deterministic: seeded noise only.
 import { SR, TAU, Bus, Rng, Noise, Sine, Saw, Biquad, curve, wobble, clamp, panGains } from './dsp.mjs';
 import { noiseShape } from './instruments.mjs';
@@ -330,111 +331,202 @@ function echoed(fn, delays, gains) {
 }
 
 // ---------- placement ----------
+// ---------- the field ----------
+const cricketsGen = (seed) => (nl, nr) => {
+  // a few crickets far off in the dark field: trains of short bright pulses, each its own rhythm
+  const r = new Rng(seed);
+  const cs = Array.from({ length: 5 }, () => ({ f: r.range(4100, 5300), s: new Sine(r.next()), per: r.range(0.55, 1.05), off: r.next() * 2, n: 3 + Math.floor(r.next() * 3), g: panGains(r.range(-0.9, 0.9)), a: r.range(0.4, 1) }));
+  return (t) => {
+    let l = 0, rr = 0;
+    for (const c of cs) {
+      const ph = ((t + c.off) % c.per) / 0.042;
+      const k = Math.floor(ph);
+      const on = k < c.n ? Math.sin(Math.PI * (ph - k)) ** 2 : 0;
+      const y = c.s.next(c.f) * on * c.a;
+      l += y * c.g[0];
+      rr += y * c.g[1];
+    }
+    return [l * 0.5, rr * 0.5];
+  };
+};
+const wheatWindGen = (seed) => (nl, nr) => {
+  // wind through a field of ripe wheat: a soft dry hiss that swells with the gusts, a little low air
+  const mk = () => ({ bp: new Biquad('bandpass', 2600, 0.5), hs: new Biquad('highpass', 900, 0.7), lo: new Biquad('lowpass', 380, 0.7) });
+  const fL = mk(), fR = mk(), gust = wobble(seed + 'g', [0.06, 0.14, 0.27]), rust = wobble(seed + 'r', [2.3, 4.1, 6.7]);
+  return (t) => {
+    const g = 0.45 + 0.55 * gust(t), rs = 0.75 + 0.25 * rust(t);
+    const l = fL.hs.process(fL.bp.process(nl.pink())) * rs * 1.5 + fL.lo.process(nl.brownN()) * 0.6;
+    const r = fR.hs.process(fR.bp.process(nr.pink())) * rs * 1.5 + fR.lo.process(nr.brownN()) * 0.6;
+    return [l * g * 2.0, r * g * 2.0];
+  };
+};
+const lakeGen = (seed) => (nl, nr) => {
+  // small waves lapping on the sand
+  const mk = () => ({ lp: new Biquad('lowpass', 900, 0.7), bp: new Biquad('bandpass', 1800, 0.8) });
+  const fL = mk(), fR = mk(), lap = wobble(seed, [0.42, 0.71, 1.13]);
+  return (t) => {
+    const a = Math.max(0, lap(t)) ** 1.5;
+    return [(fL.lp.process(nl.pink()) * 0.8 + fL.bp.process(nl.white()) * 0.3 * a) * (0.3 + a), (fR.lp.process(nr.pink()) * 0.8 + fR.bp.process(nr.white()) * 0.3 * a) * (0.3 + a)];
+  };
+};
+const sandGen = (seed) => (nl, nr) => {
+  // fine sand falling through glass: a thin hiss and countless tiny ticks
+  const r = new Rng(seed), hpL = new Biquad('highpass', 4000, 0.7), hpR = new Biquad('highpass', 4000, 0.7), bp = new Biquad('bandpass', 6500, 2);
+  let k = 0;
+  return () => {
+    if (r.next() < 900 / SR) k = r.range(0.3, 1);
+    k *= 0.97;
+    const tk = bp.process(nl.white()) * k;
+    return [hpL.process(nl.white()) * 0.25 + tk, hpR.process(nr.white()) * 0.25 + tk * 0.8];
+  };
+};
+// a handful of grains leaving the hand: a dry rattle of tiny clicks (golden: brighter, with a shimmer)
+function seedRattle(bus, t, dur, { gain = 0.12, bright = 1, seed = 'rattle', pan = 0 } = {}) {
+  const r = new Rng(seed);
+  for (let k = 0; k < 28; k++) {
+    const tt = t + dur * (k / 28) ** 1.3 + r.range(0, 0.02);
+    const nz = new Noise(`${seed}${k}`), bp = new Biquad('bandpass', r.range(2600, 5200) * bright, 3);
+    const a = gain * r.range(0.3, 1) * (1 - 0.6 * k / 28);
+    oneShot(bus, tt, 0.02, pan + r.range(-0.3, 0.3), (x) => bp.process(nz.white()) * Math.exp(-x / 0.003) * a * 3);
+  }
+}
+// a root tearing out of the earth: a creaking stretch, then fibres snapping and soil spilling
+function rootTear(bus, t, { gain = 0.2, seed = 'tear' } = {}) {
+  creak(bus, t - 0.35, 0.45, { gain: gain * 0.5, f0: 22, f1: 60, fc: 700, seed: seed + 'c' });
+  const r = new Rng(seed);
+  for (let k = 0; k < 14; k++) {
+    const tt = t + r.range(0, 0.35) * (k / 14);
+    const nz = new Noise(`${seed}s${k}`), bp = new Biquad('bandpass', r.range(900, 2600), 1.4);
+    oneShot(bus, tt, 0.06, r.range(-0.4, 0.4), (x) => bp.process(nz.white()) * Math.exp(-x / 0.01) * gain * r.range(0.5, 1.2) * 2.2);
+  }
+  const nz = new Noise(seed + 'soil'), lp = new Biquad('lowpass', 1200, 0.7);
+  oneShot(bus, t + 0.05, 0.9, 0, (x) => lp.process(nz.white()) * Math.exp(-x / 0.25) * Math.min(1, x / 0.05) * gain * 0.9);
+  softThud(bus, t + 0.02, gain * 0.8, 58);
+}
+// a wooden stamp coming down hard
+function stamp(bus, t, gain = 0.5) {
+  const nz = new Noise('stamp'), bp = new Biquad('bandpass', 700, 2.2), bp2 = new Biquad('bandpass', 1900, 4), s = new Sine(0);
+  oneShot(bus, t, 0.5, 0, (x) => (bp.process(nz.white()) * 1.6 * Math.exp(-x / 0.02) + bp2.process(nz.white()) * 0.6 * Math.exp(-x / 0.01) + s.next(95 - 30 * Math.min(1, x / 0.08)) * Math.exp(-x / 0.07)) * gain);
+}
+// paper sliding onto a pile, then the light tap of it settling
+function paperSlide(bus, t, k) {
+  cloth(bus, t - 0.3, 0.32, { gain: 0.05, fc: 4200, rate: 40, pan: 0.2, seed: `paper${k}` });
+  tick(bus, t, 0.06, 900, 0.2);
+  softThud(bus, t + 0.01, 0.08, 120);
+}
+// a quiet, dark low tone (each spot that appears on the wheat)
+function darkTone(bus, t, f, gain = 0.06) {
+  const s = new Sine(0), s2 = new Sine(0.3);
+  oneShot(bus, t, 1.4, 0, (x) => (s.next(f) + 0.3 * s2.next(f * 2.01)) * Math.min(1, x / 0.03) * Math.exp(-x / 0.5) * gain);
+}
+
 export function renderSfx(b, tl) {
   const pre = Math.round((b.total - b.loopOut) * 1000) / 1000;
   const T = b.total;
   const beds = new Bus(T, pre), hits = new Bus(T, pre);
-  const norm = (s) => s.toLowerCase().replace(/’/g, "'").replace(/[^a-z0-9']/g, '').replace(/^'+|'+$/g, '');
-  const w = (sid, text, nth = 0) => tl.words.filter((x) => x.sid === sid && norm(x.text) === text)[nth].start;
-  const cut = b.hardCut;
 
-  // ---- the storm on the summit (from the pre-roll, so the loop flows into it): wind and rain; near
-  // silence after the hard cut; back for the ask and the answer; muffled inside the clift ----
-  const storm = curve([
-    [-pre, 1], [b.swellStart, 1.1], [cut - 0.02, 1.25], [cut, 0.07], [b.s3 - 0.05, 0.07], [b.s3 + 0.05, 0], [b.s4 - 0.1, 0], [b.s4 + 0.2, 0.9],
-    [b.s5, 1], [b.s6, 0.8], [b.inside, 0.55], [b.gloryRush, 0.35], [b.gloryGone, 0.3], [b.s7, 0.45], [b.dawn, 0.35], [b.dawn + 0.8, 0],
-    [b.loopOut - 0.6, 0], [T, 1],
+  // ---- the night (S1 from the pre-roll so the loop flows in, S4): crickets in the dark field ----
+  const night = curve([[-pre, 1], [b.s2 - 0.3, 1], [b.s2 + 0.2, 0], [b.s4 - 0.3, 0], [b.s4 + 0.2, 1], [b.s5 - 0.2, 1], [b.s5 + 0.4, 0], [b.loopOut, 0], [T, 1]]);
+  bed(beds, -pre, T, (t) => 0.022 * night(t), 'crickets', cricketsGen('cr'));
+  // ---- wind through the wheat: swells with the camera moves ----
+  const ww = curve([
+    [-pre, 0.5], [b.pullBack, 0.6], [b.pullBack + 1.2, 1.1], [b.s2, 0.7], [b.s2 + 0.2, 0], [b.s3 - 0.1, 0], [b.s3 + 0.1, 0.4], [b.s4, 0.5],
+    [b.s5, 0.6], [b.growStart + 1.0, 1.1], [b.s6, 0.6], [b.s7, 0.6], [b.diveStart, 0.8], [b.underground, 0.1], [b.s8 - 0.2, 0.1], [b.s8 + 0.3, 1.0],
+    [b.s9, 0.8], [b.pushIn + 2, 0.5], [b.s10, 0.7], [b.craneUp + 2, 1.0], [b.s11, 0.6], [b.s11 + 0.2, 0], [b.s12 - 0.1, 0], [b.s12 + 0.3, 0.8],
+    [b.harvestCrane + 1.2, 1.0], [b.s13, 0.5], [b.s14, 0.2], [b.loopOut, 0.2], [T, 0.5],
   ]);
-  bed(beds, -pre, T, (t) => 0.06 * storm(t), 'gale', stormWindGen('gale'));
-  const rain = curve([[-pre, 1], [cut - 0.02, 1], [cut, 0], [b.s4 - 0.1, 0], [b.s4 + 0.3, 0.8], [b.s6, 0.6], [b.inside, 0.3], [b.s7, 0.2], [b.dawn, 0], [b.loopOut - 0.6, 0], [T, 1]]);
-  bed(beds, -pre, T, (t) => 0.03 * rain(t), 'rain', rainGen('rain'));
-  // thunder after each flash, and the robe and beard flapping in the gusts
-  [[b.lightning1, 0.55, 1], [b.lightning2, 0.42, 0.7], [b.lightning3, 0.36, 0.6], [b.lightning4, 0.4, 0.8], [b.lightning5, 0.3, 0.5], [b.lightning6, 0.36, 0.7]]
-    // (a rumble that would still be going at the hard cut stops just before it)
-    .forEach(([t, g, cr], k) => thunder(hits, t + 0.06, { gain: g, crack: cr, seed: `th${k}`, len: t < cut ? Math.min(3.4, cut - t - 0.09) : 3.4 }));
-  [[0.05, 1.1], [1.25, 1.0], [b.s2 + 0.05, 1.1], [b.s4 + 0.1, 1.2], [w('04', 'thee'), 1.0], [b.s5 + 0.3, 0.9]].forEach(([t, d], k) =>
-    cloth(hits, t, d, { gain: 0.07, rate: 24, fc: 1100, pan: -0.2 + 0.1 * k, seed: `flap${k}` }));
-  // the rising tone as the light breaks through, then the swell into "you will die" that stops dead
-  toneRise(hits, 0.0, b.titleOut, 196, 523, 0.035);
-  whoosh(hits, cut, { pre: cut - b.swellStart, post: 0.004, f0: 200, fPeak: 3600, f1: 3600, gain: 0.3, panFrom: 0, panTo: 0, body: 0.9, seed: 'swell', reverse: true });
+  bed(beds, -pre, T, (t) => 0.05 * ww(t), 'wheat-wind', wheatWindGen('ww'));
 
-  // ---- S3 montage: fire, plagues, sea ----
-  whoosh(hits, b.s3 + 0.12, { pre: 0.25, post: 0.6, f0: 300, fPeak: 2600, f1: 500, gain: 0.3, panFrom: -0.7, panTo: 0.4, seed: 'w-fire' });
-  const fire = curve([[b.s3, 0], [b.s3 + 0.2, 0.6], [b.fire - 0.05, 0.7], [b.fire + 0.1, 1.4], [b.whipPlagues - 0.04, 1.2], [b.whipPlagues, 0]]);
-  bed(beds, b.s3, b.whipPlagues, (t) => 0.1 * fire(t), 'bush-roar', roarGen('bush'));
-  bed(beds, b.s3, b.whipPlagues, (t) => 0.06 * fire(t), 'bush-crackle', crackleGen('bush-crackle', 45));
-  whoosh(hits, b.fire + 0.05, { pre: 0.12, post: 0.7, f0: 250, fPeak: 1800, f1: 350, gain: 0.34, panFrom: 0, panTo: 0.2, body: 1.1, seed: 'flare' });
-  whoosh(hits, b.whipPlagues, { pre: 0.14, post: 0.22, f0: 600, fPeak: 4200, f1: 900, gain: 0.26, panFrom: 0.7, panTo: -0.7, seed: 'whip1' });
-  b.frogs.forEach((t, k) => croak(hits, t, k, 0.11));
-  hail(hits, b.whipPlagues + 0.05, b.whipSea, 'h', 0.12);
-  whoosh(hits, b.whipSea, { pre: 0.14, post: 0.22, f0: 600, fPeak: 4200, f1: 900, gain: 0.26, panFrom: -0.7, panTo: 0.7, seed: 'whip2' });
-  const sea = curve([[b.whipSea, 0], [b.whipSea + 0.1, 0.7], [b.split - 0.05, 0.8], [b.split + 0.25, 1.6], [b.s4 - 0.2, 1.0], [b.s4, 0]]);
-  bed(beds, b.whipSea, b.s4 + 0.05, (t) => 0.12 * sea(t), 'sea', seaGen('sea'));
-  whoosh(hits, b.split + 0.2, { pre: 0.3, post: 1.0, f0: 120, fPeak: 900, f1: 160, gain: 0.4, panFrom: -0.5, panTo: 0.5, body: 1.4, seed: 'split' });
-  whoosh(hits, b.s4, { pre: 0.12, post: 0.3, f0: 500, fPeak: 3600, f1: 700, gain: 0.22, panFrom: 0.6, panTo: -0.6, seed: 'whip3' });
+  // ---- S1: the black seed leaves the hand (a dull rattle), lands (soft thuds), the weeds burst up
+  // (a rustling time-lapse whoosh), and the camera pulls back on a rising gust ----
+  seedRattle(hits, b.throw1, 0.25, { gain: 0.1, bright: 0.6, seed: 'black1' });
+  for (let k = 0; k < 6; k++) softThud(hits, b.seedsLand + k * 0.07, 0.06, 70);
+  whoosh(hits, b.burst + 0.35, { pre: 0.5, post: 0.8, f0: 300, fPeak: 3200, f1: 600, gain: 0.12, panFrom: -0.4, panTo: 0.5, seed: 'burst' });
+  cloth(hits, b.burst, 1.0, { gain: 0.06, fc: 2600, rate: 26, seed: 'burst-rustle' });
+  whoosh(hits, b.pullBack + 0.9, { pre: 0.8, post: 1.0, f0: 200, fPeak: 1400, f1: 300, gain: 0.08, panFrom: 0.3, panTo: -0.3, seed: 'pull' });
 
-  // ---- S6 the clift: rock scrape, the covering shadow, the roaring rush of light and its echo ----
-  creak(hits, b.rockScrape, 0.7, { gain: 0.12, f0: 70, f1: 140, fc: 1300, seed: 'scrape' });
-  noiseShape(hits, b.rockScrape, b.rockScrape + 0.7, 'grit', (tt) => 0.05 * Math.sin(Math.PI * tt / 0.7), { fl: [new Biquad('bandpass', 2400, 0.9)], fr: [new Biquad('bandpass', 2600, 0.9)] });
-  whoosh(hits, b.cover + 0.35, { pre: 0.35, post: 0.8, f0: 90, fPeak: 420, f1: 110, gain: 0.3, panFrom: 0.4, panTo: -0.2, body: 1.2, seed: 'cover' });
-  echoed((d, g) => whoosh(hits, b.gloryPeak + d, { pre: b.gloryPeak - b.gloryRush, post: 1.1, f0: 140, fPeak: 3000, f1: 300, gain: 0.48 * g, panFrom: -0.9, panTo: 0.9, body: 1.3, q: 0.8, seed: `rush${d}` }),
-    [0.55, 1.15], [0.28, 0.12]);
-  noiseShape(hits, b.gloryRush, b.gloryGone + 0.6, 'roar', (tt) => {
-    const u = tt / (b.gloryGone + 0.6 - b.gloryRush);
-    return 0.18 * Math.min(1, tt / 0.25) * Math.exp(-Math.max(0, u - 0.45) * 4);
-  }, { fl: [new Biquad('lowpass', 500, 0.7), new Biquad('highpass', 40, 0.7)], fr: [new Biquad('lowpass', 520, 0.7), new Biquad('highpass', 40, 0.7)] });
+  // ---- S2: the lake, a quiet crowd ----
+  const lake = curve([[b.s2 - 0.3, 0], [b.s2, 1], [b.s3 - 0.1, 1], [b.s3 + 0.2, 0]]);
+  bed(beds, b.s2 - 0.3, b.s3 + 0.3, (t) => 0.05 * lake(t), 'lake', lakeGen('lk'));
+  bed(beds, b.s2 - 0.3, b.s3 + 0.3, (t) => 0.012 * lake(t), 'crowd', murmurGen('crowd', { voices: 8, bright: 0.9, lp: 1800 }));
 
-  // ---- S7–S8 the trails fade; morning; footsteps on gravel and a shimmer around the face ----
-  sparkle(hits, b.s7 + 0.3, b.dawn, 6, 'trails', 0.025);
-  air(hits, b.dawn - 0.3, b.dawn + 0.4, b.dawn + 1.6, 0.012, 'dawn-air', 3000, 8000);
-  bed(beds, b.dawn, b.s9 + 0.4, (t) => 0.04 * curve([[b.dawn, 0], [b.dawn + 0.8, 1], [b.faceCU, 0.8], [b.s9 + 0.4, 0]])(t), 'morning-breeze', leavesGen('morning'));
-  b.steps.moses.forEach((t, k) => gravelStep(hits, t, k, 0.26, -0.15));
-  sparkle(hits, b.shining - 0.05, b.faceCU + 1.0, 10, 'shine', 0.035);
-  air(hits, b.shining - 0.2, b.faceCU + 0.2, b.s9, 0.01, 'shine-air', 6000, 11000);
+  // ---- S3: footsteps on soft earth, golden seed (a bright shimmer as it flies) ----
+  b.steps.farmer.forEach((t, k) => footstepEarth(hits, t, k, 0.16, -0.1));
+  for (const [k, t] of [b.sow1, b.sow2].entries()) {
+    seedRattle(hits, t, 0.2, { gain: 0.06, bright: 1.3, seed: `gold${k}` });
+    sparkle(hits, t, t + 0.5, 5, `goldsp${k}`, 0.022);
+  }
 
-  // ---- S9 the camp: gasps and murmurs without words, a child's shuffle ----
-  const camp = curve([[b.s9 - 0.1, 0], [b.s9 + 0.4, 1], [b.gasp2, 0.7], [b.s10, 0.4], [b.s10 + 0.5, 0]]);
-  bed(beds, b.s9 - 0.1, b.s10 + 0.6, (t) => 0.04 * camp(t), 'camp', murmurGen('camp', { voices: 8, lp: 2200 }));
-  [0, 0.12, 0.27].forEach((d, k) => gasp(hits, b.gasp1 + d, `a${k}`, 0.09));
-  [0, 0.09, 0.2, 0.33].forEach((d, k) => gasp(hits, b.gasp2 + d, `b${k}`, 0.08));
-  [0, 0.18, 0.34].forEach((d, k) => footstepEarth(hits, b.stepBack + d, 40 + k, 0.14, 0.2 - 0.15 * k));
-  cloth(hits, b.childPeek - 0.1, 0.45, { gain: 0.06, fc: 2200, seed: 'child' });
-  [0, 0.16].forEach((d, k) => footstepEarth(hits, b.childPeek + d, 60 + k, 0.08, 0.35));
+  // ---- S4: the enemy's soft steps going away, a cold low drone, dull thuds of black seed ----
+  b.steps.enemy.forEach((t, k) => footstepEarth(hits, t, 100 + k, 0.09 * (1 - 0.5 * Math.min(1, (t - b.wentHisWay) / 1.0) * (t > b.wentHisWay ? 1 : 0)), 0.2));
+  toneRise(hits, b.enemyIn, b.wentHisWay + 1.0, 55, 49, 0.03);
+  for (const [k, t] of [b.blackSow1, b.blackSow2, b.blackSow3].entries()) {
+    seedRattle(hits, t, 0.2, { gain: 0.07, bright: 0.55, seed: `black${k + 2}`, pan: -0.2 });
+    for (let j = 0; j < 4; j++) softThud(hits, t + 0.55 + j * 0.06, 0.05, 66);
+  }
 
-  // ---- S10 the veil: soft cloth ----
-  cloth(hits, b.veilOn - 0.25, 0.9, { gain: 0.11, fc: 2000, rate: 12, seed: 'veil' });
+  // ---- S5: the time-lapse rustle, the tares turning (a low dark tone) ----
+  whoosh(hits, b.growStart + 0.9, { pre: 0.8, post: 1.0, f0: 400, fPeak: 2600, f1: 500, gain: 0.09, seed: 'grow' });
+  cloth(hits, b.growStart, 1.9, { gain: 0.05, fc: 2200, rate: 30, seed: 'grow-rustle' });
+  darkTone(hits, b.tareTurn, 73, 0.05);
+  for (let k = 0; k < 6; k++) footstepEarth(hits, b.servantsIn + 0.2 + k * 0.28, 200 + k, 0.08, 0.3);
 
-  // ---- S11 the light streak across the centuries, then the lamplit upper room ----
-  whoosh(hits, b.streak, { pre: b.streak - b.streakStart, post: 0.55, f0: 500, fPeak: 4600, f1: 900, gain: 0.32, panFrom: -0.85, panTo: 0.85, body: 0.5, seed: 'streak' });
-  sparkle(hits, b.streakStart, b.streak + 0.4, 8, 'streak-sp', 0.03);
-  const room = curve([[b.room - 0.2, 0], [b.room + 0.3, 1], [b.s12 + 0.3, 0.8], [b.s12 + 0.8, 0]]);
-  bed(beds, b.room - 0.2, b.s12 + 0.9, (t) => 0.03 * room(t), 'lamps', crackleGen('lamp-crackle', 8));
-  bed(beds, b.room - 0.2, b.s12 + 0.9, (t) => 0.045 * room(t), 'room-tone', roomToneGen());
+  // ---- S7: the button, the cursor, the NAY stamp; the dive; the roots strain and tear ----
+  pop(hits, b.buttonIn, 520, 0.06, 0);
+  tick(hits, b.cursorHover, 0.05, 2400, 0.2);
+  stamp(hits, b.nay, 0.4);
+  whoosh(hits, b.diveStart + 0.55, { pre: 0.5, post: 0.45, f0: 900, fPeak: 300, f1: 80, gain: 0.14, panFrom: 0, panTo: 0, body: 1.2, seed: 'dive' });
+  creak(hits, b.pull, b.taresRip - b.pull, { gain: 0.06, f0: 16, f1: 34, fc: 650, seed: 'strain' });
+  rootTear(hits, b.taresRip, { gain: 0.16, seed: 'tear-tares' });
+  creak(hits, b.taresRip + 0.3, b.wheatRip - b.taresRip - 0.3, { gain: 0.05, f0: 20, f1: 46, fc: 900, seed: 'strain2' });
+  rootTear(hits, b.wheatRip, { gain: 0.2, seed: 'tear-wheat' });
 
-  // ---- S12–S13 the Galilee hillside: birds and a breeze ----
-  const hill = curve([[b.s12, 0], [b.s12 + 0.5, 0.7], [b.s13, 1], [b.s14, 0.6], [b.s14 + 0.8, 0]]);
-  bed(beds, b.s12, b.s14 + 0.9, (t) => 0.04 * hill(t), 'hill-breeze', leavesGen('hill'));
-  for (let k = 0, t = b.s12 + 0.4; t < b.s14 + 0.3; k++, t += 0.7 + new Rng(`bt${k}`).range(0, 0.9)) birdChirp(hits, t, k, 0.035);
+  // ---- S9: a quiet low tone as each dark spot appears ----
+  for (let k = 0; k < 5; k++) darkTone(hits, b.spotsStart + k * ((b.spotsEnd - b.spotsStart) / 5), [62, 58, 55, 52, 49][k], 0.035);
 
-  // ---- badges: a pop and a chime as each fills; a bright chord when FACE fills; cards and labels ----
-  [0, 0.12, 0.24].forEach((d, k) => pop(hits, b.badgesIn + d, 520 + 90 * k, 0.07, -0.3 + 0.3 * k));
-  pop(hits, b.fire, 640, 0.1, -0.25);
-  chime(hits, b.fire + 0.02, [1174.7, 1760], 0.035, -0.25);
-  pop(hits, b.sea, 700, 0.1, 0);
-  chime(hits, b.sea + 0.02, [1318.5, 1975.5], 0.035, 0);
-  sparkle(hits, b.faceGlow, b.faceGlow + 0.8, 4, 'face-glow', 0.02);
-  pop(hits, b.faceFill, 760, 0.11, 0.25);
-  chime(hits, b.faceFill + 0.02, [1174.7, 1480.0, 1760.0, 2349.3], 0.04, 0.25, 1.4);
-  for (const t of [b.cardGloryIn, b.cardLiveIn, b.cardShoneIn, b.cardJohnIn, b.cardFaceIn]) cloth(hits, t - 0.05, 0.3, { gain: 0.03, fc: 3200, rate: 30, seed: `card${t}` });
-  for (const t of [b.labelClift, b.labelBack, b.labelKnow, b.labelVeil]) tick(hits, t, 0.05, 1900, 0.2);
+  // ---- S10: the hourglass: sand falling ----
+  const sand = curve([[b.hourglassIn, 0], [b.hourglassIn + 0.8, 1], [b.s11 - 0.3, 1], [b.s11 + 0.2, 0]]);
+  bed(beds, b.hourglassIn, b.s11 + 0.3, (t) => 0.02 * sand(t), 'sand', sandGen('sd'));
+  sparkle(hits, b.hourglassIn, b.hourglassIn + 1.2, 6, 'hg', 0.02);
 
-  // ---- S14 call to action: typing taps (spaces skipped), hearts ----
+  // ---- S11: marching on gravel; the light (a huge bright swell), the fall on dust; Paul's room: the
+  // lamp, the scrolls sliding onto the pile ----
+  b.steps.saul.forEach((t, k) => {
+    gravelStep(hits, t, k, 0.14, -0.1);
+    gravelStep(hits, t + 0.09, k + 50, 0.09, 0.3);
+  });
+  air(hits, b.lightFlash - 0.6, b.lightFlash + 0.1, b.paulCut + 0.8, 0.02, 'light-air', 2500, 11000);
+  toneRise(hits, b.lightFlash - 0.5, b.lightFlash + 0.3, 220, 880, 0.025);
+  softThud(hits, b.fall + 0.5, 0.2, 60);
+  cloth(hits, b.fall + 0.45, 0.6, { gain: 0.05, fc: 1200, rate: 18, seed: 'dust' });
+  const room = curve([[b.paulCut - 0.3, 0], [b.paulCut + 0.3, 1], [b.s12, 1], [b.s12 + 0.4, 0]]);
+  bed(beds, b.paulCut - 0.3, b.s12 + 0.5, (t) => 0.035 * room(t), 'room-tone', roomToneGen());
+  bed(beds, b.paulCut - 0.3, b.s12 + 0.5, (t) => 0.02 * room(t), 'lamp', crackleGen('lamp', 3));
+  b.scrolls.forEach((t, k) => paperSlide(hits, t, k));
+
+  // ---- S12: the harvest: birds, a joyful murmur, sickle swishes in the reapers' rhythm ----
+  const hv = curve([[b.s12 - 0.2, 0], [b.s12 + 0.3, 1], [b.s13, 0.8], [b.s13 + 0.6, 0]]);
+  bed(beds, b.s12 - 0.2, b.s13 + 0.7, (t) => 0.018 * hv(t), 'joy', murmurGen('joy', { voices: 7, bright: 1.1, lp: 2600 }));
+  for (let k = 0, t = b.s12 + 0.2; t < b.s13 + 0.4; k++, t += 0.5 + new Rng(`hb${k}`).range(0, 0.7)) birdChirp(hits, t, 300 + k, 0.03);
+  for (let t = b.s12 + 0.05, k = 0; t < b.s13 + 0.3; t += 1.3 / 3, k++) whoosh(hits, t, { pre: 0.14, post: 0.12, f0: 1200, fPeak: 4200, f1: 1500, gain: 0.05, panFrom: -0.3 + 0.3 * (k % 3), panTo: 0.3 * (k % 3), body: 0.2, seed: `sickle${k}` });
+
+  // ---- S13: soft taps on the buttons, the comment typing, hearts ----
+  pop(hits, b.buttonsIn, 600, 0.06, -0.1);
+  tap(hits, b.yesTap, 900);
+  pop(hits, b.yesTap + 0.02, 760, 0.06, -0.2);
+  tap(hits, b.notYetTap, 901);
+  pop(hits, b.notYetTap + 0.02, 680, 0.06, 0.2);
   [...b.commentText].forEach((ch, k) => {
     if (ch !== ' ') tap(hits, b.typingStart + k / b.typingCps, k);
   });
   for (let k = 0; k < 6; k++) heartPop(hits, b.hearts + k * 0.22, k);
 
-  // ---- S15 the logo draws itself ----
+  // ---- cards and labels: a soft paper swish, a tick ----
+  for (const t of [b.cardEnemyIn, b.cardSirIn, b.cardNayIn, b.cardHarvestIn, b.cardSinnedIn, b.cardPerishIn]) cloth(hits, t - 0.05, 0.3, { gain: 0.03, fc: 3200, rate: 30, seed: `card${t}` });
+  for (const t of [b.labelMt13, b.labelTaresIn, b.tagWho, b.tagEnemy, b.labelActsIn]) tick(hits, t, 0.05, 1900, 0.2);
+  pop(hits, b.meterIn, 560, 0.05, -0.3);
+
+  // ---- S14 the logo draws itself ----
   sparkle(hits, b.logoDraw, b.logoDraw + 1.0, 5, 'logo', 0.04);
   air(hits, b.logoDraw - 0.1, b.logoDraw + 0.5, b.logoDraw + 1.6, 0.006, 'logo-air');
   return { beds, hits, pre };

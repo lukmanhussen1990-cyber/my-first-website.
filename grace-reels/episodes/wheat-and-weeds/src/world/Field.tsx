@@ -17,48 +17,44 @@ import {Mood, skyFromMood} from './mood';
 // ---------------------------------------------------------------------------------------------
 const H_STEM = 0.84;
 const H_TOP = 1.05;
-const tagPart = (g: THREE.BufferGeometry, part: number) => {
-	const n = g.attributes.position.count;
-	g.setAttribute('aPart', new THREE.Float32BufferAttribute(new Float32Array(n).fill(part), 1));
-	if (g.attributes.uv) g.deleteAttribute('uv');
-	if (g.attributes.normal) g.deleteAttribute('normal');
-	return g.index ? g.toNonIndexed() : g;
+// Every part stays indexed: the wheat is flat shaded (normals come from screen derivatives), so shared
+// vertices are run once, which matters with tens of thousands of stalks on a CPU renderer.
+type Part = {pos: number[]; idx: number[]; part: number};
+const fromGeo = (g: THREE.BufferGeometry, part: number): Part => {
+	const pos = Array.from(g.attributes.position.array as Float32Array);
+	const idx = g.index ? Array.from(g.index.array as ArrayLike<number>) : Array.from({length: pos.length / 3}, (_, k) => k);
+	return {pos, idx, part};
 };
 
-const blade = (y0: number, ang: number, len: number, droop: number, w: number) => {
-	const pts: number[] = [];
+const blade = (y0: number, ang: number, len: number, droop: number, w: number): Part => {
+	const pos: number[] = [];
+	const idx: number[] = [];
 	const seg = 3;
-	const at = (s: number) => {
+	const px = -Math.sin(ang);
+	const pz = Math.cos(ang);
+	for (let i = 0; i <= seg; i++) {
+		const s = i / seg;
 		const r = s * len;
-		return [Math.cos(ang) * r, y0 + s * len * 0.75 - droop * s * s, Math.sin(ang) * r];
-	};
-	for (let i = 0; i < seg; i++) {
-		const a = at(i / seg);
-		const b = at((i + 1) / seg);
-		const wa = w * (1 - i / seg);
-		const wb = w * (1 - (i + 1) / seg);
-		const px = -Math.sin(ang);
-		const pz = Math.cos(ang);
-		const a0 = [a[0] - px * wa, a[1], a[2] - pz * wa];
-		const a1 = [a[0] + px * wa, a[1], a[2] + pz * wa];
-		const b0 = [b[0] - px * wb, b[1], b[2] - pz * wb];
-		const b1 = [b[0] + px * wb, b[1], b[2] + pz * wb];
-		pts.push(...a0, ...a1, ...b1, ...a0, ...b1, ...b0);
+		const c = [Math.cos(ang) * r, y0 + s * len * 0.75 - droop * s * s, Math.sin(ang) * r];
+		const wi = w * (1 - s) + 0.0005;
+		pos.push(c[0] - px * wi, c[1], c[2] - pz * wi, c[0] + px * wi, c[1], c[2] + pz * wi);
+		if (i < seg) {
+			const a = i * 2;
+			idx.push(a, a + 1, a + 3, a, a + 3, a + 2);
+		}
 	}
-	const g = new THREE.BufferGeometry();
-	g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-	return g;
+	return {pos, idx, part: 1};
 };
 
 export const stalkGeometry = (kind: 'wheat' | 'tare', detail: 'field' | 'hero' | 'far' = 'field') => {
 	const hero = detail === 'hero';
 	const far = detail === 'far';
-	const parts: THREE.BufferGeometry[] = [];
+	const parts: Part[] = [];
 	const stem = new THREE.CylinderGeometry(far ? 0.007 : 0.0045, far ? 0.009 : 0.0075, H_STEM, hero ? 5 : 3, hero ? 4 : 1, true);
 	stem.translate(0, H_STEM / 2, 0);
-	parts.push(tagPart(stem, 0));
-	if (!far) parts.push(tagPart(blade(0.18, 0.4, 0.26, 0.1, 0.012), 1));
-	if (hero) parts.push(tagPart(blade(0.36, 0.4 + Math.PI, 0.24, 0.12, 0.011), 1));
+	parts.push(fromGeo(stem, 0));
+	if (!far) parts.push(blade(0.18, 0.4, 0.26, 0.1, 0.012));
+	if (hero) parts.push(blade(0.36, 0.4 + Math.PI, 0.24, 0.12, 0.011));
 	// the head: a spindle of grains (alternating radii give the kernels in flat shading)
 	const rings = hero ? 11 : far ? 2 : 4;
 	const rMax = (kind === 'wheat' ? 0.021 : 0.018) * (far ? 1.45 : hero ? 1 : 1.08);
@@ -72,12 +68,11 @@ export const stalkGeometry = (kind: 'wheat' | 'tare', detail: 'field' | 'hero' |
 		prof.push(new THREE.Vector2(Math.max(0.003, env * bump), H_STEM + s * len));
 	}
 	prof.push(new THREE.Vector2(0.002, H_STEM + len + 0.012));
-	const head = new THREE.LatheGeometry(prof, hero ? 7 : far ? 3 : 4);
-	parts.push(tagPart(head, 2));
+	parts.push(fromGeo(new THREE.LatheGeometry(prof, hero ? 7 : far ? 3 : 4), 2));
 	if (kind === 'wheat' && hero) {
 		// awns: fine bristles from the head, up and outward
-		const awn: number[] = [];
-		const n = hero ? 12 : 5;
+		const pos: number[] = [];
+		const n = 12;
 		for (let i = 0; i < n; i++) {
 			const s = 0.25 + (i / n) * 0.7;
 			const y = H_STEM + s * len;
@@ -86,24 +81,24 @@ export const stalkGeometry = (kind: 'wheat' | 'tare', detail: 'field' | 'hero' |
 			const x0 = Math.cos(a) * r;
 			const z0 = Math.sin(a) * r;
 			const L = 0.06 + 0.05 * s;
-			const tip = [x0 + Math.cos(a) * L * 0.35, y + L, z0 + Math.sin(a) * L * 0.35];
 			const w = 0.0016;
-			awn.push(x0 - w, y, z0, x0 + w, y, z0, ...tip);
+			pos.push(x0 - w, y, z0, x0 + w, y, z0, x0 + Math.cos(a) * L * 0.35, y + L, z0 + Math.sin(a) * L * 0.35);
 		}
-		const g = new THREE.BufferGeometry();
-		g.setAttribute('position', new THREE.Float32BufferAttribute(awn, 3));
-		parts.push(tagPart(g, 3));
+		parts.push({pos, idx: Array.from({length: n * 3}, (_, k) => k), part: 3});
+	}
+	const P: number[] = [];
+	const A: number[] = [];
+	const I: number[] = [];
+	for (const q of parts) {
+		const base = P.length / 3;
+		P.push(...q.pos);
+		for (let k = 0; k < q.pos.length / 3; k++) A.push(q.part);
+		for (const k of q.idx) I.push(base + k);
 	}
 	const merged = new THREE.BufferGeometry();
-	const pos: number[] = [];
-	const part: number[] = [];
-	for (const g of parts) {
-		pos.push(...(g.attributes.position.array as Float32Array));
-		part.push(...(g.attributes.aPart.array as Float32Array));
-	}
-	merged.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-	merged.setAttribute('aPart', new THREE.Float32BufferAttribute(part, 1));
-	merged.computeVertexNormals();
+	merged.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+	merged.setAttribute('aPart', new THREE.Float32BufferAttribute(A, 1));
+	merged.setIndex(I);
 	return merged;
 };
 
@@ -276,6 +271,7 @@ type ChunkData = {center: THREE.Vector3; radius: number; kind: 'wheat' | 'tare';
 const shareInto = (base: THREE.BufferGeometry, inst: Record<string, THREE.InstancedBufferAttribute>) => {
 	const g = new THREE.BufferGeometry();
 	for (const [k, a] of Object.entries(base.attributes)) g.setAttribute(k, a);
+	if (base.index) g.setIndex(base.index);
 	for (const [k, a] of Object.entries(inst)) g.setAttribute(k, a);
 	return g;
 };
@@ -459,7 +455,7 @@ const mountWheat = (f: FieldPatch) => {
 			m.customDepthMaterial = depth;
 			m.boundingSphere = new THREE.Sphere(c.center, c.radius);
 			m.frustumCulled = true;
-			m.receiveShadow = true;
+			m.receiveShadow = false;
 			group.add(m);
 			return m;
 		};
@@ -757,7 +753,7 @@ export const FarmWorld: React.FC<FarmProps> = ({
 			<mesh geometry={g.house} material={m.lambert} position={FARMHOUSE_AT} castShadow receiveShadow />
 			{showBarn && <mesh geometry={g.barn} material={m.lambert} position={BARN_AT} castShadow receiveShadow />}
 			<mesh geometry={g.clouds} material={m.cloud} rotation-y={t * cloudDrift} />
-			{wheat && <Wheat patch={patch} state={wheat} colors={wheatColors} eye={eye} lod={lod} castShadow={wheatShadow} light={{dir: mood.sunDir, color: mood.sunColor, back: backlight}} />}
+			{wheat && <Wheat patch={patch} state={wheat} colors={wheatColors} eye={eye} lod={lod ?? (lite ? 11 : 26)} castShadow={wheatShadow} light={{dir: mood.sunDir, color: mood.sunColor, back: backlight}} />}
 			{hero && <Wheat patch={hero} state={heroState ?? wheat!} colors={wheatColors} castShadow={wheatShadow} light={{dir: mood.sunDir, color: mood.sunColor, back: backlight}} />}
 		</>
 	);

@@ -1,7 +1,7 @@
 // Word-timed captions: one sentence (or clause) per block, words fade and rise in with the voice,
 // the next word shows early as a faint ghost, keywords pop in gold capitals.
 import {clamp, easeOut, lerp, smooth} from '../lib/ease';
-import {B, TL, Word} from '../lib/timeline';
+import {TL, Word} from '../lib/timeline';
 import {C, SAFE, SERIF} from './theme';
 
 export type Block = {id: number; words: Word[]; from: number; to: number};
@@ -47,8 +47,7 @@ const buildBlocks = (): Block[] => {
 	groups.sort((a, b) => a[0].start - b[0].start);
 	return groups.map((words, i) => {
 		const next = groups[i + 1];
-		// The first block is revealed by the hook title flying into the caption spot.
-		const from = i === 0 ? B.hookTitleFly + 0.05 : words[0].start - GHOST;
+		const from = Math.max(0, words[0].start - GHOST);
 		const to = Math.min(words[words.length - 1].end + HOLD, next ? next[0].start - GHOST - 0.02 : Infinity);
 		return {id: i, words, from, to};
 	});
@@ -134,7 +133,7 @@ export const Captions: React.FC<{t: number}> = ({t}) => {
 		>
 			{block.words.map((w, i) => (
 				<span key={w.i}>
-					<WordView w={w} t={t} instant={block.id === 0 && w.start < B.hookTitleFly + 0.2} />
+					<WordView w={w} t={t} instant={false} />
 					{i < block.words.length - 1 ? ' ' : ''}
 				</span>
 			))}

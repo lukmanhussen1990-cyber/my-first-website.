@@ -250,17 +250,18 @@ export const Person: React.FC<{
 	facing?: number;
 	yaw?: number;
 	lean?: number;
+	tilt?: number; // the whole figure turned about its feet (radians, counter-clockwise on screen): a fall
 	heightM?: number;
 	look?: PuppetLook;
 	blinkSeed?: number | null;
 	renderOrder?: number;
 	shadow?: {w: number; d: number; opacity: number; offset?: [number, number]} | null;
 	castShadow?: boolean;
-}> = ({id, view, position, pose, t, facing = 1, yaw = 0, lean = 0, heightM, look, blinkSeed = null, renderOrder = 0, shadow = {w: 0.8, d: 0.32, opacity: 0.3}, castShadow = true}) => {
+}> = ({id, view, position, pose, t, facing = 1, yaw = 0, lean = 0, tilt = 0, heightM, look, blinkSeed = null, renderOrder = 0, shadow = {w: 0.8, d: 0.32, opacity: 0.3}, castShadow = true}) => {
 	const rig = RIGS[id][view]!;
 	const hM = heightM ?? rig.heightPx / rig.scale / PX_PER_M;
 	return (
-		<CharacterRoot position={position} pxPerM={rig.heightPx / hM} facing={facing} yaw={yaw} lean={lean} shadow={shadow} shadowOrder={renderOrder - 1}>
+		<CharacterRoot position={position} pxPerM={rig.heightPx / hM} facing={facing} yaw={yaw} lean={lean} tilt={tilt} shadow={shadow} shadowOrder={renderOrder - 1}>
 			<Puppet id={id} view={view} pose={pose} look={look} facing={facing} t={t} blinkSeed={blinkSeed} renderOrder={renderOrder} castShadow={castShadow} />
 		</CharacterRoot>
 	);

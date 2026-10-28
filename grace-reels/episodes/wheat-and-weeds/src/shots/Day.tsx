@@ -197,6 +197,7 @@ export const TALK: ShotDef = {
 	camera: talkCam,
 	grade: () => GOLDEN_GRADE,
 	fog: () => fogOf(TALK_MOOD),
+	anchors: () => ({tare: [2.15, 1.02, -0.6]}),
 	dof: () => ({focus: 6.8, range: 1.8, aperture: 9, max: 14}),
 };
 
