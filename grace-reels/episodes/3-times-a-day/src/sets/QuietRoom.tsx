@@ -74,6 +74,10 @@ const roomGeo = () => {
 	return merge(p);
 };
 
+// the ceiling, so a low camera never sees the night city over the tops of the walls.
+// It casts no shadow: the light in the room stays as it was.
+const ceilingGeo = () => facet(at(box(7.6, 0.12, 8.4), 0.15, 3.26, 1.4), '#A89A8A', 0.02, 90);
+
 // outside the window: night city, low blocks with lit windows
 const outsideGeo = () => {
 	const p: THREE.BufferGeometry[] = [];
@@ -99,13 +103,14 @@ const doorGeo = () => {
 };
 
 export const QuietRoom: React.FC<{door?: number; lamp?: number}> = ({door = 0, lamp = 0}) => {
-	const geo = useMemo(() => ({room: roomGeo(), out: outsideGeo(), door: doorGeo()}), []);
-	useLayoutEffect(() => () => [geo.room, geo.out.dark, geo.out.lit, geo.door].forEach((g) => g.dispose()), [geo]);
+	const geo = useMemo(() => ({room: roomGeo(), ceiling: ceilingGeo(), out: outsideGeo(), door: doorGeo()}), []);
+	useLayoutEffect(() => () => [geo.room, geo.ceiling, geo.out.dark, geo.out.lit, geo.door].forEach((g) => g.dispose()), [geo]);
 	const mat = lambert();
 	const [tx, , tz] = TABLE_AT;
 	return (
 		<group>
 			<mesh geometry={geo.room} material={mat} castShadow receiveShadow />
+			<mesh geometry={geo.ceiling} material={mat} />
 			<mesh geometry={geo.out.dark} material={mat} />
 			<mesh geometry={geo.out.lit}>
 				<meshBasicMaterial color="#FFD9A0" fog={false} />
