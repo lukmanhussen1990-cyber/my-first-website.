@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imran's Cozy Corner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pink: #ffd6e7;
+      --peach: #ffe5c9;
+      --mint: #d4f5e9;
+      --sky: #d6ecff;
+      --lemon: #fff6c2;
+      --ink: #4a3b5c;
+      --accent: #ff7eb6;
+      --card: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Fredoka', sans-serif;
+      color: var(--ink);
+      background: linear-gradient(160deg, var(--pink), var(--peach) 35%, var(--mint) 70%, var(--sky));
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Floating sparkles in the background */
+    .floaties { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .floaties span {
+      position: absolute;
+      bottom: -60px;
+      font-size: 28px;
+      opacity: .7;
+      animation: rise linear infinite;
+    }
+    @keyframes rise {
+      to { transform: translateY(-115vh) rotate(360deg); }
+    }
+
+    main { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 0 16px 60px; }
+
+    /* Header */
+    header { text-align: center; padding: 50px 0 30px; }
+    .avatar {
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 8px solid #fff;
+      box-shadow: 0 10px 30px rgba(255, 126, 182, .4);
+      animation: bob 3s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    h1 {
+      font-size: clamp(2.2rem, 7vw, 3.6rem);
+      margin-top: 18px;
+      color: var(--accent);
+      text-shadow: 3px 3px 0 #fff;
+    }
+    .tagline { font-family: 'Patrick Hand', cursive; font-size: 1.5rem; margin-top: 6px; }
+
+    nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    nav a {
+      text-decoration: none;
+      color: var(--ink);
+      background: #fff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: 0 4px 0 rgba(74, 59, 92, .15);
+      transition: transform .2s;
+    }
+    nav a:hover { transform: translateY(-3px) rotate(-2deg); }
+
+    section { margin-top: 50px; }
+    h2 { text-align: center; font-size: 2rem; margin-bottom: 24px; }
+
+    /* About card */
+    .about {
+      background: var(--card);
+      border-radius: 30px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(74, 59, 92, .1);
+      font-size: 1.15rem;
+      line-height: 1.7;
+      text-align: center;
+    }
+    .facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 20px; }
+    .facts span {
+      background: var(--lemon);
+      padding: 8px 16px;
+      border-radius: 14px;
+      font-weight: 600;
+    }
+    .facts span:nth-child(2) { background: var(--mint); }
+    .facts span:nth-child(3) { background: var(--sky); }
+    .facts span:nth-child(4) { background: var(--pink); }
+
+    /* Polaroid gallery */
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 36px;
+    }
+    .polaroid {
+      background: #fff;
+      padding: 14px 14px 18px;
+      width: 280px;
+      border-radius: 6px;
+      box-shadow: 0 12px 28px rgba(74, 59, 92, .18);
+      transition: transform .3s;
+      cursor: pointer;
+      position: relative;
+    }
+    .polaroid::before {
+      content: "";
+      position: absolute;
+      top: -14px; left: 50%;
+      width: 90px; height: 28px;
+      transform: translateX(-50%) rotate(-3deg);
+      background: rgba(255, 214, 231, .85);
+    }
+    .polaroid:nth-child(1) { transform: rotate(-4deg); }
+    .polaroid:nth-child(2) { transform: rotate(3deg); }
+    .polaroid:nth-child(3) { transform: rotate(-2deg); }
+    .polaroid:hover { transform: rotate(0) scale(1.06); z-index: 2; }
+    .polaroid img { width: 100%; height: 320px; object-fit: cover; border-radius: 2px; }
+    .polaroid p {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 1.4rem;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* Favourites */
+    .faves { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; }
+    .fave {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(74, 59, 92, .1);
+      transition: transform .2s;
+    }
+    .fave:hover { transform: translateY(-6px); }
+    .fave .icon { font-size: 3rem; }
+    .fave h3 { margin: 8px 0 4px; }
+
+    /* Hearts button */
+    .love { text-align: center; }
+    .love button {
+      font-family: inherit;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      padding: 14px 32px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #e05595;
+      transition: transform .1s;
+    }
+    .love button:active { transform: translateY(4px); box-shadow: 0 2px 0 #e05595; }
+    .love .count { margin-top: 12px; font-size: 1.1rem; }
+
+    .heart-pop {
+      position: fixed;
+      pointer-events: none;
+      font-size: 26px;
+      animation: pop 1.2s ease-out forwards;
+      z-index: 10;
+    }
+    @keyframes pop {
+      to { transform: translate(var(--dx), -160px) scale(1.6); opacity: 0; }
+    }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed; inset: 0;
+      background: rgba(74, 59, 92, .85);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 20;
+      padding: 16px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 90vh; border: 10px solid #fff; border-radius: 10px; }
+
+    footer { text-align: center; margin-top: 60px; font-family: 'Patrick Hand', cursive; font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <div class="floaties" id="floaties"></div>
+
+  <main>
+    <header>
+      <img class="avatar" src="images/avatar.jpg" alt="Imran's chess avatar">
+      <h1>Hi, I'm Imran! ✨</h1>
+      <p class="tagline">Welcome to my cozy little corner of the internet</p>
+      <nav>
+        <a href="#about">🌸 About</a>
+        <a href="#photos">📸 Photos</a>
+        <a href="#faves">♟️ Favourites</a>
+        <a href="#love">💖 Say Hi</a>
+      </nav>
+    </header>
+
+    <section id="about">
+      <h2>About Me 🌈</h2>
+      <div class="about">
+        <p>This is my very first website! I love playing chess, watching anime, and hanging out with my family. Thanks for stopping by — make yourself at home! 🏡</p>
+        <div class="facts">
+          <span>♟️ Chess player</span>
+          <span>🐉 Anime fan</span>
+          <span>💻 Learning to code</span>
+          <span>😊 Always smiling</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="photos">
+      <h2>My Photo Album 📸</h2>
+      <div class="gallery">
+        <div class="polaroid"><img src="images/photo1.jpg" alt="Selfie outside under the roof"><p>Chilling outside 🌿</p></div>
+        <div class="polaroid"><img src="images/photo2.jpg" alt="Wearing a yellow and blue jacket"><p>Ninja mode 🥷</p></div>
+        <div class="polaroid"><img src="images/avatar.jpg" alt="Chess avatar"><p>IMRAN01 ♟️</p></div>
+      </div>
+    </section>
+
+    <section id="faves">
+      <h2>Things I Love 💫</h2>
+      <div class="faves">
+        <div class="fave"><div class="icon">♟️</div><h3>Chess</h3><p>Checkmate in my dreams!</p></div>
+        <div class="fave"><div class="icon">🐉</div><h3>Anime</h3><p>Powering up every day.</p></div>
+        <div class="fave"><div class="icon">🌳</div><h3>Nature</h3><p>Green trees &amp; fresh air.</p></div>
+        <div class="fave"><div class="icon">👨‍👩‍👧</div><h3>Family</h3><p>The best team ever.</p></div>
+      </div>
+    </section>
+
+    <section id="love" class="love">
+      <h2>Send Some Love 💖</h2>
+      <button id="loveBtn">Tap for hearts!</button>
+      <p class="count" id="loveCount">0 hearts sent</p>
+    </section>
+
+    <footer>Made with 💕 by Imran</footer>
+  </main>
+
+  <div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
+
+  <script>
+    // Floating background sparkles
+    const floaties = document.getElementById('floaties');
+    const icons = ['💖', '⭐', '🌸', '♟️', '✨', '☁️', '🎈'];
+    for (let i = 0; i < 18; i++) {
+      const s = document.createElement('span');
+      s.textContent = icons[i % icons.length];
+      s.style.left = Math.random() * 100 + 'vw';
+      s.style.animationDuration = 10 + Math.random() * 14 + 's';
+      s.style.animationDelay = -Math.random() * 20 + 's';
+      s.style.fontSize = 18 + Math.random() * 22 + 'px';
+      floaties.appendChild(s);
+    }
+
+    // Heart button
+    const btn = document.getElementById('loveBtn');
+    const countEl = document.getElementById('loveCount');
+    let count = 0;
+    try { count = Number(localStorage.getItem('hearts')) || 0; } catch (e) {}
+    const showCount = () => countEl.textContent = count + (count === 1 ? ' heart' : ' hearts') + ' sent';
+    showCount();
+    btn.addEventListener('click', () => {
+      count++;
+      try { localStorage.setItem('hearts', count); } catch (e) {}
+      showCount();
+      const rect = btn.getBoundingClientRect();
+      for (let i = 0; i < 6; i++) {
+        const h = document.createElement('span');
+        h.className = 'heart-pop';
+        h.textContent = ['💖', '💕', '💗', '💓'][i % 4];
+        h.style.left = rect.left + rect.width / 2 - 13 + 'px';
+        h.style.top = rect.top + 'px';
+        h.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+        document.body.appendChild(h);
+        setTimeout(() => h.remove(), 1200);
+      }
+    });
+
+    // Click a photo to see it bigger
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    document.querySelectorAll('.polaroid img').forEach(img => {
+      img.addEventListener('click', () => {
+        lightboxImg.src = img.src;
+        lightboxImg.alt = img.alt;
+        lightbox.classList.add('open');
+      });
+    });
+    lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+  </script>
+</body>
+</html>
