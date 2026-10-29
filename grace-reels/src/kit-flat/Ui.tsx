@@ -21,7 +21,8 @@ export const FearLoveMeter: React.FC<{
   scale?: number;
   opacity?: number;
   burst?: number; // 0..1 soft glow burst at LOVE
-}> = ({x = 540, y = 260, width = 560, value, shake = 0, frame, scale = 1, opacity = 1, burst = 0}) => {
+  labelsAbove?: boolean;
+}> = ({x = 540, y = 260, width = 560, value, shake = 0, frame, scale = 1, opacity = 1, burst = 0, labelsAbove = false}) => {
   const id = sid(useId());
   const h = 26;
   const half = width / 2;
@@ -59,10 +60,10 @@ export const FearLoveMeter: React.FC<{
       {[0.25, 0.5, 0.75].map((t) => (
         <line key={t} x1={-half + width * t} y1={-h / 2 + 7} x2={-half + width * t} y2={h / 2 - 7} stroke={C.ink} strokeOpacity={0.25} strokeWidth={3} {...NS} />
       ))}
-      <text x={-half - 22} y={12} textAnchor="end" {...serifCaps(32)} fill={C.red} stroke={C.ink} strokeWidth={6} strokeLinejoin="round" style={{paintOrder: 'stroke'}}>
+      <text x={labelsAbove ? -half + 10 : -half - 22} y={labelsAbove ? -36 : 12} textAnchor={labelsAbove ? 'middle' : 'end'} {...serifCaps(32)} fill={C.red} stroke={C.ink} strokeWidth={6} strokeLinejoin="round" style={{paintOrder: 'stroke'}}>
         FEAR
       </text>
-      <text x={half + 22} y={12} textAnchor="start" {...serifCaps(32)} fill={C.gold} stroke={C.ink} strokeWidth={6} strokeLinejoin="round" style={{paintOrder: 'stroke'}}>
+      <text x={labelsAbove ? half - 10 : half + 22} y={labelsAbove ? -36 : 12} textAnchor={labelsAbove ? 'middle' : 'start'} {...serifCaps(32)} fill={C.gold} stroke={C.ink} strokeWidth={6} strokeLinejoin="round" style={{paintOrder: 'stroke'}}>
         LOVE
       </text>
       <g transform={`translate(${kx},${ky})`}>

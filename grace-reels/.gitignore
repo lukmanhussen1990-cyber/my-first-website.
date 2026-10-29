@@ -4,3 +4,8 @@ episodes/*/audio/clips/*.mp3
 # regenerable study frames: ffmpeg -i reference/flat_style.mp4 -vf fps=2 reference/frames_flat/f_%03d.png
 reference/frames_flat/
 reference/sheets/
+# intermediate audio (regenerate with tools/music.ts, sfx.ts, mix.ts)
+episodes/*/audio/*.wav
+!episodes/*/audio/final_mix.wav
+episodes/*/audio/*.premix.wav
+public/

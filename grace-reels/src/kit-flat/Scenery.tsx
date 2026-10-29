@@ -282,54 +282,63 @@ const MoonReflection: React.FC<{x: number; y: number; opacity: number; frame: nu
   </g>
 );
 
-/** Big flat storm waves that rise above the sea line. */
+/**
+ * Big flat storm waves rising above the sea line: a band of rounded crests
+ * (|sin| shape, cusps at the troughs) with foam caps, drifting sideways.
+ */
 export const StormWaves: React.FC<{frame: number; height: number; y?: number; seed?: string}> = ({
   frame,
   height,
   y = GROUND_Y,
-  seed = 'sw',
 }) => {
   if (height <= 1) return null;
-  const crests = [];
-  const n = 5;
-  for (let i = 0; i < n; i++) {
-    const spacing = (W + 600) / n;
-    const x = ((i * spacing + frame * 4.2 + random(`${seed}${i}`) * 80) % (W + 600)) - 300;
-    const h = height * (0.7 + random(`${seed}h${i}`) * 0.45) * (0.85 + 0.15 * Math.sin(frame / 9 + i));
-    const w = 330;
-    crests.push(
-      <g key={i}>
-        <path
-          d={`M ${x - w / 2} ${y + 2} C ${x - w / 4} ${y - h * 0.15}, ${x - w / 6} ${y - h}, ${x + w * 0.08} ${y - h}` +
-            ` C ${x + w * 0.2} ${y - h}, ${x + w * 0.16} ${y - h * 0.62}, ${x + w * 0.05} ${y - h * 0.58}` +
-            ` C ${x + w * 0.22} ${y - h * 0.45}, ${x + w * 0.32} ${y - h * 0.1}, ${x + w / 2} ${y + 2} Z`}
-          fill={C.stormSea}
-          stroke={C.ink}
-          strokeWidth={OUTLINE * 0.8}
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d={`M ${x - w * 0.12} ${y - h * 0.82} Q ${x + w * 0.05} ${y - h * 1.02} ${x + w * 0.12} ${y - h * 0.88}`}
-          fill="none"
-          stroke={C.foam}
-          strokeWidth={5}
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d={`M ${x - w * 0.3} ${y - h * 0.28} Q ${x - w * 0.18} ${y - h * 0.4} ${x - w * 0.08} ${y - h * 0.36}`}
-          fill="none"
-          stroke={C.stormSeaLine}
-          strokeWidth={3}
-          strokeLinecap="round"
-          opacity={0.7}
-          vectorEffect="non-scaling-stroke"
-        />
-      </g>,
+  const len = 300; // crest spacing
+  const phase = frame * 3.2;
+  const crestH = (i: number) => height * (0.72 + 0.28 * Math.sin(i * 1.7 + frame / 24));
+  let d = `M -200 ${y + 4}`;
+  const foams: React.ReactNode[] = [];
+  const x0 = -200;
+  const x1 = W + 200;
+  for (let x = x0; x <= x1; x += 8) {
+    const u = (x + phase) / len;
+    const i = Math.floor(u);
+    const k = Math.abs(Math.sin(Math.PI * u)) ** 0.7;
+    // lean the crest forward a little
+    const lean = Math.sin(Math.PI * 2 * u) * 0.12;
+    d += ` L ${x} ${(y - crestH(i) * Math.max(0, k + lean * k)).toFixed(1)}`;
+  }
+  d += ` L ${x1} ${y + 4} Z`;
+  for (let i = Math.floor((x0 + phase) / len); i <= Math.ceil((x1 + phase) / len); i++) {
+    const cx = (i + 0.5) * len - phase + len * 0.06;
+    const h = crestH(i);
+    foams.push(
+      <path
+        key={i}
+        d={`M ${cx - 70} ${y - h * 0.82} Q ${cx - 10} ${y - h * 1.12} ${cx + 52} ${y - h * 0.86}`}
+        fill="none"
+        stroke={C.foam}
+        strokeWidth={6}
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />,
+      <path
+        key={`b${i}`}
+        d={`M ${cx - 96} ${y - h * 0.34} Q ${cx - 70} ${y - h * 0.5} ${cx - 34} ${y - h * 0.46}`}
+        fill="none"
+        stroke={C.stormSeaLine}
+        strokeWidth={3.5}
+        strokeLinecap="round"
+        opacity={0.8}
+        vectorEffect="non-scaling-stroke"
+      />,
     );
   }
-  return <g>{crests}</g>;
+  return (
+    <g>
+      <path d={d} fill={C.stormSea} stroke={C.ink} strokeWidth={OUTLINE * 0.8} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      {foams}
+    </g>
+  );
 };
 
 /** Cream path drawn on the fog, from bottom-left up to the horizon. */

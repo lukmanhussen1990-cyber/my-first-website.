@@ -259,7 +259,7 @@ export const InsuranceDoc: React.FC<{
   scale?: number;
   stamp?: number; // 0..1 stamp-in progress (scale from 1.6 → 1)
   stampText?: string;
-}> = ({x, y, rotate = -4, scale = 1, stamp = 0, stampText = 'PRAYED ✓'}) => {
+}> = ({x, y, rotate = -4, scale = 1, stamp = 0, stampText = 'PRAYED'}) => {
   const st = stamp <= 0 ? 0 : stamp;
   const stampScale = 1.7 - 0.7 * Math.min(1, st);
   return (
@@ -275,23 +275,24 @@ export const InsuranceDoc: React.FC<{
         INSURANCE
       </text>
       <line x1={-150} y1={-78} x2={150} y2={-78} stroke={C.red} strokeWidth={3} {...NS} />
-      {[-40, -4, 32, 68].map((ly, i) => (
-        <line key={i} x1={-150} y1={ly} x2={i === 3 ? 60 : 150} y2={ly} stroke={C.paperLine} strokeWidth={8} strokeLinecap="round" />
+      {[-44, -10, 24].map((ly, i) => (
+        <line key={i} x1={-150} y1={ly} x2={i === 2 ? 60 : 150} y2={ly} stroke={C.paperLine} strokeWidth={8} strokeLinecap="round" />
       ))}
-      <text x={-150} y={128} fontFamily={FONT_CAPTION} fontWeight={800} fontSize={25} letterSpacing={1} fill={C.captionInk}>
+      <text x={-150} y={84} fontFamily={FONT_CAPTION} fontWeight={800} fontSize={25} letterSpacing={1} fill={C.captionInk}>
         POLICY HOLDER:
       </text>
-      <text x={-150} y={170} fontFamily={FONT_CAPTION} fontWeight={800} fontSize={38} fill={C.green}>
+      <text x={-150} y={126} fontFamily={FONT_CAPTION} fontWeight={800} fontSize={38} fill={C.green}>
         YOU
       </text>
-      <line x1={-150} y1={204} x2={30} y2={204} stroke={C.paperLine} strokeWidth={3} {...NS} />
+      <line x1={-150} y1={146} x2={30} y2={146} stroke={C.paperLine} strokeWidth={3} {...NS} />
       {st > 0 ? (
-        <g transform={`translate(70,150) rotate(-14) scale(${stampScale})`} opacity={Math.min(1, st * 2.5)}>
-          <rect x={-118} y={-46} width={236} height={92} rx={10} fill="none" stroke={C.red} strokeWidth={7} />
-          <rect x={-106} y={-34} width={212} height={68} rx={6} fill="none" stroke={C.red} strokeWidth={2.5} />
-          <text x={0} y={16} textAnchor="middle" fontFamily={FONT_SERIF} fontWeight={900} fontSize={44} letterSpacing={2} fill={C.red}>
+        <g transform={`translate(38,196) rotate(-9) scale(${stampScale * 0.82})`} opacity={Math.min(1, st * 2.5)}>
+          <rect x={-128} y={-46} width={256} height={92} rx={10} fill="none" stroke={C.red} strokeWidth={7} />
+          <rect x={-116} y={-34} width={232} height={68} rx={6} fill="none" stroke={C.red} strokeWidth={2.5} />
+          <text x={-22} y={16} textAnchor="middle" fontFamily={FONT_SERIF} fontWeight={900} fontSize={42} letterSpacing={2} fill={C.red}>
             {stampText}
           </text>
+          <path d="M 70 -2 L 82 12 L 104 -16" fill="none" stroke={C.red} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
         </g>
       ) : null}
     </g>

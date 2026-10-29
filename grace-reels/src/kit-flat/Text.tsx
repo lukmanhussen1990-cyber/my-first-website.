@@ -11,7 +11,7 @@ export const Label: React.FC<{
   x: number;
   y: number;
   text: string;
-  tone?: 'gold' | 'red' | 'cream';
+  tone?: 'gold' | 'red' | 'cream' | 'green' | 'blue';
   size?: number;
   scale?: number;
   opacity?: number;

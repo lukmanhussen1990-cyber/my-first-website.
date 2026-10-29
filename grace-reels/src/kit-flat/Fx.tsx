@@ -152,8 +152,12 @@ export const Zzz: React.FC<{x: number; y: number; frame: number; color?: string}
           y={y - t * 150}
           fontFamily={FONT_SERIF}
           fontWeight={900}
-          fontSize={34 + t * 26}
+          fontSize={46 + t * 34}
           fill={color}
+          stroke={C.ink}
+          strokeWidth={5}
+          strokeLinejoin="round"
+          style={{paintOrder: 'stroke'}}
           opacity={Math.sin(t * Math.PI)}
         >
           z
