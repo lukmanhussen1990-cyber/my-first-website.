@@ -1,0 +1,6 @@
+node_modules/
+episodes/*/audio/clips/*.mp3
+.cache/
+# regenerable study frames: ffmpeg -i reference/flat_style.mp4 -vf fps=2 reference/frames_flat/f_%03d.png
+reference/frames_flat/
+reference/sheets/
