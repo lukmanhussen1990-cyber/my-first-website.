@@ -9,7 +9,7 @@ export type Insert = {word: string; at: number; cps?: number; pulseAt?: number[]
 export const EditStrip: React.FC<{
   t: number; t0: number; t1: number; before: string; after: string; insert?: Insert;
   refText: string; tag: string; y: number; dim?: number; size?: number;
-}> = ({t, t0, t1, before, after, insert, refText, tag, y, dim = 0, size = 64}) => {
+}> = ({t, t0, t1, before, after, insert, refText, tag, y, dim = 0, size = 58}) => {
   const a = out(prog(t, t0, t0 + 0.35)) * (1 - prog(t, t1 - 0.3, t1));
   if (a <= 0) return null;
   let typed = '';

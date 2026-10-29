@@ -1,12 +1,14 @@
-import {Composition} from 'remotion';
+import {Composition, Still} from 'remotion';
 import {FontGate} from './lib/fonts';
-import {TestEden, TestFace} from './scenes/TestEden';
+import {Reel} from './Reel';
+import {Cover} from './Cover';
+import {timeline} from './lib/time';
 
 const withFonts = (C: React.FC) => () => <FontGate><C /></FontGate>;
 
 export const Root = () => (
   <>
-    <Composition id="TestFace" component={withFonts(TestFace)} durationInFrames={60} fps={30} width={1080} height={1920} />
-    <Composition id="TestEden" component={withFonts(TestEden)} durationInFrames={60} fps={30} width={1080} height={1920} />
+    <Composition id="Reel" component={withFonts(Reel)} durationInFrames={timeline.durationInFrames} fps={30} width={1080} height={1920} />
+    <Still id="Cover" component={withFonts(Cover)} width={1080} height={1920} />
   </>
 );
