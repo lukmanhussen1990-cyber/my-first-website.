@@ -9,7 +9,17 @@ Updated for episode **not-an-apple** (Idea 76).
 | `reference/reference_01.mp4` (720×1280, 30 fps, 89.5 s), 89 frames at 1 fps in `reference/frames/` | studied |
 | `episodes/never-died/` (render, style block, rig, Jesus images) | **not in this repo**: style block below was rewritten from these notes |
 
-## What the reference does (copy the STYLE only)
+## Animation reference from you (29 Oct) — `reference/animation_reference_eden.png`
+
+This is now the main look for **not-an-apple**: everything is **low-poly 3D** (faceted flat-shaded meshes), characters included.
+- Golden-hour **backlight**: low sun behind the tree at upper left, warm god rays, glowing rim on leaves and hair.
+- Faceted tree: thick angular trunk, a canopy of big low-poly chunks in yellow-green to deep green.
+- Deep background: hazy cliffs with waterfalls, cypress trees, a sparkling river with rocks.
+- Foreground flowers and leaves in strong blur (shallow depth of field), so the shot has three clear depth layers.
+- Characters: low-poly figures, long dark faceted hair, simple calm faces. The snake is a smooth low-poly tube with a green/gold diamond pattern, wrapped around the trunk.
+- **Our changes for this episode's rules:** no apples on the tree (glowing light shapes only); Eve and Adam in modest **leaf** garments from shoulders to knees, not the pink dress.
+
+## What the first reference video does (copy the STYLE only)
 
 **World**
 - Warm low-poly diorama: faceted icosahedral tree canopies, palms, flat ground plane, a winding blue river.
