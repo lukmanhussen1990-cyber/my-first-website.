@@ -86,8 +86,8 @@ const armsFor = (pose: Pose, frame: number, swing: number): [Pt[], Pt[]] => {
       ];
     case 'harp':
       return [
-        [L, [-60, sh + 70], [-14, sh + 92]],
-        [R, [62, sh + 50], [30, sh + 74 + swing * 10]],
+        [L, [-30, sh + 90], [70, sh + 96]],
+        [R, [92, sh + 40], [108, sh + 70 + swing * 10]],
       ];
     case 'armsOpen':
       return [
