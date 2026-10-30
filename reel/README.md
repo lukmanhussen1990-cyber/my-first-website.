@@ -11,7 +11,7 @@ code: every frame is made with Pillow + numpy and piped into ffmpeg.
 
 ```
 pip install pillow numpy
-python3 render.py --handle @yourhandle      # -> out/reel.mp4, ~4 min on 4 cores
+python3 render.py                          # -> out/reel.mp4 (watermark @Garden_reel), ~3 min
 python3 render.py --sheet 1.0 5.4 13.9      # quick contact sheet of single frames
 ```
 
