@@ -13,3 +13,6 @@ grace-reels/episodes/*/audio/sfx.wav
 grace-reels/episodes/*/audio/voice.wav
 # remotion build cache
 grace-reels/.remotion/
+
+# full-quality master is >100 MB (GitHub limit); the under-20MB version is committed
+grace-reels/episodes/*/out/reel_*[!B].mp4

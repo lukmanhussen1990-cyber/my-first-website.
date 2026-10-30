@@ -34,6 +34,7 @@ export const Cover: React.FC = () => {
         <div style={{ fontSize: 90, letterSpacing: '0.05em', color: CREAM, textShadow: SHADOW }}>WHY DIDN&apos;T ADAM</div>
         <div style={{ fontSize: 122, letterSpacing: '0.05em', color: GOLD, marginTop: 10, textShadow: `0 0 34px rgba(226,178,90,0.55), ${SHADOW}` }}>STOP HER?</div>
       </div>
+      <div style={{ position: 'absolute', top: 1520, left: 0, width: 1080, height: 200, background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(8,5,12,0.75), rgba(8,5,12,0))' }} />
       <div style={{ position: 'absolute', top: 1596, left: 60, width: 960, textAlign: 'center', fontFamily: SERIF, fontWeight: 600, fontSize: 36, letterSpacing: '0.24em', color: 'rgba(243,236,223,0.88)', textShadow: SHADOW }}>
         ✦&nbsp;&nbsp;GENESIS 3:6&nbsp;&nbsp;✦
       </div>
