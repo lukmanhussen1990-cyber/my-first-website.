@@ -24,4 +24,4 @@ ffmpeg -y -i build/video_noaudio.mp4 -i build/audio.wav -map 0:v -map 1:a -c:v c
   train with perspective + motion blur, leaves, glows, grading, text, watermark
 - `audio.py` – wind, leaf rustle, birds, foley, train clack/rumble and soft whistle
 - `prepare_assets.py` – background upscale and the occlusion mask polygons
-- Fonts: Gloria Hallelujah and Patrick Hand (SIL Open Font License, Google Fonts)
+- Font: Gloria Hallelujah (SIL Open Font License, Google Fonts)

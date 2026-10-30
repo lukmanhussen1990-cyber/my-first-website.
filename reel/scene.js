@@ -907,14 +907,6 @@ function drawText(t, fade) {
   for (const [s, y] of lines) ctx.fillText(s, W / 2, y);
   ctx.restore();
 }
-function drawWatermark() {
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.font = '36px Patrick'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
-  ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.fillText('@Grace In Motion', W - 38, H - 46);
-  ctx.restore();
-}
 function post(t, frame) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   // vignette
@@ -957,7 +949,6 @@ function render(t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = `rgba(12,4,1,${0.36 * fade})`; ctx.fillRect(0, 0, W, H);
   drawText(t, fade);
-  drawWatermark();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
@@ -965,7 +956,7 @@ function render(t) {
 function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 window.ready = (async () => {
   [BG, FG] = await Promise.all([loadImg('build/bg_2x.png'), loadImg('build/fg_2x.png')]);
-  await Promise.all([document.fonts.load('72px Gloria'), document.fonts.load('36px Patrick')]);
+  await document.fonts.load('72px Gloria');
   TRAIN = makeTrain();
   resetSim();
   return true;
