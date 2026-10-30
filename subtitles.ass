@@ -1,0 +1,264 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Sub,Inter,60,&H00FFFFFF,&H00FFFFFF,&H5A000000,&H64000000,-1,0,0,0,100,100,0.6,0,1,3.2,2.2,2,80,80,66,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.22,0:00:00.50,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}{\c&H52DC3D&}Today{\c&HFFFFFF&} we're releasing
+Dialogue: 0,0:00:00.50,0:00:00.66,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}Today {\c&H52DC3D&}we're{\c&HFFFFFF&} releasing
+Dialogue: 0,0:00:00.66,0:00:01.15,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}Today we're {\c&H52DC3D&}releasing{\c&HFFFFFF&}
+Dialogue: 0,0:00:01.15,0:00:01.49,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}{\c&H52DC3D&}Fable{\c&HFFFFFF&} 5.1,
+Dialogue: 0,0:00:01.49,0:00:02.70,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}Fable {\c&H52DC3D&}5.1,{\c&HFFFFFF&}
+Dialogue: 0,0:00:02.70,0:00:02.77,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}{\c&H52DC3D&}the{\c&HFFFFFF&} latest upgrade
+Dialogue: 0,0:00:02.77,0:00:03.16,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}the {\c&H52DC3D&}latest{\c&HFFFFFF&} upgrade
+Dialogue: 0,0:00:03.16,0:00:03.57,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}the latest {\c&H52DC3D&}upgrade{\c&HFFFFFF&}
+Dialogue: 0,0:00:03.57,0:00:03.68,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}{\c&H52DC3D&}to{\c&HFFFFFF&} our most
+Dialogue: 0,0:00:03.68,0:00:03.75,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}to {\c&H52DC3D&}our{\c&HFFFFFF&} most
+Dialogue: 0,0:00:03.75,0:00:03.95,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}to our {\c&H52DC3D&}most{\c&HFFFFFF&}
+Dialogue: 0,0:00:03.95,0:00:04.39,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}{\c&H52DC3D&}capable{\c&HFFFFFF&} model class.
+Dialogue: 0,0:00:04.39,0:00:04.67,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}capable {\c&H52DC3D&}model{\c&HFFFFFF&} class.
+Dialogue: 0,0:00:04.67,0:00:05.79,Sub,,0,0,0,,{\an2\pos(1360,1014)}{\blur5}capable model {\c&H52DC3D&}class.{\c&HFFFFFF&}
+Dialogue: 0,0:00:05.79,0:00:06.10,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Whatever{\c&HFFFFFF&} you already
+Dialogue: 0,0:00:06.10,0:00:06.33,Sub,,0,0,0,,{\blur5}Whatever {\c&H52DC3D&}you{\c&HFFFFFF&} already
+Dialogue: 0,0:00:06.33,0:00:06.67,Sub,,0,0,0,,{\blur5}Whatever you {\c&H52DC3D&}already{\c&HFFFFFF&}
+Dialogue: 0,0:00:06.67,0:00:07.01,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}hand{\c&HFFFFFF&} Claude,
+Dialogue: 0,0:00:07.01,0:00:07.71,Sub,,0,0,0,,{\blur5}hand {\c&H52DC3D&}Claude,{\c&HFFFFFF&}
+Dialogue: 0,0:00:07.71,0:00:07.81,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}it{\c&HFFFFFF&} can take
+Dialogue: 0,0:00:07.81,0:00:07.93,Sub,,0,0,0,,{\blur5}it {\c&H52DC3D&}can{\c&HFFFFFF&} take
+Dialogue: 0,0:00:07.93,0:00:08.14,Sub,,0,0,0,,{\blur5}it can {\c&H52DC3D&}take{\c&HFFFFFF&}
+Dialogue: 0,0:00:08.14,0:00:08.26,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}on{\c&HFFFFFF&} more
+Dialogue: 0,0:00:08.26,0:00:08.60,Sub,,0,0,0,,{\blur5}on {\c&H52DC3D&}more{\c&HFFFFFF&}
+Dialogue: 0,0:00:08.60,0:00:09.17,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} do the hardest
+Dialogue: 0,0:00:09.17,0:00:09.30,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}do{\c&HFFFFFF&} the hardest
+Dialogue: 0,0:00:09.30,0:00:09.38,Sub,,0,0,0,,{\blur5}and do {\c&H52DC3D&}the{\c&HFFFFFF&} hardest
+Dialogue: 0,0:00:09.38,0:00:09.79,Sub,,0,0,0,,{\blur5}and do the {\c&H52DC3D&}hardest{\c&HFFFFFF&}
+Dialogue: 0,0:00:09.79,0:00:10.06,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}parts{\c&HFFFFFF&} better.
+Dialogue: 0,0:00:10.06,0:00:10.77,Sub,,0,0,0,,{\blur5}parts {\c&H52DC3D&}better.{\c&HFFFFFF&}
+Dialogue: 0,0:00:10.77,0:00:11.01,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}That's{\c&HFFFFFF&} possible because
+Dialogue: 0,0:00:11.01,0:00:11.42,Sub,,0,0,0,,{\blur5}That's {\c&H52DC3D&}possible{\c&HFFFFFF&} because
+Dialogue: 0,0:00:11.42,0:00:11.78,Sub,,0,0,0,,{\blur5}That's possible {\c&H52DC3D&}because{\c&HFFFFFF&}
+Dialogue: 0,0:00:11.78,0:00:11.87,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}of{\c&HFFFFFF&} how it
+Dialogue: 0,0:00:11.87,0:00:12.07,Sub,,0,0,0,,{\blur5}of {\c&H52DC3D&}how{\c&HFFFFFF&} it
+Dialogue: 0,0:00:12.07,0:00:12.14,Sub,,0,0,0,,{\blur5}of how {\c&H52DC3D&}it{\c&HFFFFFF&}
+Dialogue: 0,0:00:12.14,0:00:12.57,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}handles{\c&HFFFFFF&} multi-step work,
+Dialogue: 0,0:00:12.57,0:00:13.20,Sub,,0,0,0,,{\blur5}handles {\c&H52DC3D&}multi-step{\c&HFFFFFF&} work,
+Dialogue: 0,0:00:13.20,0:00:13.86,Sub,,0,0,0,,{\blur5}handles multi-step {\c&H52DC3D&}work,{\c&HFFFFFF&}
+Dialogue: 0,0:00:13.86,0:00:14.08,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}like{\c&HFFFFFF&} a complex
+Dialogue: 0,0:00:14.08,0:00:14.15,Sub,,0,0,0,,{\blur5}like {\c&H52DC3D&}a{\c&HFFFFFF&} complex
+Dialogue: 0,0:00:14.15,0:00:14.65,Sub,,0,0,0,,{\blur5}like a {\c&H52DC3D&}complex{\c&HFFFFFF&}
+Dialogue: 0,0:00:14.65,0:00:15.10,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}financial{\c&HFFFFFF&} model,
+Dialogue: 0,0:00:15.10,0:00:16.07,Sub,,0,0,0,,{\blur5}financial {\c&H52DC3D&}model,{\c&HFFFFFF&}
+Dialogue: 0,0:00:16.07,0:00:16.10,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}a{\c&HFFFFFF&} long mathematical proof,
+Dialogue: 0,0:00:16.10,0:00:16.44,Sub,,0,0,0,,{\blur5}a {\c&H52DC3D&}long{\c&HFFFFFF&} mathematical proof,
+Dialogue: 0,0:00:16.44,0:00:17.01,Sub,,0,0,0,,{\blur5}a long {\c&H52DC3D&}mathematical{\c&HFFFFFF&} proof,
+Dialogue: 0,0:00:17.01,0:00:17.71,Sub,,0,0,0,,{\blur5}a long mathematical {\c&H52DC3D&}proof,{\c&HFFFFFF&}
+Dialogue: 0,0:00:17.71,0:00:18.13,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}or{\c&HFFFFFF&} a contract
+Dialogue: 0,0:00:18.13,0:00:18.18,Sub,,0,0,0,,{\blur5}or {\c&H52DC3D&}a{\c&HFFFFFF&} contract
+Dialogue: 0,0:00:18.18,0:00:18.74,Sub,,0,0,0,,{\blur5}or a {\c&H52DC3D&}contract{\c&HFFFFFF&}
+Dialogue: 0,0:00:18.74,0:00:18.95,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}with{\c&HFFFFFF&} hundreds of cross-references.
+Dialogue: 0,0:00:18.95,0:00:19.32,Sub,,0,0,0,,{\blur5}with {\c&H52DC3D&}hundreds{\c&HFFFFFF&} of cross-references.
+Dialogue: 0,0:00:19.32,0:00:19.40,Sub,,0,0,0,,{\blur5}with hundreds {\c&H52DC3D&}of{\c&HFFFFFF&} cross-references.
+Dialogue: 0,0:00:19.40,0:00:20.92,Sub,,0,0,0,,{\blur5}with hundreds of {\c&H52DC3D&}cross-references.{\c&HFFFFFF&}
+Dialogue: 0,0:00:20.92,0:00:21.13,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}These{\c&HFFFFFF&} are the kinds
+Dialogue: 0,0:00:21.13,0:00:21.23,Sub,,0,0,0,,{\blur5}These {\c&H52DC3D&}are{\c&HFFFFFF&} the kinds
+Dialogue: 0,0:00:21.23,0:00:21.34,Sub,,0,0,0,,{\blur5}These are {\c&H52DC3D&}the{\c&HFFFFFF&} kinds
+Dialogue: 0,0:00:21.34,0:00:21.75,Sub,,0,0,0,,{\blur5}These are the {\c&H52DC3D&}kinds{\c&HFFFFFF&}
+Dialogue: 0,0:00:21.75,0:00:21.84,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}of{\c&HFFFFFF&} tasks where
+Dialogue: 0,0:00:21.84,0:00:22.29,Sub,,0,0,0,,{\blur5}of {\c&H52DC3D&}tasks{\c&HFFFFFF&} where
+Dialogue: 0,0:00:22.29,0:00:22.52,Sub,,0,0,0,,{\blur5}of tasks {\c&H52DC3D&}where{\c&HFFFFFF&}
+Dialogue: 0,0:00:22.52,0:00:22.55,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}a{\c&HFFFFFF&} small mistake
+Dialogue: 0,0:00:22.55,0:00:22.87,Sub,,0,0,0,,{\blur5}a {\c&H52DC3D&}small{\c&HFFFFFF&} mistake
+Dialogue: 0,0:00:22.87,0:00:23.24,Sub,,0,0,0,,{\blur5}a small {\c&H52DC3D&}mistake{\c&HFFFFFF&}
+Dialogue: 0,0:00:23.24,0:00:23.33,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}in{\c&HFFFFFF&} step two
+Dialogue: 0,0:00:23.33,0:00:23.58,Sub,,0,0,0,,{\blur5}in {\c&H52DC3D&}step{\c&HFFFFFF&} two
+Dialogue: 0,0:00:23.58,0:00:24.39,Sub,,0,0,0,,{\blur5}in step {\c&H52DC3D&}two{\c&HFFFFFF&}
+Dialogue: 0,0:00:24.39,0:00:24.68,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}messes{\c&HFFFFFF&} things up
+Dialogue: 0,0:00:24.68,0:00:24.95,Sub,,0,0,0,,{\blur5}messes {\c&H52DC3D&}things{\c&HFFFFFF&} up
+Dialogue: 0,0:00:24.95,0:00:25.10,Sub,,0,0,0,,{\blur5}messes things {\c&H52DC3D&}up{\c&HFFFFFF&}
+Dialogue: 0,0:00:25.10,0:00:25.17,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}in{\c&HFFFFFF&} step 40,
+Dialogue: 0,0:00:25.17,0:00:25.42,Sub,,0,0,0,,{\blur5}in {\c&H52DC3D&}step{\c&HFFFFFF&} 40,
+Dialogue: 0,0:00:25.42,0:00:26.38,Sub,,0,0,0,,{\blur5}in step {\c&H52DC3D&}40,{\c&HFFFFFF&}
+Dialogue: 0,0:00:26.38,0:00:26.49,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} Fable 5.1
+Dialogue: 0,0:00:26.49,0:00:26.74,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}Fable{\c&HFFFFFF&} 5.1
+Dialogue: 0,0:00:26.74,0:00:27.45,Sub,,0,0,0,,{\blur5}and Fable {\c&H52DC3D&}5.1{\c&HFFFFFF&}
+Dialogue: 0,0:00:27.45,0:00:27.69,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}holds{\c&HFFFFFF&} up
+Dialogue: 0,0:00:27.69,0:00:27.83,Sub,,0,0,0,,{\blur5}holds {\c&H52DC3D&}up{\c&HFFFFFF&}
+Dialogue: 0,0:00:27.83,0:00:27.94,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}the{\c&HFFFFFF&} whole way.
+Dialogue: 0,0:00:27.94,0:00:28.17,Sub,,0,0,0,,{\blur5}the {\c&H52DC3D&}whole{\c&HFFFFFF&} way.
+Dialogue: 0,0:00:28.17,0:00:28.56,Sub,,0,0,0,,{\blur5}the whole {\c&H52DC3D&}way.{\c&HFFFFFF&}
+Dialogue: 0,0:00:28.56,0:00:29.04,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Give{\c&HFFFFFF&} it
+Dialogue: 0,0:00:29.04,0:00:29.10,Sub,,0,0,0,,{\blur5}Give {\c&H52DC3D&}it{\c&HFFFFFF&}
+Dialogue: 0,0:00:29.10,0:00:29.15,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}a{\c&HFFFFFF&} software project,
+Dialogue: 0,0:00:29.15,0:00:29.62,Sub,,0,0,0,,{\blur5}a {\c&H52DC3D&}software{\c&HFFFFFF&} project,
+Dialogue: 0,0:00:29.62,0:00:30.21,Sub,,0,0,0,,{\blur5}a software {\c&H52DC3D&}project,{\c&HFFFFFF&}
+Dialogue: 0,0:00:30.21,0:00:30.30,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} it can take
+Dialogue: 0,0:00:30.30,0:00:30.38,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}it{\c&HFFFFFF&} can take
+Dialogue: 0,0:00:30.38,0:00:30.51,Sub,,0,0,0,,{\blur5}and it {\c&H52DC3D&}can{\c&HFFFFFF&} take
+Dialogue: 0,0:00:30.51,0:00:30.70,Sub,,0,0,0,,{\blur5}and it can {\c&H52DC3D&}take{\c&HFFFFFF&}
+Dialogue: 0,0:00:30.70,0:00:30.83,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}on{\c&HFFFFFF&} more
+Dialogue: 0,0:00:30.83,0:00:31.04,Sub,,0,0,0,,{\blur5}on {\c&H52DC3D&}more{\c&HFFFFFF&}
+Dialogue: 0,0:00:31.04,0:00:31.11,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}of{\c&HFFFFFF&} it than ever.
+Dialogue: 0,0:00:31.11,0:00:31.23,Sub,,0,0,0,,{\blur5}of {\c&H52DC3D&}it{\c&HFFFFFF&} than ever.
+Dialogue: 0,0:00:31.23,0:00:31.39,Sub,,0,0,0,,{\blur5}of it {\c&H52DC3D&}than{\c&HFFFFFF&} ever.
+Dialogue: 0,0:00:31.39,0:00:32.11,Sub,,0,0,0,,{\blur5}of it than {\c&H52DC3D&}ever.{\c&HFFFFFF&}
+Dialogue: 0,0:00:32.11,0:00:32.40,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}From{\c&HFFFFFF&} code review
+Dialogue: 0,0:00:32.40,0:00:32.68,Sub,,0,0,0,,{\blur5}From {\c&H52DC3D&}code{\c&HFFFFFF&} review
+Dialogue: 0,0:00:32.68,0:00:33.14,Sub,,0,0,0,,{\blur5}From code {\c&H52DC3D&}review{\c&HFFFFFF&}
+Dialogue: 0,0:00:33.14,0:00:33.45,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}to{\c&HFFFFFF&} performance work,
+Dialogue: 0,0:00:33.45,0:00:34.06,Sub,,0,0,0,,{\blur5}to {\c&H52DC3D&}performance{\c&HFFFFFF&} work,
+Dialogue: 0,0:00:34.06,0:00:34.84,Sub,,0,0,0,,{\blur5}to performance {\c&H52DC3D&}work,{\c&HFFFFFF&}
+Dialogue: 0,0:00:34.84,0:00:35.22,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}features{\c&HFFFFFF&} that cut
+Dialogue: 0,0:00:35.22,0:00:35.38,Sub,,0,0,0,,{\blur5}features {\c&H52DC3D&}that{\c&HFFFFFF&} cut
+Dialogue: 0,0:00:35.38,0:00:35.52,Sub,,0,0,0,,{\blur5}features that {\c&H52DC3D&}cut{\c&HFFFFFF&}
+Dialogue: 0,0:00:35.52,0:00:35.87,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}across{\c&HFFFFFF&} an entire
+Dialogue: 0,0:00:35.87,0:00:36.02,Sub,,0,0,0,,{\blur5}across {\c&H52DC3D&}an{\c&HFFFFFF&} entire
+Dialogue: 0,0:00:36.02,0:00:36.40,Sub,,0,0,0,,{\blur5}across an {\c&H52DC3D&}entire{\c&HFFFFFF&}
+Dialogue: 0,0:00:36.40,0:00:36.66,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}code{\c&HFFFFFF&} base.
+Dialogue: 0,0:00:36.66,0:00:37.64,Sub,,0,0,0,,{\blur5}code {\c&H52DC3D&}base.{\c&HFFFFFF&}
+Dialogue: 0,0:00:37.64,0:00:38.15,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Sessions{\c&HFFFFFF&} you
+Dialogue: 0,0:00:38.15,0:00:38.33,Sub,,0,0,0,,{\blur5}Sessions {\c&H52DC3D&}you{\c&HFFFFFF&}
+Dialogue: 0,0:00:38.33,0:00:38.48,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}can{\c&HFFFFFF&} step away
+Dialogue: 0,0:00:38.48,0:00:38.72,Sub,,0,0,0,,{\blur5}can {\c&H52DC3D&}step{\c&HFFFFFF&} away
+Dialogue: 0,0:00:38.72,0:00:38.97,Sub,,0,0,0,,{\blur5}can step {\c&H52DC3D&}away{\c&HFFFFFF&}
+Dialogue: 0,0:00:38.97,0:00:39.35,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}from{\c&HFFFFFF&} and come
+Dialogue: 0,0:00:39.35,0:00:39.53,Sub,,0,0,0,,{\blur5}from {\c&H52DC3D&}and{\c&HFFFFFF&} come
+Dialogue: 0,0:00:39.53,0:00:39.68,Sub,,0,0,0,,{\blur5}from and {\c&H52DC3D&}come{\c&HFFFFFF&}
+Dialogue: 0,0:00:39.68,0:00:39.89,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}back{\c&HFFFFFF&} to.
+Dialogue: 0,0:00:39.89,0:00:40.55,Sub,,0,0,0,,{\blur5}back {\c&H52DC3D&}to.{\c&HFFFFFF&}
+Dialogue: 0,0:00:40.55,0:00:40.66,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}If{\c&HFFFFFF&} it hits
+Dialogue: 0,0:00:40.66,0:00:40.75,Sub,,0,0,0,,{\blur5}If {\c&H52DC3D&}it{\c&HFFFFFF&} hits
+Dialogue: 0,0:00:40.75,0:00:40.91,Sub,,0,0,0,,{\blur5}If it {\c&H52DC3D&}hits{\c&HFFFFFF&}
+Dialogue: 0,0:00:40.91,0:00:40.96,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}a{\c&HFFFFFF&} wall,
+Dialogue: 0,0:00:40.96,0:00:41.63,Sub,,0,0,0,,{\blur5}a {\c&H52DC3D&}wall,{\c&HFFFFFF&}
+Dialogue: 0,0:00:41.63,0:00:41.72,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}it{\c&HFFFFFF&} tells you
+Dialogue: 0,0:00:41.72,0:00:41.98,Sub,,0,0,0,,{\blur5}it {\c&H52DC3D&}tells{\c&HFFFFFF&} you
+Dialogue: 0,0:00:41.98,0:00:42.12,Sub,,0,0,0,,{\blur5}it tells {\c&H52DC3D&}you{\c&HFFFFFF&}
+Dialogue: 0,0:00:42.12,0:00:42.33,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}what{\c&HFFFFFF&} it tried
+Dialogue: 0,0:00:42.33,0:00:42.40,Sub,,0,0,0,,{\blur5}what {\c&H52DC3D&}it{\c&HFFFFFF&} tried
+Dialogue: 0,0:00:42.40,0:00:42.97,Sub,,0,0,0,,{\blur5}what it {\c&H52DC3D&}tried{\c&HFFFFFF&}
+Dialogue: 0,0:00:42.97,0:00:43.11,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} where
+Dialogue: 0,0:00:43.11,0:00:43.28,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}where{\c&HFFFFFF&}
+Dialogue: 0,0:00:43.28,0:00:43.35,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}it{\c&HFFFFFF&} got stuck.
+Dialogue: 0,0:00:43.35,0:00:43.52,Sub,,0,0,0,,{\blur5}it {\c&H52DC3D&}got{\c&HFFFFFF&} stuck.
+Dialogue: 0,0:00:43.52,0:00:44.29,Sub,,0,0,0,,{\blur5}it got {\c&H52DC3D&}stuck.{\c&HFFFFFF&}
+Dialogue: 0,0:00:44.29,0:00:44.40,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}And{\c&HFFFFFF&} it doesn't
+Dialogue: 0,0:00:44.40,0:00:44.47,Sub,,0,0,0,,{\blur5}And {\c&H52DC3D&}it{\c&HFFFFFF&} doesn't
+Dialogue: 0,0:00:44.47,0:00:44.67,Sub,,0,0,0,,{\blur5}And it {\c&H52DC3D&}doesn't{\c&HFFFFFF&}
+Dialogue: 0,0:00:44.67,0:00:44.94,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}stop{\c&HFFFFFF&} at code.
+Dialogue: 0,0:00:44.94,0:00:45.04,Sub,,0,0,0,,{\blur5}stop {\c&H52DC3D&}at{\c&HFFFFFF&} code.
+Dialogue: 0,0:00:45.04,0:00:45.95,Sub,,0,0,0,,{\blur5}stop at {\c&H52DC3D&}code.{\c&HFFFFFF&}
+Dialogue: 0,0:00:45.95,0:00:46.10,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Give{\c&HFFFFFF&} Fable 5.1
+Dialogue: 0,0:00:46.10,0:00:46.38,Sub,,0,0,0,,{\blur5}Give {\c&H52DC3D&}Fable{\c&HFFFFFF&} 5.1
+Dialogue: 0,0:00:46.38,0:00:46.97,Sub,,0,0,0,,{\blur5}Give Fable {\c&H52DC3D&}5.1{\c&HFFFFFF&}
+Dialogue: 0,0:00:46.97,0:00:47.15,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}an{\c&HFFFFFF&} open question,
+Dialogue: 0,0:00:47.15,0:00:47.37,Sub,,0,0,0,,{\blur5}an {\c&H52DC3D&}open{\c&HFFFFFF&} question,
+Dialogue: 0,0:00:47.37,0:00:48.12,Sub,,0,0,0,,{\blur5}an open {\c&H52DC3D&}question,{\c&HFFFFFF&}
+Dialogue: 0,0:00:48.12,0:00:48.23,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} it comes back
+Dialogue: 0,0:00:48.23,0:00:48.29,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}it{\c&HFFFFFF&} comes back
+Dialogue: 0,0:00:48.29,0:00:48.51,Sub,,0,0,0,,{\blur5}and it {\c&H52DC3D&}comes{\c&HFFFFFF&} back
+Dialogue: 0,0:00:48.51,0:00:48.74,Sub,,0,0,0,,{\blur5}and it comes {\c&H52DC3D&}back{\c&HFFFFFF&}
+Dialogue: 0,0:00:48.74,0:00:48.84,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}with{\c&HFFFFFF&} something polished,
+Dialogue: 0,0:00:48.84,0:00:49.17,Sub,,0,0,0,,{\blur5}with {\c&H52DC3D&}something{\c&HFFFFFF&} polished,
+Dialogue: 0,0:00:49.17,0:00:50.04,Sub,,0,0,0,,{\blur5}with something {\c&H52DC3D&}polished,{\c&HFFFFFF&}
+Dialogue: 0,0:00:50.04,0:00:50.26,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}ready{\c&HFFFFFF&} for you
+Dialogue: 0,0:00:50.26,0:00:50.38,Sub,,0,0,0,,{\blur5}ready {\c&H52DC3D&}for{\c&HFFFFFF&} you
+Dialogue: 0,0:00:50.38,0:00:50.53,Sub,,0,0,0,,{\blur5}ready for {\c&H52DC3D&}you{\c&HFFFFFF&}
+Dialogue: 0,0:00:50.53,0:00:50.60,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}to{\c&HFFFFFF&} review.
+Dialogue: 0,0:00:50.60,0:00:51.38,Sub,,0,0,0,,{\blur5}to {\c&H52DC3D&}review.{\c&HFFFFFF&}
+Dialogue: 0,0:00:51.83,0:00:51.91,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}The{\c&HFFFFFF&} research,
+Dialogue: 0,0:00:51.91,0:00:52.53,Sub,,0,0,0,,{\blur5}The {\c&H52DC3D&}research,{\c&HFFFFFF&}
+Dialogue: 0,0:00:52.53,0:00:52.64,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}the{\c&HFFFFFF&} spreadsheet,
+Dialogue: 0,0:00:52.64,0:00:53.20,Sub,,0,0,0,,{\blur5}the {\c&H52DC3D&}spreadsheet,{\c&HFFFFFF&}
+Dialogue: 0,0:00:53.20,0:00:53.29,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}the{\c&HFFFFFF&} memo,
+Dialogue: 0,0:00:53.29,0:00:53.71,Sub,,0,0,0,,{\blur5}the {\c&H52DC3D&}memo,{\c&HFFFFFF&}
+Dialogue: 0,0:00:53.71,0:00:53.83,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}the{\c&HFFFFFF&} deck,
+Dialogue: 0,0:00:53.83,0:00:54.37,Sub,,0,0,0,,{\blur5}the {\c&H52DC3D&}deck,{\c&HFFFFFF&}
+Dialogue: 0,0:00:54.37,0:00:54.67,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}all{\c&HFFFFFF&} with the numbers
+Dialogue: 0,0:00:54.67,0:00:54.82,Sub,,0,0,0,,{\blur5}all {\c&H52DC3D&}with{\c&HFFFFFF&} the numbers
+Dialogue: 0,0:00:54.82,0:00:54.88,Sub,,0,0,0,,{\blur5}all with {\c&H52DC3D&}the{\c&HFFFFFF&} numbers
+Dialogue: 0,0:00:54.88,0:00:55.27,Sub,,0,0,0,,{\blur5}all with the {\c&H52DC3D&}numbers{\c&HFFFFFF&}
+Dialogue: 0,0:00:55.27,0:00:55.37,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} sources laid out
+Dialogue: 0,0:00:55.37,0:00:55.79,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}sources{\c&HFFFFFF&} laid out
+Dialogue: 0,0:00:55.79,0:00:55.99,Sub,,0,0,0,,{\blur5}and sources {\c&H52DC3D&}laid{\c&HFFFFFF&} out
+Dialogue: 0,0:00:55.99,0:00:56.23,Sub,,0,0,0,,{\blur5}and sources laid {\c&H52DC3D&}out{\c&HFFFFFF&}
+Dialogue: 0,0:00:56.23,0:00:56.34,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}so{\c&HFFFFFF&} that you
+Dialogue: 0,0:00:56.34,0:00:56.56,Sub,,0,0,0,,{\blur5}so {\c&H52DC3D&}that{\c&HFFFFFF&} you
+Dialogue: 0,0:00:56.56,0:00:56.70,Sub,,0,0,0,,{\blur5}so that {\c&H52DC3D&}you{\c&HFFFFFF&}
+Dialogue: 0,0:00:56.70,0:00:56.84,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}can{\c&HFFFFFF&} check them.
+Dialogue: 0,0:00:56.84,0:00:57.11,Sub,,0,0,0,,{\blur5}can {\c&H52DC3D&}check{\c&HFFFFFF&} them.
+Dialogue: 0,0:00:57.11,0:00:57.50,Sub,,0,0,0,,{\blur5}can check {\c&H52DC3D&}them.{\c&HFFFFFF&}
+Dialogue: 0,0:00:57.88,0:00:58.24,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}And{\c&HFFFFFF&} this model
+Dialogue: 0,0:00:58.24,0:00:58.41,Sub,,0,0,0,,{\blur5}And {\c&H52DC3D&}this{\c&HFFFFFF&} model
+Dialogue: 0,0:00:58.41,0:00:58.72,Sub,,0,0,0,,{\blur5}And this {\c&H52DC3D&}model{\c&HFFFFFF&}
+Dialogue: 0,0:00:58.72,0:00:58.78,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}is{\c&HFFFFFF&} great at science.
+Dialogue: 0,0:00:58.78,0:00:59.26,Sub,,0,0,0,,{\blur5}is {\c&H52DC3D&}great{\c&HFFFFFF&} at science.
+Dialogue: 0,0:00:59.26,0:00:59.43,Sub,,0,0,0,,{\blur5}is great {\c&H52DC3D&}at{\c&HFFFFFF&} science.
+Dialogue: 0,0:00:59.43,0:01:00.05,Sub,,0,0,0,,{\blur5}is great at {\c&H52DC3D&}science.{\c&HFFFFFF&}
+Dialogue: 0,0:01:00.05,0:01:00.36,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Give{\c&HFFFFFF&} it
+Dialogue: 0,0:01:00.36,0:01:00.43,Sub,,0,0,0,,{\blur5}Give {\c&H52DC3D&}it{\c&HFFFFFF&}
+Dialogue: 0,0:01:00.43,0:01:00.46,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}a{\c&HFFFFFF&} hard problem,
+Dialogue: 0,0:01:00.46,0:01:00.73,Sub,,0,0,0,,{\blur5}a {\c&H52DC3D&}hard{\c&HFFFFFF&} problem,
+Dialogue: 0,0:01:00.73,0:01:01.19,Sub,,0,0,0,,{\blur5}a hard {\c&H52DC3D&}problem,{\c&HFFFFFF&}
+Dialogue: 0,0:01:01.19,0:01:01.48,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} it works
+Dialogue: 0,0:01:01.48,0:01:01.55,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}it{\c&HFFFFFF&} works
+Dialogue: 0,0:01:01.55,0:01:01.83,Sub,,0,0,0,,{\blur5}and it {\c&H52DC3D&}works{\c&HFFFFFF&}
+Dialogue: 0,0:01:01.83,0:01:02.01,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}with{\c&HFFFFFF&} you by reading
+Dialogue: 0,0:01:02.01,0:01:02.26,Sub,,0,0,0,,{\blur5}with {\c&H52DC3D&}you{\c&HFFFFFF&} by reading
+Dialogue: 0,0:01:02.26,0:01:02.56,Sub,,0,0,0,,{\blur5}with you {\c&H52DC3D&}by{\c&HFFFFFF&} reading
+Dialogue: 0,0:01:02.56,0:01:03.00,Sub,,0,0,0,,{\blur5}with you by {\c&H52DC3D&}reading{\c&HFFFFFF&}
+Dialogue: 0,0:01:03.00,0:01:03.06,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}the{\c&HFFFFFF&} literature,
+Dialogue: 0,0:01:03.06,0:01:03.89,Sub,,0,0,0,,{\blur5}the {\c&H52DC3D&}literature,{\c&HFFFFFF&}
+Dialogue: 0,0:01:03.89,0:01:04.28,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}proposing{\c&HFFFFFF&} a hypothesis,
+Dialogue: 0,0:01:04.28,0:01:04.32,Sub,,0,0,0,,{\blur5}proposing {\c&H52DC3D&}a{\c&HFFFFFF&} hypothesis,
+Dialogue: 0,0:01:04.32,0:01:05.18,Sub,,0,0,0,,{\blur5}proposing a {\c&H52DC3D&}hypothesis,{\c&HFFFFFF&}
+Dialogue: 0,0:01:05.18,0:01:05.59,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} designing an experiment,
+Dialogue: 0,0:01:05.59,0:01:06.11,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}designing{\c&HFFFFFF&} an experiment,
+Dialogue: 0,0:01:06.11,0:01:06.17,Sub,,0,0,0,,{\blur5}and designing {\c&H52DC3D&}an{\c&HFFFFFF&} experiment,
+Dialogue: 0,0:01:06.17,0:01:06.99,Sub,,0,0,0,,{\blur5}and designing an {\c&H52DC3D&}experiment,{\c&HFFFFFF&}
+Dialogue: 0,0:01:06.99,0:01:07.12,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}so{\c&HFFFFFF&} that your research
+Dialogue: 0,0:01:07.12,0:01:07.28,Sub,,0,0,0,,{\blur5}so {\c&H52DC3D&}that{\c&HFFFFFF&} your research
+Dialogue: 0,0:01:07.28,0:01:07.52,Sub,,0,0,0,,{\blur5}so that {\c&H52DC3D&}your{\c&HFFFFFF&} research
+Dialogue: 0,0:01:07.52,0:01:08.08,Sub,,0,0,0,,{\blur5}so that your {\c&H52DC3D&}research{\c&HFFFFFF&}
+Dialogue: 0,0:01:08.08,0:01:08.51,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}happens{\c&HFFFFFF&} faster.
+Dialogue: 0,0:01:08.51,0:01:09.15,Sub,,0,0,0,,{\blur5}happens {\c&H52DC3D&}faster.{\c&HFFFFFF&}
+Dialogue: 0,0:01:09.52,0:01:09.80,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Fable{\c&HFFFFFF&} 5.1
+Dialogue: 0,0:01:09.80,0:01:10.41,Sub,,0,0,0,,{\blur5}Fable {\c&H52DC3D&}5.1{\c&HFFFFFF&}
+Dialogue: 0,0:01:10.41,0:01:10.61,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}is{\c&HFFFFFF&} out today,
+Dialogue: 0,0:01:10.61,0:01:10.78,Sub,,0,0,0,,{\blur5}is {\c&H52DC3D&}out{\c&HFFFFFF&} today,
+Dialogue: 0,0:01:10.78,0:01:11.18,Sub,,0,0,0,,{\blur5}is out {\c&H52DC3D&}today,{\c&HFFFFFF&}
+Dialogue: 0,0:01:11.18,0:01:11.68,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}available{\c&HFFFFFF&} everywhere.
+Dialogue: 0,0:01:11.68,0:01:12.75,Sub,,0,0,0,,{\blur5}available {\c&H52DC3D&}everywhere.{\c&HFFFFFF&}
+Dialogue: 0,0:01:12.75,0:01:12.92,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}Hand{\c&HFFFFFF&} it something big
+Dialogue: 0,0:01:12.92,0:01:13.01,Sub,,0,0,0,,{\blur5}Hand {\c&H52DC3D&}it{\c&HFFFFFF&} something big
+Dialogue: 0,0:01:13.01,0:01:13.29,Sub,,0,0,0,,{\blur5}Hand it {\c&H52DC3D&}something{\c&HFFFFFF&} big
+Dialogue: 0,0:01:13.29,0:01:13.86,Sub,,0,0,0,,{\blur5}Hand it something {\c&H52DC3D&}big{\c&HFFFFFF&}
+Dialogue: 0,0:01:13.86,0:01:13.96,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} see what
+Dialogue: 0,0:01:13.96,0:01:14.10,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}see{\c&HFFFFFF&} what
+Dialogue: 0,0:01:14.10,0:01:14.22,Sub,,0,0,0,,{\blur5}and see {\c&H52DC3D&}what{\c&HFFFFFF&}
+Dialogue: 0,0:01:14.22,0:01:14.29,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}it{\c&HFFFFFF&} brings back.
+Dialogue: 0,0:01:14.29,0:01:14.50,Sub,,0,0,0,,{\blur5}it {\c&H52DC3D&}brings{\c&HFFFFFF&} back.
+Dialogue: 0,0:01:14.50,0:01:15.49,Sub,,0,0,0,,{\blur5}it brings {\c&H52DC3D&}back.{\c&HFFFFFF&}
+Dialogue: 0,0:01:15.49,0:01:15.59,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}We{\c&HFFFFFF&} think
+Dialogue: 0,0:01:15.59,0:01:15.79,Sub,,0,0,0,,{\blur5}We {\c&H52DC3D&}think{\c&HFFFFFF&}
+Dialogue: 0,0:01:15.79,0:01:15.93,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}it's{\c&HFFFFFF&} the best
+Dialogue: 0,0:01:15.93,0:01:16.00,Sub,,0,0,0,,{\blur5}it's {\c&H52DC3D&}the{\c&HFFFFFF&} best
+Dialogue: 0,0:01:16.00,0:01:16.29,Sub,,0,0,0,,{\blur5}it's the {\c&H52DC3D&}best{\c&HFFFFFF&}
+Dialogue: 0,0:01:16.29,0:01:16.52,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}model{\c&HFFFFFF&} we've made
+Dialogue: 0,0:01:16.52,0:01:16.71,Sub,,0,0,0,,{\blur5}model {\c&H52DC3D&}we've{\c&HFFFFFF&} made
+Dialogue: 0,0:01:16.71,0:01:17.00,Sub,,0,0,0,,{\blur5}model we've {\c&H52DC3D&}made{\c&HFFFFFF&}
+Dialogue: 0,0:01:17.00,0:01:17.09,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}for{\c&HFFFFFF&} complex work,
+Dialogue: 0,0:01:17.09,0:01:17.58,Sub,,0,0,0,,{\blur5}for {\c&H52DC3D&}complex{\c&HFFFFFF&} work,
+Dialogue: 0,0:01:17.58,0:01:18.16,Sub,,0,0,0,,{\blur5}for complex {\c&H52DC3D&}work,{\c&HFFFFFF&}
+Dialogue: 0,0:01:18.16,0:01:18.28,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}and{\c&HFFFFFF&} it's ready
+Dialogue: 0,0:01:18.28,0:01:18.42,Sub,,0,0,0,,{\blur5}and {\c&H52DC3D&}it's{\c&HFFFFFF&} ready
+Dialogue: 0,0:01:18.42,0:01:18.62,Sub,,0,0,0,,{\blur5}and it's {\c&H52DC3D&}ready{\c&HFFFFFF&}
+Dialogue: 0,0:01:18.62,0:01:18.76,Sub,,0,0,0,,{\blur5}{\c&H52DC3D&}for{\c&HFFFFFF&} yours.
+Dialogue: 0,0:01:18.76,0:01:19.62,Sub,,0,0,0,,{\blur5}for {\c&H52DC3D&}yours.{\c&HFFFFFF&}
