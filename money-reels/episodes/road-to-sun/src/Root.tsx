@@ -1,6 +1,10 @@
+import React from 'react';
 import {Composition} from 'remotion';
-import {GlTest} from './GlTest';
+import {MoneyRoad} from './MoneyRoad';
+import {DURATION, FPS, H, W} from './lib/anim';
 
 export const RemotionRoot: React.FC = () => (
-  <Composition id="GlTest" component={GlTest} durationInFrames={30} fps={30} width={1080} height={1920} />
+  <>
+    <Composition id="MoneyRoad" component={MoneyRoad} durationInFrames={Math.round(DURATION * FPS)} fps={FPS} width={W} height={H} />
+  </>
 );
