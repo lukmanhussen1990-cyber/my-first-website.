@@ -5,3 +5,11 @@ grace-reels/reference/frames_storybook/
 grace-reels/episodes/*/style_refs/
 
 node_modules/
+
+# regenerable audio stems (rebuild with episodes/<slug>/score.mjs + tools/build_voice.py)
+grace-reels/episodes/*/audio/work/
+grace-reels/episodes/*/audio/music.wav
+grace-reels/episodes/*/audio/sfx.wav
+grace-reels/episodes/*/audio/voice.wav
+# remotion build cache
+grace-reels/.remotion/
