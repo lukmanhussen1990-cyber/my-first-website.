@@ -5,6 +5,52 @@ import {jitter, sid} from './anim';
 // Peg figures. Local origin = between the feet, on the ground line.
 // Everything is drawn front-on, faceless or with a dark beard face.
 
+export type Outfit = 'priest' | 'labcoat' | 'einstein' | 'suit';
+
+/** Small costume details drawn over a peg body (no faces). */
+const OutfitLayer: React.FC<{outfit: Outfit; top: number; hem: number; headY: number; r: number; lineW: number}> = ({outfit, top, hem, headY, r, lineW}) => {
+  const st = {stroke: C.ink, strokeWidth: lineW * 0.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, vectorEffect: 'non-scaling-stroke' as const};
+  const glasses = (
+    <g {...st} fill="none" strokeWidth={lineW * 0.55}>
+      <circle cx={-16} cy={headY + 4} r={11} fill="#E8EEF6" fillOpacity={0.5} />
+      <circle cx={16} cy={headY + 4} r={11} fill="#E8EEF6" fillOpacity={0.5} />
+      <line x1={-5} y1={headY + 4} x2={5} y2={headY + 4} />
+    </g>
+  );
+  if (outfit === 'priest')
+    return (
+      <g>
+        <rect x={-15} y={top - 2} width={30} height={14} rx={3} fill="#FFFFFF" {...st} />
+        {glasses}
+      </g>
+    );
+  if (outfit === 'labcoat')
+    return (
+      <g>
+        <path d={`M -34 ${top + 2} L 0 ${top + 70} L 34 ${top + 2}`} fill="none" {...st} />
+        <line x1={0} y1={top + 70} x2={0} y2={hem - 4} {...st} />
+        <rect x={20} y={top + 92} width={24} height={20} rx={3} fill="none" {...st} />
+        <line x1={28} y1={top + 86} x2={28} y2={top + 100} stroke="#3D6494" strokeWidth={4} strokeLinecap="round" />
+      </g>
+    );
+  // einstein / suit: shirt V + tie (+ white hair puff)
+  return (
+    <g>
+      {outfit === 'einstein' ? (
+        <g fill="#F7F5F0" {...st}>
+          {[-44, -24, 0, 24, 44].map((dx, i) => (
+            <circle key={i} cx={dx} cy={headY - r * 0.7 + Math.abs(dx) * 0.25} r={18} />
+          ))}
+          <circle cx={-50} cy={headY - 4} r={14} />
+          <circle cx={50} cy={headY - 4} r={14} />
+        </g>
+      ) : null}
+      <path d={`M -26 ${top + 2} L 0 ${top + 44} L 26 ${top + 2} Z`} fill="#FFFFFF" {...st} />
+      <path d={`M 0 ${top + 10} L -8 ${top + 30} L 0 ${top + 70} L 8 ${top + 30} Z`} fill={outfit === 'einstein' ? '#7A6A86' : '#9E3E35'} {...st} />
+    </g>
+  );
+};
+
 export type Pose =
   | 'stand'
   | 'walk'
@@ -23,7 +69,11 @@ export type Pose =
   | 'reach'
   | 'sitGround' // sitting on the ground, hands on knees
   | 'harp' // seated, arms to a small harp in front
-  | 'cross'; // arms straight along a beam
+  | 'cross' // arms straight along a beam
+  | 'write' // right arm up to a board
+  | 'shrug'
+  | 'shoo' // both arms waving up
+  | 'sweep'; // both arms down-left (broom)
 
 type Pt = [number, number];
 
@@ -50,6 +100,7 @@ interface BodyProps {
   lineW?: number;
   faceColor?: string;
   look?: number; // -1 head down … +1 looking up
+  outfit?: Outfit;
   style: BodyStyle;
 }
 
@@ -116,6 +167,27 @@ const armsFor = (pose: Pose, frame: number, swing: number): [Pt[], Pt[]] => {
     }
     case 'point':
       return [restL, [R, [185, sh - 6 - swing * 30]]];
+    case 'write':
+      return [restL, [R, [120, sh - 70 - swing * 24]]];
+    case 'shrug':
+      return [
+        [L, [-80, sh + 50], [-110, sh - 10 - swing * 16]],
+        [R, [80, sh + 50], [110, sh - 10 - swing * 16]],
+      ];
+    case 'shoo': {
+      const k = Math.sin(frame * 0.9) * 20 * swing;
+      return [
+        [L, [-120, sh - 90 + k]],
+        [R, [120, sh - 90 - k]],
+      ];
+    }
+    case 'sweep': {
+      const k = Math.sin(frame * 0.5) * 18 * swing;
+      return [
+        [L, [-60 + k, sh + 120]],
+        [R, [-30 + k, sh + 150]],
+      ];
+    }
     case 'pointLeft':
       return [[L, [-185, sh - 6 - swing * 30]], restR];
     case 'reach':
@@ -142,6 +214,7 @@ export const PegBody: React.FC<BodyProps> = ({
   lineW = OUTLINE,
   faceColor,
   look = 0,
+  outfit,
   style,
 }) => {
   const kneeling = pose === 'kneel' || pose === 'pray' || pose === 'sitGround';
@@ -217,6 +290,7 @@ export const PegBody: React.FC<BodyProps> = ({
           <path d={facePath} fill={faceColor ?? C.face} stroke={style.line} strokeWidth={lineW * 0.42} strokeLinejoin="round" {...NS} />
         ) : null}
       </g>
+      {outfit ? <OutfitLayer outfit={outfit} top={top} hem={hem} headY={headY} r={HEAD_R} lineW={lineW} /> : null}
       {tremble > 0.05 ? <TrembleMarks frame={frame} top={top} amount={tremble} line={style.line} /> : null}
     </g>
   );
@@ -262,6 +336,8 @@ export interface PegPersonProps {
   opacity?: number;
   faceColor?: string;
   look?: number;
+  outfit?: Outfit;
+  headColor?: string;
 }
 
 export const PegPerson: React.FC<PegPersonProps> = ({
@@ -282,11 +358,14 @@ export const PegPerson: React.FC<PegPersonProps> = ({
   opacity = 1,
   faceColor,
   look,
+  outfit,
+  headColor,
 }) => (
   <g transform={`translate(${x},${y}) rotate(${rotate}) scale(${scale})`} opacity={opacity}>
     <PegBody
       faceColor={faceColor}
       look={look}
+      outfit={outfit}
       pose={pose}
       frame={frame}
       walkPhase={walkPhase}
@@ -296,7 +375,7 @@ export const PegPerson: React.FC<PegPersonProps> = ({
       beard={beard}
       wrapColor={wrapColor ?? robe}
       armSwing={armSwing}
-      style={{fill: robe, line: C.ink, head: robe, belt: C.ink}}
+      style={{fill: robe, line: C.ink, head: headColor ?? robe, belt: robe === '#2B2830' ? '#55505C' : C.ink}}
     />
   </g>
 );
