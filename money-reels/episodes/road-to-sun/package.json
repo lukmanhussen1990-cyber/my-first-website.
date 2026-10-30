@@ -1,0 +1,24 @@
+{
+  "name": "money-road-to-the-sun",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts MoneyRoad out/money_road_to_the_sun.mp4",
+    "still": "remotion still src/index.ts MoneyRoad"
+  },
+  "dependencies": {
+    "@fontsource/lilita-one": "^5.2.7",
+    "@fontsource/nunito": "^5.2.7",
+    "@react-three/fiber": "^9.3.0",
+    "@remotion/cli": "^4.0.539",
+    "@remotion/three": "^4.0.539",
+    "@types/react": "^19.2.2",
+    "@types/three": "^0.180.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "remotion": "^4.0.539",
+    "three": "^0.180.0",
+    "typescript": "^5.9.3"
+  }
+}
