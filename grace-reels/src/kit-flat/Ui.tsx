@@ -75,14 +75,15 @@ export const FearLoveMeter: React.FC<{
 };
 
 /** Two answer buttons (call to action). */
-export const AnswerButtons: React.FC<{x: number; y: number; pressed?: 'FEAR' | 'LOVE' | null; scale?: number; pulse?: number}> = ({
+export const AnswerButtons: React.FC<{x: number; y: number; pressed?: string | null; scale?: number; pulse?: number; labels?: [string, string]}> = ({
   x,
   y,
   pressed = null,
   scale = 1,
   pulse = 0,
+  labels = ['FEAR', 'LOVE'],
 }) => {
-  const btn = (bx: number, label: 'FEAR' | 'LOVE', col: string) => {
+  const btn = (bx: number, label: string, col: string) => {
     const on = pressed === label;
     const s = on ? 1 + pulse * 0.06 : 1;
     return (
@@ -96,8 +97,8 @@ export const AnswerButtons: React.FC<{x: number; y: number; pressed?: 'FEAR' | '
   };
   return (
     <g transform={`translate(${x},${y}) scale(${scale})`}>
-      {btn(-170, 'FEAR', C.red)}
-      {btn(170, 'LOVE', C.gold)}
+      {btn(-170, labels[0], C.red)}
+      {btn(170, labels[1], C.gold)}
     </g>
   );
 };

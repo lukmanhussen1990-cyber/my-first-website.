@@ -3,7 +3,7 @@ import {random} from 'remotion';
 import {C, GROUND_Y, H, OUTLINE, W} from './palette';
 import {lerp, sid} from './anim';
 
-export type SkyKind = 'night' | 'storm' | 'dawn';
+export type SkyKind = 'night' | 'storm' | 'dawn' | 'greyDay' | 'darkDay';
 
 const SKY_STOPS: Record<SkyKind, [number, string][]> = {
   night: [
@@ -17,6 +17,16 @@ const SKY_STOPS: Record<SkyKind, [number, string][]> = {
     [0.45, C.stormMid],
     [0.8, C.stormLow],
     [1, C.stormHorizon],
+  ],
+  greyDay: [
+    [0, '#AEB2BE'],
+    [0.6, '#C3C5CD'],
+    [1, '#D7D6D8'],
+  ],
+  darkDay: [
+    [0, '#2E2A3B'],
+    [0.55, '#463F55'],
+    [1, '#6B6276'],
   ],
   dawn: [
     [0, '#EFD7BC'],

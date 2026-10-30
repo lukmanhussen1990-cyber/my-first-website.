@@ -159,12 +159,15 @@ export const Signpost: React.FC<{x: number; y: number; text: string; color?: str
   </g>
 );
 
-export const House: React.FC<{x: number; y: number; scale?: number; glow?: number}> = ({x, y, scale = 1, glow = 1}) => (
+/** Small house. `glow` 0..1 = window light, `door` 0 = open (warm doorway) … 1 = closed. */
+export const House: React.FC<{x: number; y: number; scale?: number; glow?: number; door?: number}> = ({x, y, scale = 1, glow = 1, door = 1}) => (
   <g transform={`translate(${x},${y}) scale(${scale})`}>
     <rect x={-110} y={-170} width={220} height={170} fill={C.house} {...line()} />
     <path d="M -140 -164 L 0 -270 L 140 -164 Z" fill={C.roof} {...line()} />
-    <rect x={20} y={-120} width={58} height={62} rx={6} fill={C.window} {...line(OUTLINE * 0.8)} opacity={0.6 + 0.4 * glow} />
-    <rect x={-80} y={-100} width={60} height={100} fill={C.woodDark} {...line(OUTLINE * 0.8)} />
+    <rect x={20} y={-120} width={58} height={62} rx={6} fill={glow > 0.05 ? C.window : '#6E6A72'} {...line(OUTLINE * 0.8)} />
+    <rect x={20} y={-120} width={58} height={62} rx={6} fill="#6E6A72" opacity={1 - glow} />
+    <rect x={-80} y={-100} width={60} height={100} fill="#F6C977" {...line(OUTLINE * 0.8)} opacity={glow} />
+    <rect x={-80} y={-100} width={60 * Math.max(0.12, door)} height={100} fill={C.woodDark} {...line(OUTLINE * 0.8)} />
   </g>
 );
 

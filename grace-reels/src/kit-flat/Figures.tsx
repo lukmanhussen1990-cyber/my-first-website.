@@ -20,7 +20,10 @@ export type Pose =
   | 'point'
   | 'pointLeft'
   | 'jump'
-  | 'reach';
+  | 'reach'
+  | 'sitGround' // sitting on the ground, hands on knees
+  | 'harp' // seated, arms to a small harp in front
+  | 'cross'; // arms straight along a beam
 
 type Pt = [number, number];
 
@@ -46,6 +49,7 @@ interface BodyProps {
   armSwing?: number; // extra 0..1 animation for shake/point
   lineW?: number;
   faceColor?: string;
+  look?: number; // -1 head down … +1 looking up
   style: BodyStyle;
 }
 
@@ -69,6 +73,21 @@ const armsFor = (pose: Pose, frame: number, swing: number): [Pt[], Pt[]] => {
       return [
         [L, [-46, sh + 70], [-3, sh + 40]],
         [R, [46, sh + 70], [3, sh + 40]],
+      ];
+    case 'cross':
+      return [
+        [L, [-190, sh - 4]],
+        [R, [190, sh - 4]],
+      ];
+    case 'sitGround':
+      return [
+        [L, [-70, sh + 60], [-40, sh + 130]],
+        [R, [70, sh + 60], [40, sh + 130]],
+      ];
+    case 'harp':
+      return [
+        [L, [-60, sh + 70], [-14, sh + 92]],
+        [R, [62, sh + 50], [30, sh + 74 + swing * 10]],
       ];
     case 'armsOpen':
       return [
@@ -122,9 +141,10 @@ export const PegBody: React.FC<BodyProps> = ({
   armSwing = 0,
   lineW = OUTLINE,
   faceColor,
+  look = 0,
   style,
 }) => {
-  const kneeling = pose === 'kneel' || pose === 'pray';
+  const kneeling = pose === 'kneel' || pose === 'pray' || pose === 'sitGround';
   const drop = kneeling ? 66 : 0; // kneeling figures sit lower
   const hem = kneeling ? -3 : HEM_Y;
   const hemW = kneeling ? 94 : 78;
@@ -141,7 +161,7 @@ export const PegBody: React.FC<BodyProps> = ({
   const shiftArm = (pts: Pt[]) => pts.map(([x, y]) => [x, y + drop] as Pt);
   const poly = (pts: Pt[]) => pts.map((p) => p.join(',')).join(' ');
 
-  const headY = top - HEAD_R + 8;
+  const headY = top - HEAD_R + 8 - look * 6;
   const stroke = {stroke: style.line, strokeWidth: lineW, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const, ...NS};
 
   const legLen = 60;
@@ -160,7 +180,7 @@ export const PegBody: React.FC<BodyProps> = ({
   };
 
   const r = HEAD_R;
-  const faceTop = headY + r * 0.12;
+  const faceTop = headY + r * 0.12 - look * r * 0.3;
   const facePath =
     `M ${-r * 0.74} ${faceTop + 6} Q 0 ${faceTop - 12} ${r * 0.74} ${faceTop + 6}` +
     ` Q ${r * 0.74} ${headY + r * 0.95} ${r * 0.5} ${headY + r * 1.35} L 0 ${headY + r * 2.45}` +
@@ -168,7 +188,7 @@ export const PegBody: React.FC<BodyProps> = ({
 
   return (
     <g transform={`translate(${tx},${ty + bodyBob})`}>
-      {!kneeling && pose !== 'sit' && pose !== 'lie' ? (
+      {!kneeling && pose !== 'sit' && pose !== 'lie' && pose !== 'harp' ? (
         <g>
           {leg(-1, legA)}
           {leg(1, -legA)}
@@ -241,6 +261,7 @@ export interface PegPersonProps {
   rotate?: number;
   opacity?: number;
   faceColor?: string;
+  look?: number;
 }
 
 export const PegPerson: React.FC<PegPersonProps> = ({
@@ -260,10 +281,12 @@ export const PegPerson: React.FC<PegPersonProps> = ({
   rotate = 0,
   opacity = 1,
   faceColor,
+  look,
 }) => (
   <g transform={`translate(${x},${y}) rotate(${rotate}) scale(${scale})`} opacity={opacity}>
     <PegBody
       faceColor={faceColor}
+      look={look}
       pose={pose}
       frame={frame}
       walkPhase={walkPhase}
