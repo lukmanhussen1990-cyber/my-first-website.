@@ -76,7 +76,7 @@ export const Ronaldo: React.FC<{t: number}> = ({t}) => {
           </div>
         </>
       ) : null}
-      <Rider t={t} name="09_ronaldo_ride" feet={feet} tail={[[(feet[0] + tailEnd[0]) / 2 - 70, (feet[1] + tailEnd[1]) / 2], tailEnd]} h={640} scroll={rise} settleAt={T.ronRoadEnd} />
+      <Rider t={t} name="09_ronaldo_ride" feet={feet} tail={[tailEnd]} h={640} scroll={rise} settleAt={T.ronRoadEnd} />
       <SpeedFx t={t} speed={speed} />
     </AbsoluteFill>
   );

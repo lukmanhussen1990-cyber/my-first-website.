@@ -131,13 +131,13 @@ export const Elon: React.FC<{t: number}> = ({t}) => {
           </>
         ) : null}
         {mp > 0 && mp < 1 ? <Planet name="20_moon" x={lerp(1050, -150, mp)} y={lerp(260, 2000, mp)} d={lerp(260, 1500, mp)} blur={10} /> : null}
-        <OrbitRing p={prog(t, T.elonVenus - 0.35, T.elonVenus + 0.5)} label="VENUS'S ORBIT" planet={<Img src={img('22_venus')} style={{width: 230}} />} />
-        <OrbitRing p={prog(t, T.elonMercury - 0.35, T.elonMercury + 0.5)} label="MERCURY'S ORBIT" color="#ffd0a0" planet={<Img src={img('22_mercury')} style={{width: 150}} />} />
         <AbsoluteFill style={{filter: backlit > 0 ? `brightness(${1 - 0.75 * backlit}) saturate(${1 - backlit * 0.6})` : undefined}}>
           <RibbonRoad path={path} billLen={150} scroll={rise} glow={0.8} persp={0.3} seed={17} />
           <Rocket x={rk.x} y={rk.y} h={560} rot={rocketRot} t={t} />
           <Sprite name="02_elon_ride" x={feet[0]} y={feet[1] + 8} h={700 * (1 + 0.01 * Math.sin(t * 6))} rot={-12 + Math.sin(t * 9) * 1.5} />
         </AbsoluteFill>
+        <OrbitRing p={prog(t, T.elonVenus - 0.35, T.elonVenus + 0.5)} label="VENUS'S ORBIT" planet={<Img src={img('22_venus')} style={{width: 230}} />} />
+        <OrbitRing p={prog(t, T.elonMercury - 0.35, T.elonMercury + 0.5)} label="MERCURY'S ORBIT" color="#ffd0a0" planet={<Img src={img('22_mercury')} style={{width: 150}} />} />
         <SpeedLines t={t} intensity={0.5 + hyper * 1.1} radial cx={SUN_C.x} cy={SUN_C.y} color={warm > 0.4 ? '255,240,200' : '255,255,255'} />
         {t >= T.musicCut ? <AbsoluteFill style={{background: '#fff3c4', opacity: 0.35 + 0.65 * prog(t, T.musicCut, T.elonSun)}} /> : null}
       </AbsoluteFill>
