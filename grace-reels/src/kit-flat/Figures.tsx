@@ -5,7 +5,7 @@ import {jitter, sid} from './anim';
 // Peg figures. Local origin = between the feet, on the ground line.
 // Everything is drawn front-on, faceless or with a dark beard face.
 
-export type Outfit = 'priest' | 'labcoat' | 'einstein' | 'suit';
+export type Outfit = 'priest' | 'labcoat' | 'einstein' | 'suit' | 'painter';
 
 /** Small costume details drawn over a peg body (no faces). */
 const OutfitLayer: React.FC<{outfit: Outfit; top: number; hem: number; headY: number; r: number; lineW: number}> = ({outfit, top, hem, headY, r, lineW}) => {
@@ -22,6 +22,13 @@ const OutfitLayer: React.FC<{outfit: Outfit; top: number; hem: number; headY: nu
       <g>
         <rect x={-15} y={top - 2} width={30} height={14} rx={3} fill="#FFFFFF" {...st} />
         {glasses}
+      </g>
+    );
+  if (outfit === 'painter')
+    return (
+      <g>
+        <ellipse cx={-6} cy={headY - r * 0.82} rx={r * 0.95} ry={r * 0.36} fill="#B4432F" {...st} />
+        <circle cx={-6} cy={headY - r * 1.14} r={5} fill="#B4432F" {...st} />
       </g>
     );
   if (outfit === 'labcoat')
@@ -73,7 +80,8 @@ export type Pose =
   | 'write' // right arm up to a board
   | 'shrug'
   | 'shoo' // both arms waving up
-  | 'sweep'; // both arms down-left (broom)
+  | 'sweep' // both arms down-left (broom)
+  | 'staff'; // right arm holding a tall staff
 
 type Pt = [number, number];
 
@@ -167,6 +175,8 @@ const armsFor = (pose: Pose, frame: number, swing: number): [Pt[], Pt[]] => {
     }
     case 'point':
       return [restL, [R, [185, sh - 6 - swing * 30]]];
+    case 'staff':
+      return [restL, [R, [96, sh + 50]]];
     case 'write':
       return [restL, [R, [120, sh - 70 - swing * 24]]];
     case 'shrug':

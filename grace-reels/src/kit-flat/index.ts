@@ -9,3 +9,4 @@ export * from './Text';
 export * from './Ui';
 export * from './Extras';
 export * from './Cosmos';
+export * from './Chain';
