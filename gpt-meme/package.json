@@ -1,0 +1,14 @@
+{
+  "name": "gpt-what-about-me",
+  "version": "1.0.0",
+  "private": true,
+  "description": "15s vertical 2D animated meme rendered from an HTML canvas with Playwright + ffmpeg",
+  "scripts": {
+    "render": "node render.js",
+    "sheet": "node render.js --sheet",
+    "preview": "node render.js --serve"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}

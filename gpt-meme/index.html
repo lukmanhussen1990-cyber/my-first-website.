@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT — What About Me</title>
+<style>
+  @font-face { font-family: 'Nunito'; font-weight: 600; src: url(fonts/Nunito-600.woff) format('woff'); }
+  @font-face { font-family: 'Nunito'; font-weight: 800; src: url(fonts/Nunito-800.woff) format('woff'); }
+  @font-face { font-family: 'Nunito'; font-weight: 900; src: url(fonts/Nunito-900.woff) format('woff'); }
+  @font-face { font-family: 'Josefin Sans'; font-weight: 300; src: url(fonts/JosefinSans-300.woff) format('woff'); }
+  @font-face { font-family: 'Josefin Sans'; font-weight: 400; src: url(fonts/JosefinSans-400.woff) format('woff'); }
+  @font-face { font-family: 'Dancing Script'; font-weight: 600; src: url(fonts/DancingScript-600.woff) format('woff'); }
+  :root { --bg: #111317; --fg: #e6e8ee; --muted: #8b90a0; --accent: #62CDB5; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  #stage { display: flex; gap: 20px; padding: 16px; align-items: flex-start; flex-wrap: wrap; }
+  #c { height: calc(100vh - 32px); max-width: 100%; aspect-ratio: 9 / 16; background: #000; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+  #ui { min-width: 260px; display: grid; gap: 10px; }
+  #ui input[type=range] { width: 100%; accent-color: var(--accent); }
+  #ui button { background: #23262e; color: var(--fg); border: 1px solid #333846; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+  #time { font: 600 22px ui-monospace, monospace; }
+  .muted { color: var(--muted); }
+  body.render #ui { display: none; }
+  body.render #stage { padding: 0; }
+  body.render #c { height: auto; width: 1080px; border-radius: 0; box-shadow: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div id="ui">
+    <div id="time">0.00s</div>
+    <input id="scrub" type="range" min="0" max="15" step="0.0333334" value="0">
+    <div><button id="play">Pause</button> <button id="loop">Loop: on</button></div>
+    <div class="muted">Space: play/pause · ←/→: step one frame · Shift+←/→: 1s</div>
+    <div class="muted">Edit <code>TIMING</code> at the top of <code>scene.js</code> and reload.</div>
+  </div>
+</div>
+<script src="scene.js"></script>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const isRender = params.has('render');
+  if (isRender) document.body.classList.add('render');
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const D = MEME.TIMING.DURATION, FPS = MEME.TIMING.FPS;
+
+  // Hooks for render.js
+  window.renderFrame = (t, type = 'image/png') => { MEME.render(ctx, t); return cv.toDataURL(type); };
+  window.contactSheet = (times, cols = 4, scale = 0.25) => {
+    const cw = Math.round(1080 * scale), ch = Math.round(1920 * scale), lab = 30, gap = 6;
+    const rows = Math.ceil(times.length / cols);
+    const sh = document.createElement('canvas');
+    sh.width = cols * cw + (cols + 1) * gap; sh.height = rows * (ch + lab) + (rows + 1) * gap;
+    const s = sh.getContext('2d');
+    s.fillStyle = '#1a1c22'; s.fillRect(0, 0, sh.width, sh.height);
+    s.imageSmoothingEnabled = true; s.imageSmoothingQuality = 'high';
+    times.forEach((t, i) => {
+      MEME.render(ctx, t);
+      const x = gap + (i % cols) * (cw + gap), y = gap + Math.floor(i / cols) * (ch + lab + gap);
+      s.drawImage(cv, x, y + lab, cw, ch);
+      s.fillStyle = '#e6e8ee'; s.font = '600 18px sans-serif'; s.textBaseline = 'middle';
+      s.fillText(`t = ${t.toFixed(2)}s  (frame ${Math.round(t * FPS)})`, x + 6, y + lab / 2);
+    });
+    return sh.toDataURL('image/png');
+  };
+  window.MEME_READY = MEME.ready();
+
+  if (isRender) return;
+  const scrub = document.getElementById('scrub'), timeEl = document.getElementById('time');
+  const playBtn = document.getElementById('play'), loopBtn = document.getElementById('loop');
+  let t = 0, playing = true, loop = true, last = null;
+  const draw = () => { MEME.render(ctx, t); scrub.value = t; timeEl.textContent = `${t.toFixed(2)}s · f${Math.round(t * FPS)}`; };
+  const tick = now => {
+    if (playing) {
+      if (last != null) t += (now - last) / 1000;
+      if (t >= D) { t = loop ? 0 : D; if (!loop) playing = false; }
+      draw();
+    }
+    last = now; requestAnimationFrame(tick);
+  };
+  scrub.oninput = () => { t = +scrub.value; playing = false; playBtn.textContent = 'Play'; draw(); };
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? 'Pause' : 'Play'; };
+  loopBtn.onclick = () => { loop = !loop; loopBtn.textContent = `Loop: ${loop ? 'on' : 'off'}`; };
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playBtn.click(); }
+    const step = e.shiftKey ? 1 : 1 / FPS;
+    if (e.code === 'ArrowRight') { t = Math.min(D, t + step); playing = false; draw(); }
+    if (e.code === 'ArrowLeft') { t = Math.max(0, t - step); playing = false; draw(); }
+  });
+  window.MEME_READY.then(() => requestAnimationFrame(tick));
+})();
+</script>
+</body>
+</html>
