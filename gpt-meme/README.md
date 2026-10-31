@@ -3,7 +3,9 @@
 A 15-second vertical 2D cartoon meme: **1080x1920, 30 fps, H.264 MP4, no audio** (add your own sound).
 It's drawn on an HTML canvas, recorded frame by frame with Playwright, and encoded with ffmpeg.
 
-- `gpt_what_about_me.mp4` is the rendered video.
+- `gpt_what_about_me.mp4` is the rendered video, silent.
+- `gpt_what_about_me_with_audio.mp4` is the same video with the reference clip's audio. The audio is copied without re-encoding, starts at 0s, and is trimmed to 15.0s. It needs no shift, because the reference also goes dark at exactly 6.5s. To redo it after a re-render:
+  `ffmpeg -i gpt_what_about_me.mp4 -i <reference.mp4> -map 0:v:0 -map 1:a:0 -c copy -t 15 -movflags +faststart gpt_what_about_me_with_audio.mp4`
 - `contact_sheet.png` shows one frame per second, for a quick QA look.
 
 ## Files
