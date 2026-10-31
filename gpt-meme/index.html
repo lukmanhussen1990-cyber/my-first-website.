@@ -47,6 +47,7 @@
 
   // Hooks for render.js
   window.renderFrame = (t, type = 'image/png') => { MEME.render(ctx, t); return cv.toDataURL(type); };
+  window.renderCover = (type = 'image/png') => { MEME.renderCover(ctx); return cv.toDataURL(type); };
   window.contactSheet = (times, cols = 4, scale = 0.25) => {
     const cw = Math.round(1080 * scale), ch = Math.round(1920 * scale), lab = 30, gap = 6;
     const rows = Math.ceil(times.length / cols);

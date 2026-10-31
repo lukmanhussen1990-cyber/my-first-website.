@@ -1364,8 +1364,63 @@ function render(ctx, t) {
   if (blk > 0) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = `rgba(0,0,0,${blk})`; ctx.fillRect(0, 0, W, H); }
 }
 
+// ─────────────────────────────────────────────────────────────────────
+//  COVER IMAGE (thumbnail)  ·  `node render.js --cover` → cover.png
+//  A still that sums up the joke: teary GPT in the dark + the story card.
+//  Key content stays inside the centre 3:4 crop used by profile grids.
+// ─────────────────────────────────────────────────────────────────────
+const COVER = {
+  POSE_T: 9.3,            // which moment's pose to borrow (dark, teary)
+  GLOSS: 1.3,             // extra-teary eyes
+  ZOOM: 1.08,
+  TITLE: 'WHAT ABOUT ME?', TITLE_Y: 372, TITLE_SIZE: 80, TITLE_TRACK: 12,
+  CARD: { x: 44, y: 470, scale: 0.98, rot: -0.08 },
+};
+function renderCover(ctx) {
+  const T = TIMING, t = COVER.POSE_T;
+  const P = getPose(t);
+  Object.assign(P, { gloss: COVER.GLOSS, blink: 0, glow: 1, charFade: 0 });
+  const spr = { ax: 0, ay: 0, sx: 0, sy: 0 };
+  const cam = { x: 0, y: 0, zoom: COVER.ZOOM };
+  const M = gptMatrices(P);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+  ctx.shadowColor = 'transparent'; ctx.letterSpacing = '0px';
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  drawRoom(ctx, t, cam);
+  ctx.save(); camXform(ctx, cam, 1); drawGPT(ctx, P, M, spr); ctx.restore();
+  applyDarkLighting(ctx, t, P, M, cam);
+  vignette(ctx, true);
+  grain(ctx, t, 0.022);
+
+  // story card, settled, tilted, with a warm glow so it pops off the dark
+  const L = LAYOUT.POPUP, c = COVER.CARD;
+  ctx.save();
+  ctx.translate(c.x + L.w / 2, c.y + L.h / 2); ctx.rotate(c.rot); ctx.scale(c.scale, c.scale);
+  ctx.translate(-(L.x + L.w / 2), -(L.y + L.h / 2));
+  ctx.shadowColor = 'rgba(255,150,170,0.55)'; ctx.shadowBlur = 70;
+  ctx.fillStyle = '#2E2829'; ctx.fill(rrectP(L.x, L.y, L.w, L.h, 24));
+  ctx.shadowColor = 'transparent';
+  drawStoryCard(ctx, T.POPUP_IN + 0.9);
+  ctx.restore();
+
+  // title
+  ctx.save();
+  let size = COVER.TITLE_SIZE;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  const setFont = () => { ctx.font = `400 ${size}px "Josefin Sans"`; ctx.letterSpacing = `${COVER.TITLE_TRACK}px`; };
+  setFont();
+  while (ctx.measureText(COVER.TITLE).width - COVER.TITLE_TRACK > W - 120) { size -= 2; setFont(); }
+  const tw = ctx.measureText(COVER.TITLE).width - COVER.TITLE_TRACK;
+  radial(ctx, W / 2, COVER.TITLE_Y - size * 0.35, 520, [[0, 'rgba(0,0,10,0.55)'], [1, 'rgba(0,0,10,0)']], 0.3);
+  ctx.shadowColor = 'rgba(200,222,255,0.55)'; ctx.shadowBlur = 22;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText(COVER.TITLE, W / 2 - tw / 2, COVER.TITLE_Y);
+  ctx.restore();
+}
+
 const FONT_SPECS = ['600 20px Nunito', '800 20px Nunito', '900 20px Nunito', '400 20px "Josefin Sans"', '600 20px "Dancing Script"'];
 function ready() { return Promise.all(FONT_SPECS.map(f => document.fonts.load(f))).then(() => document.fonts.ready); }
 
-global.MEME = { W, H, TIMING, COPY, LAYOUT, render, ready, getPose };
+global.MEME = { W, H, TIMING, COPY, LAYOUT, COVER, render, renderCover, ready, getPose };
 })(window);

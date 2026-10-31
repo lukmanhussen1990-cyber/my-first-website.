@@ -7,6 +7,7 @@
     node render.js                       → gpt_what_about_me.mp4
     node render.js --out my.mp4 --crf 18
     node render.js --sheet               → contact_sheet.png (1 frame per second)
+    node render.js --cover               → cover.png (thumbnail, see COVER in scene.js)
     node render.js --sheet --times 5.6,6.0,6.6   (custom moments)
     node render.js --frames ./frames     → also save every frame as PNG
     node render.js --serve [--port 8123] → live preview at http://localhost:8123
@@ -60,6 +61,14 @@ async function openPage(port) {
   const srv = await serve(port);
   const { browser, page } = await openPage(port);
   const meta = await page.evaluate(() => ({ D: MEME.TIMING.DURATION, FPS: MEME.TIMING.FPS }));
+
+  if (opt('cover', false)) {
+    const out = opt('out', path.join(ROOT, 'cover.png'));
+    const url = await page.evaluate(() => window.renderCover());
+    fs.writeFileSync(out, Buffer.from(url.split(',')[1], 'base64'));
+    console.log(`Cover → ${out}`);
+    await browser.close(); srv.close(); return;
+  }
 
   if (opt('sheet', false)) {
     const custom = opt('times', null);

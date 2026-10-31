@@ -7,6 +7,7 @@ It's drawn on an HTML canvas, recorded frame by frame with Playwright, and encod
 - `gpt_what_about_me_with_audio.mp4` is the same video with the reference clip's audio. The audio is copied without re-encoding, starts at 0s, and is trimmed to 15.0s. It needs no shift, because the reference also goes dark at exactly 6.5s. To redo it after a re-render:
   `ffmpeg -i gpt_what_about_me.mp4 -i <reference.mp4> -map 0:v:0 -map 1:a:0 -c copy -t 15 -movflags +faststart gpt_what_about_me_with_audio.mp4`
 - `contact_sheet.png` shows one frame per second, for a quick QA look.
+- `cover.png` is a 1080x1920 cover/thumbnail. Regenerate it with `node render.js --cover`, and tweak it with `COVER` in `scene.js`.
 
 ## Files
 
