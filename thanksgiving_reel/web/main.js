@@ -155,8 +155,8 @@ function audit(t) {
   const dirs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1],[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1]];
   let nearest = 9;
   for (const d of dirs) {
-    ray.set(cp, v3(d).normalize()); ray.far = 0.5;
-    const hit = ray.intersectObjects(ctx.scene.children, true).find((h) => h.object.visible && h.object.isMesh && !h.object.userData.noAudit);
+    ray.set(cp, v3(d).normalize()); ray.far = 0.5; ray.camera = camera;
+    const hit = ray.intersectObjects(ctx.scene.children, true).find((h) => h.object.visible && h.object.isMesh && !h.object.userData.noAudit && !h.object.material.transparent);
     if (hit) nearest = Math.min(nearest, hit.distance);
   }
   if (nearest < 0.04) issues.push(`camera only ${nearest.toFixed(3)} m from a surface (may be inside something)`);
@@ -185,6 +185,7 @@ function audit(t) {
   return { t, shot: ctx.shot.id, camera: cp.toArray().map((v) => +v.toFixed(3)), nearest: +nearest.toFixed(3), issues };
 }
 
+window.WORLD = world;
 window.APP = {
   frameCount: () => Math.round(DURATION * FPS),
   renderFrame: (f) => { renderAt(f / FPS); return grab(); },

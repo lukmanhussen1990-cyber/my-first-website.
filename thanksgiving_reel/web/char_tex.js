@@ -104,10 +104,10 @@ export function torsoTex(style, c) {
       }
       if (v > 0.93) col = addc(rib(x, y), -8);                          // neckline
     } else if (style === 'cardigan') {
-      const open = v > 0.42 ? 0.018 + (v - 0.42) * 0.22 : 0.0;          // V opening showing the blouse
+      const open = v > 0.6 ? 0.008 + (v - 0.6) * 0.1 : 0.0;          // V opening showing the blouse
       if (adu < open && blouse) col = blouse(x, y);
       else if (adu < open + 0.022) col = addc(f(x, y), 14);            // button band
-      if (v <= 0.42 && adu < 0.012 && (y % 8) < 3) col = [70, 40, 30];  // buttons
+      if (v <= 0.6 && adu < 0.012 && (y % 8) < 3) col = [70, 40, 30];  // buttons
       if (v < 0.06) col = rib(x, y);
     } else if (style === 'flannel') {
       if (adu < 0.014) col = addc(col, 10);                             // placket
