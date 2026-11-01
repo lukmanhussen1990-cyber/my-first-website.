@@ -13,7 +13,7 @@ export const shots = {
     if (t < 39.88) you.p.gripR = f;
     else { you.p.handR = [-0.08, 0.7612, -0.52]; you.p.handPoseR = 'flat'; }
     youFace(ctx, 'wide', 'sad', 'tight');
-    if (t >= 39.85) W.fx.lines({ at: [0.0, 0.8, -0.34], t0: 39.85, t, count: 3 });
+    if (t >= 39.85) W.fx.impact({ at: [0.0, 0.8, -0.34], t0: 39.85, t, size: 0.35 });
     W.set.props.candles[0].visible = false;
   } },
   s25: { update(ctx) { // "The whole table goes quiet."
@@ -59,8 +59,8 @@ export const shots = {
   } },
   s28: { update(ctx) { // (pause) horror
     const { W, t } = ctx, you = W.cast.you;
-    move(ctx, { pos: [0.02, 1.22, -0.36], target: [0, 1.15, -0.76], fov: 34 }, { pos: [0.02, 1.22, -0.39], target: [0, 1.15, -0.76], fov: 33 }, (u) => u);
-    punch(ctx, 46.4, 1.25, 0.05);
+    move(ctx, { pos: [0.02, 1.04, -0.33], target: [0, 1.13, -0.76], fov: 42 }, { pos: [0.02, 1.04, -0.36], target: [0, 1.13, -0.76], fov: 41 }, (u) => u);
+    punch(ctx, 46.4, 1.15, 0.05);
     youFace(ctx, 'wide', 'worried', 'o');
     you.p.lookAt = [0, 0.85, -0.33]; you.p.lean = -0.1; you.p.shoulderUp = 1;
     sweatYou(ctx, 46.42, 'L', { count: 2 });
@@ -70,7 +70,7 @@ export const shots = {
   } },
   s29: { update(ctx) { // "You look skinny." (Grandma)
     const { W, t } = ctx, g = W.cast.grandma, you = W.cast.you;
-    move(ctx, { pos: [0.06, 1.44, 0.04], target: [-0.3, 1.33, -0.74], fov: 42 }, { pos: [0.02, 1.44, -0.04], target: [-0.3, 1.33, -0.74], fov: 40 });
+    move(ctx, { pos: [0.02, 1.45, 0.04], target: [-0.4, 1.36, -0.72], fov: 42 }, { pos: [-0.02, 1.45, -0.04], target: [-0.4, 1.36, -0.72], fov: 40 });
     lookCam(ctx, g);
     g.p.eyes = 'happy'; g.p.brows = 'raised'; g.p.mouth = 'smile';
     if (t > 47.31 && t < 48.85) W.cast.helpers.talk(g, t, 0.9);
