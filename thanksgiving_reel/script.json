@@ -1,0 +1,38 @@
+{
+  "title": "You pooped your pants at Thanksgiving dinner",
+  "voices": {
+    "N": {"name": "Nassim - Corporate Narration", "voice_id": "repzAAjoKlgcT2oOAIWt", "model": "eleven_v4", "prompt_tags": "[calm] [deadpan]"},
+    "U": {"name": "Uncle Chatter - Rambling and Fun", "voice_id": "vgOO1n3VfwBabYL9LRen", "model": "eleven_v4", "prompt_tags": "[loud] [cheerful]"},
+    "G": {"name": "Carol - Relatable, Real, Cool, Senior", "voice_id": "5u41aNhyCU6hXOcjPPv0", "model": "eleven_v4", "prompt_tags": "[warmly] [elderly voice]"}
+  },
+  "takes": {"N": "narr_B", "U": "uncle_B", "G": "grandma_A"},
+  "gain_db": {"N": 0.0, "U": 1.0, "G": 0.0},
+  "lines": [
+    {"who": "N", "text": "You just pooped your pants."},
+    {"who": "N", "text": "At Thanksgiving dinner."},
+    {"who": "N", "text": "The whole family is here."},
+    {"who": "N", "text": "You sit very, very still."},
+    {"who": "N", "text": "Nobody notices."},
+    {"who": "N", "text": "Then Grandma puts turkey on your plate."},
+    {"who": "N", "text": "You take one bite."},
+    {"who": "N", "text": "Your stomach rumbles."},
+    {"who": "N", "text": "Loud."},
+    {"who": "N", "text": "Your uncle looks up."},
+    {"who": "U", "text": "Somebody's hungry!", "pause_before": 0.35},
+    {"who": "N", "text": "Everyone laughs.", "pause_before": 0.36},
+    {"who": "N", "text": "You laugh too."},
+    {"who": "N", "text": "Grandma adds mashed potatoes."},
+    {"who": "N", "text": "And gravy."},
+    {"who": "N", "text": "Every bite, it gets worse."},
+    {"who": "N", "text": "What you don't know:", "pause_before": 0.90},
+    {"who": "N", "text": "the moment food hits your stomach,"},
+    {"who": "N", "text": "your gut gets a signal to make space."},
+    {"who": "N", "text": "It's called the gastrocolic reflex."},
+    {"who": "N", "text": "Every bite pushes things along."},
+    {"who": "N", "text": "You stop eating."},
+    {"who": "N", "text": "The whole table goes quiet."},
+    {"who": "N", "text": "Grandma stares at you."},
+    {"who": "N", "text": "Then she serves you a third plate."},
+    {"who": "G", "text": "You look skinny.", "pause_before": 1.05}
+  ]
+}
