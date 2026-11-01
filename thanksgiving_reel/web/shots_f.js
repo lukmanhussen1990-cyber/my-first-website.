@@ -7,10 +7,10 @@ export const shots = {
     const { W, t } = ctx, you = W.cast.you, f = W.set.props.yourFork;
     move(ctx, { pos: [-0.16, 1.02, -0.06], target: [-0.01, 0.8, -0.38], fov: 38 }, { pos: [-0.15, 1.0, -0.09], target: [-0.01, 0.8, -0.38], fov: 36 });
     // fork lowered slowly and laid on the plate (tines on the plate, handle on the rim)
-    const tip = kf(t, [[39.1, [-0.03, 0.96, -0.46]], [39.85, [0.0, 0.797, -0.34]]]);
+    const tip = kf(t, [[39.1, [-0.03, 0.96, -0.46]], [39.85, [0.0, 0.803, -0.34]]]);
     const axis = kf(t, [[39.1, [0.15, -0.35, 0.92]], [39.85, [0.16, -0.22, 0.96]]]);
     placeProp(f, tip, axis, [0, 1, 0], f.userData.tip);
-    if (t < 39.95) you.p.gripR = f;
+    if (t < 39.88) you.p.gripR = f;
     else { you.p.handR = [-0.08, 0.7612, -0.52]; you.p.handPoseR = 'flat'; }
     youFace(ctx, 'wide', 'sad', 'tight');
     if (t >= 39.85) W.fx.lines({ at: [0.0, 0.8, -0.34], t0: 39.85, t, count: 3 });
