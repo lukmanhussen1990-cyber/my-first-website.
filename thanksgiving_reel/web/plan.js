@@ -2,7 +2,7 @@
 // Voice line times come from audio/vo_lines.json (speech start/end measured from the audio).
 // `say` = what the voice says during the shot. The picture MUST clearly show that.
 // `events` = moments other code (sound effects, punch-ins) syncs to. Keep them in sync with make_sfx.py cues.
-// Hard cuts between all shots. Owners: shots_a.js (s01-s10), shots_b.js (s11-s19), shots_c.js (s20-s29).
+// Hard cuts between all shots. Owners: shots_a (s01-s05), shots_b (s06-s10), shots_c (s11-s15), shots_d (s16-s19), shots_e (s20-s23), shots_f (s24-s29).
 
 export const PLAN = [
   { id: 's01', t0: 0.00, t1: 2.35, say: 'You just pooped your pants.',

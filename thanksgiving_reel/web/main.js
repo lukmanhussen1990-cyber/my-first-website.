@@ -18,11 +18,12 @@ async function load(name, stub) {
   try { return await import(`./${name}.js`); }
   catch (e) { console.error(`[log] module ${name}.js failed to load: ${e.message}`); return import(stub); }
 }
-const [mSet, mCast, mFx, mXray, mA, mB, mC] = await Promise.all([
+const SHOT_FILES = ['shots_a', 'shots_b', 'shots_c', 'shots_d', 'shots_e', 'shots_f'];
+const [mSet, mCast, mFx, mXray, ...mShots] = await Promise.all([
   load('set', './stubs/set.js'), load('characters', './stubs/characters.js'), load('fx', './stubs/fx.js'), load('xray', './stubs/xray.js'),
-  load('shots_a', './stubs/shots.js'), load('shots_b', './stubs/shots.js'), load('shots_c', './stubs/shots.js'),
+  ...SHOT_FILES.map((f) => load(f, './stubs/shots.js')),
 ]);
-const SHOTS = { ...mA.shots, ...mB.shots, ...mC.shots };
+const SHOTS = Object.assign({}, ...mShots.map((m) => m.shots));
 const scale = Number(params.get('scale') || 1);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });

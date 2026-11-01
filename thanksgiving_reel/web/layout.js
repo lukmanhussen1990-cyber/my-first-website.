@@ -61,7 +61,7 @@ export const DISHES = {
   corn:       { x: -0.74, z: 0.04 },   // corn on the cob on an oval dish
   turkey:     { x: -0.32, z: 0.00 },   // roast turkey on a big oval platter (platter ~0.46 x 0.32)
   cranberry:  { x: 0.02,  z: 0.12 },   // cranberry sauce (can-shaped jelly with ridges) on a small dish
-  candles:    [{ x: 0.0, z: -0.11 }, { x: -0.62, z: -0.13 }],  // tall candles in holders
+  candles:    [{ x: 0.15, z: -0.12 }, { x: -0.62, z: -0.13 }],  // tall candles in holders (kept off the YOU-uncle sight line x=0)
   potatoes:   { x: 0.26,  z: 0.03 },   // bowl of mashed potatoes with a butter pat
   gravy:      { x: 0.47,  z: -0.12 },  // gravy boat (spout points -X)
   beans:      { x: 0.66,  z: 0.08 },   // bowl of green beans

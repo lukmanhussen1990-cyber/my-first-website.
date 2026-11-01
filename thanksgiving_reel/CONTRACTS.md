@@ -19,7 +19,7 @@ mouth, pixel-noisy textures on clothes/walls/carpet, soft warm light, shallow st
 | `web/set.js` | set agent | dining room, furniture, food, props, lights |
 | `web/characters.js` | characters agent | the 7 people, faces, poses, holding props |
 | `web/fx.js`, `web/xray.js` | fx agent | stink lines, sweat, rumble rings, haze, x-ray scene |
-| `web/shots_a.js` / `_b` / `_c` | shot agents | s01–s10 / s11–s19 / s20–s29 |
+| `web/shots_a.js` … `shots_f.js` | shot agents | a: s01–s05, b: s06–s10, c: s11–s15, d: s16–s19, e: s20–s23, f: s24–s29 |
 | `make_sfx.py`, `mix.py` | audio agent | code-made sound effects + final mix at -14 LUFS |
 | `make_captions.py` | captions agent | 2–4 word captions (ASS, Pixelify Sans, centre) |
 
