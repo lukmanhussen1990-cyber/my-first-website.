@@ -355,8 +355,8 @@ function buildSideboard(S, add, dyn) {
     fruit(0.0, 0.04, -0.06, 0.04, M.apple); fruit(0.07, 0.035, -0.09, 0.035, M.pumpkin); fruit(-0.07, 0.03, -0.08, 0.032, M.apple);
     for (let i = 0; i < 9; i++) fruit(0.03 + (R() - 0.5) * 0.06, 0.02 + R() * 0.04, -0.13 - R() * 0.04, 0.014, M.grape);
     const corn = mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.14, 6), M.corn); corn.rotation.set(Math.PI / 2, 0.6, 0); corn.position.set(-0.04, 0.03, -0.14); hg2.add(corn);
-    hg2.rotation.y = -Math.PI / 2 - 0.25; hg2.position.set(0.12, top, 2.34);
-    add(hg2);
+    hg2.rotation.y = -Math.PI / 2 - 0.25; hg2.position.set(-0.36, top, 2.34);
+    void hg2; // removed: its silhouette read as a cigar next to uncle's head in close-ups
   }
   // pillar candles on a tray + pumpkins
   {

@@ -283,7 +283,7 @@ function solve(ch, t) {
     const sh = ch.shoulderLocal[side].clone().applyMatrix4(ch.chest.matrixWorld);
     const dist = sh.distanceTo(tw), reach = (ch.armL[0] + ch.armL[1]) * 0.92 + 0.04 * s;
     const flat = tw.clone().sub(sh); flat.y = 0;
-    if (dist > reach && flat.dot(fwdW) > 0) extra = Math.max(extra, clamp((dist - reach) / (ch.torsoH * 0.8), 0, 0.55));
+    if (dist > reach && flat.dot(fwdW) > 0) extra = Math.max(extra, clamp((dist - reach) / (ch.torsoH * 0.8), 0, 0.42));
   }
   if (extra > 0) { ch.chest.rotation.x += extra; ch.root.updateMatrixWorld(true); }
 
@@ -410,7 +410,7 @@ export function buildCast(world) {
     } else {
       g.p.sit = 0; g.p.pos = GRANDMA_STAND.pos.slice(); g.p.rotY = GRANDMA_STAND.rotY; g.p.mouth = 'smile';
     }
-    if (quiet) for (const n of [...eaters, 'grandma']) { const ch = chars[n]; ch.p.lookAt = [0, 1.17, -0.93]; ch.p.mouth = 'neutral'; }
+    if (quiet) for (const n of [...eaters, 'grandma']) { const ch = chars[n]; ch.p.lookAt = [0, 1.196, -0.825]; ch.p.mouth = 'neutral'; }
   }
 
   function commit(ctx) { for (const ch of list) solve(ch, ctx.t); }

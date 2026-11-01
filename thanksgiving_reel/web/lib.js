@@ -18,7 +18,7 @@ export const easeOutBack = (t, s = 1.70158) => { t = clamp(t) - 1; return t * t 
 export const pulse = (t, a, b) => smooth(invLerp(a, a + (b - a) * 0.3, t)) * (1 - smooth(invLerp(a + (b - a) * 0.7, b, t)));
 // window: 0 before a, ramps to 1 by a+fadeIn, back to 0 from b-fadeOut to b
 export const win = (t, a, b, fi = 0.15, fo = 0.15) => smooth(invLerp(a, a + fi, t)) * (1 - smooth(invLerp(b - fo, b, t)));
-export const v3 = (x = 0, y = 0, z = 0) => (Array.isArray(x) ? new THREE.Vector3(x[0], x[1], x[2]) : new THREE.Vector3(x, y, z));
+export const v3 = (x = 0, y = 0, z = 0) => (x && x.isVector3 ? x.clone() : Array.isArray(x) ? new THREE.Vector3(x[0], x[1], x[2]) : new THREE.Vector3(x, y, z));
 export const lerpV = (a, b, t) => v3(a).lerp(v3(b), t);
 export const deg = (d) => (d * Math.PI) / 180;
 

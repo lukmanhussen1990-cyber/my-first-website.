@@ -37,13 +37,13 @@ export const CHAIR = {
 // (rotY=0 faces +Z, Math.PI faces -Z, -PI/2 faces -X).
 // plate = plate centre on the table top (x, z).
 export const SEATS = {
-  grandma: { pos: [-0.85, -0.95], rotY: 0,            plate: [-0.85, -0.33] },
-  you:     { pos: [0.0, -0.95],   rotY: 0,            plate: [0.0, -0.33] },
-  cousinA: { pos: [0.85, -0.95],  rotY: 0,            plate: [0.85, -0.33] },   // girl, ~12
-  mom:     { pos: [-0.85, 0.95],  rotY: Math.PI,      plate: [-0.85, 0.33] },
-  uncle:   { pos: [0.0, 0.98],    rotY: Math.PI,      plate: [0.0, 0.33] },      // big belly -> chair 3 cm further back
-  dad:     { pos: [0.85, 0.95],   rotY: Math.PI,      plate: [0.85, 0.33] },
-  cousinB: { pos: [1.72, 0.0],    rotY: -Math.PI / 2, plate: [1.08, 0.0] },      // boy, ~9, head of table (+X end)
+  grandma: { pos: [-0.85, -0.86], rotY: 0,            plate: [-0.85, -0.33] },
+  you:     { pos: [0.0, -0.86],   rotY: 0,            plate: [0.0, -0.33] },
+  cousinA: { pos: [0.85, -0.86],  rotY: 0,            plate: [0.85, -0.33] },   // girl, ~12
+  mom:     { pos: [-0.85, 0.86],  rotY: Math.PI,      plate: [-0.85, 0.33] },
+  uncle:   { pos: [0.0, 0.9],    rotY: Math.PI,      plate: [0.0, 0.33] },      // big belly -> chair 3 cm further back
+  dad:     { pos: [0.85, 0.86],   rotY: Math.PI,      plate: [0.85, 0.33] },
+  cousinB: { pos: [1.63, 0.0],    rotY: -Math.PI / 2, plate: [1.08, 0.0] },      // boy, ~9, head of table (+X end)
 };
 
 // Place setting around each plate (offsets in the diner's local frame: +x = diner's right, +z = toward table centre)
@@ -69,7 +69,7 @@ export const DISHES = {
 };
 
 // Grandma's standing serving spot (her chair is slid back to CHAIR_PULLED when she stands)
-export const GRANDMA_STAND = { pos: [-0.56, -0.86], rotY: Math.PI * 0.18 }; // turned a little toward YOU
+export const GRANDMA_STAND = { pos: [-0.46, -0.76], rotY: Math.PI * 0.16 }; // beside YOU, turned toward his plate
 export const GRANDMA_CHAIR_PULLED = [-0.95, -1.22];
 
 // Furniture along the walls (keep cameras out of these volumes)
