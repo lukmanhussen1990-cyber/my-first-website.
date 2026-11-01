@@ -16,87 +16,89 @@ Style: Shadow,Pixelify Sans,88,&H700A0C10,&H700A0C10,&H700A0C10,&HFF0A0C10,-1,0,
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.26,0:00:00.96,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You just
-Dialogue: 1,0:00:00.26,0:00:00.96,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You just
-Dialogue: 0,0:00:00.96,0:00:02.46,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pooped your pants
-Dialogue: 1,0:00:00.96,0:00:02.46,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pooped your pants
-Dialogue: 0,0:00:02.46,0:00:04.09,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}At Thanksgiving dinner
-Dialogue: 1,0:00:02.46,0:00:04.09,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}At Thanksgiving dinner
-Dialogue: 0,0:00:04.09,0:00:05.06,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The whole family
-Dialogue: 1,0:00:04.09,0:00:05.06,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The whole family
-Dialogue: 0,0:00:05.06,0:00:05.89,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}is here
-Dialogue: 1,0:00:05.06,0:00:05.89,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}is here
-Dialogue: 0,0:00:05.89,0:00:07.09,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You sit very
-Dialogue: 1,0:00:05.89,0:00:07.09,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You sit very
-Dialogue: 0,0:00:07.09,0:00:08.43,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}very still
-Dialogue: 1,0:00:07.09,0:00:08.43,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}very still
-Dialogue: 0,0:00:08.43,0:00:09.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Nobody notices
-Dialogue: 1,0:00:08.43,0:00:09.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Nobody notices
-Dialogue: 0,0:00:09.83,0:00:10.86,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then Grandma
-Dialogue: 1,0:00:09.83,0:00:10.86,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then Grandma
-Dialogue: 0,0:00:10.86,0:00:11.56,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}puts turkey
-Dialogue: 1,0:00:10.86,0:00:11.56,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}puts turkey
-Dialogue: 0,0:00:11.56,0:00:12.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}on your plate
-Dialogue: 1,0:00:11.56,0:00:12.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}on your plate
-Dialogue: 0,0:00:12.49,0:00:13.99,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You take one bite
-Dialogue: 1,0:00:12.49,0:00:13.99,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You take one bite
-Dialogue: 0,0:00:13.99,0:00:15.59,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your stomach rumbles
-Dialogue: 1,0:00:13.99,0:00:15.59,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your stomach rumbles
+Dialogue: 0,0:00:00.26,0:00:00.96,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hjust
+Dialogue: 1,0:00:00.26,0:00:00.96,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hjust
+Dialogue: 0,0:00:00.96,0:00:02.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pooped \hyour \hpants
+Dialogue: 1,0:00:00.96,0:00:02.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pooped \hyour \hpants
+Dialogue: 0,0:00:02.49,0:00:04.09,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}At \hThanksgiving \hdinner
+Dialogue: 1,0:00:02.49,0:00:04.09,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}At \hThanksgiving \hdinner
+Dialogue: 0,0:00:04.09,0:00:05.03,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The \hwhole \hfamily
+Dialogue: 1,0:00:04.09,0:00:05.03,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The \hwhole \hfamily
+Dialogue: 0,0:00:05.03,0:00:05.89,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}is \hhere
+Dialogue: 1,0:00:05.03,0:00:05.89,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}is \hhere
+Dialogue: 0,0:00:05.89,0:00:07.06,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hsit \hvery
+Dialogue: 1,0:00:05.89,0:00:07.06,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hsit \hvery
+Dialogue: 0,0:00:07.06,0:00:08.43,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}very \hstill
+Dialogue: 1,0:00:07.06,0:00:08.43,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}very \hstill
+Dialogue: 0,0:00:08.43,0:00:09.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Nobody \hnotices
+Dialogue: 1,0:00:08.43,0:00:09.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Nobody \hnotices
+Dialogue: 0,0:00:09.83,0:00:10.86,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then \hGrandma
+Dialogue: 1,0:00:09.83,0:00:10.86,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then \hGrandma
+Dialogue: 0,0:00:10.86,0:00:11.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}puts \hturkey
+Dialogue: 1,0:00:10.86,0:00:11.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}puts \hturkey
+Dialogue: 0,0:00:11.49,0:00:12.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}on \hyour \hplate
+Dialogue: 1,0:00:11.49,0:00:12.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}on \hyour \hplate
+Dialogue: 0,0:00:12.49,0:00:13.99,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \htake \hone \hbite
+Dialogue: 1,0:00:12.49,0:00:13.99,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \htake \hone \hbite
+Dialogue: 0,0:00:13.99,0:00:15.59,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your \hstomach \hrumbles
+Dialogue: 1,0:00:13.99,0:00:15.59,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your \hstomach \hrumbles
 Dialogue: 0,0:00:15.59,0:00:16.63,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Loud
 Dialogue: 1,0:00:15.59,0:00:16.63,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Loud
-Dialogue: 0,0:00:16.63,0:00:17.16,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your uncle
-Dialogue: 1,0:00:16.63,0:00:17.16,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your uncle
-Dialogue: 0,0:00:17.16,0:00:18.09,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}looks up
-Dialogue: 1,0:00:17.16,0:00:18.09,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}looks up
-Dialogue: 0,0:00:18.09,0:00:20.19,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"Somebody's hungry!"
-Dialogue: 1,0:00:18.09,0:00:20.19,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"Somebody's hungry!"
-Dialogue: 0,0:00:20.19,0:00:21.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Everyone laughs
-Dialogue: 1,0:00:20.19,0:00:21.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Everyone laughs
-Dialogue: 0,0:00:21.49,0:00:22.73,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You laugh too
-Dialogue: 1,0:00:21.49,0:00:22.73,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You laugh too
-Dialogue: 0,0:00:22.73,0:00:23.53,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma adds
-Dialogue: 1,0:00:22.73,0:00:23.53,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma adds
-Dialogue: 0,0:00:23.53,0:00:24.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}mashed potatoes
-Dialogue: 1,0:00:23.53,0:00:24.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}mashed potatoes
-Dialogue: 0,0:00:24.83,0:00:26.03,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}And gravy
-Dialogue: 1,0:00:24.83,0:00:26.03,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}And gravy
-Dialogue: 0,0:00:26.03,0:00:27.06,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every bite
-Dialogue: 1,0:00:26.03,0:00:27.06,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every bite
-Dialogue: 0,0:00:27.06,0:00:28.36,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}it gets worse
-Dialogue: 1,0:00:27.06,0:00:28.36,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}it gets worse
-Dialogue: 0,0:00:28.96,0:00:30.36,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}What you don't know
-Dialogue: 1,0:00:28.96,0:00:30.36,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}What you don't know
-Dialogue: 0,0:00:30.36,0:00:30.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the moment
-Dialogue: 1,0:00:30.36,0:00:30.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the moment
-Dialogue: 0,0:00:30.83,0:00:32.23,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}food hits your stomach
-Dialogue: 1,0:00:30.83,0:00:32.23,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}food hits your stomach
-Dialogue: 0,0:00:32.23,0:00:32.69,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}your gut
-Dialogue: 1,0:00:32.23,0:00:32.69,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}your gut
-Dialogue: 0,0:00:32.69,0:00:33.46,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}gets a signal
-Dialogue: 1,0:00:32.69,0:00:33.46,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}gets a signal
-Dialogue: 0,0:00:33.46,0:00:34.59,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}to make space
-Dialogue: 1,0:00:33.46,0:00:34.59,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}to make space
-Dialogue: 0,0:00:34.59,0:00:35.09,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}It's called
-Dialogue: 1,0:00:34.59,0:00:35.09,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}It's called
-Dialogue: 0,0:00:35.09,0:00:36.99,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the gastrocolic reflex
-Dialogue: 1,0:00:35.09,0:00:36.99,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the gastrocolic reflex
-Dialogue: 0,0:00:36.99,0:00:37.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every bite
-Dialogue: 1,0:00:36.99,0:00:37.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every bite
-Dialogue: 0,0:00:37.83,0:00:39.23,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pushes things along
-Dialogue: 1,0:00:37.83,0:00:39.23,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pushes things along
-Dialogue: 0,0:00:39.23,0:00:40.46,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You stop eating
-Dialogue: 1,0:00:39.23,0:00:40.46,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You stop eating
-Dialogue: 0,0:00:40.46,0:00:41.39,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The whole table
-Dialogue: 1,0:00:40.46,0:00:41.39,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The whole table
-Dialogue: 0,0:00:41.39,0:00:42.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}goes quiet
-Dialogue: 1,0:00:41.39,0:00:42.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}goes quiet
-Dialogue: 0,0:00:42.49,0:00:43.46,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma stares
-Dialogue: 1,0:00:42.49,0:00:43.46,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma stares
-Dialogue: 0,0:00:43.46,0:00:44.13,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}at you
-Dialogue: 1,0:00:43.46,0:00:44.13,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}at you
-Dialogue: 0,0:00:44.13,0:00:45.36,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then she serves you
-Dialogue: 1,0:00:44.13,0:00:45.36,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then she serves you
-Dialogue: 0,0:00:45.36,0:00:46.53,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}a third plate
-Dialogue: 1,0:00:45.36,0:00:46.53,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}a third plate
-Dialogue: 0,0:00:47.26,0:00:49.19,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"You look skinny"
-Dialogue: 1,0:00:47.26,0:00:49.19,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"You look skinny"
+Dialogue: 0,0:00:16.63,0:00:17.16,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your \huncle
+Dialogue: 1,0:00:16.63,0:00:17.16,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Your \huncle
+Dialogue: 0,0:00:17.16,0:00:18.13,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}looks \hup
+Dialogue: 1,0:00:17.16,0:00:18.13,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}looks \hup
+Dialogue: 0,0:00:18.13,0:00:20.19,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"Somebody's \hhungry!"
+Dialogue: 1,0:00:18.13,0:00:20.19,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"Somebody's \hhungry!"
+Dialogue: 0,0:00:20.19,0:00:21.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Everyone \hlaughs
+Dialogue: 1,0:00:20.19,0:00:21.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Everyone \hlaughs
+Dialogue: 0,0:00:21.49,0:00:22.76,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hlaugh \htoo
+Dialogue: 1,0:00:21.49,0:00:22.76,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hlaugh \htoo
+Dialogue: 0,0:00:22.76,0:00:23.53,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma \hadds
+Dialogue: 1,0:00:22.76,0:00:23.53,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma \hadds
+Dialogue: 0,0:00:23.53,0:00:24.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}mashed \hpotatoes
+Dialogue: 1,0:00:23.53,0:00:24.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}mashed \hpotatoes
+Dialogue: 0,0:00:24.83,0:00:26.03,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}And \hgravy
+Dialogue: 1,0:00:24.83,0:00:26.03,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}And \hgravy
+Dialogue: 0,0:00:26.03,0:00:27.13,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every \hbite
+Dialogue: 1,0:00:26.03,0:00:27.13,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every \hbite
+Dialogue: 0,0:00:27.13,0:00:28.36,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}it \hgets \hworse
+Dialogue: 1,0:00:27.13,0:00:28.36,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}it \hgets \hworse
+Dialogue: 0,0:00:28.96,0:00:30.36,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}What \hyou \hdon't \hknow
+Dialogue: 1,0:00:28.96,0:00:30.36,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}What \hyou \hdon't \hknow
+Dialogue: 0,0:00:30.36,0:00:30.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the \hmoment
+Dialogue: 1,0:00:30.36,0:00:30.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the \hmoment
+Dialogue: 0,0:00:30.83,0:00:31.43,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}food \hhits
+Dialogue: 1,0:00:30.83,0:00:31.43,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}food \hhits
+Dialogue: 0,0:00:31.43,0:00:32.23,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}your \hstomach
+Dialogue: 1,0:00:31.43,0:00:32.23,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}your \hstomach
+Dialogue: 0,0:00:32.23,0:00:32.69,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}your \hgut
+Dialogue: 1,0:00:32.23,0:00:32.69,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}your \hgut
+Dialogue: 0,0:00:32.69,0:00:33.46,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}gets \ha \hsignal
+Dialogue: 1,0:00:32.69,0:00:33.46,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}gets \ha \hsignal
+Dialogue: 0,0:00:33.46,0:00:34.63,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}to \hmake \hspace
+Dialogue: 1,0:00:33.46,0:00:34.63,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}to \hmake \hspace
+Dialogue: 0,0:00:34.63,0:00:35.09,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}It's \hcalled
+Dialogue: 1,0:00:34.63,0:00:35.09,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}It's \hcalled
+Dialogue: 0,0:00:35.09,0:00:36.99,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the \hgastrocolic \hreflex
+Dialogue: 1,0:00:35.09,0:00:36.99,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}the \hgastrocolic \hreflex
+Dialogue: 0,0:00:36.99,0:00:37.83,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every \hbite
+Dialogue: 1,0:00:36.99,0:00:37.83,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Every \hbite
+Dialogue: 0,0:00:37.83,0:00:39.23,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pushes \hthings \halong
+Dialogue: 1,0:00:37.83,0:00:39.23,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}pushes \hthings \halong
+Dialogue: 0,0:00:39.23,0:00:40.46,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hstop \heating
+Dialogue: 1,0:00:39.23,0:00:40.46,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}You \hstop \heating
+Dialogue: 0,0:00:40.46,0:00:41.39,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The \hwhole \htable
+Dialogue: 1,0:00:40.46,0:00:41.39,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}The \hwhole \htable
+Dialogue: 0,0:00:41.39,0:00:42.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}goes \hquiet
+Dialogue: 1,0:00:41.39,0:00:42.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}goes \hquiet
+Dialogue: 0,0:00:42.49,0:00:43.39,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma \hstares
+Dialogue: 1,0:00:42.49,0:00:43.39,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Grandma \hstares
+Dialogue: 0,0:00:43.39,0:00:44.13,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}at \hyou
+Dialogue: 1,0:00:43.39,0:00:44.13,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}at \hyou
+Dialogue: 0,0:00:44.13,0:00:45.36,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then \hshe \hserves \hyou
+Dialogue: 1,0:00:44.13,0:00:45.36,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}Then \hshe \hserves \hyou
+Dialogue: 0,0:00:45.36,0:00:46.49,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}a \hthird \hplate
+Dialogue: 1,0:00:45.36,0:00:46.49,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}a \hthird \hplate
+Dialogue: 0,0:00:47.29,0:00:49.13,Shadow,,0,0,0,,{\an5\pos(546,966)\blur9\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"You \hlook \hskinny"
+Dialogue: 1,0:00:47.29,0:00:49.13,Caption,,0,0,0,,{\an5\pos(540,960)\fscx85\fscy85\t(0,80,\fscx100\fscy100)}"You \hlook \hskinny"

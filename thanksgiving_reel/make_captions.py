@@ -27,11 +27,13 @@ W, H, FPS = 1080, 1920, 30
 FONT_SIZE = 88          # ASS size (font ascent+descent box) -> cap height ~51 px, line box ~88 px
 OUTLINE = 7             # dark outline, px
 SHADOW_OFF = 6          # soft drop shadow offset, px (down-right)
-MAX_TEXT_W = 940        # one line only: a chunk wider than this gets fewer words
+MAX_TEXT_W = 900        # one line only, >= ~70 px side margins: a chunk wider than this gets fewer words
 POP_MS, POP_FROM = 80, 85
+WORD_GAP = ' \\h'        # wider gap between words (space + hard space): the thick outline eats a plain space
 TAIL = 0.25             # hold after the last word when a pause follows
 MIN_GAP = 0.15          # never show a blank gap shorter than this between two chunks
-LEAD_MAX = 0.045        # caption frame may be at most this much before the word onset (never after)
+LEAD_MAX = 0.050        # caption frame may be at most this much before the word onset (never after)
+LEAD_AIM = 0.025        # aim: the frame nearest to 25 ms before the onset (frames are 33 ms apart)
 
 # Natural 2-4 word phrases per voice line (exact script words; never split "Thanksgiving dinner",
 # "mashed potatoes", "gastrocolic reflex", "third plate"). Lines not listed are chunked automatically.
@@ -53,7 +55,7 @@ CHUNKS = {
     "And gravy.": ["And gravy."],
     "Every bite, it gets worse.": ["Every bite,", "it gets worse."],
     "What you don't know:": ["What you don't know:"],
-    "the moment food hits your stomach,": ["the moment", "food hits your stomach,"],
+    "the moment food hits your stomach,": ["the moment", "food hits", "your stomach,"],
     "your gut gets a signal to make space.": ["your gut", "gets a signal", "to make space."],
     "It's called the gastrocolic reflex.": ["It's called", "the gastrocolic reflex."],
     "Every bite pushes things along.": ["Every bite", "pushes things along."],
@@ -132,7 +134,9 @@ def split_line(text):
 
 
 # ---------------------------------------------------------------- audio features
-HOP = 0.0025
+HOP = 0.0025            # analysis hop (s)
+SIL_DB = -52.0          # frame energy (dB re. the loudest speech) below this = silence
+ALIGN_EARLY = 0.015     # boundaries without an acoustic landmark: shift to the start of the transition
 
 
 def features(x, sr):
@@ -153,13 +157,20 @@ def fi(F, t):
     return int(np.clip(round((t - F['t'][0]) / HOP), 0, len(F['t']) - 1))
 
 
-def line_edges(F, L, thr=-52.0):
-    """Speech start/end of a line: first/last frame above the silence threshold near the measured span."""
-    a, b = fi(F, L['start'] - 0.15), fi(F, L['start'] + 0.15)
+def line_edges(F, L, rel=40.0):
+    """Speech start/end of a line: first/last frame (out of the silence between lines) whose energy is within
+    `rel` dB of the line's loudest frame - the point where the voice becomes clearly audible over a music/SFX bed."""
     e = F['all']
-    on = next((i for i in range(a, b) if e[i] > thr and e[i:i + 4].min() > thr), fi(F, L['start']))
-    a2, b2 = fi(F, L['end'] - 0.15), fi(F, L['end'] + 0.15)
-    off = next((i for i in range(b2, a2, -1) if e[i] > thr and e[i - 4:i + 1].min() > thr), fi(F, L['end']))
+    a, b = fi(F, L['start'] - 0.15), fi(F, L['end'] + 0.15)
+    thr = max(SIL_DB, e[fi(F, L['start']):fi(F, L['end']) + 1].max() - rel)
+    s0 = fi(F, L['start'])
+    while s0 > a and e[s0 - 1] > SIL_DB:          # back to the silence before the line
+        s0 -= 1
+    on = next((i for i in range(s0, b) if e[i] > thr and e[i:i + 4].min() > thr), fi(F, L['start']))
+    e0 = fi(F, L['end'])
+    while e0 < b and e[e0 + 1] > SIL_DB:          # forward to the silence after the line
+        e0 += 1
+    off = next((i for i in range(e0, on, -1) if e[i] > thr and e[i - 4:i + 1].min() > thr), fi(F, L['end']))
     return F['t'][on], F['t'][off]
 
 
@@ -220,52 +231,79 @@ def first_sound(w):
     return 'son'
 
 
-def snap(F, w, prior, first_phone, lo, hi):
-    """Refine a word onset near `prior` (s) to the acoustic onset of its first sound, within [lo, hi]."""
+def _burst(F, a, b):
+    """Release burst of a stop in frames [a, b]: biggest jump out of a closure; returns (frame, rise) or None."""
+    e, ehi = F['all'], F['hi']
+    best, bi = -1e9, None
+    for i in range(a, b + 1):
+        clo = e[max(i - 10, 0):i + 1].min()                      # closure level in the 25 ms before
+        rise = e[min(i + 3, len(e) - 1)] - clo
+        score = rise + 0.5 * (ehi[min(i + 2, len(e) - 1)] - ehi[max(i - 2, 0)])
+        if rise > 9 and score > best:
+            best, bi = score, i
+    if bi is None:
+        return None
+    clo = e[max(bi - 10, 0):bi + 1].min()
+    j = bi
+    while j > a and e[j - 1] > clo + 3:                          # first frame leaving the closure floor
+        j -= 1
+    return j
+
+
+def snap(F, w, prior, first_phone, lo, hi, line_first=False):
+    """Acoustic onset of word `w` near the alignment boundary `prior` (s), searched within [lo, hi].
+    Returns (time, how)."""
     t, e, elo, ehi = F['t'], F['all'], F['lo'], F['hi']
+    tilt = ehi - elo
     kind = first_sound(w)
-    d = lambda v, i, k=2: v[min(i + k, len(v) - 1)] - v[max(i - k, 0)]
+    lo, hi = min(lo, prior - 0.01), max(hi, prior + 0.02)     # never an empty search window
+    if line_first:            # prior = first frame out of the silence between lines (incl. pre-voicing)
+        return prior, 'line'
+    b = fi(F, prior)
+    # inside a pause (e.g. "Every bite, | it gets worse"): the word starts where the sound comes back
+    if e[b] < SIL_DB:
+        j = b
+        while j < fi(F, hi) and not (e[j:j + 4].min() > SIL_DB):
+            j += 1
+        prior, b = t[j], j
+        if kind != 'stop':
+            return t[j], kind + '-after-pause'
     if kind == 'stop':
-        # release burst: biggest broadband jump after a closure (silence) inside the first phone
+        # release burst after the closure silence, inside the first phone of the alignment
         a = fi(F, max(lo, prior - 0.03))
-        b = fi(F, min(hi, (first_phone[1] if first_phone else prior + 0.12) + 0.03))
-        best, bi = -1e9, None
-        for i in range(a, b + 1):
-            clo = e[max(i - 10, 0):i + 1].min()                   # closure level in the 25 ms before
-            rise = e[min(i + 3, len(e) - 1)] - clo
-            score = rise + 0.5 * d(ehi, i)
-            if rise > 9 and score > best:
-                best, bi = score, i
-        if bi is None:
-            return prior, kind + '?'
-        # onset = first frame of the rise (energy leaves the closure floor)
-        clo = e[max(bi - 10, 0):bi + 1].min()
-        j = bi
-        while j > a and e[j - 1] > clo + 3:
-            j -= 1
-        return t[j], kind
+        z = fi(F, min(hi, (first_phone[1] if first_phone else prior + 0.12) + 0.03))
+        j = _burst(F, a, z)
+        return (t[j], 'stop-burst') if j is not None else (prior, 'stop-nobust')
+    if kind == 'son':
+        # after the previous word's hiss (e.g. "adds | mashed", "stares | at", "hits | your"): the word starts
+        # where the hiss stops (spectral tilt collapses, voicing comes in)
+        a, z = fi(F, max(lo, prior - 0.05)), fi(F, min(hi, prior + 0.04))
+        drops = [tilt[max(k - 3, 0)] - tilt[min(k + 3, len(e) - 1)] for k in range(a, z + 1)]
+        k = int(np.argmax(drops))
+        if drops[k] >= 10 and ehi[max(a + k - 4, 0)] > -40:
+            return t[a + k], 'son-hiss-end'
+    # deep energy dip just before the boundary (prosodic break, voiced fricative constriction)
+    a, z = fi(F, max(lo, prior - 0.06)), fi(F, min(hi, prior + 0.015))
+    i = a + int(np.argmin(e[a:z + 1]))
+    left = e[max(i - 24, 0):i + 1].max(); right = e[i:i + 17].max()
+    if min(left, right) - e[i] >= 8:
+        j = i                       # the word starts where the energy climbs out of the dip
+        while j < z and e[j + 1] < e[i] + 3:
+            j += 1
+        return t[j], kind + '-dip'
     if kind == 'fric':
-        # hiss onset: high band rises relative to the low band (voicing of the previous word fades)
-        a, b = fi(F, max(lo, prior - 0.05)), fi(F, min(hi, prior + 0.05))
-        tilt = ehi - elo
-        sc = [d(tilt, i, 3) + 0.5 * d(ehi, i, 3) for i in range(a, b + 1)]
-        i = a + int(np.argmax(sc))
-        if sc[i - a] < 6:
-            # weak fricative (f, th, h): end of the energy dip between the words
-            seg = e[a:b + 1]
-            i = a + int(np.argmin(seg))
-            return t[i], kind + '-dip'
-        j = i
-        while j > a and d(tilt, j - 1, 3) > 0.35 * sc[i - a]:
-            j -= 1
-        return t[j], kind
-    # vowel / glide / nasal / liquid: bottom of the energy dip between the words
-    a, b = fi(F, max(lo, prior - 0.05)), fi(F, min(hi, prior + 0.05))
-    seg = e[a:b + 1]
-    i = a + int(np.argmin(seg))
-    if max(e[a], e[b]) - seg.min() < 3:      # no dip: keep the alignment boundary
-        return prior, kind + '-nodip'
-    return t[i], kind
+        # start of this word's hiss: high band rises against the low band
+        a, z = fi(F, max(lo, prior - 0.03)), fi(F, min(hi, prior + 0.02))
+        rises = [tilt[min(k + 3, len(e) - 1)] - tilt[max(k - 3, 0)] for k in range(a, z + 1)]
+        k = int(np.argmax(rises))
+        if rises[k] >= 8:
+            j = a + k
+            while j > a and tilt[min(j + 2, len(e) - 1)] - tilt[max(j - 4, 0)] > 0.35 * rises[k]:
+                j -= 1
+            return min(t[j], prior), 'fric-hiss'
+    # no acoustic landmark (vowel-to-vowel / l-to-l glide, e.g. "turkey | on"): the aligner puts the boundary
+    # mid-transition; the new sound is already audible ~15 ms before that
+    return prior - ALIGN_EARLY, kind + '-align'
 
 
 # ---------------------------------------------------------------- timing
@@ -286,9 +324,9 @@ def word_onsets(x, sr, lines, words_aligned, debug=False):
         res = []
         for j, w in enumerate(ws):
             if j == 0:
-                on, kind = s0, 'line'
+                on, kind = snap(F, w['w'], s0, None, s0 - 0.01, s0 + 0.1, line_first=True)
             else:
-                lo = res[-1]['s'] + 0.05
+                lo = min(res[-1]['s'] + 0.04, al[j]['s'] - 0.01)
                 hi = al[j + 1]['s'] - 0.02 if j + 1 < len(ws) else e0 - 0.05
                 fp = al[j]['ph'][0][1:] if al[j]['ph'] else None
                 on, kind = snap(F, w['w'], al[j]['s'], fp, lo, hi)
@@ -301,9 +339,9 @@ def word_onsets(x, sr, lines, words_aligned, debug=False):
 
 
 def frame_at_or_before(t):
-    """Index of the video frame to show a caption for a word starting at t: the frame closest to
-    t - LEAD_MAX/2 that is not after t and not more than LEAD_MAX before it."""
-    k = int(round((t - LEAD_MAX / 2) * FPS))
+    """Index of the video frame on which a caption for a word starting at t appears: the frame nearest to
+    t - LEAD_AIM, never after t and never more than LEAD_MAX before it."""
+    k = int(np.floor((t - LEAD_AIM) * FPS + 0.5))
     while k / FPS > t + 1e-9:
         k -= 1
     while (k + 1) / FPS <= t + 1e-9 and t - k / FPS > LEAD_MAX:
@@ -325,7 +363,7 @@ def build_chunks(lines, onsets):
             chunks.append({'line': L['i'], 'who': L['who'], 'text': caption_text([w['w'] for w in cw], L['who']),
                            'onset': cw[0]['s'], 'last_end': cw[-1]['e'], 'words': [w['w'] for w in cw]})
     for c in chunks:      # one line only: too wide -> report (the table above keeps every chunk narrower)
-        c['width'] = text_width(c['text'])
+        c['width'] = text_width(c['text'].replace(' ', '  '))
         if c['width'] > MAX_TEXT_W:
             raise SystemExit(f"caption too wide ({c['width']:.0f} px > {MAX_TEXT_W}): {c['text']} - use fewer words")
     for i, c in enumerate(chunks):
@@ -372,7 +410,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     ev = []
     for c in chunks:
         a, b = ass_time(c['k0']), ass_time(c['k1'])
-        txt = c['text'].replace('{', '(').replace('}', ')')
+        txt = c['text'].replace('{', '(').replace('}', ')').replace(' ', WORD_GAP)
         cx, cy = W // 2, H // 2
         ev.append(f"Dialogue: 0,{a},{b},Shadow,,0,0,0,,{{\\an5\\pos({cx + SHADOW_OFF},{cy + SHADOW_OFF})\\blur9{pop}}}{txt}")
         ev.append(f"Dialogue: 1,{a},{b},Caption,,0,0,0,,{{\\an5\\pos({cx},{cy}){pop}}}{txt}")
