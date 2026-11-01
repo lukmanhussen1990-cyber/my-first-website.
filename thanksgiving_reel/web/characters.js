@@ -308,9 +308,12 @@ function solve(ch, t) {
         const T = v3(tgt);
         if (rot) handQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot, 'YXZ'));
         else if (pose === 'flat') {
+          // resting on a surface: fingertips touch, the wrist is lifted (a forearm is thicker than a hand)
           const dir = T.clone().sub(shW); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.copy(fwdW); dir.normalize();
-          const Z = V(0, 1, 0), Y = dir, X = V().crossVectors(Y, Z);
+          const a = 0.27, ca = Math.cos(a), sa = Math.sin(a);
+          const Y = dir.clone().multiplyScalar(ca).add(V(0, -sa, 0)), Z = V(0, ca, 0).addScaledVector(dir, sa), X = V().crossVectors(Y, Z);
           handQ = basis(X, Y, Z);
+          T.y += 0.0035 + 0.13 * s * sa;
         } else {
           const Y = T.clone().sub(shW).normalize();
           const out = pose === 'point' ? V(0, 1, 0) : V(fwdW.z, 0, -fwdW.x).multiplyScalar(sx).add(V(0, 0.8, 0)).normalize();
