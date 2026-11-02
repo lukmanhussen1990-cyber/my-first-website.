@@ -1,0 +1,208 @@
+{
+ "title": "You're homeless (mansion reel)",
+ "voices": {
+  "N": {
+   "name": "user's own voiceover",
+   "file": "audio/voiceover_src.mp3",
+   "source": "uploaded by the user (flush_gay.mp3) - used as is, not regenerated"
+  }
+ },
+ "lines": [
+  {
+   "who": "N",
+   "text": "You're homeless."
+  },
+  {
+   "who": "N",
+   "text": "You really need to poop."
+  },
+  {
+   "who": "N",
+   "text": "Every shop says \"customers only.\""
+  },
+  {
+   "who": "N",
+   "text": "So you knock on the only door left."
+  },
+  {
+   "who": "N",
+   "text": "A mansion."
+  },
+  {
+   "who": "N",
+   "text": "The door opens."
+  },
+  {
+   "who": "N",
+   "text": "A rich guy."
+  },
+  {
+   "who": "N",
+   "text": "In a gold bathrobe."
+  },
+  {
+   "who": "N",
+   "text": "You say: \"Toilet. Please.\""
+  },
+  {
+   "who": "N",
+   "text": "He points down a hallway."
+  },
+  {
+   "who": "N",
+   "text": "A very long hallway."
+  },
+  {
+   "who": "N",
+   "text": "Made of gold."
+  },
+  {
+   "who": "N",
+   "text": "You run."
+  },
+  {
+   "who": "N",
+   "text": "The toilet has thirty buttons."
+  },
+  {
+   "who": "N",
+   "text": "You don't know which one flushes."
+  },
+  {
+   "who": "N",
+   "text": "So you press them all."
+  },
+  {
+   "who": "N",
+   "text": "Water sprays the ceiling."
+  },
+  {
+   "who": "N",
+   "text": "Music starts playing."
+  },
+  {
+   "who": "N",
+   "text": "The seat spins."
+  },
+  {
+   "who": "N",
+   "text": "He walks in."
+  },
+  {
+   "who": "N",
+   "text": "You're soaking wet."
+  },
+  {
+   "who": "N",
+   "text": "He stares at you."
+  },
+  {
+   "who": "N",
+   "text": "Then he laughs."
+  },
+  {
+   "who": "N",
+   "text": "So hard he cries."
+  },
+  {
+   "who": "N",
+   "text": "And you feel something."
+  },
+  {
+   "who": "N",
+   "text": "In your heart."
+  },
+  {
+   "who": "N",
+   "text": "Not your stomach this time."
+  },
+  {
+   "who": "N",
+   "text": "You've been straight your whole life."
+  },
+  {
+   "who": "N",
+   "text": "You think."
+  },
+  {
+   "who": "N",
+   "text": "What you don't know:",
+   "pause_before": 1.0
+  },
+  {
+   "who": "N",
+   "text": "in a New York zoo, two male penguins named Roy and Silo"
+  },
+  {
+   "who": "N",
+   "text": "fell in love"
+  },
+  {
+   "who": "N",
+   "text": "and raised a baby penguin together."
+  },
+  {
+   "who": "N",
+   "text": "He hands you a towel."
+  },
+  {
+   "who": "N",
+   "text": "Then a coffee."
+  },
+  {
+   "who": "N",
+   "text": "Then a key."
+  },
+  {
+   "who": "N",
+   "text": "You never leave."
+  },
+  {
+   "who": "N",
+   "text": "He gives you your own bathroom."
+  },
+  {
+   "who": "N",
+   "text": "With your name on the door."
+  },
+  {
+   "who": "N",
+   "text": "Welcome home.",
+   "pause_before": 1.2,
+   "audio": {
+    "file": null,
+    "placeholder_len": 1.0,
+    "note": "missing from the upload - waiting for the user's clip / voice name"
+   }
+  }
+ ],
+ "source_cuts": {
+  "why": "the uploaded take has generation glitches: 'The toilet... Please.' + a repeat of 'He points down a hallway ... You run.' (24.5-32.2 s), an extra spoken 'and sad.' (51.0-51.6 s), and a repeat of the penguin part up to 'He gives you your own bathroom.' after 'With your name on the door.' (77.7 s to the end). 'Welcome home.' is not in the file. The breath before the first word (0-0.76 s) is trimmed so the reel starts on the first word.",
+  "cuts": [
+   [
+    0.0,
+    0.76
+   ],
+   [
+    24.32,
+    32.41
+   ],
+   [
+    50.76,
+    51.85
+   ],
+   [
+    77.4,
+    999
+   ]
+  ]
+ },
+ "take": "audio/raw/user_take.wav",
+ "gaps": {
+  "default": [
+   0.3,
+   0.55
+  ],
+  "note": "the user's own pacing is kept (natural gaps, only very long/short ones are evened out)"
+ }
+}
