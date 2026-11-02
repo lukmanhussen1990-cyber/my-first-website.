@@ -23,8 +23,12 @@ an ending that slowly zooms out while green haze fills the room.
    and ending are unchanged.
 2. **Shot plan + prompts — done.** `prompts.md`: character sheet prompt, 36 ChatGPT image prompts (same STYLE
    block), caption / effect / sound per shot, 6 key shots with Kling prompts.
-3. **Waiting for the images (`images/shot_XX.png`) and Kling clips (`clips/shot_XX.mp4`).**
-4. Then: build `final.mp4` (zooms, pans, punch-ins, shake, captions, effects, sound) and check it.
+3. **Build pipeline — ready and tested** end to end with placeholder pictures (61.07 s, 1832 frames, -13.9 LUFS).
+   Sound effects: 27 ElevenLabs sound effects (same flow, 4 takes each, `audio/sfx_src/`; the take used for
+   each sound is in `make_sfx.py` TAKES, picked from spectrograms) + code-made ones (whooshes, ding, womp,
+   heartbeat, drip, pad, booms, the yell echoes, the war-drum pattern). 43 cues, every one placed on a word.
+4. **Waiting for the images (`images/shot_XX.png`) and Kling clips (`clips/shot_XX.mp4`).**
+5. Then: set the effect anchors in `fx.py` for each picture, `./make_reel.sh`, check the result, fix.
 
 ## Files
 
@@ -38,6 +42,21 @@ an ending that slowly zooms out while green haze fills the room.
 | `audio/vo_lines.json`, `audio/voiceover.words.json` | exact start/end of every line and word |
 | `plan.py` → `shots.json`, `prompts.md` | the 36 shots (times, captions, effects, sound, Kling prompts) |
 | `fonts/` | Pixelify Sans (same caption font as last time, OFL licence) |
+| `align_words.py`, `make_captions.py` → `audio/captions.ass` | 2–4 word captions, forced-aligned to the voice (pocketsphinx) |
+| `audio/word_onsets.json` | exact start of every spoken word (used for punch-ins, shakes and sound cues) |
+| `audiolib.py`, `make_sfx.py` → `audio/sfx/`, `audio/sfx_cues.json` | sound effects and where they play |
+| `mix.py` → `audio/mix_final.wav` | voice + effects (ducked under the voice), -14 LUFS, true peak ≤ -1.5 dBTP |
+| `fx.py` | per-shot camera moves and effects (push, pan, punch-ins, shake, stink lines, sweat, tears, haze …) |
+| `render.py` | renders each shot from its image / Kling clip (parallel) → `build/seg_XX.mp4` |
+| `make_reel.sh` | the whole build → `final.mp4` (1080x1920, 30 fps, H.264 + AAC, captions burned in) |
+
+## Build the video
+
+```bash
+pip install numpy scipy soundfile faster-whisper pocketsphinx opencv-python-headless fonttools
+./make_reel.sh                     # captions -> sound -> mix -> shots -> final.mp4
+python3 render.py --stills out/    # 3 stills per shot for checking
+```
 
 ## Rebuild steps 1–2
 

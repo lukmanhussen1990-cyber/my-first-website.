@@ -70,7 +70,7 @@ CHAR_SHEET = (
 
 # Caption chunks per voice line (2-4 words, exact script words; trailing , . : are dropped on screen)
 CHUNKS = {
-    1: ["You're thirty-two", "years old."], 2: ["You just pooped", "at your cousin's wedding."],
+    1: ["You're thirty-two", "years old."], 2: ["You just pooped", "at your", "cousin's wedding."],
     3: ["And from the toilet,", "you yell:"], 4: ["MOM!", "I'M DONE!"], 5: ["The DJ", "stops the music."],
     6: ["Two hundred guests", "turn around."], 7: ["Then you remember."], 8: ["Mom left", "an hour ago."],
     9: ["Silence."], 10: ["The uncles", "look at each other."], 11: ["Nobody moves."],

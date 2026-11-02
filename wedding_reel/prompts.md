@@ -131,7 +131,7 @@ Wide establishing shot of the fancy wedding hall at night: crystal chandeliers g
 PLACE: a fancy wedding hall: big crystal chandeliers, round tables with white tablecloths and tall white-and-pink flower centerpieces, gold chairs, a shiny wooden dance floor, a DJ booth with colored lights, and a long hallway at the side that leads to the bathroom.
 ```
 
-- **Caption:** "at your cousin's wedding" (2.97s)
+- **Caption:** "at your" (2.97s) → "cousin's wedding" (3.29s)
 - **Effect:** Slow sideways pan across the party.
 - **Sound:** Wedding music louder (we are in the hall now), crowd chatter.
 
