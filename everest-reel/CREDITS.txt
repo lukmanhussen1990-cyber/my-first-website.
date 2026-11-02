@@ -1,0 +1,478 @@
+CREDITS - "Pooping on Top of Mount Everest" (37 s reel, @garden_reels)
+=====================================================================
+
+No attribution is legally required: every third-party asset in this video is CC0 / public domain, or SIL OFL (fonts).
+Credits are listed as a courtesy and for provenance. No CC-BY material is used.
+
+Voice
+-----
+Voiceover: supplied by the channel (ElevenLabs, mount_everest_poop.mp3), used as-is (only loudness-normalised).
+
+Characters (MakeHuman / MPFB2)
+------------------------------
+MPFB2 Blender extension (MakeHuman Community) - tool.
+MakeHuman system assets (CC0):
+  - base mesh and "default" rig (163 bones incl. fingers and face), procedural high-poly eyes;
+  - eyebrow001 / eyebrow006, eyelashes02 / eyelashes01, teeth_base, tongue01;
+  - skin young_caucasian_male; hair short02 (friend).
+Faceunits 01 - ARKit-style face shape keys by Mika Suominen (CC0).
+Made for this video from the characters' own body meshes: quilted down suits with hood, mountaineering boots,
+  mittens, black sunglasses, fur ruff strands.
+
+Environment and props
+---------------------
+Poly Haven (CC0, https://polyhaven.com):
+  - HDRIs kloofendal_43d_clear_puresky (day) and syferfontein_6d_clear_puresky (golden hour);
+  - textures snow_02, dark_rock_02, rock_06;
+  - models rock_07, boulder_01, namaqualand_boulder_02, stone_01.
+Modelled / procedural for this video:
+  - summit terrain with sastrugi and boot prints, distant peaks, cloud sea, deep-blue sky;
+  - prayer flags, dome tent, spindrift and blowing snow;
+  - thermometer, ice blocks, camping stove + flame, hot rock, ice axe, backpack, carabiner;
+  - toilet-paper roll and streamer, poop bag, summit flag;
+  - steam, breath fog, ice-crystal burst, sparkles.
+
+Fonts
+-----
+Poppins Bold / SemiBold - Indian Type Foundry, SIL Open Font License 1.1 (captions + watermark).
+
+Music
+-----
+"Comedy Funny Background Song" by Almitory (OpenGameArt.org) - CC0 option of a multi-licensed entry.
+  https://opengameart.org/content/comedy-funny-background-song
+End sting built from CC0 jingles (see the sound list below).
+
+Tools
+-----
+Blender 4.5 LTS (Cycles + OpenImageDenoise), MPFB2, faster-whisper (Whisper large-v3), Vosk/Kaldi aligner, ffmpeg.
+
+----------------------------------------------------------------------------------
+Full sound-effects source list (as delivered with the SFX library):
+SOUND EFFECTS / MUSIC CREDITS - "Pooping on Top of Mount Everest" SFX library
+==============================================================================
+All files in this folder are 48 kHz / 24-bit WAV. Every third-party source used is CC0 / public-domain dedication.
+NO CC-BY material is used (the CC-BY grunt_effort_02..08 files of the older library were not touched).
+Attribution is not required by any source; credits below are given as a courtesy and for provenance.
+
+General processing applied to every output (on top of the per-file changes listed below): decoded and resampled to
+48 kHz (ffmpeg), edited in numpy/scipy (cutting/trimming, layering, EQ/high-pass, varispeed, envelopes, short fades),
+one-shots peak-normalised to -3 dBTP (true peak), loops made seamless by crossfading/circular construction,
+written as 24-bit PCM. Downloads were treated as data only (nothing from a download was executed).
+
+SOURCES
+------------------------------------------------------------------------------
+* "Zip #1"  [BigSoundBank sound #0014]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/zip-1-s0014.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - zip_short_02.wav: BSB "Zip #1" (K-way jacket), the very fast zip.
+  Used in: zip_short_02.wav
+
+* "Whistling of the Wind #1"  [BigSoundBank sound #0147]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/whistling-of-the-wind-1-s0147.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - wind_howl_bed_40s.wav: Each layer folded into a seamless 42 s loop (crossfaded ends) so the bed loops cleanly; roar layer low-passed at 3.2 kHz to remove tree-leaf rustle; periodic +/-5.5 dB gust swells (whole cycles per loop); synthesized gust-following spindrift hiss added quietly.
+  Used in: wind_howl_bed_40s.wav
+
+* "Strong wind #4"  [BigSoundBank sound #0154]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/strong-wind-4-s0154.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - wind_gust_01.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_gust_02.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_gust_03.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_howl_bed_40s.wav: Each layer folded into a seamless 42 s loop (crossfaded ends) so the bed loops cleanly; roar layer low-passed at 3.2 kHz to remove tree-leaf rustle; periodic +/-5.5 dB gust swells (whole cycles per loop); synthesized gust-following spindrift hiss added quietly.
+  Used in: wind_gust_01.wav, wind_gust_02.wav, wind_gust_03.wav, wind_howl_bed_40s.wav
+
+* "Whistling of the Wind #2"  [BigSoundBank sound #0155]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/whistling-of-the-wind-2-s0155.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - wind_gust_01.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_gust_02.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_gust_03.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_howl_bed_40s.wav: Each layer folded into a seamless 42 s loop (crossfaded ends) so the bed loops cleanly; roar layer low-passed at 3.2 kHz to remove tree-leaf rustle; periodic +/-5.5 dB gust swells (whole cycles per loop); synthesized gust-following spindrift hiss added quietly.
+  Used in: wind_gust_01.wav, wind_gust_02.wav, wind_gust_03.wav, wind_howl_bed_40s.wav
+
+* "Water that burns"  [BigSoundBank sound #0202]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/water-that-burns-s0202.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - sizzle_steam_01.wav: Water sizzling on a hot plate (BSB 0202 @54.7 s) + low-level steam hiss from the existing library steam_hiss_01 (BSB "Pressure cooker").
+  Used in: sizzle_steam_01.wav
+
+* "Zipper #2"  [BigSoundBank sound #0270]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/zipper-2-s0270.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - zip_short_01.wav: BSB "Zipper #2" (short fly zip), trimmed.
+  Used in: zip_short_01.wav
+
+* "Tent or curtain shower"  [BigSoundBank sound #0399]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/tent-or-curtain-shower-s0399.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - puffy_rustle_02.wav: BSB Tent or curtain shower (nylon friction) swish @2.46 s (low-passed 9 kHz) + Kenney RPG cloth3 for body.
+    - puffy_rustle_04.wav: BSB Tent or curtain shower (nylon friction) swish @10.20 s (low-passed 9 kHz) + Kenney RPG cloth1 for body.
+  Used in: puffy_rustle_02.wav, puffy_rustle_04.wav
+
+* "Wind"  [BigSoundBank sound #0595]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/wind-s0595.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - wind_gust_01.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_gust_02.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_gust_03.wav: Layered recorded wind segments under a swell envelope; Foley wind band-pass swept with the swell.
+    - wind_howl_bed_40s.wav: Each layer folded into a seamless 42 s loop (crossfaded ends) so the bed loops cleanly; roar layer low-passed at 3.2 kHz to remove tree-leaf rustle; periodic +/-5.5 dB gust swells (whole cycles per loop); synthesized gust-following spindrift hiss added quietly.
+  Used in: wind_gust_01.wav, wind_gust_02.wav, wind_gust_03.wav, wind_howl_bed_40s.wav
+
+* "Slaps"  [BigSoundBank sound #0597]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/slaps-s0597.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - paper_slap_01.wav: BSB "Slaps" (slap at 2.04 s, low-passed 6 kHz) + Kenney impactSoft_medium_001 + BSB road-map crinkle.
+  Used in: paper_slap_01.wav
+
+* "Zip #5"  [BigSoundBank sound #0626]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/zip-5-s0626.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - tent_zipper_01.wav: BSB "Zip #5" first zip, slowed slightly (varispeed x0.92) for a chunkier tent zipper.
+  Used in: tent_zipper_01.wav
+
+* "Blowtorch"  [BigSoundBank sound #0930]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/blowtorch-s0930.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - stove_ignite_01.wav: Campingaz piezo blowtorch recording (one spare click, igniting click, roar); clicks lowered 7 dB; a short synthesized noise "fwoomp" added at ignition for cartoon emphasis; roar fades out over the last 0.25 s.
+    - stove_roar_loop_6s.wav: Steady section (9-16 s) of the Campingaz blowtorch recording folded into a 6 s loop with a 1 s crossfade.
+  Used in: stove_ignite_01.wav, stove_roar_loop_6s.wav
+
+* "Breathless Man"  [BigSoundBank sound #1103]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/breathless-man-s1103.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - gasp_02.wav: Real CC0 breath: panting inhale (17.68-18.23 s); re-enveloped with an 8 ms attack, a strongly emphasised onset (+10 dB decaying over ~50 ms), falling level and a tight ending, varispeed x1.06, presence EQ. Not a dedicated gasp recording (none found under CC0) - check by ear.
+  Used in: gasp_02.wav
+
+* "Synthetic Coat Rubbed"  [BigSoundBank sound #1104]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/synthetic-coat-rubbed-s1104.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - mitten_pull_01.wav: Kenney RPG cloth1 + BSB "Synthetic Coat Rubbed" swish @2.58 s + light BSB rope whoosh (x1.25).
+    - mitten_pull_02.wav: Kenney RPG cloth2 + BSB "Synthetic Coat Rubbed" swish @0.36 s + light BSB rope whoosh (x1.25).
+    - puffy_rustle_01.wav: BSB Synthetic Coat Rubbed swish @2.57 s (low-passed 9 kHz) + Kenney RPG cloth1 for body.
+    - puffy_rustle_03.wav: BSB Synthetic Coat Rubbed swish @0.35 s (low-passed 9 kHz) + Kenney RPG cloth2 for body.
+  Used in: mitten_pull_01.wav, mitten_pull_02.wav, puffy_rustle_01.wav, puffy_rustle_03.wav
+
+* "Climbing carabiner #4"  [BigSoundBank sound #1240]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/climbing-carabiner-4-s1240.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - carabiner_clip_01.wav: Kenney RPG metalLatch (snap) layered with BSB climbing carabiner 1240 event at 1.01 s.
+  Used in: carabiner_clip_01.wav
+
+* "Sigh by the Mouth"  [BigSoundBank sound #1405]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/sigh-by-the-mouth-s1405.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - gasp_01.wav: Real CC0 breath: deep mouth inhale before a sigh (1.05-1.62 s); re-enveloped with an 8 ms attack, a strongly emphasised onset (+10 dB decaying over ~50 ms), falling level and a tight ending, varispeed x1.08, presence EQ. Not a dedicated gasp recording (none found under CC0) - check by ear.
+  Used in: gasp_01.wav
+
+* "Pack of chips, manipulation #1"  [BigSoundBank sound #1433]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/pack-of-chips-manipulation-1-s1433.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - bag_seal_01.wav: Plastic cable-tie zip (BSB "Plastic handcuff #2") low-passed and slowed (x0.82) for a softer zip-lock track, plus crisp-bag crinkle.
+  Used in: bag_seal_01.wav
+
+* "Flag in the wind #1"  [BigSoundBank sound #1632]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/flag-in-the-wind-1-s1632.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - flag_flap_loop_10s.wav: Busiest flutter section of 1633 compressed and looped (two offsets for L/R); hardest real snaps cut from 1632/1633/1787 and re-sequenced densely, placed circularly so the loop is seamless; peak-limited ~7 dB for a denser, harder flap.
+  Used in: flag_flap_loop_10s.wav
+
+* "Flag in the Wind #2"  [BigSoundBank sound #1633]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/flag-in-the-wind-2-s1633.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - flag_flap_loop_10s.wav: Busiest flutter section of 1633 compressed and looped (two offsets for L/R); hardest real snaps cut from 1632/1633/1787 and re-sequenced densely, placed circularly so the loop is seamless; peak-limited ~7 dB for a denser, harder flap.
+    - paper_flutter_01.wav: Densest paper handling (BSB road map @2.8s) given a jittered ~17 Hz flutter, layered with busy flag flutter (BSB 1633 @44.5s) sped up x1.6 for a light material, swell envelope, peak-limited.
+    - paper_flutter_02.wav: Densest paper handling (BSB road map @9.1s) given a jittered ~21 Hz flutter, layered with busy flag flutter (BSB 1633 @50.5s) sped up x1.6 for a light material, swell envelope, peak-limited.
+  Used in: flag_flap_loop_10s.wav, paper_flutter_01.wav, paper_flutter_02.wav
+
+* "Flag #1"  [BigSoundBank sound #1787]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/flag-1-s1787.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - flag_flap_loop_10s.wav: Busiest flutter section of 1633 compressed and looped (two offsets for L/R); hardest real snaps cut from 1632/1633/1787 and re-sequenced densely, placed circularly so the loop is seamless; peak-limited ~7 dB for a denser, harder flap.
+  Used in: flag_flap_loop_10s.wav
+
+* "Whoosh #3"  [BigSoundBank sound #1795]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/whoosh-3-s1795.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - mitten_pull_01.wav: Kenney RPG cloth1 + BSB "Synthetic Coat Rubbed" swish @2.58 s + light BSB rope whoosh (x1.25).
+    - mitten_pull_02.wav: Kenney RPG cloth2 + BSB "Synthetic Coat Rubbed" swish @0.36 s + light BSB rope whoosh (x1.25).
+  Used in: mitten_pull_01.wav, mitten_pull_02.wav
+
+* "Plastic handcuff #2"  [BigSoundBank sound #1963]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/plastic-handcuff-2-s1963.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - bag_seal_01.wav: Plastic cable-tie zip (BSB "Plastic handcuff #2") low-passed and slowed (x0.82) for a softer zip-lock track, plus crisp-bag crinkle.
+  Used in: bag_seal_01.wav
+
+* "Ice cubes in a glass #2"  [BigSoundBank sound #2124]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/ice-cubes-in-a-glass-2-s2124.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - ice_clink_01.wav: Kenney impactGlass_light_001 glass tap + first ice-cube transient from BSB 2124 (high-passed 2.5 kHz) for an icy edge.
+  Used in: ice_clink_01.wav
+
+* "Ice cubes in a glass #4"  [BigSoundBank sound #2126]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/ice-cubes-in-a-glass-4-s2126.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - ice_clink_02.wav: Kenney glass_005 glass tap + first ice-cube transient from BSB 2126 (high-passed 2.5 kHz) for an icy edge.
+  Used in: ice_clink_02.wav
+
+* "Chattering teeth #2"  [BigSoundBank sound #2190]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/chattering-teeth-2-s2190.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - teeth_chatter_01.wav: Real teeth clicks cut from "Chattering teeth #2" and re-sequenced at ~14.0 Hz with +/-18% timing jitter and level variation.
+    - teeth_chatter_02.wav: Real teeth clicks cut from "Chattering teeth #2" and re-sequenced at ~16.5 Hz with +/-18% timing jitter and level variation.
+    - teeth_chatter_03.wav: Real teeth clicks cut from "Chattering teeth #2" and re-sequenced at ~12.5 Hz with +/-18% timing jitter and level variation.
+  Used in: teeth_chatter_01.wav, teeth_chatter_02.wav, teeth_chatter_03.wav
+
+* "Cracking ice #1"  [BigSoundBank sound #2205]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/cracking-ice-1-s2205.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - frost_crackle_01.wav: Tiny cracks cut from BSB "Cracking ice" #1-4, sped up x1.6, scattered with rising density over a high-passed bed of BSB "Ice cubes that melt" crackle.
+    - ice_block_thud_02.wav: Kenney impactSoft_heavy_001 (varispeed 0.82) + Kenney footstep_snow + BSB 2890 snow crunch @11.17s + BSB 2205 ice crack, layered.
+  Used in: frost_crackle_01.wav, ice_block_thud_02.wav
+
+* "Cracking ice #2"  [BigSoundBank sound #2206]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/cracking-ice-2-s2206.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - frost_crackle_01.wav: Tiny cracks cut from BSB "Cracking ice" #1-4, sped up x1.6, scattered with rising density over a high-passed bed of BSB "Ice cubes that melt" crackle.
+    - ice_block_thud_04.wav: Kenney impactSoft_heavy_003 (varispeed 0.85) + Kenney footstep_snow + BSB 2890 snow crunch @17.02s + BSB 2206 ice crack, layered.
+  Used in: frost_crackle_01.wav, ice_block_thud_04.wav
+
+* "Cracking ice #3"  [BigSoundBank sound #2207]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/cracking-ice-3-s2207.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - frost_crackle_01.wav: Tiny cracks cut from BSB "Cracking ice" #1-4, sped up x1.6, scattered with rising density over a high-passed bed of BSB "Ice cubes that melt" crackle.
+    - ice_block_thud_01.wav: Kenney impactSoft_heavy_000 (varispeed 0.9) + Kenney footstep_snow + BSB 2890 snow crunch @3.91s + BSB 2207 ice crack, layered.
+  Used in: frost_crackle_01.wav, ice_block_thud_01.wav
+
+* "Cracking ice #4"  [BigSoundBank sound #2208]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/cracking-ice-4-s2208.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - frost_crackle_01.wav: Tiny cracks cut from BSB "Cracking ice" #1-4, sped up x1.6, scattered with rising density over a high-passed bed of BSB "Ice cubes that melt" crackle.
+    - ice_block_thud_03.wav: Kenney impactSoft_heavy_002 (varispeed 0.88) + Kenney footstep_snow + BSB 2890 snow crunch @6.26s + BSB 2208 ice crack, layered.
+  Used in: frost_crackle_01.wav, ice_block_thud_03.wav
+
+* "Ice cubes that melt"  [BigSoundBank sound #2209]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/ice-cubes-that-melt-s2209.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - frost_crackle_01.wav: Tiny cracks cut from BSB "Cracking ice" #1-4, sped up x1.6, scattered with rising density over a high-passed bed of BSB "Ice cubes that melt" crackle.
+  Used in: frost_crackle_01.wav
+
+* "Road map #4"  [BigSoundBank sound #2799]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/road-map-4-s2799.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - paper_flutter_02.wav: Densest paper handling (BSB road map @9.1s) given a jittered ~21 Hz flutter, layered with busy flag flutter (BSB 1633 @50.5s) sped up x1.6 for a light material, swell envelope, peak-limited.
+  Used in: paper_flutter_02.wav
+
+* "Road map #7"  [BigSoundBank sound #2802]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/road-map-7-s2802.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - paper_flutter_01.wav: Densest paper handling (BSB road map @2.8s) given a jittered ~17 Hz flutter, layered with busy flag flutter (BSB 1633 @44.5s) sped up x1.6 for a light material, swell envelope, peak-limited.
+  Used in: paper_flutter_01.wav
+
+* "Road map #10"  [BigSoundBank sound #2805]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/road-map-10-s2805.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - paper_slap_01.wav: BSB "Slaps" (slap at 2.04 s, low-passed 6 kHz) + Kenney impactSoft_medium_001 + BSB road-map crinkle.
+  Used in: paper_slap_01.wav
+
+* "Footstep in the Snow #2"  [BigSoundBank sound #2890]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/footstep-in-the-snow-2-s2890.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - ice_block_thud_01.wav: Kenney impactSoft_heavy_000 (varispeed 0.9) + Kenney footstep_snow + BSB 2890 snow crunch @3.91s + BSB 2207 ice crack, layered.
+    - ice_block_thud_02.wav: Kenney impactSoft_heavy_001 (varispeed 0.82) + Kenney footstep_snow + BSB 2890 snow crunch @11.17s + BSB 2205 ice crack, layered.
+    - ice_block_thud_03.wav: Kenney impactSoft_heavy_002 (varispeed 0.88) + Kenney footstep_snow + BSB 2890 snow crunch @6.26s + BSB 2208 ice crack, layered.
+    - ice_block_thud_04.wav: Kenney impactSoft_heavy_003 (varispeed 0.85) + Kenney footstep_snow + BSB 2890 snow crunch @17.02s + BSB 2206 ice crack, layered.
+    - snow_step_01.wav: Body: kenney_impact:footstep_snow_000; bright dry-snow crunch layer: bsb_2890@2.7 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_02.wav: Body: kenney_impact:footstep_snow_001; bright dry-snow crunch layer: bsb_2890@3.91 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_04.wav: Body: kenney_impact:footstep_snow_003; bright dry-snow crunch layer: bsb_2890@11.17 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_05.wav: Body: kenney_impact:footstep_snow_004; bright dry-snow crunch layer: bsb_2890@12.33 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_06.wav: Body: bsb_3363@20.05; bright dry-snow crunch layer: bsb_2890@15.92 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_08.wav: Body: kenney_impact:footstep_snow_002 (varispeed x0.88); bright dry-snow crunch layer: bsb_2890@13.51 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+  Used in: ice_block_thud_01.wav, ice_block_thud_02.wav, ice_block_thud_03.wav, ice_block_thud_04.wav, snow_step_01.wav, snow_step_02.wav, snow_step_04.wav, snow_step_05.wav, snow_step_06.wav, snow_step_08.wav
+
+* "Steps in the snow #3"  [BigSoundBank sound #3363]
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/steps-in-the-snow-3-s3363.html
+  Licence: CC0 1.0 (public domain dedication; BigSoundBank: "CC0 (public domain): Free and royalty-free")
+  Changes / use:
+    - snow_step_06.wav: Body: bsb_3363@20.05; bright dry-snow crunch layer: bsb_2890@15.92 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_07.wav: Body: bsb_3363@21.48; bright dry-snow crunch layer: oga_walking-on-snow-sound:SnowWalk2 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+  Used in: snow_step_06.wav, snow_step_07.wav
+
+* "Impact Sounds (pack, v1.0)"
+  Author : Kenney (Kenney Vleugels, kenney.nl)
+  URL    : https://kenney.nl/assets/impact-sounds
+  Licence: CC0 1.0 (License.txt in pack)
+  Changes / use:
+    - ice_block_thud_01.wav: Kenney impactSoft_heavy_000 (varispeed 0.9) + Kenney footstep_snow + BSB 2890 snow crunch @3.91s + BSB 2207 ice crack, layered.
+    - ice_block_thud_02.wav: Kenney impactSoft_heavy_001 (varispeed 0.82) + Kenney footstep_snow + BSB 2890 snow crunch @11.17s + BSB 2205 ice crack, layered.
+    - ice_block_thud_03.wav: Kenney impactSoft_heavy_002 (varispeed 0.88) + Kenney footstep_snow + BSB 2890 snow crunch @6.26s + BSB 2208 ice crack, layered.
+    - ice_block_thud_04.wav: Kenney impactSoft_heavy_003 (varispeed 0.85) + Kenney footstep_snow + BSB 2890 snow crunch @17.02s + BSB 2206 ice crack, layered.
+    - ice_clink_01.wav: Kenney impactGlass_light_001 glass tap + first ice-cube transient from BSB 2124 (high-passed 2.5 kHz) for an icy edge.
+    - paper_slap_01.wav: BSB "Slaps" (slap at 2.04 s, low-passed 6 kHz) + Kenney impactSoft_medium_001 + BSB road-map crinkle.
+    - snow_step_01.wav: Body: kenney_impact:footstep_snow_000; bright dry-snow crunch layer: bsb_2890@2.7 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_02.wav: Body: kenney_impact:footstep_snow_001; bright dry-snow crunch layer: bsb_2890@3.91 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_03.wav: Body: kenney_impact:footstep_snow_002; bright dry-snow crunch layer: oga_walking-on-snow-sound:SnowWalk (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_04.wav: Body: kenney_impact:footstep_snow_003; bright dry-snow crunch layer: bsb_2890@11.17 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_05.wav: Body: kenney_impact:footstep_snow_004; bright dry-snow crunch layer: bsb_2890@12.33 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_08.wav: Body: kenney_impact:footstep_snow_002 (varispeed x0.88); bright dry-snow crunch layer: bsb_2890@13.51 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+  Used in: ice_block_thud_01.wav, ice_block_thud_02.wav, ice_block_thud_03.wav, ice_block_thud_04.wav, ice_clink_01.wav, paper_slap_01.wav, snow_step_01.wav, snow_step_02.wav, snow_step_03.wav, snow_step_04.wav, snow_step_05.wav, snow_step_08.wav
+
+* "Interface Sounds (pack, v1.0)"
+  Author : Kenney (Kenney Vleugels, kenney.nl)
+  URL    : https://kenney.nl/assets/interface-sounds
+  Licence: CC0 1.0 (License.txt in pack)
+  Changes / use:
+    - ice_clink_02.wav: Kenney glass_005 glass tap + first ice-cube transient from BSB 2126 (high-passed 2.5 kHz) for an icy edge.
+  Used in: ice_clink_02.wav
+
+* "RPG Audio (pack)"
+  Author : Kenney (Kenney Vleugels, kenney.nl)
+  URL    : https://kenney.nl/assets/rpg-audio
+  Licence: CC0 1.0 (License.txt in pack)
+  Changes / use:
+    - carabiner_clip_01.wav: Kenney RPG metalLatch (snap) layered with BSB climbing carabiner 1240 event at 1.01 s.
+    - mitten_pull_01.wav: Kenney RPG cloth1 + BSB "Synthetic Coat Rubbed" swish @2.58 s + light BSB rope whoosh (x1.25).
+    - mitten_pull_02.wav: Kenney RPG cloth2 + BSB "Synthetic Coat Rubbed" swish @0.36 s + light BSB rope whoosh (x1.25).
+    - puffy_rustle_01.wav: BSB Synthetic Coat Rubbed swish @2.57 s (low-passed 9 kHz) + Kenney RPG cloth1 for body.
+    - puffy_rustle_02.wav: BSB Tent or curtain shower (nylon friction) swish @2.46 s (low-passed 9 kHz) + Kenney RPG cloth3 for body.
+    - puffy_rustle_03.wav: BSB Synthetic Coat Rubbed swish @0.35 s (low-passed 9 kHz) + Kenney RPG cloth2 for body.
+    - puffy_rustle_04.wav: BSB Tent or curtain shower (nylon friction) swish @10.20 s (low-passed 9 kHz) + Kenney RPG cloth1 for body.
+  Used in: carabiner_clip_01.wav, mitten_pull_01.wav, mitten_pull_02.wav, puffy_rustle_01.wav, puffy_rustle_02.wav, puffy_rustle_03.wav, puffy_rustle_04.wav
+
+* "Classic fanfare lick (fanfare_3.ogg)"
+  Author : fvcalderan (OpenGameArt.org)
+  URL    : https://opengameart.org/content/classic-fanfare-lick
+  Licence: CC0
+  Changes / use:
+    - sting_triumph_01.wav: "Classic fanfare lick" by fvcalderan (CC0), trimmed and normalised.
+  Used in: sting_triumph_01.wav
+
+* "Walking on snow sound (SnowWalk.ogg, SnowWalk2.ogg)"
+  Author : IgnasD (OpenGameArt.org)
+  URL    : https://opengameart.org/content/walking-on-snow-sound
+  Licence: CC0
+  Changes / use:
+    - snow_step_03.wav: Body: kenney_impact:footstep_snow_002; bright dry-snow crunch layer: oga_walking-on-snow-sound:SnowWalk (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+    - snow_step_07.wav: Body: bsb_3363@21.48; bright dry-snow crunch layer: oga_walking-on-snow-sound:SnowWalk2 (high-passed 1.2 kHz, re-enveloped); small varispeed for variety.
+  Used in: snow_step_03.wav, snow_step_07.wav
+
+* "Win Jingle (WinBrass.wav from winjingle.zip)"
+  Author : Fupi (OpenGameArt.org)
+  URL    : https://opengameart.org/content/win-jingle
+  Licence: CC0
+  Changes / use:
+    - sting_triumph_02.wav: "Win Jingle" (WinBrass variation) by Fupi (CC0), trailing silence trimmed, short end fade.
+  Used in: sting_triumph_02.wav
+
+* "chime_idea_ding_01.wav from the existing library"
+  Author : synthesized from scratch for the earlier library (no third-party audio)
+  URL    : (none - /tmp/work/audio/sfx/chime_idea_ding_01.wav)
+  Licence: CC0 (released with the project; credit carried over)
+  Changes / use:
+    - ding_sparkle_01.wav: Reused from the existing library (chime_idea_ding_01.wav, synthesized from scratch, CC0); trimmed tail.
+  Used in: ding_sparkle_01.wav
+
+* "music_bed_01_comedy_acoustic.wav from the existing library = "Comedy Funny Background Song""
+  Author : Almitory (OpenGameArt.org)
+  URL    : https://opengameart.org/content/comedy-funny-background-song
+  Licence: CC0 (OGA entry is multi-licensed; CC0 option used; credit carried over)
+  Changes / use:
+    - music_bed_01.wav: Unchanged copy of music_bed_01_comedy_acoustic.wav from the existing library.
+  Used in: music_bed_01.wav
+
+* "steam_hiss_01.wav from the existing library = "Pressure cooker""
+  Author : Joseph Sardin (BigSoundBank.com)
+  URL    : https://bigsoundbank.com/pressure-cooker-s0805.html
+  Licence: CC0 1.0 (credit carried over from /tmp/work/audio/sfx/CREDITS_SFX.txt)
+  Changes / use:
+    - sizzle_steam_01.wav: Water sizzling on a hot plate (BSB 0202 @54.7 s) + low-level steam hiss from the existing library steam_hiss_01 (BSB "Pressure cooker").
+  Used in: sizzle_steam_01.wav
+
+* "Synthesized from scratch (numpy/scipy, this job)"
+  Author : this project
+  URL    : (none)
+  Licence: CC0 (no third-party audio)
+  Changes / use:
+    - shiver_brrr_01.wav: Synthesized: voiced buzz ~128 Hz (harmonic source + 3 resonances) gated by a jittered ~27 Hz lip trill, per-cycle amplitude variation, shivery pitch wobble/tremble and breath noise. No third-party audio.
+    - shiver_brrr_02.wav: Synthesized: voiced buzz ~116 Hz (harmonic source + 3 resonances) gated by a jittered ~25 Hz lip trill, per-cycle amplitude variation, shivery pitch wobble/tremble and breath noise. No third-party audio.
+    - stove_ignite_01.wav: Campingaz piezo blowtorch recording (one spare click, igniting click, roar); clicks lowered 7 dB; a short synthesized noise "fwoomp" added at ignition for cartoon emphasis; roar fades out over the last 0.25 s.
+    - wind_howl_bed_40s.wav: Each layer folded into a seamless 42 s loop (crossfaded ends) so the bed loops cleanly; roar layer low-passed at 3.2 kHz to remove tree-leaf rustle; periodic +/-5.5 dB gust swells (whole cycles per loop); synthesized gust-following spindrift hiss added quietly.
+  Used in: shiver_brrr_01.wav, shiver_brrr_02.wav, stove_ignite_01.wav, wind_howl_bed_40s.wav
+
+Courtesy credit lines (optional): "Additional sounds: Joseph SARDIN - BigSoundBank.com"; "Kenney.nl";
+"Classic fanfare lick" by fvcalderan, "Win Jingle" by Fupi, "Walking on snow sound" by IgnasD, music by Almitory (OpenGameArt.org, CC0).
+
+SYNTHESIZED / PARTLY SYNTHESIZED FILES
+------------------------------------------------------------------------------
+Fully synthesized (no third-party audio): shiver_brrr_01.wav, shiver_brrr_02.wav
+Partly synthesized (synth layer + recorded CC0 sources above): stove_ignite_01.wav, wind_howl_bed_40s.wav
+Reused from the older library (credits carried over): ding_sparkle_01.wav (chime_idea_ding_01, synthesized), music_bed_01.wav (Almitory, CC0),
+and a steam layer in sizzle_steam_01.wav (steam_hiss_01 = BigSoundBank "Pressure cooker", CC0).
