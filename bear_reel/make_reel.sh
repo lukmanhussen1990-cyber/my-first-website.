@@ -40,7 +40,7 @@ DUR=$(python3 -c "print($TOTAL/$FPS)")
 ffmpeg -v error -y -framerate $FPS -i "$BUILD/frames/f_%05d.jpg" -i audio/mix_final.wav \
   -t "$DUR" \
   -vf "subtitles=audio/captions.ass:fontsdir=fonts" \
-  -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p -profile:v high -level 4.2 -r $FPS \
+  -c:v libx264 -preset slow -crf ${CRF:-21} -pix_fmt yuv420p -profile:v high -level 4.2 -r $FPS \
   -c:a aac -b:a 192k -ar 48000 -movflags +faststart "$OUT"
 echo "wrote $OUT"
 ffprobe -v error -show_entries format=duration:stream=codec_name,width,height,r_frame_rate -of compact "$OUT"

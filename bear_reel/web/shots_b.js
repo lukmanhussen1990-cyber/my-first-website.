@@ -17,9 +17,9 @@ export const shots = {
     const k = smoother(ctx.u);
     ctx.cam.set({ pos: [BP.enter[0] + 0.55, 0.14, BP.enter[1] - 1.75], target: [BP.enter[0], lerp(0.7, 3.1, k), BP.enter[1] - 0.2], fov: 56 }).handheld(0.0015);
     hit(ctx, ctx.ev('growl'), 0.005, 0.5, 14);
-    ctx.W.set.state.skyDark = 0.25; ctx.W.set.state.rays = 0.7;
-    ctx.post.vignette = 0.3;
-    light(ctx, [BP.enter[0], 1.5, BP.enter[1]], 6, 0.4);
+    ctx.W.set.state.skyDark = 0.05; ctx.W.set.state.rays = 0.7; ctx.W.set.state.exposure = 1.3;
+    ctx.post.vignette = 0.2;
+    light(ctx, [BP.enter[0], 1.5, BP.enter[1]], 6, 0.85, [0.3, 0.2, -1]);
   } },
 
   // ---------------------------------------------------------------- s12 "It stops."

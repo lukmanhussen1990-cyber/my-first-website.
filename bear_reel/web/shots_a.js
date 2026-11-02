@@ -58,13 +58,13 @@ export const shots = {
   s04: { update(ctx) {
     const you = ctx.W.cast.you, p = you.p, leaf = ctx.W.set.props.giantLeaf;
     const grab = ctx.ev('grab'), tear = ctx.ev('tear');
-    p.pos = [YX + 0.42, YZ + 0.05]; p.rotY = 0.6; p.lean = 0.3; p.crouch = 0.55;
+    p.pos = [1.22, -0.32]; p.rotY = -0.49; p.lean = 0.25; p.crouch = 0.45;   // behind the leaf bush: only hoodie + arm show
     // the hand reaches for the leaf edge, closes at `grab`, tears it off at `tear` and pulls it away (up-left)
     const reach = smoother(invLerp(ctx.shot.t0 + 0.12, grab, ctx.t));
     if (ctx.t < tear) {
       const g = leaf.userData.grip; leaf.updateMatrixWorld(true);
       const gp = v3(g.pos).applyMatrix4(leaf.matrixWorld);
-      const start = v3(YX + 0.45, 1.05, YZ + 0.1);
+      const start = v3(1.15, 1.0, -0.1);
       const tgt = start.clone().lerp(gp, reach);
       if (ctx.t >= grab) p.gripL = { prop: leaf, pose: 'grip' };
       else { p.handL = tgt.toArray(); p.handPoseL = 'relaxed'; }
