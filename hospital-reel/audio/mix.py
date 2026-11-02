@@ -81,13 +81,13 @@ bed("birds1", SH["37"]["t0"] + 0.3, D["duration"], -13, 1.2)
 
 # ---------------- hits ----------------
 place(fades(level(load("door2"), -16)[: int(1.4 * SR)], 0, 0.4), 0.0)          # entering
-place(level(load("squish"), -6), W[13]["s"] + 0.02)                               # pooped
+place(level(load("squish"), -6), W[13]["s"] - 0.14)                               # pooped
 place(fades(level(load("sprinkler1"), -12)[: int(SH["11"]["dur"] * SR)], 0, 0.2), SH["11"]["t0"])
 pen = level(load("pen2"), -11)
 place(fades(pen[: int(1.3 * SR)], 0.02, 0.2), SH["13"]["t0"] + 0.15)              # scribble
 place(fades(pen[int(1.7 * SR):], 0.02, 0.1), SH["14"]["t0"] + 0.55)               # underline
 place(level(load("sting1"), -7), W[61]["s"] - 0.05)                               # dun dun DUN
-place(level(load("click1"), -6), W[84]["e"] - 0.22)                              # wristband
+place(level(load("click1"), -6), W[84]["e"] - 0.38)                              # wristband
 for sid in ("28", "30", "32"):                                                    # calendar
     place(level(load("calendar1"), -12), SH[sid]["t0"] - 0.02)
 # sad trombone "wah wah" after "changed your pants"
@@ -99,7 +99,7 @@ def wah(f, dur):
     return s * np.minimum(1, t / 0.04) * np.minimum(1, (dur - t) / 0.08)
 ww = np.concatenate([wah(hz(58), 0.32), wah(hz(57), 0.45)])
 place(level(ww, -18), W[133]["e"] + 0.05)
-place(level(load("boom1"), -4), SH["34"]["t0"] + 0.03)                            # BOOM
+place(level(load("boom1"), -4), SH["34"]["t0"] - 0.12)                            # BOOM
 pf = level(load("calendar2"), -15)
 for k in range(4): place(pf[: int(0.5 * SR)], SH["36"]["t0"] + 0.1 + k * 0.55)    # page flips
 place(fades(level(load("door1"), -12), 0, 0.5), SH["37"]["t0"])                  # door opens
