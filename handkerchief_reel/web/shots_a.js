@@ -115,7 +115,7 @@ export const shots = {
     const k = clamp((t - ctx.shot.t0) / (st + 0.15 - ctx.shot.t0));
     H.go(lady, [REAR[0], REAR[1] - 0.55], [REAR[0], REAR[1]], easeOut(k), 'walk', 0.55, 0.15);
     lady.p.y = SY - 0.02;
-    move(ctx, { pos: [-1.82, 0.13, -2.55], target: [-1.3, 0.22, -3.15], fov: 40 }, { pos: [-1.78, 0.13, -2.6], target: [-1.3, 0.2, -3.15], fov: 38 });
+    move(ctx, { pos: [-2.15, 0.2, -2.3], target: [-1.3, 0.3, -3.1], fov: 44 }, { pos: [-2.08, 0.19, -2.38], target: [-1.3, 0.28, -3.1], fov: 42 });
     if (t > st) ctx.W.fx.dust({ at: [-1.24, SY + 0.02, -3.0], amount: 0.6, size: 0.05, life: 0.5 });
     hit(ctx, st, 0.004, 0.2);
     shadowAt(ctx, [-1.3, 0.4, -3.1], 3);

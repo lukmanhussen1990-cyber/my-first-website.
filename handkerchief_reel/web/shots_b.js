@@ -85,8 +85,8 @@ export const shots = {
   s17: { update(ctx) {
     parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const you = youInBush(ctx), p = you.p;
-    face(you, 'open', 'raised', 'neutral'); p.headPitch = 0.28; p.pupils = [0, 0.8]; p.blush = 0.3;
-    move(ctx, { pos: [2.0, 1.35, -2.74], target: [2.0, HEADY + 0.03, -2.2], fov: 30 }, { pos: [2.0, 1.35, -2.66], target: [2.0, HEADY + 0.03, -2.2], fov: 30 });
+    face(you, 'open', 'raised', 'neutral'); p.headPitch = 0.16; p.pupils = [0, 0.8]; p.blush = 0.3;
+    move(ctx, { pos: [2.0, 1.37, -2.86], target: [2.0, HEADY + 0.07, -2.2], fov: 30 }, { pos: [2.0, 1.37, -2.78], target: [2.0, HEADY + 0.07, -2.2], fov: 30 });
     ctx.cam.handheld(0);
     shadowAt(ctx, [2.0, 1.2, -2.3], 3);
   } },
@@ -136,7 +136,7 @@ export const shots = {
     holdOut(ctx, lady, easeOut(clamp((t - t0) / 0.35)));
     p.headPitch = 0.05; p.lookAt = [ATBUSH[0], LFACE, ATBUSH[1] + 3];
     const you = youInBush(ctx); face(you, 'wide', 'raised', 'o'); you.p.lookAt = [ATBUSH[0] - 0.05, SY + 1.3, ATBUSH[1] + 0.62];
-    move(ctx, { pos: [3.75, 1.42, -2.7], target: [2.0, 1.3, -2.68], fov: 42 }, { pos: [3.6, 1.42, -2.7], target: [2.0, 1.3, -2.68], fov: 42 });
+    move(ctx, { pos: [-1.05, 1.48, -2.66], target: [2.0, 1.3, -2.66], fov: 40 }, { pos: [-0.9, 1.47, -2.66], target: [2.0, 1.3, -2.66], fov: 40 });
     shadowAt(ctx, [2.0, 1.2, -2.7], 3);
     pose(ctx);
     ctx.W.fx.glint({ at: PROPS(ctx).hanky.p.pos.map((v, i) => v + (i === 1 ? -0.12 : 0)), size: 0.05, t0: t0 + 0.4 });
