@@ -117,7 +117,7 @@ export function update(ctx) {
       you.p.visible = false; bearAt(B0, Math.PI);
       cam.set({ pos: add(HB, [0.15, 0.1, -2.2]), target: add(HB, [0, -0.1, 0]), fov: 40 });
       if (lt < 5) fx.tears({ ch: bear, t0: T0 + 0.3, t, amount: 1 });
-      else fx.cryTears({ ch: bear, t, amount: 1, dir: [0, 1, 0] });
+      else fx.cryTears({ ch: bear, t, amount: 1, wind: 0 });
       break;
     }
     case 7: {          // s27 wide side view: bear runs away (+X) crying, dust behind the feet
@@ -129,7 +129,7 @@ export function update(ctx) {
       for (let k = 0; k < 4; k++) {
         const tk = Math.floor(lt / 0.32) * 0.32 - k * 0.32;
         if (tk < 0) continue;
-        fx.dust({ at: [-3 + tk * 2.2 - 0.5, 0, 6 + (k % 2 ? 0.35 : -0.35)], t0: T0 + tk, t, amount: 0.8, seed: Math.round(tk * 100) });
+        fx.dust({ at: [-3 + tk * 2.2 - 1.5, 0, 6 + (k % 2 ? 0.35 : -0.35)], t0: T0 + tk, t, amount: 0.8, seed: Math.round(tk * 100) });
       }
       break;
     }

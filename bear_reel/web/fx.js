@@ -131,7 +131,7 @@ export function buildFX(world) {
     streak: pool(6, () => new THREE.Mesh(quadCenter, shaderMat(STREAK_FS, { uOpacity: 1, uCount: 7, uProg: 0, uW: 0.06, uSeed: 0,
       uCol: COL.streak.clone(), uOut: COL.ink.clone() })), 'streak', 66),
     star: pool(12, () => new THREE.Mesh(quadCenter, shaderMat(STAR_FS, { uOpacity: 1, uCol: COL.star.clone(), uGlowCol: COL.starGlow.clone() })), 'glint', 90),
-    drop: pool(56, () => makeDrop(), 'drop'),
+    drop: pool(80, () => makeDrop(), 'drop'),
     leaf: pool(48, (i) => new THREE.Mesh(leafGeo, leafMats[i % leafMats.length]), 'leaf'),
     chip: pool(96, () => new THREE.Mesh(chipGeo, new THREE.MeshStandardMaterial({ color: '#8a6a4a', roughness: 0.9, flatShading: true })), 'chip'),
   };
@@ -664,9 +664,9 @@ export function buildFX(world) {
     const { head, r } = hi;
     const sides = o.side === 'L' || o.side === 'R' ? [o.side] : ['L', 'R'];
     const grow = easeOut(clamp(tau / (o.grow ?? 0.8)));
-    const drift = THREE.MathUtils.degToRad(o.drift ?? 12), drop = THREE.MathUtils.degToRad(o.len ?? 62);
+    const drift = THREE.MathUtils.degToRad(o.drift ?? 12), drop = THREE.MathUtils.degToRad(o.len ?? 50);
     const off = Math.max(0.004, r * 0.03);
-    const wHalf = r * 0.06 * lerp(0.55, 1, amount) * (o.size ?? 1);
+    const wHalf = r * 0.07 * lerp(0.55, 1, amount) * (o.size ?? 1);
     for (const side of sides) {
       const sx = side === 'L' ? 1 : -1;
       const E = _ep.copy(o.ch.eyeLocal(side));
@@ -683,7 +683,7 @@ export function buildFX(world) {
         if (k > 1 && SN[k].y < -0.55) ended = true;     // the surface turns under the chin: stop, drip from here
         SP[k].addScaledVector(SN[k], off);
         const fl = 1 + 0.18 * Math.sin(s * 14 - t * 8 + sx);
-        const bulb = 1 + 0.55 * smooth((s - grow + 0.18) / 0.18) * (grow < 0.999 ? 1 : 0.5 + 0.5 * Math.sin(t * 5 + sx));
+        const bulb = 1 + 0.8 * smooth((s - grow + 0.2) / 0.2) * (grow < 0.999 ? 1 : 0.55 + 0.45 * Math.sin(t * 6 + sx));
         SW[k] = wHalf * fl * bulb * cap(s * r * 1.2, wHalf * 1.2);
         SA[k] = 0.95;
         used = k + 1;
@@ -717,60 +717,69 @@ export function buildFX(world) {
   }
 
   // ================================================================ CRY TEARS (big cartoon streams shooting out of both eyes)
-  const _v0 = new THREE.Vector3(), _out = new THREE.Vector3(), _dir = new THREE.Vector3(), _eye = new THREE.Vector3(), _hp = new THREE.Vector3();
+  // Each eye shoots a jet outward + up (like a fountain); `dir` (default: the head's backward direction) is the way the
+  // tears get blown while running: the jets and the drops bend toward it (wind acceleration `wind`, 0 = no wind).
+  const _out = new THREE.Vector3(), _dir = new THREE.Vector3(), _eye = new THREE.Vector3(), _hp = new THREE.Vector3(), _acc = new THREE.Vector3(), _vel = new THREE.Vector3();
   function doCryTears(o) {
     const hi = headInfo(o.ch); if (!hi || !o.ch.eyeLocal) return;
     const t = o.t ?? T;
     const amount = clamp(o.amount ?? 1);
     if (amount <= 0.001) return;
     const { head, r } = hi;
-    const k = (r / 0.35) * (o.size ?? 1);
-    if (o.dir) _dir.copy(V(o.dir)).normalize();
-    else _dir.set(0, 0.45, -1).transformDirection(head.matrixWorld);
-    const spread = o.spread ?? 0.55, lift = o.lift ?? 0.35;
-    const g = 9.8 * Math.sqrt(k);
+    const sz = o.size ?? 1;
+    const k = (r / 0.35) * sz;                       // trajectories scale with the head
+    if (o.dir) _dir.copy(V(o.dir)); else _dir.set(0, 0, -1).transformDirection(head.matrixWorld);
+    if (_dir.lengthSq() > 1e-8) _dir.normalize();
+    const wind = (o.wind ?? 6.5) * k;
+    const grav = (o.gravity ?? 7.5) * k;
+    const up = (o.lift ?? 1.35) * k, outS = (o.spread ?? 1.9) * k, back = (o.back ?? 0.5) * k;
     const seedS = o.seed ?? 7;
+    const W0 = r * 0.085 * sz * lerp(0.7, 1, amount);
+    const tJ = 0.3 * lerp(0.75, 1, amount);           // the jet is continuous for tJ seconds, then breaks into drops
+    _acc.copy(_dir).multiplyScalar(wind); _acc.y -= grav;
     for (const side of ['L', 'R']) {
       const sx = side === 'L' ? 1 : -1;
       const E = head.localToWorld(_eye.copy(o.ch.eyeLocal(side)));
       _out.set(sx, 0, 0).transformDirection(head.matrixWorld);
       _hp.subVectors(E, hi.center).normalize();
-      E.addScaledVector(_hp, r * 0.06);
+      E.addScaledVector(_hp, r * 0.05);
       const pulse = 1 + 0.12 * Math.sin(t * 13 + sx * 1.3) + 0.06 * Math.sin(t * 29 + sx);
-      const spd = 3.1 * Math.sqrt(k) * lerp(0.75, 1.05, amount) * pulse;
-      _v0.copy(_dir).addScaledVector(_out, spread).add(t1.set(0, lift, 0)).normalize().multiplyScalar(spd);
-      const posAt = (tt, out, vj = 1) => out.set(E.x + _v0.x * vj * tt, E.y + _v0.y * vj * tt - 0.5 * g * tt * tt, E.z + _v0.z * vj * tt);
-      // the jet: a thick wobbling stream from the eye, breaking up at tJ
-      const tJ = 0.2 * lerp(0.7, 1, amount);
+      _vel.copy(_out).multiplyScalar(outS * pulse).addScaledVector(_dir, back).add(t1.set(0, up * pulse, 0)).multiplyScalar(lerp(0.75, 1, amount));
+      const vx = _vel.x, vy = _vel.y, vz = _vel.z;
+      const posAt = (tt, out, vj = 1) => out.set(E.x + vx * vj * tt + 0.5 * _acc.x * tt * tt, E.y + vy * vj * tt + 0.5 * _acc.y * tt * tt, E.z + vz * vj * tt + 0.5 * _acc.z * tt * tt);
+      // the jet: a wobbling stream from the eye
       const m = P.strip.take(); if (!m) return;
-      const n = 26;
-      const W0 = r * 0.13 * lerp(0.7, 1, amount) * (o.size ?? 1);
+      const n = 28;
+      const spd = _vel.length();
       for (let i = 0; i < n; i++) {
         const u = i / (n - 1), tt = u * tJ;
         posAt(tt, SP[i]);
         const wob = 1 + 0.22 * Math.sin(u * 11 - t * 26 + sx) + 0.1 * Math.sin(u * 23 - t * 41);
-        SW[i] = W0 * lerp(0.45, 1.15, Math.pow(u, 0.6)) * wob * cap(u * tJ * spd, W0 * 0.8) * cap((1 - u) * tJ * spd, W0 * 1.1);
+        SW[i] = W0 * lerp(0.55, 1.2, Math.pow(u, 0.6)) * wob * cap(u * tJ * spd, W0 * 0.7) * cap((1 - u) * tJ * spd, W0 * 1.2);
         SA[i] = 1;
       }
       fillStrip(m, n);
-      stripStyle(m, { core: COL.cryCore, edge: COL.cryEdge, hi: COL.cryHi, outline: 0.3, hiAmt: 1, hiSide: 1, shade: 0.88, pix: o.pixel ?? 4 });
-      // drops flying on from the jet's end
-      const per = 0.045 / lerp(0.6, 1, amount);
-      const lifeD = 0.42;
+      stripStyle(m, { core: COL.cryCore, edge: COL.cryEdge, hi: COL.cryHi, outline: 0.32, hiAmt: 1, hiSide: 1, shade: 0.88, pix: o.pixel ?? 4 });
+      // drops flying on from the end of the jet
+      const per = 0.034 / lerp(0.55, 1, amount);
+      const lifeD = o.life ?? 0.5;
+      const tA = tJ * 0.7;
       const jb = Math.floor(t / per);
-      const nD = Math.ceil(lifeD / per);
+      const nD = Math.ceil((tJ - tA + lifeD) / per);
       for (let j = jb; j > jb - nD; j--) {
-        const rj = h(j, seedS + sx * 5), rk = h(j + 99, seedS + sx * 5);
-        const tt = tJ * 0.75 + (t - j * per) - rj * per * 0.5;
-        if (tt < tJ * 0.75 || tt > tJ + lifeD) continue;
+        const rj = h(j, seedS + sx * 5), rk = h(j + 99, seedS + sx * 5), rl = h(j + 177, seedS + sx * 5);
+        const tt = tA + (t - j * per) - rj * per * 0.6;
+        if (tt < tA || tt > tJ + lifeD) continue;
         const gD = P.drop.take(); if (!gD) return;
         setDropLook(gD, 'cry');
-        const vj = 0.9 + 0.22 * rk;
-        posAt(tt, gD.position, vj).add(t1.set((rj - 0.5) * r * 0.25, (rk - 0.5) * r * 0.2, (rj - 0.5) * r * 0.25).multiplyScalar(Math.min(1, (tt - tJ * 0.75) * 6)));
-        orientDrop(gD, t1.set(-_v0.x * vj, -(_v0.y * vj - g * tt), -_v0.z * vj));
-        const fade = 1 - smooth((tt - tJ - lifeD * 0.6) / (lifeD * 0.4));
-        const ds = r * (0.17 + 0.13 * rj) * (o.size ?? 1) * lerp(0.7, 1, amount) * fade;
-        gD.scale.set(ds * 0.62 / 0.6, ds * 1.15 / 1.02, ds * 0.45 / 0.6);
+        const vj = 0.85 + 0.3 * rk;
+        posAt(tt, gD.position, vj);
+        const spr = Math.min(1, (tt - tA) * 5) * r * 0.5;
+        gD.position.addScaledVector(_out, (rl - 0.5) * spr).add(t1.set(0, (rj - 0.5) * spr, 0)).addScaledVector(_dir, (rk - 0.5) * spr);
+        orientDrop(gD, t1.set(-(vx * vj + _acc.x * tt), -(vy * vj + _acc.y * tt), -(vz * vj + _acc.z * tt)));
+        const fade = 1 - smooth((tt - tJ - lifeD * 0.55) / (lifeD * 0.45));
+        const ds = r * (0.16 + 0.12 * rj) * sz * lerp(0.7, 1, amount) * fade * Math.min(1, 0.6 + (tt - tA) * 4);
+        gD.scale.set(ds * 0.62 / 0.6, ds * 1.12 / 1.02, ds * 0.45 / 0.6);
         gD.visible = ds > 1e-4;
       }
     }
