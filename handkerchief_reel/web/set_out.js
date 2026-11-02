@@ -17,5 +17,4 @@ function tmpPlace(name, origin, floor, bg) {
   return { name, group, props: {}, key, defaults: () => ({}), update() {},
     look: { background: bg, fog: null, exposure: 1.0, shadowCenter: [origin[0], 0.8, origin[1]], shadowRadius: 6 } };
 }
-export const buildWedding = () => tmpPlace('wedding', WEDDING.origin, '#5a9a40', '#a8d0f0');
-export const buildPorch = () => tmpPlace('porch', PORCH.origin, '#5a8a3a', '#f0a080');
+export { buildWedding, buildPorch } from './set_out_wp.js';

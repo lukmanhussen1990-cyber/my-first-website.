@@ -88,7 +88,7 @@ export const shots = {
     parked(ctx);
     const P = ctx.W.set.props.street || {};
     const w = (P.anchors && P.anchors.frontWheel) || [PARK + 2.45, 0.37, -3.3];
-    move(ctx, { pos: [w[0] - 0.75, 0.5, w[2] + 1.45], target: [w[0] - 0.2, 0.42, w[2]], fov: 40 }, { pos: [w[0] + 0.35, 0.48, w[2] + 1.35], target: [w[0] + 0.05, 0.4, w[2]], fov: 40 });
+    move(ctx, { pos: [w[0] - 0.95, 0.47, w[2] + 0.62], target: [w[0] - 0.05, 0.4, w[2]], fov: 40 }, { pos: [w[0] - 0.75, 0.46, w[2] + 0.66], target: [w[0] + 0.05, 0.4, w[2]], fov: 38 });
     punch(ctx, ctx.ev('black'), 1.12, 0.1);
     for (let i = 0; i < 4; i++) {
       const a = i * 1.6 + ctx.t * 0.8;

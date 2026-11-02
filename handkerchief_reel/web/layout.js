@@ -12,7 +12,7 @@ export const STREET = {
   // the small round bush YOU hides in: a dense ring of leaves around a hollow centre (he crouches in the middle,
   // only his head + shoulders show above it from ANY side). Centre on the sidewalk, in a square of dirt.
   bush: { pos: [2.0, -2.2], r: 0.66, h: 0.98 },
-  lamp: { pos: [3.15, -2.85] },                  // street lamp next to the bush
+  lamp: { pos: [4.45, -2.85] },                  // street lamp next to the bush
   cart: { pos: [0.55, -1.15], rotY: 0.5 },        // YOU's shopping cart (everything he owns)
   // the black stretch limousine parks at the curb, nose toward +X; its rear passenger door (curb side, +Z) opens
   // right next to the bush, the front passenger door (curb side) is where the bodyguard jumps out.

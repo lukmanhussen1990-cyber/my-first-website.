@@ -42,7 +42,7 @@ export const shots = {
     lady.p.y = SY;
     you.p.headYaw = clamp((lady.p.pos[0] - BUSH[0]) * -0.25, -0.6, 0.6);
     guardWorried(ctx);
-    move(ctx, { pos: [3.7, 2.05, -0.35], target: [0.4, 0.95, -3.3], fov: 50 }, { pos: [3.5, 2.0, -0.55], target: [0.9, 0.95, -3.25], fov: 48 });
+    move(ctx, { pos: [3.6, 1.8, -0.8], target: [0.4, 0.95, -3.3], fov: 50 }, { pos: [3.45, 1.78, -0.95], target: [0.9, 0.95, -3.25], fov: 48 });
     shadowAt(ctx, [1.0, 1.0, -2.8], 6);
   } },
   // 14. "You freeze."  close-up: frozen, eyes wide, tiny straight mouth, one sweat drop. (All sound drops.)

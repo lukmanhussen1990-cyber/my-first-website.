@@ -15,5 +15,4 @@ export function plainPlace(name, origin, floor, bg) {
     look: { background: bg, fog: null, exposure: 1.0, shadowCenter: [origin[0], 0.8, origin[1]], shadowRadius: 6 } };
 }
 export const buildVoid = (env, world) => buildVoidPlace(env, world);
-export const buildRestaurant = () => plainPlace('restaurant', RESTAURANT.origin, '#7a2a2a', '#8a6a2a');
-export const buildInterior = () => plainPlace('interior', INTERIOR.origin, '#6a4a3a', '#a08a7a');
+export { buildRestaurant, buildInterior } from './set_rest_room.js';

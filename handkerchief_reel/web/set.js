@@ -60,6 +60,8 @@ export function buildSet(world) {
       const s = (set.state = defaults());
       const n = ctx && ctx.shot ? Number(String(ctx.shot.id).replace(/\D/g, '')) : 1;
       s.loc = ctx?.shot?.loc || locOf(n);
+      const P = places[s.loc];
+      if (P && P.reset) P.reset(t, s, ctx);
     },
     commit(ctx) {
       const s = set.state, t = ctx.t;
