@@ -41,13 +41,14 @@ export const shots = {
     // the empty tube held up beside his face, tilted toward the camera so we see it is empty
     const lift = easeOut(invLerp(ctx.shot.t0, ctx.shot.t0 + 0.35, ctx.t));
     tube.visible = true;
-    tube.position.set(YX - 0.13, lerp(1.22, 1.5, lift), YZ + 0.3);
-    tube.rotation.set(0.75, 0, 0.22);
-    p.gripR = tube;
-    p.lookAt = [YX - 0.12, 1.52, YZ + 0.26];
+    tube.scale.setScalar(1.7);                               // cartoon-sized so it reads on a phone
+    tube.position.set(YX + 0.17, lerp(1.28, 1.58, lift), YZ + 0.3);
+    tube.rotation.set(1.0, 0, -0.35);                         // open end toward the camera: you can see it is empty
+    p.gripL = tube; p.poleL = [1.3, -0.7, -0.35];   // left hand (open side of the frame), elbow out and down
+    p.lookAt = [YX + 0.17, 1.58, YZ + 0.3];
     if (ctx.t > ev) { p.eyes = 'stare'; p.lookAt = null; p.headPitch = -0.02; lookCam(ctx, you); }
-    move(ctx, { pos: [0.02, 1.58, 0.95], target: [YX - 0.04, 1.52, YZ], fov: 30 },
-              { pos: [0.0, 1.57, 0.85], target: [YX - 0.04, 1.52, YZ], fov: 29 });
+    move(ctx, { pos: [YX + 0.1, 1.6, 1.15], target: [YX + 0.1, 1.55, YZ], fov: 33 },
+              { pos: [YX + 0.1, 1.6, 1.05], target: [YX + 0.1, 1.55, YZ], fov: 32 });
     punch(ctx, ev, 1.18);
     if (ctx.t > ev) ctx.W.fx.sweat({ ch: you, side: 'L', t0: ev + 0.02, t: ctx.t, size: 1 });
     light(ctx, [0, 1.4, 0], 4, 0.5);
@@ -57,7 +58,7 @@ export const shots = {
   s04: { update(ctx) {
     const you = ctx.W.cast.you, p = you.p, leaf = ctx.W.set.props.giantLeaf;
     const grab = ctx.ev('grab'), tear = ctx.ev('tear');
-    p.pos = [YX + 0.42, YZ + 0.05]; p.rotY = 0.6; p.lean = 0.12;
+    p.pos = [YX + 0.42, YZ + 0.05]; p.rotY = 0.6; p.lean = 0.3; p.crouch = 0.55;
     // the hand reaches for the leaf edge, closes at `grab`, tears it off at `tear` and pulls it away (up-left)
     const reach = smoother(invLerp(ctx.shot.t0 + 0.12, grab, ctx.t));
     if (ctx.t < tear) {
@@ -81,6 +82,9 @@ export const shots = {
     move(ctx, { pos: [GIANT_LEAF.stem[0] + 0.45, 1.12, GIANT_LEAF.stem[2] + 0.95], target: [GIANT_LEAF.stem[0] - 0.02, 0.98, GIANT_LEAF.stem[2]], fov: 34 },
               { pos: [GIANT_LEAF.stem[0] + 0.38, 1.1, GIANT_LEAF.stem[2] + 0.8], target: [GIANT_LEAF.stem[0] - 0.02, 0.99, GIANT_LEAF.stem[2]], fov: 32 });
     bump(ctx, grab, 1.05);
+    // after the tear the camera tilts up with the leaf (keeps YOU waist-up only)
+    const up = easeOut(invLerp(tear - 0.05, tear + 0.3, ctx.t));
+    if (up > 0) { const sp = ctx.cam.spec; ctx.cam.set({ target: [sp.target[0] - 0.12 * up, sp.target[1] + 0.32 * up, sp.target[2]], pos: [sp.pos[0], sp.pos[1] + 0.12 * up, sp.pos[2]] }); ctx.cam.punch(1 + 0.12 * up); }
     ctx.W.set.state.rays = 0.6;
     light(ctx, [GIANT_LEAF.stem[0], 1, GIANT_LEAF.stem[2]], 3, 0.35);
   } },
@@ -107,9 +111,10 @@ export const shots = {
     const [a, b] = ctx.ev('scratch');
     const on = smooth(invLerp(a - 0.05, a + 0.08, t));
     face(ctx, 'squeeze', 'worried', 'tongue'); p.tongue = on; p.hairBounce = on;
-    const ph = t * 17;   // frantic scratching
-    p.handL = [YX + 0.13 + Math.sin(ph) * 0.06 * on, 1.0 + Math.sin(ph * 1.31) * 0.07 * on, YZ - 0.17];
-    p.handR = [YX - 0.13 + Math.sin(ph + 2.1) * 0.06 * on, 1.0 + Math.cos(ph * 1.17) * 0.07 * on, YZ - 0.17];
+    const ph = t * 19;   // frantic scratching: elbows pump up and down, body wiggles
+    p.handL = [YX + 0.15 + Math.sin(ph) * 0.09 * on, 1.02 + Math.sin(ph * 1.31) * 0.16 * on, YZ - 0.17];
+    p.handR = [YX - 0.15 + Math.sin(ph + 2.1) * 0.09 * on, 1.02 + Math.cos(ph * 1.17) * 0.16 * on, YZ - 0.17];
+    p.leanSide = Math.sin(ph * 0.5) * 0.12 * on; p.crouch = 0.08 * (0.5 + 0.5 * Math.sin(ph * 0.9)) * on;
     p.poleL = [1.0, -0.15, -0.55]; p.poleR = [1.0, -0.15, -0.55]; p.handPoseL = p.handPoseR = 'fist';
     p.headRoll = Math.sin(ph * 0.5) * 0.16 * on; p.headYaw = Math.sin(ph * 0.37) * 0.12 * on; p.torsoYaw = Math.sin(ph * 0.5) * 0.12 * on;
     p.shoulderUp = 0.6;
@@ -164,12 +169,14 @@ export const shots = {
   s09: { update(ctx) {
     const t = ctx.t, bear = ctx.W.animals.bear, p = bear.p;
     // dark backlit silhouette far up the trail, walking slowly between trees
-    bearWalk(ctx, [BP.start[0] - 2.5, BP.start[1] + 2], [BP.start[0] - 0.2, BP.start[1] - 1.5], ctx.u);
+    bearWalk(ctx, [BP.start[0] - 1.4, BP.start[1] + 8.5], [BP.start[0] - 0.8, BP.start[1] + 5.5], ctx.u);
     p.headPitch = 0.1;
     for (const [i, tt] of ctx.ev('thuds').entries()) hit(ctx, tt, 0.0035, 0.12, 18 + i);
     ctx.W.animals.birds.flyOff({ t, t0: 12.05, from: [-3.0, 7.5, 17.5], count: 5, dir: [1, 0.6, -0.3], seed: 2 });
-    ctx.W.fx.glint({ at: bear.eyePos('L').toArray(), t, size: 0.06 });
-    ctx.W.fx.glint({ at: bear.eyePos('R').toArray(), t, size: 0.06 });
+    ctx.W.animals.commit(ctx);   // pose first, then read the eye positions (pure function of t)
+    ctx.W.fx.glint({ at: bear.eyePos('L').toArray(), t, size: 0.09 });
+    ctx.W.fx.glint({ at: bear.eyePos('R').toArray(), t, size: 0.09 });
+    ctx.W.set.state.fog = { color: '#3b3346', near: 6, far: 48 };   // dark haze: the bear is only a shape
     move(ctx, { pos: [0.45, 1.35, 1.7], target: [-1.6, 1.8, 22], fov: 36 }, { pos: [0.3, 1.38, 2.6], target: [-1.6, 1.8, 22], fov: 29 });
     ctx.W.set.state.skyDark = 0.55; ctx.W.set.state.rays = 0.3;
     ctx.post.vignette = 0.45;

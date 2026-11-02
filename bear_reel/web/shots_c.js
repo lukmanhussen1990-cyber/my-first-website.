@@ -50,7 +50,7 @@ export const shots = {
     for (const s of ctx.ev('steps')) hit(ctx, s, 0.0035, 0.15, 17);
     move(ctx, { pos: [YX + 0.12, 1.32, YZ - 0.12], target: [BP.near[0] - 0.1, 1.05, BP.near[1] + 1.2], fov: 46 },
               { pos: [YX + 0.12, 1.32, YZ - 0.05], target: [BP.near[0] - 0.05, 1.0, BP.near[1] + 0.6], fov: 43 });
-    stinkYou(ctx, 0.45, { at: [YX + 0.35, 0.9, YZ + 0.75], count: 3, scale: 0.55, spread: 0.6 });
+    stinkYou(ctx, 0.35, { at: [YX + 0.55, 0.85, YZ + 1.2], count: 2, scale: 0.4, spread: 0.5 });
     ctx.W.set.state.skyDark = 0.2;
     light(ctx, [0, 1, 2], 6, 0.45);
   } },
@@ -86,7 +86,7 @@ export const shots = {
     solve(ctx);
     const head = bear.headPos(), nose = bear.nosePos();
     // profile from the bear's left (+X side when it faces -Z is its right... we just pick the sunny side)
-    const camP = head.clone().add(v3(-2.3, 0.05, -0.35));
+    const camP = head.clone().add(v3(-2.3, 0.05, 0.3));
     ctx.cam.set({ pos: camP.toArray(), target: head.clone().lerp(nose, 0.85).toArray(), fov: 32 }).handheld(t > sn + 0.4 ? 0 : 0.001);
     ctx.W.fx.stinkFlow({ from: [YX + 0.1, 1.0, YZ + 0.4], to: nose.toArray(), progress: smooth(invLerp(ctx.shot.t0 - 0.2, sn + 0.4, t)), t, count: 4, seed: 6, width: 0.32 });
     bump(ctx, sn, 1.05, 0.4);
@@ -116,15 +116,14 @@ export const shots = {
     const t = ctx.t, bear = ctx.W.animals.bear, p = bear.p, pin = ctx.ev('pinch');
     p.pos = BP.close.slice(); p.rotY = Math.PI; p.gait = 'idle';
     ctx.W.cast.you.p.visible = false;
-    p.sit = smooth(invLerp(ctx.shot.t0, ctx.shot.t0 + 0.3, t));
+    p.sit = lerp(0.7, 1, smooth(invLerp(ctx.shot.t0, ctx.shot.t0 + 0.3, t)));
     p.pinch = easeOut(invLerp(pin - 0.15, pin + 0.15, t));
     bearFace(ctx, 'squeeze', 'sad', 'pressed'); p.tears = 1; p.cheeksPuff = 0.7; p.green = 0.8; p.ears = 0.3;
     p.headYaw = 0.22 * Math.sin((t - pin) * 13) * smooth(invLerp(pin + 0.1, pin + 0.3, t));
     solve(ctx);
     const head = bear.headPos(), nose = bear.nosePos();
     const fwd = nose.clone().sub(head).setY(0).normalize();
-    const camP = head.clone().addScaledVector(fwd, 2.3).add(v3(0.35, -0.35, 0));
-    ctx.cam.set({ pos: camP.toArray(), target: head.clone().add(v3(0, -0.25, 0)).toArray(), fov: 36 }).handheld(0.0015);
+    ctx.cam.set({ pos: [BP.close[0] + 0.3, 1.72, BP.close[1] - 2.75], target: [BP.close[0], 1.72, BP.close[1] - 0.55], fov: 36 }).handheld(0.0015);
     shake(ctx, pin, ctx.shot.t1, 0.004, 20);
     ctx.W.fx.tears({ ch: bear, t0: ctx.shot.t0, t, amount: 0.9, side: 'L' }); ctx.W.fx.tears({ ch: bear, t0: ctx.shot.t0 + 0.1, t, amount: 0.9, side: 'R' });
     ctx.W.fx.haze({ at: head.clone().add(v3(0, -0.4, 0)).toArray(), radius: 1.8, amount: 0.5, t, seed: 4 });
@@ -143,9 +142,9 @@ export const shots = {
     solve(ctx);
     const head = bear.headPos(), dir = v3(b[0] - a[0], 0, b[1] - a[1]).normalize(), perp = v3(dir.z, 0, -dir.x);
     const bp = v3(p.pos[0], 0, p.pos[1]);
-    const camP = bp.clone().addScaledVector(perp, 4.2).addScaledVector(dir, 2.4).add(v3(0, 1.4, 0));
-    const tg = bp.clone().addScaledVector(dir, 0.4).add(v3(0, 1.65, 0));
-    ctx.cam.set({ pos: camP.toArray(), target: tg.toArray(), fov: 44 }).handheld(0.002);
+    const camP = v3(a[0], 0, a[1]).addScaledVector(perp, 4.4).addScaledVector(dir, 4.6).add(v3(0, 1.45, 0));
+    const tg = bp.clone().add(v3(0, 1.6, 0));
+    ctx.cam.set({ pos: camP.toArray(), target: tg.toArray(), fov: 46 }).handheld(0.002);
     ctx.W.cast.you.p.visible = false;
     ctx.W.fx.cryTears({ ch: bear, t, amount: 1, dir: [-(b[0] - a[0]), 0.3, -(b[1] - a[1])] });
     const fp = bear.pawPos ? bear.pawPos('BL') : head;

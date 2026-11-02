@@ -189,7 +189,7 @@ function buildTube() {
   g.add(msh(og, outM, 'tubeOut')); g.add(msh(og.clone(), inM, 'tubeIn'));
   // spiral seam
   const sg = new THREE.TorusGeometry(0.0222, 0.0009, 3, 24, Math.PI * 2); sg.rotateX(Math.PI / 2); sg.scale(1, 1, 1);
-  g.userData.grip = { pos: [0, -0.022, 0], axis: [0, 1, 0], up: [0, 0, 1] };
+  g.userData.grip = { pos: [0, -0.036, 0], axis: [0, 1, 0], up: [0, 0, 1] };   // held by the bottom end
   return g;
 }
 
@@ -363,7 +363,7 @@ export function buildSet(world) {
     reset(t) {
       set.state = defaults();
       const h = giantLeaf.userData.home; giantLeaf.position.copy(h.pos); giantLeaf.rotation.copy(h.rot); giantLeaf.visible = true; giantLeaf.scale.setScalar(1);
-      tpTube.visible = false; tpTube.position.set(0, -10, 0); tpTube.rotation.set(0, 0, 0);
+      tpTube.visible = false; tpTube.position.set(0, -10, 0); tpTube.rotation.set(0, 0, 0); tpTube.scale.setScalar(1);
       hideBush.rotation.set(0, 0, 0); hideBush.scale.set(1, 1, 1);
       foreBranch.position.set(0, 0, 0);
     },

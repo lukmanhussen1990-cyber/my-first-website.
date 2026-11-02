@@ -118,7 +118,7 @@ export const shots = {
   s18: { update(ctx) {
     ctx.W.cast.you.p.visible = false;
     ctx.W.animals.bear.p.visible = false;
-    move(ctx, { pos: [-9, 27, -12], target: [12, 9, 30], fov: 46 }, { pos: [-7.5, 26.5, -9], target: [12, 9, 30], fov: 45 }, (u) => u);
+    move(ctx, { pos: [-9, 27, -12], target: [14, 17, 32], fov: 48 }, { pos: [-7.5, 26.5, -9], target: [14, 17, 32], fov: 47 }, (u) => u);
     ctx.cam.handheld(0.0008);
     const s = ctx.W.set.state; s.rays = 1.0; s.fog = { ...s.fog, near: 40, far: 220 };
     light(ctx, [0, 8, 14], 30, 0.15);
@@ -152,7 +152,7 @@ export const shots = {
     bearFace(ctx, 'happy', 'raised', 'closed'); bear.p.headPitch = 0.12;
     dog.p.visible = true; dog.p.pos = [cx + 0.95, cz + 0.05]; dog.p.rotY = -0.12; dog.p.sit = 1;
     dog.p.eyes = 'sad'; dog.p.brows = 'sad'; dog.p.mouth = 'closed';
-    dog.p.headYaw = -0.55; dog.p.headPitch = 0.42 + 0.04 * Math.sin(t * 2);   // looks up-left toward the big bear
+    dog.p.headYaw = -0.38; dog.p.headPitch = 0.24 + 0.03 * Math.sin(t * 2);   // looks up toward the big bear
     solve(ctx);
     const dh = dog.headPos();
     move(ctx, { pos: [dh.x - 0.5, dh.y + 0.1, dh.z + 0.95], target: [dh.x - 0.03, dh.y + 0.04, dh.z], fov: 34 },

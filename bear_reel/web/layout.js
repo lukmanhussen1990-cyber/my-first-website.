@@ -45,7 +45,7 @@ export const TRAIL = { from: [0.2, 1.6], to: [-1.8, 27], width: 5.0 };     // op
 
 // ---- cutaway / special places
 export const COMPARE = { pos: [26.0, 0.0], r: 5.0 };     // clearing for the bear + bloodhound comparison (s19-s20); both face +Z
-export const MAP_BEAR = { pos: [-6.0, 92.0], scale: 3.6 }; // giant bear head sticking out of the trees (map shot s21 only)
+export const MAP_BEAR = { pos: [-6.0, 92.0], scale: 6.5 }; // giant bear head sticking out of the trees (map shot s21 only)
 export const RIVER = [[-60, 50], [-30, 57], [-8, 52], [12, 60], [35, 54], [60, 58]]; // river centre line (x, z), ~6 m wide
 export const BIRD_TREES = [[5.5, 9.5], [8.0, 12.5], [3.0, 14.0], [10.5, 9.0], [6.5, 16.0]]; // treetops the flock bursts out of (s28)
 export const FORE_BRANCH = { pos: [2.2, 8.6, 6.4], dir: [1, 0.05, 0.25] };  // a pine branch near the s28 camera; the squirrel runs on it
@@ -56,7 +56,7 @@ export const CLEARINGS = [
   { pos: [0.4, 0.4], r: 2.6 },         // YOU's spot (the HIDE_TREE itself is placed by the set)
   { pos: CAMP_CLEARING.pos, r: CAMP_CLEARING.r },
   { pos: COMPARE.pos, r: COMPARE.r },
-  { pos: MAP_BEAR.pos, r: 4.0 },
+  { pos: MAP_BEAR.pos, r: 7.5 },
 ];
 
 // ---- light
