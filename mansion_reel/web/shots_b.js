@@ -26,7 +26,7 @@ export function party(ctx, drop = 1, notes = 1) {
 export function drips(ctx, you, n = 1) {
   pose(ctx);
   const nose = you.nosePos(), mouth = you.mouthPos(), head = you.headPos();
-  ctx.W.fx.drips({ points: [nose.clone().add(v3(0, -0.025, 0.015)).toArray(), head.clone().add(v3(0.1, -0.03, 0.01)).toArray(), head.clone().add(v3(-0.1, -0.02, 0.0)).toArray()].slice(0, Math.max(1, Math.round(3 * n))), every: 0.7, size: 0.013 });
+  ctx.W.fx.drips({ points: [head.clone().add(v3(0.1, -0.03, 0.01)).toArray(), head.clone().add(v3(-0.1, -0.02, 0.0)).toArray(), nose.clone().add(v3(0, -0.025, 0.015)).toArray()].slice(0, Math.max(1, Math.round(3 * n))), every: 0.7, size: 0.013 });
 }
 const BATH_LIGHT = (ctx, c = [0, FY + PH + 0.8, THRONE.pos[1]], fill = 0.45, o = {}) => light(ctx, c, 3.5, fill, { key: { dir: [0.2, 1, -0.6], color: '#ffe6c2', intensity: 2.1 }, ...o });
 
@@ -55,7 +55,7 @@ export const shots = {
     p.handL = [lerp(0.55, -0.15, k), FY + lerp(1.0, 1.62, k), lerp(100.8, 101.85, k)]; p.handPoseL = k > 0.4 ? 'point' : 'relaxed';
     p.handR = L(rich, -0.2, 1.0, 0.06); p.handPoseR = 'fist';
     p.lookAt = [PORCH_SPOT.pos[0], FY + 1.6, PORCH_SPOT.pos[1]];
-    move(ctx, { pos: [-0.55, FY + 1.6, 98.6], target: [0.35, FY + 1.6, 103.0], fov: 48 }, { pos: [-0.5, FY + 1.6, 98.8], target: [0.3, FY + 1.6, 103.0], fov: 46 });
+    move(ctx, { pos: [-0.2, FY + 1.6, 98.3], target: [0.45, FY + 1.6, 101.6], fov: 50 }, { pos: [-0.15, FY + 1.6, 98.45], target: [0.45, FY + 1.6, 101.6], fov: 49 });
     bump(ctx, pt, 1.04);
     light(ctx, [0, FY + 1, 101], 3, 0.4, { fillColor: '#ffe2c0' });
   } },

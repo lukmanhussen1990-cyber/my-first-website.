@@ -74,7 +74,7 @@ export const shots = {
       if (ctx.t > t0) ch.p.headRoll = -0.08;
     }
     // on the chef for "customers", fast pan to the clerk for "only"
-    const pan = smooth(clamp((ctx.t - (n2 - 0.32)) / 0.26));
+    const pan = smooth(clamp((ctx.t - (n2 - 0.23)) / 0.2));
     ctx.cam.set({ pos: [lerp(10.6, 15.6, pan), 1.66, lerp(-3.0, -3.2, pan)], target: [lerp(s1.x + 0.75, s2.x + 1.0, pan), 1.38, -0.3], fov: lerp(46, 44, pan) });
     for (const ch of [chef, clerk]) ch.p.lookAt = ctx.cam.spec.pos;
     bump(ctx, n1, 1.05); bump(ctx, n2, 1.06);
