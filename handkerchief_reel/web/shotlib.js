@@ -39,10 +39,10 @@ export function shadowAt(ctx, center, radius = 6) { ctx.W.set.state.shadow = { c
 export function setState(ctx, o) { Object.assign(ctx.W.set.state, o); }
 
 // YOU crouching in a bush (only head + shoulders above it): centre [x, z], facing rotY; dy lifts him a bit
-export function inBush(ctx, ch, at, rotY = Math.PI, dy = 0) {
-  const p = show(ch, at, rotY, -0.62 + dy);
+export function inBush(ctx, ch, at, rotY = Math.PI, y = -0.3) {
+  const p = show(ch, at, rotY, y);                         // y = root height (absolute): head centre ~ y + 1.62
   p.inBush = true; p.lean = 0.12; p.shoulderUp = 0.2;
   // hands rest on the bush top (hidden in the leaves) unless a shot moves them
-  p.handL = L(ch, 0.16, 1.58 - 0.62, 0.12); p.handR = L(ch, -0.16, 1.58 - 0.62, 0.12);
+  p.handL = L(ch, 0.16, 0.95, 0.12); p.handR = L(ch, -0.16, 0.95, 0.12);
   return p;
 }

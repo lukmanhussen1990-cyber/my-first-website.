@@ -69,7 +69,7 @@ export const shots = {
   // 25. "She decided."  extreme close-up: her eyes go wide over the lowered sunglasses, cheeks pink, sparkle.
   s25: { update(ctx) {
     const t = ctx.t, d = ctx.ev('decided');
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAt(ctx, ATBUSH, 0), p = lady.p;
     p.glassesLow = 1; p.headPitch = -0.2; p.pupils = [0, -0.8];
     face(lady, t > d + 0.08 ? 'wide' : 'open', t > d + 0.08 ? 'raised' : 'neutral', 'neutral');
@@ -85,7 +85,7 @@ export const shots = {
   // 26. "So did you."  his eyes go wide too; a big pink heart pops between them, small hearts float.
   s26: { update(ctx) {
     const t = ctx.t, y = ctx.ev('you'), pop = ctx.ev('pop');
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const you = youInBush(ctx), p = you.p;
     face(you, t > y + 0.04 ? 'wide' : 'open', 'raised', t > pop ? 'smile' : 'neutral'); p.headPitch = 0.28; p.pupils = [0, 0.8];
     p.blush = t > y + 0.04 ? 1 : 0.3;

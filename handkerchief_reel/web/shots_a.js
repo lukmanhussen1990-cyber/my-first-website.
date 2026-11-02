@@ -88,7 +88,7 @@ export const shots = {
     parked(ctx);
     const P = ctx.W.set.props.street || {};
     const w = (P.anchors && P.anchors.frontWheel) || [PARK + 2.45, 0.37, -3.3];
-    move(ctx, { pos: [w[0] - 0.45, 0.46, -2.45], target: [w[0] - 0.1, 0.37, w[2]], fov: 38 }, { pos: [w[0] + 0.25, 0.44, -2.5], target: [w[0] + 0.05, 0.37, w[2]], fov: 38 });
+    move(ctx, { pos: [w[0] - 0.75, 0.5, w[2] + 1.45], target: [w[0] - 0.2, 0.42, w[2]], fov: 40 }, { pos: [w[0] + 0.35, 0.48, w[2] + 1.35], target: [w[0] + 0.05, 0.4, w[2]], fov: 40 });
     punch(ctx, ctx.ev('black'), 1.12, 0.1);
     for (let i = 0; i < 4; i++) {
       const a = i * 1.6 + ctx.t * 0.8;
@@ -101,7 +101,7 @@ export const shots = {
   s06: { update(ctx) {
     const t = ctx.t, o = ctx.ev('opens');
     parked(ctx, { limoDoor: smooth(clamp((t - (o - 0.25)) / 0.6)), limoMist: smooth(clamp((t - o) / 0.5)) });
-    move(ctx, { pos: [-2.05, 0.42, -2.25], target: [-1.3, 1.0, -3.35], fov: 46 }, { pos: [-1.95, 0.42, -2.35], target: [-1.3, 1.02, -3.35], fov: 44 });
+    move(ctx, { pos: [-2.75, 0.55, -1.55], target: [-1.25, 0.95, -3.3], fov: 50 }, { pos: [-2.6, 0.55, -1.7], target: [-1.25, 0.95, -3.3], fov: 48 });
     if (t > o) ctx.W.fx.glow({ at: [-1.3, 0.95, -3.55], size: 1.4, color: '#ffd890', amount: 0.55 * smooth((t - o) / 0.4) });
     ctx.W.fx.glint({ at: [-1.1, 1.25, -3.3], size: 0.08, t0: o + 0.2 });
     shadowAt(ctx, [-1.3, 0.8, -3.3], 4);

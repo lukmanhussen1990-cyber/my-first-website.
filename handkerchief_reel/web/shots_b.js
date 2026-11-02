@@ -33,7 +33,7 @@ export const shots = {
   //     foreground, she walks along the curb straight toward it, the limo behind her, the bodyguard holding his head.
   s13: { update(ctx) {
     const t = ctx.t, t0 = ctx.shot.t0, H = ctx.W.cast.helpers;
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const you = youInBush(ctx); you.p.lookAt = null;
     const lady = ladyAt(ctx, REAR, Math.PI / 2);
     const u = clamp((t - (t0 + 0.05)) / 1.95);
@@ -42,12 +42,12 @@ export const shots = {
     lady.p.y = SY;
     you.p.headYaw = clamp((lady.p.pos[0] - BUSH[0]) * -0.25, -0.6, 0.6);
     guardWorried(ctx);
-    move(ctx, { pos: [3.55, 1.6, -0.55], target: [0.4, 1.05, -3.3], fov: 50 }, { pos: [3.35, 1.58, -0.75], target: [0.9, 1.05, -3.25], fov: 48 });
+    move(ctx, { pos: [3.7, 2.05, -0.35], target: [0.4, 0.95, -3.3], fov: 50 }, { pos: [3.5, 2.0, -0.55], target: [0.9, 0.95, -3.25], fov: 48 });
     shadowAt(ctx, [1.0, 1.0, -2.8], 6);
   } },
   // 14. "You freeze."  close-up: frozen, eyes wide, tiny straight mouth, one sweat drop. (All sound drops.)
   s14: { update(ctx) {
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const you = youInBush(ctx), p = you.p;
     face(you, 'wide', 'raised', 'tight'); p.headPitch = 0.12; p.pupils = [0, 0.4]; p.shoulderUp = 0.7;
     move(ctx, { pos: [2.0, 1.36, -3.1], target: [2.0, HEADY + 0.02, -2.2], fov: 36 }, { pos: [2.0, 1.36, -3.0], target: [2.0, HEADY + 0.02, -2.2], fov: 36 });
@@ -58,7 +58,7 @@ export const shots = {
   } },
   // 15. "She freezes."  close-up: frozen mid-step in front of the bush, perfectly still, one brow up.
   s15: { update(ctx) {
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAtBush(ctx), p = lady.p;
     face(lady, 'open', 'raised', 'neutral'); p.headPitch = -0.12;
     p.gait = { kind: 'walk', phase: 0.22 };
@@ -69,7 +69,7 @@ export const shots = {
   // 16. "She looks at you."  extreme close-up: she slowly lowers her sunglasses with one finger, eyes look down.
   s16: { update(ctx) {
     const t = ctx.t, t0 = ctx.shot.t0;
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAtBush(ctx), p = lady.p;
     const k = smooth(clamp((t - t0 - 0.1) / 0.9));
     p.glassesLow = k; face(lady, 'open', 'neutral', 'neutral'); p.headPitch = -0.2; p.pupils = [0, -0.8];
@@ -83,7 +83,7 @@ export const shots = {
   } },
   // 17. "You look at her."  the closest shot: his kind eyes looking up at her.
   s17: { update(ctx) {
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const you = youInBush(ctx), p = you.p;
     face(you, 'open', 'raised', 'neutral'); p.headPitch = 0.28; p.pupils = [0, 0.8]; p.blush = 0.3;
     move(ctx, { pos: [2.0, 1.35, -2.74], target: [2.0, HEADY + 0.03, -2.2], fov: 30 }, { pos: [2.0, 1.35, -2.66], target: [2.0, HEADY + 0.03, -2.2], fov: 30 });
@@ -94,7 +94,7 @@ export const shots = {
   //     beam of light, sparkles (choir "aaah").
   s18: { update(ctx) {
     const t = ctx.t, pl = ctx.ev('pulls'), sk = ctx.ev('silk');
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAtBush(ctx), p = lady.p, P = PROPS(ctx);
     face(lady, 'open', 'neutral', 'neutral');
     const a = clamp((t - (pl - 0.2)) / 0.6);
@@ -120,7 +120,7 @@ export const shots = {
   } },
   // 19. "It costs more than your whole life."  YOU's whole life: the rusty shopping cart. Slow sideways pan.
   s19: { update(ctx) {
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const you = youInBush(ctx); face(you, 'open', 'sad', 'frown'); you.p.lookAt = [0.55, 0.8, -1.15];
     const c = STREET.cart.pos;
     move(ctx, { pos: [-0.35, 1.15, -3.0], target: [0.4, 0.62, -1.15], fov: 44 }, { pos: [0.35, 1.12, -3.05], target: [0.7, 0.62, -1.15], fov: 44 });
@@ -131,12 +131,12 @@ export const shots = {
   //     deadpan, looking straight ahead; his head above the bush, staring at it.
   s20: { update(ctx) {
     const t = ctx.t, t0 = ctx.shot.t0;
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAtBush(ctx), p = lady.p;
     holdOut(ctx, lady, easeOut(clamp((t - t0) / 0.35)));
     p.headPitch = 0.05; p.lookAt = [ATBUSH[0], LFACE, ATBUSH[1] + 3];
     const you = youInBush(ctx); face(you, 'wide', 'raised', 'o'); you.p.lookAt = [ATBUSH[0] - 0.05, SY + 1.3, ATBUSH[1] + 0.62];
-    move(ctx, { pos: [0.15, 1.4, -2.72], target: [2.0, 1.3, -2.68], fov: 40 }, { pos: [0.3, 1.4, -2.72], target: [2.0, 1.3, -2.68], fov: 40 });
+    move(ctx, { pos: [3.75, 1.42, -2.7], target: [2.0, 1.3, -2.68], fov: 42 }, { pos: [3.6, 1.42, -2.7], target: [2.0, 1.3, -2.68], fov: 42 });
     shadowAt(ctx, [2.0, 1.2, -2.7], 3);
     pose(ctx);
     ctx.W.fx.glint({ at: PROPS(ctx).hanky.p.pos.map((v, i) => v + (i === 1 ? -0.12 : 0)), size: 0.05, t0: t0 + 0.4 });
@@ -144,7 +144,7 @@ export const shots = {
   // 21. "You'll need this."  close-up: her perfectly straight face, sunglasses on, the handkerchief held out.
   s21: { update(ctx) {
     const t = ctx.t, nd = ctx.ev('need');
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAtBush(ctx), p = lady.p;
     holdOut(ctx, lady, 1);
     p.headPitch = -0.08;
@@ -156,7 +156,7 @@ export const shots = {
   } },
   // 22. "What you don't know:"  high wide shot looking down at the street: limo, bush, the lady, the bodyguard.
   s22: { update(ctx) {
-    parked(ctx, { limoDoor: 1, guardDoor: 1 });
+    parked(ctx, { limoDoor: 1, guardDoor: 0 });
     const lady = ladyAtBush(ctx); holdOut(ctx, lady, 1);
     youInBush(ctx);
     guardWorried(ctx);
