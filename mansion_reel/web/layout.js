@@ -28,7 +28,7 @@ export const MANSION = {
   porch: { z0: 95.0, z1: 100, steps: 6 },                   // marble steps up to the porch (y 0 -> floorY)
   fountain: [0, 76], drive: { r: 14 },
 };
-export const PORCH_SPOT = { pos: [0.15, 98.75], rotY: 0 };   // YOU knocking (facing the door, +Z)
+export const PORCH_SPOT = { pos: [0.15, 99.42], rotY: 0 };   // YOU knocking (facing the door, +Z)
 export const DOORWAY_SPOT = { pos: [0, 101.0], rotY: Math.PI }; // the rich guy in the open doorway (facing -Z)
 
 // ---------------------------------------------------------------- 3. the gold hallway (inside, from the door to +Z)

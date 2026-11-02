@@ -49,11 +49,12 @@ if (mode === 'times') {
     save(path.join(out, `t_${t.toFixed(2).padStart(6, '0')}.jpg`), await page.evaluate((t) => window.APP.renderTime(t), t));
   }
 } else if (mode === 'shots') {
-  const frac = Number(rest[0] ?? 0.5);
-  const plan = await page.evaluate(() => window.APP.plan());
-  for (const s of plan) {
+  let plan = await page.evaluate(() => window.APP.plan());
+  if (process.env.ONLY) { const want = new Set(process.env.ONLY.split(',').flatMap((x) => { const m = x.match(/^s?(\d+)-s?(\d+)$/); if (!m) return [x.startsWith('s') ? x : 's' + String(x).padStart(2, '0')]; const out = []; for (let i = +m[1]; i <= +m[2]; i++) out.push('s' + String(i).padStart(2, '0')); return out; })); plan = plan.filter((s) => want.has(s.id)); }
+  const fracs = String(rest[0] ?? 0.5).split(',').map(Number);
+  for (const s of plan) for (const frac of fracs) {
     const t = Math.round((s.t0 + (s.t1 - s.t0) * frac) * 30) / 30;
-    if (process.env.LOGSHOTS) console.log(`[shot] ${s.id}`);
+    if (process.env.LOGSHOTS) console.log(`[shot] ${s.id} ${t}`);
     save(path.join(out, `${s.id}_${t.toFixed(2)}.jpg`), await page.evaluate((t) => window.APP.renderTime(t), t));
   }
 } else if (mode === 'view') {

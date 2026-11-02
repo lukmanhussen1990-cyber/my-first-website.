@@ -33,7 +33,8 @@ export function buildMansion(env) {
   boxAt(ext, dw, Hh - FY - dh, 0.6, wallM, 0, FY + dh + (Hh - FY - dh) / 2, Z0 + 0.3, 'frontTop');
   boxAt(ext, dw, FY, 0.6, wallM, 0, FY / 2, Z0 + 0.3, 'frontSill');
   // body behind (sides + roof only matter from outside)
-  boxAt(ext, W, Hh, D - 0.6, wallM, 0, Hh / 2, Z0 + 0.6 + (D - 0.6) / 2, 'body');
+  const noFace = new THREE.MeshBasicMaterial({ visible: false });
+  boxAt(ext, W, Hh, D - 0.6, [wallM, wallM, wallM, wallM, wallM, noFace], 0, Hh / 2, Z0 + 0.6 + (D - 0.6) / 2, 'body');   // no front face (the hall is behind the door)
   // roof: low hip roof + gold-trimmed balustrade cornice
   const roofM = mat(T(stoneCanvas('#5a4a44', 31), [10, 4]), { rough: 0.8 });
   const roof = msh(new THREE.CylinderGeometry(W * 0.36, W * 0.72, 4.5, 4, 1), roofM, 'roof'); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, D / W * 1.4); roof.position.set(0, Hh + 2.2, Z0 + D / 2); ext.add(roof);
@@ -72,11 +73,11 @@ export function buildMansion(env) {
   // the giant golden double door (leaves hinge at the outer edges, open inward to +Z)
   const doorPanel = mat(T(goldPanelCanvas(5), [1, 3]), { rough: 0.28, metal: 0.85 }); doorPanel.envMap = env; doorPanel.envMapIntensity = 1.3;
   const leaves = [-1, 1].map((sd2) => {
-    const piv = new THREE.Group(); piv.name = `set.mansion.doorPivot${sd2}`; piv.position.set(sd2 * dw / 2, FY, Z0 + 0.12); ext.add(piv);
+    const piv = new THREE.Group(); piv.name = `set.mansion.doorPivot${sd2}`; piv.position.set(sd2 * dw / 2, FY, Z0 + 0.12); root.add(piv);   // seen from outside AND inside
     const leaf = msh(new THREE.BoxGeometry(dw / 2, dh, 0.22), doorPanel, 'doorLeaf'); leaf.position.set(-sd2 * dw / 4, dh / 2, 0); piv.add(leaf);
     const ring = msh(new THREE.TorusGeometry(0.22, 0.05, 6, 12), GOLD_SHINY, 'knockerRing'); ring.position.set(-sd2 * (dw / 2 - 0.45), 3.6, -0.17); piv.add(ring);
     const lion = msh(new THREE.IcosahedronGeometry(0.2, 1), GOLD_SHINY, 'knockerLion'); lion.scale.set(1, 1.1, 0.5); lion.position.set(-sd2 * (dw / 2 - 0.45), 3.9, -0.15); piv.add(lion);
-    const knob = msh(new THREE.SphereGeometry(0.09, 8, 6), GOLD_SHINY, 'doorKnob'); knob.position.set(-sd2 * (dw / 2 - 0.2), 1.35, -0.15); piv.add(knob);
+    const knob = msh(new THREE.SphereGeometry(0.06, 8, 6), GOLD_DARK, 'doorKnob'); knob.position.set(-sd2 * (dw / 2 - 0.2), 1.15, -0.14); piv.add(knob);
     piv.userData.sd = sd2; return piv;
   });
   boxAt(ext, dw + 0.8, 0.5, 0.5, GOLD_DARK, 0, FY + dh + 0.25, Z0 - 0.05, 'doorHead');
@@ -129,11 +130,19 @@ export function buildMansion(env) {
   const carpet = plane(inn, 1.9, L - 1, mat(T(carpetCanvas(), [1, (L - 1) / 3]), { rough: 0.95 }), [0, FY + 0.006, zc + 0.5], [-Math.PI / 2, 0, 0], 'carpet', { cast: false, receive: true });
   const upperM = mat(T(plasterCanvas('#8a2030', 25, 12), [L / 3, 1]), { rough: 0.85 });
   const panelM = mat(T(goldPanelCanvas(), [L / 1.2, 1]), { rough: 0.32, metal: 0.8 }); panelM.envMap = env; panelM.envMapIntensity = 1.1;
+  // the walls are built in z-segments; the right wall (+X) has the opening for your door
+  const ydz0 = YOUR_DOOR.z - YOUR_DOOR.w / 2 - 0.02, ydz1 = YOUR_DOOR.z + YOUR_DOOR.w / 2 + 0.02, ydh = YOUR_DOOR.h + 0.02;
   for (const s2 of [-1, 1]) {
     const x = s2 * (hw / 2);
-    plane(inn, L, 1.25, panelM, [x - s2 * 0.001, FY + 0.625, zc], [0, -s2 * Math.PI / 2, 0], 'wainscot', { cast: false, receive: true });
-    plane(inn, L, H2 - 1.25, upperM, [x, FY + 1.25 + (H2 - 1.25) / 2, zc], [0, -s2 * Math.PI / 2, 0], 'hallWall', { cast: false, receive: true });
-    boxAt(inn, 0.12, 0.12, L, GOLD, x - s2 * 0.06, FY + 1.28, zc, 'chairRail', { cast: false });
+    const segs = s2 > 0 ? [[HALL.z0, ydz0], [ydz1, HALL.z1]] : [[HALL.z0, HALL.z1]];
+    const wallMat = (m0, len) => { const mm = m0.clone(); mm.map = m0.map.clone(); mm.map.needsUpdate = true; mm.map.repeat.set(m0.map.repeat.x * len / L, m0.map.repeat.y); return mm; };
+    for (const [za, zb] of segs) {
+      const len = zb - za, zm = (za + zb) / 2;
+      plane(inn, len, 1.25, wallMat(panelM, len), [x - s2 * 0.001, FY + 0.625, zm], [0, -s2 * Math.PI / 2, 0], 'wainscot', { cast: false, receive: true });
+      plane(inn, len, H2 - 1.25, wallMat(upperM, len), [x, FY + 1.25 + (H2 - 1.25) / 2, zm], [0, -s2 * Math.PI / 2, 0], 'hallWall', { cast: false, receive: true });
+      boxAt(inn, 0.12, 0.12, len, GOLD, x - s2 * 0.06, FY + 1.28, zm, 'chairRail', { cast: false });
+    }
+    if (s2 > 0) plane(inn, ydz1 - ydz0, H2 - ydh, upperM, [x, FY + ydh + (H2 - ydh) / 2, (ydz0 + ydz1) / 2], [0, -Math.PI / 2, 0], 'hallWallOverDoor', { cast: false, receive: true });
     boxAt(inn, 0.25, 0.3, L, GOLD_DARK, x - s2 * 0.12, HALL.ceilY - 0.15, zc, 'crown', { cast: false });
   }
   plane(inn, hw, L, mat(T(goldPanelCanvas(27), [2, L / 2.6]), { rough: 0.4, metal: 0.7 }), [0, HALL.ceilY, zc], [Math.PI / 2, 0, 0], 'hallCeiling', { cast: false, receive: false }).material.envMap = env;
@@ -339,9 +348,9 @@ function makeToilet({ GOLD, GOLD_SHINY, GOLD_DARK, env, buttons }) {
     // ONE big red button on a little golden stand
     panel.position.set(-0.55, 0, 0.1); g.add(panel);
     const ped = msh(new THREE.CylinderGeometry(0.05, 0.09, 0.72, 8), GOLD, 'panelPedestal'); ped.position.set(0, 0.36, 0); panel.add(ped);
-    const plate = msh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 16), GOLD_SHINY, 'panelPlate'); plate.position.set(0, 0.74, 0); panel.add(plate);
+    const plate = msh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 18), GOLD_SHINY, 'panelPlate'); plate.position.set(0, 0.74, 0); panel.add(plate);
     const m = new THREE.MeshStandardMaterial({ color: '#e8241e', roughness: 0.3, emissive: '#ff2a1a', emissiveIntensity: 0.35, flatShading: true });
-    const b = msh(new THREE.CylinderGeometry(0.11, 0.12, 0.07, 16), m, 'bigButton', { cast: false }); b.position.set(0, 0.8, 0); panel.add(b); btns.push(b);
+    const b = msh(new THREE.CylinderGeometry(0.14, 0.15, 0.08, 18), m, 'bigButton', { cast: false }); b.position.set(0, 0.81, 0); panel.add(b); btns.push(b);
   }
   return { group: g, seat, lid, panel, buttons: btns, bowl };
 }

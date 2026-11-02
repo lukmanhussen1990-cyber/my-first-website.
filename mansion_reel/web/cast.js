@@ -347,6 +347,7 @@ class Character {
   _w(local, obj) { obj.updateMatrixWorld(true); return local.clone().applyMatrix4(obj.matrixWorld); }
   headPos() { return this._w(V(), this.head); }
   eyePos() { return this._w(this.eyeLocalC, this.head); }
+  eyeLocal(side = 'L') { return V(side === 'L' ? 0.031 : -0.031, 0.004, this.eyeLocalC.z); }
   mouthPos() { return this._w(this.mouthLocal, this.head); }
   nosePos() { return this._w(V(0, -0.015, this.eyeLocalC.z + 0.02), this.head); }
   hatTop() { return this._w(V(0, HEAD.ry * 1.2, 0), this.head); }
