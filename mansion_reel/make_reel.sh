@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the reel: captions -> sound -> 3D frames (parallel chunks) -> final.mp4
-#   ./make_reel.sh                 full 44.4 s video  -> final.mp4
+#   ./make_reel.sh                 full 71.8 s video  -> final.mp4
 #   PREVIEW=12 ./make_reel.sh      first 12 s only    -> preview.mp4
 #   JOBS=3 (parallel render processes), SKIP_AUDIO=1, SKIP_RENDER=1 (re-encode only), FROM/TO (frame range to re-render)
 set -euo pipefail

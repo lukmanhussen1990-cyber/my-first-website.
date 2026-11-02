@@ -33,7 +33,7 @@ from scipy import ndimage, signal
 HERE = os.path.dirname(os.path.abspath(__file__))
 AUD = os.path.join(HERE, "audio")
 SR = 48000
-DUR = 1331 / 30            # = video length (web/layout.js DURATION)
+DUR = 2153 / 30            # = video length (web/plan.js DURATION)
 VOICE_LUFS = -20.0
 TARGET_I = -14.0
 TARGET_TP = -1.5
