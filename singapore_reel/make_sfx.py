@@ -708,7 +708,7 @@ def make_horn():
         lt = t - t0
         e = att(lt, 0.01) * (1 - att(lt - (l - 0.03), 0.03)) * (lt >= 0)
         y += e * (harmonics(np.full(len(t), 415.0), fmax=5000, tilt=0.8) + 0.8 * harmonics(np.full(len(t), 523.0), fmax=5000, tilt=0.8))
-    y = svf(y, 1400, q=1.5) + 0.3 * lp(y, 900)
+    y = lp(svf(y, 1400, q=1.5) + 0.3 * lp(y, 900), 3200, 4)     # rounded top end: no harsh fizz (and no AAC overshoot)
     return save("horn", place(y, 0.35, "hall", -16), fade_out=0.08)
 
 
@@ -917,7 +917,7 @@ def build_cues():
     for k, t in enumerate(ev("s11", "step")):
         cue(t, f"step_far_{k + 1}", [-9.0, -6.0][k], f"s11 footsteps off-screen {k + 1}")
     for k, t in enumerate(ev("s12", "step") + [ev("s13", "plant")]):
-        cue(t, f"step_{k + 1}", [-3.0, -2.0, -1.5, -1.0][k], f"heavy boot plant {k + 1}", duck_db=4.0)
+        cue(t, f"step_{k + 1}", [-3.5, -3.0, -2.5, -2.0, -0.5][k], f"heavy boot plant {k + 1}" + (" (stomp in place)" if k == 4 else ""), duck_db=4.0)
     cue(ev("s13", "boom"), "boom", -5.0, "s13 officer entrance boom")
     cue(ev("s14", "sting"), "stab_1", -4.0, "s14 drama sting: he looks at it", duck_db=4.0)
     cue(ev("s15", "sting"), "stab_2", -3.0, "s15 drama sting: he looks at YOU", duck_db=4.0)
@@ -934,7 +934,7 @@ def build_cues():
     cue(a, "scribble_fast", -5.0, "s23 pen scribbling super fast", dur=b - a, fade_out=0.04)
     cue(ev("s24", "print") - 0.1, "printer", -7.0, "s24-s28 receipt printer, faster and faster", dur=T1("s28") - ev("s24", "print") + 0.1, fade_out=0.06)
     cue(ev("s27", "horn") - 0.75, "car_pass", -7.0, "s27 car drives past")
-    cue(ev("s27", "horn"), "horn", -5.0, "s27 car horn beep-beep", duck_db=4.0)
+    cue(ev("s27", "horn"), "horn", -7.0, "s27 car horn beep-beep", duck_db=4.0)
     cue(ev("s27", "horn") + 0.45, "car_pass", -10.0, "s27 second car")
     cue(ev("s28", "arrive") - 0.02, "flap", -9.0, "s28 the receipt end slaps into the nose tyre")
     cue(T0("s28"), "jet_idle", -7.0, "s28 airliner whine on the runway", dur=T1("s28") - T0("s28"), fade_in=0.03, fade_out=0.04)
@@ -958,7 +958,7 @@ def main():
     make_oranges()
     make_step("step_far_1", 2001, far=True)
     make_step("step_far_2", 2011, far=True)
-    for k in range(4):
+    for k in range(5):
         make_step(f"step_{k + 1}", 2101 + 10 * k)
     make_boom()
     make_stab("stab_1", 196.0, 2201)          # G3

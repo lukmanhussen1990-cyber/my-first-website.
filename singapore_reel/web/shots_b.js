@@ -3,9 +3,9 @@ import { P, C, OFF, offPt, move, punch, shake, win, kf, placeProp, propPoint, lo
 import { SPOTS, TOILET } from './layout.js';
 
 const TX = TOILET.x, TZ = TOILET.z;
-// officer foot plants while he walks in (16.55 -> 18.3, stride 0.85)
-const walkPos = (t) => { const a = SPOTS.officerStart.pos, b = SPOTS.officer.pos, u = clamp((t - 16.55) / 1.75); return [lerp(a[0], b[0], u), lerp(a[1], b[1], u)]; };
-const PLANTS = [16.55, 17.13, 17.72, 18.3];
+// officer foot plants while he walks in (16.55 -> 17.9, stride 0.85); then a stomp in place at 18.3 (s13)
+const walkPos = (t) => { const a = SPOTS.officerStart.pos, b = SPOTS.officer.pos, u = clamp((t - 16.55) / 1.35); return [lerp(a[0], b[0], u), lerp(a[1], b[1], u)]; };
+const PLANTS = [16.55, 17.0, 17.45, 17.9];
 
 export const shots = {
   s11: { update(ctx) { // "Then you hear footsteps."
@@ -20,12 +20,15 @@ export const shots = {
   } },
   s12: { update(ctx) { // "Heavy footsteps."
     const { W, t } = ctx;
-    move(ctx, { pos: [-0.6, 0.2, 0.42], target: [-1.15, 0.22, -0.95], fov: 52 }, { pos: [-0.6, 0.2, 0.42], target: [-1.12, 0.22, -0.7], fov: 50 }, (u) => u);
-    W.set.state.focus = [-1.1, C, -0.4]; W.set.state.shadowSize = 3;
+    // ground-level camera backing away in front of the boots as they stomp toward it
+    const wp = walkPos(t);
+    ctx.cam.set({ pos: [wp[0] + OFF.f[0] * 1.05 + OFF.r[0] * 0.55, 0.2, wp[1] + OFF.f[2] * 1.05 + OFF.r[2] * 0.55],
+      target: [wp[0] + OFF.f[0] * 0.15, 0.24, wp[1] + OFF.f[2] * 0.15], fov: 52 });
+    W.set.state.focus = [wp[0], C, wp[1]]; W.set.state.shadowSize = 3;
     for (const [i, tp] of PLANTS.entries()) {
       if (t >= tp && t < tp + 0.7) {
-        const p = walkPos(tp), side = i % 2 ? 1 : -1;
-        W.fx.impact({ at: [p[0] + OFF.r[0] * side * 0.1, C + 0.01, p[1] + 0.25], t0: tp, t, size: 0.7 });
+        const p = walkPos(tp), side = i % 2 ? 1 : -1, fw = i === PLANTS.length - 1 ? 0 : 0.17;
+        W.fx.impact({ at: [p[0] + OFF.r[0] * side * 0.1 + OFF.f[0] * fw, C + 0.01, p[1] + OFF.r[2] * side * 0.1 + OFF.f[2] * fw], t0: tp, t, size: 0.7 });
         shake(ctx, tp, tp + 0.22, 0.007, 26);
       }
     }
@@ -36,7 +39,9 @@ export const shots = {
     ctx.cam.set({ pos: offPt(0.55, 0.3, 0.78), target: [lerp(-1.05, -1.06, u), lerp(0.32, 1.84, u), lerp(0.95, 0.94, u)], fov: 54 });
     W.set.state.focus = [-1.05, C, 0.95]; W.set.state.shadowSize = 3;
     lookCam(ctx, off); face(off, 'open', 'angry', 'tight');
-    shake(ctx, 18.2, 18.45, 0.006);
+    // stomp in place: right boot up, then down hard on 18.3
+    off.p.liftR = t < 18.3 ? 0.13 * smooth(invLerp(18.08, 18.22, t)) * (1 - Math.pow(clamp((t - 18.22) / 0.08), 2)) : 0;
+    shake(ctx, 18.3, 18.55, 0.007);
     if (t >= 18.3) W.fx.impact({ at: [-1.05, C + 0.01, 0.95], t0: 18.3, t, size: 0.6 });
   } },
   s14: { update(ctx) { // "He looks at it."

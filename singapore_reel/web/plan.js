@@ -12,7 +12,7 @@ export const PLAN = [
   { id: 's09', t0: 11.50, t1: 13.30, say: 'A lady drops her shopping bag.', desc: 'bag falls in slow motion, oranges roll', events: { drop: 12.62, roll: 12.916 } },
   { id: 's10', t0: 13.30, t1: 14.70, say: 'A kid points.', desc: 'kid points, huge open mouth', events: { punch: 13.9 } },
   { id: 's11', t0: 14.70, t1: 16.55, say: 'Then you hear footsteps.', desc: 'YOU close-up, turns his head, sweat', events: { step: [15.7, 16.25] } },
-  { id: 's12', t0: 16.55, t1: 18.05, say: 'Heavy footsteps.', desc: 'ground-level boots stepping on the mirror pavement', events: { step: [16.55, 17.13, 17.72] } },
+  { id: 's12', t0: 16.55, t1: 18.05, say: 'Heavy footsteps.', desc: 'ground-level boots stepping on the mirror pavement', events: { step: [16.55, 17.0, 17.45, 17.9] } },
   { id: 's13', t0: 18.05, t1: 19.30, say: 'An officer.', desc: 'low angle, slow tilt up from boots to his serious face', events: { boom: 18.2, plant: 18.3 } },
   { id: 's14', t0: 19.30, t1: 20.40, say: 'He looks at it.', desc: 'officer close-up looking down', events: { sting: 19.46 } },
   { id: 's15', t0: 20.40, t1: 21.60, say: 'He looks at you.', desc: 'officer eyes straight into camera', events: { sting: 20.55 } },

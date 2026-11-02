@@ -16,7 +16,7 @@ export const SPOTS = {
   you:     { pos: [-2.0, 0.0],  rotY: 0 },
   poop:    { pos: [-1.62, 0.32] },
   officer: { pos: [-1.05, 0.95], rotY: -2.35 },      // stops in front-right of YOU, facing him and the poop
-  officerStart: { pos: [-1.2, -1.6], rotY: 0.05 },   // walks in from behind YOU (slow heavy steps 16.55-18.3)
+  officerStart: { pos: [0.373, 2.355], rotY: -2.35 },  // 2 m behind his spot along his facing: walks straight at YOU (16.55-17.9)
   man:     { pos: [-0.2, 4.6],  rotY: -2.6 },
   lady:    { pos: [-4.6, 3.6],  rotY: 2.4 },
   kid:     { pos: [-4.0, -2.4], rotY: 1.0 },

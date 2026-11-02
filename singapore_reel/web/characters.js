@@ -376,6 +376,8 @@ function solve(ch, t) {
       if (q < 0.5) { ankle.z += st * (0.5 - q * 2) * 0.5; }
       else { const u = (q - 0.5) * 2; ankle.z += st * (-0.5 + u) * 0.5; ankle.y += Math.sin(u * Math.PI) * 0.1 * s; pitch = Math.sin(u * Math.PI) * 0.35; }
     }
+    const lift = side === 'L' ? p.liftL : p.liftR;            // optional foot lift (m) for a stomp in place
+    if (lift) { ankle.y += lift * s; ankle.z += lift * 0.4 * s; pitch = -lift * 1.5; }
     const ft = side === 'L' ? p.footL : p.footR;
     if (ft) { ankle = v3(ft).applyMatrix4(toLocal); ankle.y = Math.max(ankle.y, ch.ankleH); }
     const { J, E } = ik3(hip, ankle, ch.legL[0], ch.legL[1], hip.clone().add(V(0, -0.3, 1)));
@@ -409,7 +411,7 @@ export function buildCast(world) {
       ch.p.pos = [lerp(a[0], b[0], u), lerp(a[1], b[1], u)];
       ch.p.rotY = Math.atan2(b[0] - a[0], b[1] - a[1]);
       const dist = Math.hypot(b[0] - a[0], b[1] - a[1]) * u;
-      if (u < 1) { ch.p.walkPhase = (dist / (stride * 2)) % 1; ch.p.stride = stride; }
+      if (u < 1) { ch.p.walkPhase = (dist / (stride * 2)) % 1; ch.p.stride = stride * (1 - smooth(clamp((u - 0.8) / 0.2))); } // last steps shrink: feet end together
     },
   };
 
@@ -417,9 +419,10 @@ export function buildCast(world) {
     for (const ch of list) { ch.p = ch.defaults(); helpers.blink(ch, t); }
     const you = chars.you, off = chars.officer;
     you.p.brows = 'worried'; you.p.mouth = 'tight'; you.p.eyes = 'wide';
-    // the officer appears with the footsteps and is standing at his spot from 19.3 s
+    // the officer appears with the footsteps, walks straight at YOU (3 heavy steps, 16.55-17.9; the last one shrinks so
+    // his feet end together) and is standing at his spot, facing YOU, before the s13 cut (18.05)
     off.p.visible = t >= 16.55; off.p.brows = 'angry'; off.p.mouth = 'tight';
-    if (t < 18.3) helpers.walk(off, SPOTS.officerStart.pos, SPOTS.officer.pos, 16.55, 18.3, t, 0.85);
+    if (t < 17.9) helpers.walk(off, SPOTS.officerStart.pos, SPOTS.officer.pos, 16.55, 17.9, t, 0.667);
     // everybody else stares at YOU once they notice (8.45 s)
     for (const n of ['man', 'lady', 'kid', 'extra0', 'extra1', 'extra2', 'extra3', 'extra4']) {
       const ch = chars[n];
