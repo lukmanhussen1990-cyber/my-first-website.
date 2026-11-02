@@ -223,8 +223,6 @@ function bgStreet(ctx, t, o = {}) {
   g.addColorStop(0, '#4aa3e8'); g.addColorStop(1, '#bfe6ff');
   ctx.fillStyle = g; ctx.fillRect(-900, -1400, 2800, 2400);
   for (let i = 0; i < 6; i++) { const cx = ((i * 260 + t * 12) % 1800) - 400, cy = -900 + i * 180 + (i % 2) * 60; puff(ctx, cx, cy, 1.4, '#fff'); }
-  // sun with face
-  drawSun(ctx, t, 600, 220, 0.8, {});
   // buildings
   const cols = ['#f29e4c', '#9b5de5', '#f15bb5', '#00bbf9', '#00c49a', '#fee440', '#e2725b'];
   for (let i = 0; i < 16; i++) {

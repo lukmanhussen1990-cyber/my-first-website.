@@ -76,7 +76,8 @@ function captionAt(t) {
   for (let c = 0; c < CHUNKS.length; c++) {
     const ch = CHUNKS[c], next = CHUNKS[c + 1];
     const start = ws(ch.a) - 0.06;
-    const end = next ? Math.min(ws(next.a) - 0.06, we(ch.b) + 0.75) : we(ch.b) + 1.0;
+    let end = next ? Math.min(ws(next.a) - 0.06, we(ch.b) + 0.75) : we(ch.b) + 1.0;
+    for (const sc of SCENES) if (sc.a > start && sc.a < end) end = sc.a;   // never carry a caption across a cut
     if (t >= start && t < end) return ch;
   }
   return null;
@@ -131,7 +132,6 @@ function drawPhone(ctx, t, o) {
   ctx.restore();
   plainText(ctx, 'Sis', px + 100, py + 84, 26, '#111', { weight: 800 });
   plainText(ctx, 'Bride-to-be · 10 days', px + 100, py + 110, 17, '#ff3f97', { weight: 600 });
-  plainText(ctx, 'Today 9:41 AM', 360, py + 166, 15, '#8e8e98', { align: 'center', weight: 500 });
   // messages
   const msgs = o.msgs.filter(m => t >= m.t);
   const lines = []; // compute layout
@@ -157,7 +157,8 @@ function drawPhone(ctx, t, o) {
   // scroll so the last message stays above input bar
   const bottom = py + ph - 110;
   const scroll = Math.max(0, y - bottom);
-  ctx.save(); ctx.translate(0, -scroll);
+  ctx.save(); ctx.beginPath(); ctx.rect(px, py + 134, pw, ph - 134); ctx.clip(); ctx.translate(0, -scroll);
+  plainText(ctx, 'Today 9:41 AM', 360, py + 166, 15, '#8e8e98', { align: 'center', weight: 500 });
   for (const it of layout) {
     const { m } = it;
     const mine = m.from === 'me';
@@ -193,7 +194,7 @@ function drawPhone(ctx, t, o) {
   ctx.restore();
   // input bar
   const inp = o.input || '';
-  ctx.font = '500 21px Inter';
+  ctx.font = '500 23px Inter';
   let rows = [];
   if (inp) { const words = inp.split(' '); let cur = ''; for (const w of words) { const test = cur ? cur + ' ' + w : w; if (ctx.measureText(test).width > 320 && cur) { rows.push(cur); cur = w; } else cur = test; } rows.push(cur); }
   const ih = Math.max(50, rows.length * 28 + 22);
@@ -201,10 +202,10 @@ function drawPhone(ctx, t, o) {
   ctx.fillStyle = '#ffffff'; ctx.fillRect(px, iy - 14, pw, ph);
   rr(ctx, px + 20, iy, pw - 40, ih, 25); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#d0d0da'; ctx.stroke();
   if (!inp) plainText(ctx, 'Message', px + 44, iy + 33, 21, '#b0b0ba', { weight: 500 });
-  rows.forEach((r, i) => plainText(ctx, r, px + 40, iy + 34 + i * 28, 21, '#111', { weight: 500 }));
+  rows.forEach((r, i) => plainText(ctx, r, px + 40, iy + 34 + i * 28, 23, '#111', { weight: 500 }));
   if (o.cursor && Math.sin(t * 12) > 0) {
     const lr = rows.length ? rows[rows.length - 1] : '';
-    ctx.font = '500 21px Inter'; const cx = px + 40 + (lr ? ctx.measureText(lr).width + 3 : 4);
+    ctx.font = '500 23px Inter'; const cx = px + 40 + (lr ? ctx.measureText(lr).width + 3 : 4);
     ctx.fillStyle = '#2f8bff'; ctx.fillRect(cx, iy + 14 + Math.max(0, rows.length - 1) * 28, 3, 26);
   }
   circle(ctx, px + pw - 46, iy + ih - 25, 16); ctx.fillStyle = inp ? '#2f8bff' : '#c9c9d3'; ctx.fill();

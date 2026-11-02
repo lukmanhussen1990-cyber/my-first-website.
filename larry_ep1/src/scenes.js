@@ -117,7 +117,7 @@ function buildTimeline() {
   countEvent(ws(60), 1, 'toot2');
   addScene('phone1', P1a, P1b, {
     capY: 1150, whip: false,
-    cam: [{ t: P1a, x: 360, y: 640, z: 1 }, { t: ws(42), x: 360, y: 640, z: 1.06, d: 0.3, e: 'out' }, { t: ws(50), x: 360, y: 700, z: 1.12, d: 1.5 }, { t: ws(56), x: 400, y: 820, z: 1.32, d: 0.25, e: 'out' }, { t: ws(58), x: 360, y: 660, z: 1.05, d: 0.4 }],
+    cam: [{ t: P1a, x: 360, y: 640, z: 1 }, { t: ws(42), x: 360, y: 640, z: 1.06, d: 0.3, e: 'out' }, { t: ws(50), x: 360, y: 700, z: 1.12, d: 1.5 }, { t: ws(56), x: 380, y: 760, z: 1.16, d: 0.25, e: 'out' }, { t: ws(58), x: 360, y: 660, z: 1.05, d: 0.4 }],
     draw(ctx, t) {
       bgPhone(ctx, t);
       const k = E.back(P(t, P1a, 0.4));
@@ -278,7 +278,7 @@ function buildTimeline() {
   // ---------------- CHURCH ----------------
   const H0 = C1, H1 = ws(140) - 0.1;
   cue(H0, 'organ', 0.75);
-  cue(ws(129) + 0.2, 'crickets', 0.6);
+  cue(ws(129) + 0.2, 'crickets', 0.6, { dur: ws(132) - ws(129) + 0.6 });
   cue(ws(132) + 0.1, 'aah', 0.35);
   cue(ws(136), 'choir', 0.6); cue(ws(138), 'sparkle', 0.5);
   addScene('church', H0, H1, {
@@ -323,7 +323,7 @@ function buildTimeline() {
   cue(B0, 'whoosh', 0.6); cue(ws(142), 'creak', 0.9);
   cue(ws(146), 'scratch', 1.0); shakeAt(ws(146), 10, 0.3); punch(ws(146), 0.08);
   countEvent(ws(150), 4, 'flush');
-  cue(ws(152), 'ticktock', 0.7);
+  cue(ws(152), 'ticktock', 0.7, { dur: B1 - ws(152) });
   addScene('restroom', B0, B1, {
     cam: [
       { t: B0, x: 360, y: 640, z: 1.0 }, { t: B0 + 0.1, x: 360, y: 640, z: 1.05, d: 1.5 },
@@ -378,9 +378,9 @@ function buildTimeline() {
   addScene('street', S0, S1, {
     cam: [
       { t: S0, x: 330, y: 650, z: 1.0 },
-      { t: dogSniff - 0.1, x: 420, y: 850, z: 1.35, d: 0.35, e: 'out' },
-      { t: dogOff + 0.4, x: 420, y: 760, z: 1.12, d: 0.6 },
-      { t: ws(170) + 0.1, x: 400, y: -320, z: 1.0, d: 1.1, e: 'inOut' },
+      { t: dogSniff - 0.1, x: 430, y: 740, z: 1.12, d: 0.35, e: 'out' },
+      { t: dogOff + 0.4, x: 420, y: 690, z: 1.02, d: 0.6 },
+      { t: ws(170) + 0.1, x: 470, y: -180, z: 1.0, d: 1.1, e: 'inOut' },
     ],
     draw(ctx, t) {
       bgStreet(ctx, t);
@@ -463,7 +463,7 @@ function buildTimeline() {
   const apology = 'Dear sister, I am so deeply sorry for everything my stomach has done, and everything it will do. You deserve a perfect day. I will be strong. I will hold it. I will';
   const typeA = ws(194), typeB = we(198) + 0.2, delA = ws(200) - 0.05, delB = we(201) + 0.05, kT = we(205) + 0.12;
   cue(Q0, 'swoosh', 0.8); cue(ws(191) - 0.05, 'msg', 0.8);
-  cue(typeA, 'typing', 0.7); cue(delA, 'backspace', 0.8);
+  cue(typeA, 'typing', 0.7, { dur: typeB - typeA }); cue(delA, 'backspace', 0.8, { dur: delB - delA });
   cue(kT, 'key', 0.9); cue(ws(206), 'send', 0.9); cue(ws(206) + 0.06, 'thud', 0.5); punch(ws(206), 0.07);
   countEvent(ws(212), 5, 'toot5');
   const msgs2 = msgs1.concat([
@@ -472,7 +472,7 @@ function buildTimeline() {
   ]);
   addScene('phone2', Q0, Q1, {
     capY: 1150, whip: false,
-    cam: [{ t: Q0, x: 360, y: 640, z: 1 }, { t: typeA, x: 360, y: 820, z: 1.28, d: 0.4, e: 'out' }, { t: ws(206), x: 360, y: 760, z: 1.18, d: 0.25, e: 'out' }, { t: ws(207), x: 360, y: 650, z: 1.02, d: 0.5 }],
+    cam: [{ t: Q0, x: 360, y: 640, z: 1 }, { t: typeA, x: 360, y: 780, z: 1.14, d: 0.4, e: 'out' }, { t: ws(206), x: 360, y: 740, z: 1.1, d: 0.25, e: 'out' }, { t: ws(207), x: 360, y: 650, z: 1.02, d: 0.5 }],
     draw(ctx, t) {
       bgPhone(ctx, t, '#2d0b2a');
       let input = '';
@@ -501,6 +501,7 @@ function buildTimeline() {
     cam: [{ t: L0, x: 360, y: 640, z: 1 }],
     draw(ctx, t) {
       const k = E.out(P(t, L0, 0.35));
+      ctx.fillStyle = '#ffd23f'; ctx.fillRect(-50, -50, W + 100, H + 100);
       // halves
       ctx.save(); ctx.translate(-(1 - k) * 380, 0);
       let g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#5a0d17'); g.addColorStop(1, '#a01d2e'); ctx.fillStyle = g; ctx.fillRect(-20, 0, 380, H);
