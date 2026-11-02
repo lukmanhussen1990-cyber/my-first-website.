@@ -5,24 +5,32 @@ Goofy start (bush, limo, rich lady, "Shut up."), then a sweet love-story timelin
 50 YEARS LATER). Same look as the last reels: low-poly PS1 / Roblox 3D, white Pixelify Sans captions in the
 centre (57.5 % height), stink lines, sweat drops, sparkles and floating hearts added in the edit.
 
-## Status
+## How it was made
 
-1. Voiceover: done — the user's own recording (`audio/voiceover_src.mp3`), nothing regenerated.
-2. Shot plan + prompts: done — `prompts.md` (character sheets + 41 ChatGPT prompts + 6 Kling prompts).
-3. Sound: done — 23 new ElevenLabs effects + reused beds/effects + code-made ones, mixed at -14 LUFS.
-4. Video tool: done and tested (placeholder cards until the images exist).
-5. Waiting for the user's images (`images/shot_01.png` ...) and Kling clips (`clips/shot_04.mp4` ...).
-6. Then: tune `edit.py` to the real pictures and build `final.mp4`.
+The prompts for ChatGPT / Kling are in `prompts.md` (step 2). The user then asked me to build the reel myself,
+so - like the bear and mansion reels - the whole video is rendered in 3D with code (three.js r160, frame by
+frame in headless Chromium):
+
+- `web/layout.js` - the 7 places (far apart along +X): rainy blue-hour street, the fun-fact void, the fancy
+  restaurant, Paris (Eiffel Tower), the wedding garden, the porch house at sunset, the living-room wall.
+- `web/set.js` - shows only the current shot's place; places: `set_street.js` (+ `set_city.js`,
+  `set_street_props.js`: limo with gold rims + opening doors, hollow bush, cart, lamp, puddles),
+  `set_rest.js` (+ `set_rest_void.js`: brain + stopwatch, `set_rest_room.js`: restaurant + framed handkerchief),
+  `set_out.js` (+ `set_out_paris.js`, `set_out_eiffel.js`, `set_out_wp.js`: wedding + porch).
+- `web/cast.js` - YOU (homeless / suit / groom / old), the lady (fur coat / bride / old), the bodyguard, the
+  waiter, guests; `web/props_hk.js` - the animated silk handkerchief, its old twin, leaf, ticket, tissue, fly.
+- `web/shots_a.js` .. `shots_d.js` - the 41 shots (camera, poses, faces, effects), timed to the word onsets.
+- `add_labels.py` - DAY 1 / MONTH 3 / YEAR 1 / 50 YEARS LATER labels (added to the captions file).
 
 ## Build
 
 ```bash
-python3 make_sfx.py && python3 mix.py          # sound -> audio/mix_final.wav
-python3 render.py sheet                        # one frame per shot -> build/sheet.jpg (quick check)
-python3 render.py frames                       # all frames (4 processes, ~2 min)
-python3 render.py encode                       # frames + sound + captions -> final.mp4
-SCALE=0.5 python3 render.py frames && SCALE=0.5 python3 render.py encode build/preview.mp4   # fast preview
+SCALE=0.75 JOBS=4 ./make_reel.sh     # captions + labels, plan, sound, frames (4 jobs), final.mp4 (1080x1920)
+PREVIEW=12 ./make_reel.sh            # first 12 s only -> preview.mp4
+SCALE=0.5 node render.mjs shots out 0.6     # one frame per shot (quick check)
 ```
+
+(`render.py` + `edit.py` are the image-based alternative for ChatGPT images; not used for the final.)
 
 ## Voice
 
