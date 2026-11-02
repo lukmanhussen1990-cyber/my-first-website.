@@ -62,7 +62,7 @@ export const shots = {
     move(ctx, { pos: [300, 1.62, -0.85], target: [300, 1.62, 0], fov: 40 }, { pos: [300, 1.62, -0.78], target: [300, 1.62, 0], fov: 40 });
     punch(ctx, te, 1.15, 0.08);
     if (t > te && t < te + 0.1) ctx.post.flash = 0.3 * (1 - (t - te) / 0.1);
-    ctx.W.fx.badge({ text: '0.1 SEC', at: [300, 1.74, -0.32], t0: te, size: 0.26, roll: 0, depthTest: false });
+    ctx.W.fx.badge({ text: '0.1 SEC', at: [300, 1.73, -0.36], t0: te, size: 0.115, roll: 0, depthTest: false });
     ctx.W.fx.glint({ at: [300.12, 1.78, -0.1], size: 0.08, t0: te });
     shadowAt(ctx, [300, 1.6, 0], 2);
   } },
