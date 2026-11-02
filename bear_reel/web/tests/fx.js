@@ -37,20 +37,26 @@ function testCanopy(scene) {
 const MAP_NOSE = [MAP_BEAR.pos[0], 20.6, MAP_BEAR.pos[1] - 5.3];
 const TRAIL_PTS = [[-0.6, 24, 1], [4.0, 24, 12], [-3.5, 24, 25], [2.5, 24, 39], [-4.0, 24, 52], [-8.5, 24, 66], [-3.0, 23.5, 78], MAP_NOSE];
 
+// stub bear (web/stubs/animals.js): head centre = root + R(rotY) * (0, 1.6, 1.6), nose 0.45 in front of it
+const B0 = [BEAR_PATH.stop[0], BEAR_PATH.stop[1]];
+const HB = [B0[0], 1.6, B0[1] - 1.6];          // head centre when the stub bear stands at B0 facing -Z
+const NB = [B0[0], 1.6, B0[1] - 2.05];         // nose
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+
 export function update(ctx) {
   const { t, W, cam, post } = ctx;
   const fx = W.fx, you = W.cast.you, bear = W.animals.bear, dog = W.animals.dog;
-  const slot = Math.floor(t / 10), lt = t - slot * 10;
+  const slot = Math.floor(t / 10), lt = t - slot * 10, T0 = slot * 10;
   if (canopy) { canopy.visible = false; mapBear.visible = false; }
   cam.handheld(0);
   const bearAt = (pos, rotY) => { bear.p.pos = pos; bear.p.rotY = rotY; bear.p.visible = true; };
   const nose = () => bear.nosePos();
 
   switch (slot) {
-    case 0: {          // s01-like: stink behind the bush, medium close-up from the front
+    case 0: {          // s01-like: stink behind the bush, medium close-up from the front (lt<5) / low over the bush (lt>=5)
       bear.p.visible = false;
       if (lt < 5) cam.set({ pos: [0.95, 1.45, 3.1], target: [0.05, 1.3, 0], fov: 40 });
-      else cam.set({ pos: [-0.2, 1.05, 2.6], target: [0.1, 1.25, 0], fov: 40 });  // s22-ish low view over the bush
+      else cam.set({ pos: [-0.2, 1.05, 2.6], target: [0.1, 1.25, 0], fov: 40 });
       fx.stink({ at: [0.12, 0.92, -0.05], amount: 0.8, t, seed: 3 });
       break;
     }
@@ -67,12 +73,12 @@ export function update(ctx) {
       }
       break;
     }
-    case 2: {          // s24 profile: stink sucked into the nose (progress over 2 s, then a loop)
-      bearAt(BEAR_PATH.stop, Math.PI);
-      const n0 = [BEAR_PATH.stop[0], 1.6, BEAR_PATH.stop[1] - 2.05];
-      cam.set({ pos: [n0[0] + 1.45, 1.4, n0[2] - 0.25], target: [n0[0], 1.3, n0[2] - 0.12], fov: 40 });
+    case 2: {          // s24 profile: stink sucked into the nose (progress 0..1 over 2 s; lt>=5: held at 0.5)
+      you.p.visible = false; bearAt(B0, Math.PI);
+      const tg = add(NB, [0, -0.3, 0.08]);
+      cam.set({ pos: add(tg, [1.75, 0.1, -0.15]), target: tg, fov: 40 });
       const prog = lt < 5 ? clamp(lt / 2) : 0.5;
-      fx.stinkFlow({ from: [n0[0], 0.7, n0[2] - 0.45], to: nose, progress: prog, t, count: 4, seed: 2 });
+      fx.stinkFlow({ from: add(NB, [0, -0.8, -0.3]), to: nose, progress: prog, t, count: 4, seed: 2 });
       break;
     }
     case 3: {          // s21 map: trail from 150 m straight down, camera follows the head
@@ -87,11 +93,10 @@ export function update(ctx) {
       break;
     }
     case 4: {          // s25/s26 haze around the bear's face (medium close-up), green tint
-      bearAt(BEAR_PATH.close, Math.PI);
-      const hp = [BEAR_PATH.close[0], 1.6, BEAR_PATH.close[1] - 1.6];
-      cam.set({ pos: [hp[0] + 0.5, 1.7, hp[2] - 2.4], target: hp, fov: 40 });
-      fx.haze({ at: [hp[0], 1.3, hp[2] - 0.2], radius: 1.4, amount: lt < 5 ? 0.6 : 1, t });
-      post.tint = lt < 5 ? 0.15 : 0.3;
+      you.p.visible = false; bearAt(B0, Math.PI);
+      cam.set({ pos: add(HB, [0.5, 0.15, -3.0]), target: add(HB, [0, -0.15, 0]), fov: 40 });
+      fx.haze({ at: add(HB, [0, -0.3, -0.4]), radius: 1.2, amount: lt < 5 ? 0.6 : 1, t });
+      post.tint = lt < 5 ? 0.12 : 0.25;
       break;
     }
     case 5: {          // sweat: s08 face close-up (lt<5), s15 panic burst medium close-up (lt>=5)
@@ -100,31 +105,31 @@ export function update(ctx) {
       const hy = lt < 5 ? 1.6 : 1.6 - 0.35 * 0.4;
       if (lt < 5) {
         cam.set({ pos: [0.2, hy + 0.05, YOU_SPOT.pos[1] + 0.75], target: [YOU_SPOT.pos[0], hy, YOU_SPOT.pos[1]], fov: 40 });
-        fx.sweat({ ch: you, side: 'L', t0: 0.3 + 10 * slot, t, size: 1 });
-        fx.sweat({ ch: you, side: 'R', t0: 1.4 + 10 * slot, t, size: 0.8 });
+        fx.sweat({ ch: you, side: 'L', t0: T0 + 0.3, t, size: 1 });
+        fx.sweat({ ch: you, side: 'R', t0: T0 + 1.4, t, size: 0.8 });
       } else {
         cam.set({ pos: [0.3, hy + 0.1, YOU_SPOT.pos[1] + 1.6], target: [YOU_SPOT.pos[0], hy - 0.05, YOU_SPOT.pos[1]], fov: 40 });
-        fx.sweatBurst({ ch: you, t0: 5.2 + 10 * slot, t, count: 6, every: 0.35 });
+        fx.sweatBurst({ ch: you, t0: T0 + 5.2, t, count: 6, every: 0.35 });
       }
       break;
     }
     case 6: {          // s25 tears down the cheeks (front close-up) lt<5; cryTears front view lt>=5 (reference look)
-      bearAt(BEAR_PATH.close, Math.PI);
-      const hp = [BEAR_PATH.close[0], 1.6, BEAR_PATH.close[1] - 1.6];
-      cam.set({ pos: [hp[0] + 0.15, 1.7, hp[2] - 1.5], target: [hp[0], 1.55, hp[2]], fov: 40 });
-      if (lt < 5) fx.tears({ ch: bear, t0: 0.3 + 10 * slot, t, amount: 1 });
-      else fx.cryTears({ ch: bear, t, amount: 1, dir: [0, 0.6, 0] });
+      you.p.visible = false; bearAt(B0, Math.PI);
+      cam.set({ pos: add(HB, [0.15, 0.1, -2.2]), target: add(HB, [0, -0.1, 0]), fov: 40 });
+      if (lt < 5) fx.tears({ ch: bear, t0: T0 + 0.3, t, amount: 1 });
+      else fx.cryTears({ ch: bear, t, amount: 1, dir: [0, 1, 0] });
       break;
     }
     case 7: {          // s27 wide side view: bear runs away (+X) crying, dust behind the feet
+      you.p.visible = false;
       const x = -3 + lt * 2.2;
-      bearAt([x, 4], Math.PI / 2);
-      cam.set({ pos: [x + 0.5, 1.9, 4 - 7.5], target: [x + 0.3, 1.5, 4], fov: 40 });
+      bearAt([x, 6], Math.PI / 2);
+      cam.set({ pos: [x + 1.0, 1.9, 6 - 7.5], target: [x + 0.8, 1.5, 6], fov: 40 });
       fx.cryTears({ ch: bear, t, amount: 1 });
       for (let k = 0; k < 4; k++) {
         const tk = Math.floor(lt / 0.32) * 0.32 - k * 0.32;
         if (tk < 0) continue;
-        fx.dust({ at: [-3 + tk * 2.2 - 0.4, 0, 4 + (k % 2 ? 0.35 : -0.35)], t0: tk + 10 * slot, t, amount: 0.8, seed: Math.round(tk * 100) });
+        fx.dust({ at: [-3 + tk * 2.2 - 0.5, 0, 6 + (k % 2 ? 0.35 : -0.35)], t0: T0 + tk, t, amount: 0.8, seed: Math.round(tk * 100) });
       }
       break;
     }
@@ -132,11 +137,10 @@ export function update(ctx) {
       if (lt < 5) {
         bear.p.visible = false;
         cam.set({ pos: [0.35, 1.45, 2.4], target: [0.05, 1.25, -0.28], fov: 40 });
-        fx.itch({ at: [0.05, 1.05, -0.2], t0: 0.3 + 10 * slot, t, radius: 0.32, count: 7 });
+        fx.itch({ at: [0.05, 1.05, -0.2], t0: T0 + 0.3, t, radius: 0.32, count: 7 });
       } else {
-        bearAt(BEAR_PATH.stop, Math.PI);
-        const n0 = [BEAR_PATH.stop[0], 1.6, BEAR_PATH.stop[1] - 2.05];
-        cam.set({ pos: [n0[0] + 0.05, 1.63, n0[2] - 0.55], target: n0, fov: 40 });
+        you.p.visible = false; bearAt(B0, Math.PI);
+        cam.set({ pos: add(NB, [0.04, 0.03, -0.62]), target: NB, fov: 40 });
         fx.swirl({ to: nose, t, amount: 1, radius: 0.16 });
       }
       break;
@@ -145,21 +149,23 @@ export function update(ctx) {
       bear.p.visible = false;
       if (lt < 5) {
         cam.set({ pos: [0.6, 1.4, 3.4], target: [0.1, 1.1, 0], fov: 40 });
-        fx.leaves({ at: [0.22, 1.0, 0.55], t0: 0.3 + 10 * slot, t, count: 12, spread: 0.6 });
-        fx.leaves({ at: [0.0, 0.95, 0.4], t0: 1.0 + 10 * slot, t, count: 8, spread: 0.5, seed: 77 });
+        fx.leaves({ at: [0.22, 1.0, 0.55], t0: T0 + 0.3, t, count: 12, spread: 0.6 });
+        fx.leaves({ at: [0.0, 0.95, 0.4], t0: T0 + 1.0, t, count: 8, spread: 0.5, seed: 77 });
       } else {
+        you.p.visible = false;
         const b = [BRANCH.pos[0], 0.04, BRANCH.pos[1]];
         cam.set({ pos: [b[0] + 0.15, 0.18, b[2] - 0.75], target: [b[0], 0.08, b[2]], fov: 40 });
-        fx.splinters({ at: b, t0: 5.4 + 10 * slot, t, count: 16 });
+        fx.splinters({ at: b, t0: T0 + 5.4, t, count: 16 });
       }
       break;
     }
-    case 10: {         // s10 needles kicked at the paws (low angle) lt<5 / s09 glints: eyes in the dark + nose sparkle lt>=5
+    case 10: {         // s10 needles kicked at the paws (low angle) lt<5 / s09 glints: eyes in the dark lt>=5
+      you.p.visible = false;
       if (lt < 5) {
         bearAt([BEAR_PATH.enter[0], BEAR_PATH.enter[1] - 1], Math.PI);
         const pz = BEAR_PATH.enter[1] - 1 - 1.3;
         cam.set({ pos: [BEAR_PATH.enter[0] + 0.3, 0.4, pz - 2.6], target: [BEAR_PATH.enter[0], 0.6, pz], fov: 40 });
-        for (const [k, t0] of [[0, 0.4], [1, 1.1], [2, 1.8]]) fx.needles({ at: [BEAR_PATH.enter[0] + (k % 2 ? 0.35 : -0.35), 0, pz + 0.1], t0: t0 + 10 * slot, t, count: 16, seed: 5 + k });
+        for (const [k, t0] of [[0, 0.4], [1, 1.1], [2, 1.8]]) fx.needles({ at: [BEAR_PATH.enter[0] + (k % 2 ? 0.35 : -0.35), 0, pz + 0.1], t0: T0 + t0, t, count: 16, seed: 5 + k });
       } else {
         bearAt(BEAR_PATH.start, Math.PI);
         W.set.state.exposure = 0.45;
@@ -171,10 +177,11 @@ export function update(ctx) {
       break;
     }
     case 11: {         // s19 badge next to the bear head ~5 m away at fov 40
+      you.p.visible = false;
       bearAt([COMPARE.pos[0] - 1.2, COMPARE.pos[1]], 0);
       dog.p.visible = true;
       cam.set({ pos: [COMPARE.pos[0], 1.6, COMPARE.pos[1] + 6.5], target: [COMPARE.pos[0] - 0.4, 1.5, COMPARE.pos[1]], fov: 40 });
-      fx.badge({ text: 'x7', at: () => W.animals.bear.nosePos().add(new THREE.Vector3(0.75, 0.45, 0.2)), t0: 0.5 + 10 * slot, t, size: 0.75 });
+      fx.badge({ text: 'x7', at: () => W.animals.bear.nosePos().add(new THREE.Vector3(0.75, 0.45, 0.2)), t0: T0 + 0.5, t, size: 0.75 });
       break;
     }
     default: break;
