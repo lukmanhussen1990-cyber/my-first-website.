@@ -1,7 +1,7 @@
 # "Pooping on Top of Mount Everest": delivery report
 
 **Files**
-- `everest_reel_final.mp4`: 1080×1920, 30 fps, H.264 High, 1116 frames = 37.200 s, AAC 256 kb/s 48 kHz.
+- `so_far.mp4`: the full video you uploaded. 1080×1920, 30 fps, H.264, 1116 frames = 37.200 s, AAC 48 kHz. It is the complete first full-quality pass.
 - `preview_low.mp4`, `preview_full_140p.mp4`, `clip_5s_140p.mp4`, `clip_20s_140p.mp4`, `so_far.mp4`: the previews and in-progress cuts sent along the way.
 - `notes.md`: reference study, word timings, shot plan.
 - `CREDITS.txt`: every asset and its licence. Everything is CC0 or OFL; no attribution is required.
@@ -106,7 +106,7 @@ Every shot was checked automatically (black or flat frames, frame-to-frame jump 
 - **Shot 5:** a one-frame pop out of the crouch on "Clever!". The rise is now spread over 6 frames.
 - **Shot 6:** soft focus on the "eyes go huge" beat. The focus now tracks his face, with a deeper depth of field.
 - **Shot 14a:** the hero was too small in a static wide frame. It is now a low hero angle with a slow push-in.
-- Shots 1, 2, 5, 6 and 14a were re-rendered with these fixes.
+- Re-renders of shots 1, 2, 5, 6 and 14a with these fixes were started. Shots 1 and 2 finished; the rest were stopped at your request after you uploaded the video. The uploaded `so_far.mp4` therefore has the original versions of those five shots.
 
 **Verified:**
 - no black frames;
