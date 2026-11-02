@@ -75,8 +75,8 @@ const SPOT = V3(HW.x + 1.55, 0, HW.z + 0.25);               // where the walker 
 // shutters
 const shutters = [];
 for (const s of [-1, 1]) {
-  const hinge = grp(SP.win, s * SP.ww / 2, SP.oy, 0.06);
-  mesh(rbox(SP.ww / 2, SP.wh, 0.08, 0.03), mat('#ffffff', { map: TEX.planks, rough: 0.7 }), { parent: hinge, pos: [-s * SP.ww / 4, 0, 0] });
+  const hinge = grp(SP.win, s * SP.ww / 2, SP.oy + 0.22, 0.06);
+  mesh(rbox(SP.ww / 2, SP.wh - 0.45, 0.08, 0.03), mat('#ffffff', { map: TEX.planks, rough: 0.7 }), { parent: hinge, pos: [-s * SP.ww / 4, 0, 0] });
   mesh(box(SP.ww / 2 - 0.1, 0.08, 0.1), mat('#5a3a22'), { parent: hinge, pos: [-s * SP.ww / 4, 0.3, 0.03] });
   mesh(box(SP.ww / 2 - 0.1, 0.08, 0.1), mat('#5a3a22'), { parent: hinge, pos: [-s * SP.ww / 4, -0.3, 0.03] });
   shutters.push({ hinge, s });

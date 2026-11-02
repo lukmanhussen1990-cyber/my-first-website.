@@ -33,7 +33,7 @@ export function initTextures() {
   T.cobble = TX.cobble(11); T.brick = TX.bricks(12); T.soil = TX.soil(13); T.roof = TX.roofTiles(14);
   T.roofDark = TX.roofTiles(15, '#8a5038'); T.grass = TX.grass(16); T.planks = TX.planks(17); T.ripple = TX.ripples(18);
   T.water = TX.ripples(19, '#2f8fd0', 'rgba(255,255,255,0.4)'); T.dirtyWater = TX.ripples(20, '#6f5a2c', 'rgba(255,230,170,0.3)');
-  T.banner = TX.banner('@Grace In Motion'); T.newspaper = TX.newspaper();
+  T.banner = TX.banner('@Garden_reels'); T.newspaper = TX.newspaper();
   T.plaster = ['#f3e4c6', '#f6e8bb', '#f2d6c9', '#e9ece2', '#f7f0e2', '#f0dcb8'].map((c, i) => TX.plaster(30 + i, c));
   return T;
 }
@@ -193,7 +193,7 @@ export function buildTown(scene) {
   const festive = grp(town); festive.visible = false;
   for (const hh of houses) {
     for (const wdw of hh.g.userData.info.windows) {
-      if (wdw.floor !== 1 || hh.hero && Math.abs(wdw.x) < 0.5) continue;
+      if (wdw.floor !== 1 || hh.hero && hh.g.userData.info.special && Math.abs(wdw.x - hh.g.userData.info.special.x) < 0.01) continue;
       const fb = flowerBox(null, wdw.x, wdw.y - 0.85, wdw.z + 0.25, wdw.ww + 0.3, Math.round(hh.z * 13 + wdw.x * 7));
       const holder = grp(festive); holder.position.copy(hh.g.position); holder.rotation.copy(hh.g.rotation); holder.add(fb);
     }
@@ -211,7 +211,7 @@ export function buildTown(scene) {
   bake(festive);
   // creator banner on the hero house (upper jetty, facing the street)
   const hero = town.userData.hero; const hinfo = hero.userData.info;
-  const bn = grp(null, 0, 3.78, hinfo.d / 2 + hinfo.jet + 0.12);
+  const bn = grp(null, 0, 3.45, hinfo.d / 2 + hinfo.jet + 0.2);
   mesh(rbox(3.25, 0.98, 0.06, 0.03), mat('#6b4423'), { parent: bn, pos: [0, 0, -0.02] });
   mesh(new THREE.PlaneGeometry(3.1, 0.86), new THREE.MeshStandardMaterial({ map: T.banner, roughness: 0.8 }), { parent: bn, pos: [0, 0, 0.02], cast: false });
   for (const s of [-1, 1]) mesh(sphere(0.06), mat('#d9b44a', { metal: 0.6 }), { parent: bn, pos: [1.5 * s, 0.38, 0.05] });
