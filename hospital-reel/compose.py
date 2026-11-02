@@ -37,6 +37,7 @@ def caption_img(text):
     cap_cache[text] = img
     return img
 CAP_Y = 1100
+CAP_Y_SHOT = {'28': 1560, '30': 1560, '32': 1560, '36': 1640}
 
 def zoom_shift(im, z, cx, cy, dx=0, dy=0):
     if abs(z - 1) < 1e-3 and dx == 0 and dy == 0: return im
@@ -48,13 +49,13 @@ def shake(a, u, f=40):
 
 rng = np.random.default_rng(11)
 yy, xx = np.mgrid[0:OH, 0:OW]
-VIG = (1 - 0.6 * np.clip(((xx - OW / 2) / (OW * 0.6)) ** 2 + ((yy - OH / 2) / (OH * 0.6)) ** 2, 0, 1))[..., None].astype(np.float32)
+VIG = (1 - 0.42 * np.clip(((xx - OW / 2) / (OW * 0.6)) ** 2 + ((yy - OH / 2) / (OH * 0.6)) ** 2, 0, 1))[..., None].astype(np.float32)
 def old_film(fr, t):
     a = np.asarray(fr).astype(np.float32)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     o = np.stack([0.393 * r + 0.769 * g + 0.189 * b, 0.349 * r + 0.686 * g + 0.168 * b, 0.272 * r + 0.534 * g + 0.131 * b], -1)
-    o = o * 0.9 * VIG * (0.93 + 0.07 * math.sin(t * 41) * math.sin(t * 13))
-    o += rng.normal(0, 9, (OH // 3, OW // 3, 1)).repeat(3, 0).repeat(3, 1)
+    o = (o * 1.12 + 18) * VIG * (0.94 + 0.06 * math.sin(t * 41) * math.sin(t * 13))
+    o += rng.normal(0, 6, (OH // 4, OW // 4, 1)).repeat(4, 0).repeat(4, 1)
     im = Image.fromarray(np.clip(o, 0, 255).astype(np.uint8))
     d = ImageDraw.Draw(im); rr = np.random.default_rng(int(t * FPS))
     for _ in range(rr.integers(0, 3)):
@@ -110,7 +111,7 @@ GAIN = -14.0 - I
 cmd = ["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{OW}x{OH}", "-r", str(FPS), "-i", "-",
        "-ss", str(t_from), "-t", str(t_to - t_from), "-i", os.path.join(HERE, "audio", "mix.wav"),
        "-af", f"volume={GAIN:.2f}dB,alimiter=limit=0.85:level=false", "-ar", "48000",
-       "-c:v", "libx264", "-preset", "slow", "-crf", "19", "-pix_fmt", "yuv420p", "-profile:v", "high",
+       "-c:v", "libx264", "-preset", "slow", "-crf", "24", "-pix_fmt", "yuv420p", "-profile:v", "high",
        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", out]
 p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 missing = 0
@@ -122,7 +123,7 @@ for f in range(int(t_from * FPS), min(NF, int(round(t_to * FPS)))):
     im = effects(im, s, t - s["t0"], t)
     for c in D["captions"]:
         if c["t0"] <= t < c["t1"]:
-            ci = caption_img(c["text"]); im.paste(ci, (0, CAP_Y - ci.height // 2), ci); break
+            ci = caption_img(c["text"]); cy = CAP_Y_SHOT.get(s["id"], CAP_Y); im.paste(ci, (0, cy - ci.height // 2), ci); break
     p.stdin.write(im.tobytes())
 p.stdin.close(); p.wait()
 print("wrote", out, "missing frames:", missing)
