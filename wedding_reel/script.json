@@ -1,0 +1,62 @@
+{
+  "title": "MOM! I'M DONE! (wedding reel)",
+  "voices": {
+    "N": {
+      "name": "Nassim - Corporate Narration",
+      "voice_id": "repzAAjoKlgcT2oOAIWt",
+      "model": "eleven_v4",
+      "prompt_tags": "[calm] [deadpan]",
+      "source": "same voice and settings as bear_reel/script.json (branch ccr-64855637-j42i5x) and thanksgiving_reel/script.json"
+    },
+    "Y": {
+      "name": "Nassim - Corporate Narration (YOU yelling)",
+      "voice_id": "repzAAjoKlgcT2oOAIWt",
+      "model": "eleven_v4",
+      "prompt_tags": "[shouting]",
+      "source": "the same Nassim voice, shouting: the calm narrator is the 32-year-old man yelling from the toilet"
+    }
+  },
+  "takes": {
+    "N": "narr_A",
+    "Y": "yell_B"
+  },
+  "gain_db": {
+    "N": 0.0,
+    "Y": 0.0
+  },
+  "lines": [
+    {"who": "N",   "text": "You're thirty-two years old."},
+    {"who": "N",   "text": "You just pooped at your cousin's wedding."},
+    {"who": "N",   "text": "And from the toilet, you yell:"},
+    {"who": "Y",   "text": "MOM! I'M DONE!",   "pause_before": 0.3},
+    {"who": "N",   "text": "The DJ stops the music.",   "pause_before": 0.6},
+    {"who": "N",   "text": "Two hundred guests turn around."},
+    {"who": "N",   "text": "Then you remember."},
+    {"who": "N",   "text": "Mom left an hour ago."},
+    {"who": "N",   "text": "Silence."},
+    {"who": "N",   "text": "The uncles look at each other.",   "pause_before": 0.85},
+    {"who": "N",   "text": "Nobody moves."},
+    {"who": "N",   "text": "The bride stops smiling."},
+    {"who": "N",   "text": "The groom pretends to check his phone."},
+    {"who": "N",   "text": "Grandpa pretends to be asleep."},
+    {"who": "N",   "text": "You yell again."},
+    {"who": "N",   "text": "Louder."},
+    {"who": "Y",   "text": "MOM! I'M DOOONE!",   "pause_before": 0.3,   "stretch_last": 1.35},
+    {"who": "N",   "text": "A baby starts crying.",   "pause_before": 0.6},
+    {"who": "N",   "text": "What you don't know:",   "pause_before": 1.0},
+    {"who": "N",   "text": "most kids learn to wipe on their own by age five or six."},
+    {"who": "N",   "text": "You're thirty-two."},
+    {"who": "N",   "text": "The family makes a circle."},
+    {"who": "N",   "text": "Rock."},
+    {"who": "N",   "text": "Paper.",   "pause_before": 0.42},
+    {"who": "N",   "text": "Scissors.",   "pause_before": 0.42},
+    {"who": "N",   "text": "Everyone throws rock."},
+    {"who": "N",   "text": "Except the groom."},
+    {"who": "N",   "text": "He throws scissors.",   "pause_before": 1.25},
+    {"who": "N",   "text": "On his own wedding day."},
+    {"who": "N",   "text": "He walks to the toilet."},
+    {"who": "N",   "text": "Slowly.",   "pause_before": 0.55},
+    {"who": "N",   "text": "The DJ plays a sad song."},
+    {"who": "N",   "text": "Congratulations to the happy couple.",   "pause_before": 1.1}
+  ]
+}
