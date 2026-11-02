@@ -134,10 +134,11 @@ def main():
             t += n / SR
         s, e = t + c["speech"][0], t + c["speech"][1]
         meta.append({"i": i + 1, "text": c["line"]["text"], "start": round(s, 3), "end": round(e, 3)})
-        for w in c["words"]:   # STT word times moved onto the new timeline (clamped inside the line)
+        # STT word times moved onto the new timeline (clamped inside the line); the words are the SCRIPT's words
+        for sw, w in zip(c["line"]["text"].split(), c["words"]):
             ws = min(max(t + (w["s"] - c["cut0"]), s), e)
             we = min(max(t + (w["e"] - c["cut0"]), ws + 0.05), e)
-            all_words.append({"w": w["w"], "s": round(ws, 3), "e": round(we, 3), "line": i + 1})
+            all_words.append({"w": sw, "s": round(ws, 3), "e": round(we, 3), "line": i + 1})
         out.append(c["audio"].astype(np.float32))
         t += len(c["audio"]) / SR
     out.append(np.zeros(int(TAIL * SR), np.float32))
