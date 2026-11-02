@@ -51,6 +51,15 @@ ANCHORS = {
 }
 
 
+# real positions measured by the 3D renderer (render_scene.mjs -> build/anchors/shot_XX.json) override the defaults
+for _i in list(ANCHORS):
+    _f = os.path.join(HERE, "build", "anchors", f"shot_{_i:02d}.json")
+    if os.path.exists(_f):
+        _m = json.load(open(_f))
+        for _k, _v in _m.items():
+            ANCHORS[_i][_k] = [tuple(x) for x in _v] if _v and isinstance(_v[0], list) else tuple(_v)
+
+
 def A(i, k):
     return ANCHORS[i][k]
 
@@ -91,7 +100,7 @@ def shot_fx(i):
         19: dict(push=(1.08, 1.20), punch=[(w(17, 0), 1.10)], shake=[(yell2, 52, 1.4, 24)],
                  flash=[(yell2, 0.5, 0.2)],
                  fx=[dict(type="rings", at=A(19, "mouth"), t0=yell2, t1=t1 + 0.1, size=700, n=5)]),
-        20: dict(push=(1.05, 1.12), shake=[(t0, 40, 2.4, 16)], sway=(2.5, 0.9)),
+        20: dict(push=(1.05, 1.12), shake=[(t0, 34, 2.4, 16)], sway=(1.0, 0.9)),
         21: dict(push=(1.0, 1.08), shake=[(w(18, 3), 8, 0.6, 24)],
                  fx=[dict(type="tears", at=A(21, "eyes"), t0=t0 + 0.2, fly=0.7, rate=7.0)]),
         22: dict(push=(1.0, 1.14), push_ease="lin",
@@ -109,9 +118,9 @@ def shot_fx(i):
         30: dict(push=(1.0, 1.24), push_ease="in", grade=dict(desat=(0.0, 0.4)), vignette=0.45,
                  fx=[dict(type="sweat", at=A(30, "forehead"), t0=t0 + 0.4, dist=90, slide=1.5)]),
         31: dict(push=(1.0, 1.10), push_ease="lin", flash=[(w(28, 2), 0.55, 0.25)], vignette=0.45,
-                 clip=dict(start=0.0, speed=0.6)),
+                 clip=dict(start=0.0, speed=1.0)),
         32: dict(push=(1.0, 1.05), punch=[(w(29, 3), 1.12)], vignette=0.35),
-        33: dict(push=(1.0, 1.10), push_ease="lin", clip=dict(start=0.3, speed=0.7),
+        33: dict(push=(1.0, 1.10), push_ease="lin", clip=dict(start=0.0, speed=1.0),
                  fx=[dict(type="petals", n=26, speed=110)]),
         34: dict(push=(1.0, 1.06), fx=[dict(type="petals", n=22, speed=110)]),
         35: dict(push=(1.0, 1.08), grade=dict(tint=((255, 200, 160), 0.35)),

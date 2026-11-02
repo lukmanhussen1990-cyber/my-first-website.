@@ -27,8 +27,18 @@ an ending that slowly zooms out while green haze fills the room.
    Sound effects: 27 ElevenLabs sound effects (same flow, 4 takes each, `audio/sfx_src/`; the take used for
    each sound is in `make_sfx.py` TAKES, picked from spectrograms) + code-made ones (whooshes, ding, womp,
    heartbeat, drip, pad, booms, the yell echoes, the war-drum pattern). 43 cues, every one placed on a word.
-4. **Waiting for the images (`images/shot_XX.png`) and Kling clips (`clips/shot_XX.mp4`).**
-5. Then: set the effect anchors in `fx.py` for each picture, `./make_reel.sh`, check the result, fix.
+4. **Pictures made in code** (the user asked to build without waiting for the ChatGPT images): every shot is a
+   low-poly 3D scene in `scene/` (three.js, rendered headless with Playwright + SwiftShader), using the character
+   rig and textures from the Thanksgiving reel with a new wedding cast (YOU, groom, bride, three uncles, grandpa,
+   DJ, waiter, baby, kids, guests), the wedding hall, hallway, marble bathroom and kids' bathroom.
+   `node render_scene.mjs` writes `images/shot_XX.png` (1350x2400) and, for shots 5, 8, 17, 20, 31 and 33,
+   real 3D animation clips `clips/shot_XX.mp4` (guests turning in sync, the chandelier swinging, the groom's
+   slow walk...). It also measures where mouths, eyes and doors are on screen (`build/anchors/`), so the 2D
+   effects (stink lines, sweat, tears, sound rings) sit on the right spot.
+   If ChatGPT images / Kling clips arrive later, drop them into `images/` and `clips/` and run `./make_reel.sh`.
+5. **Done: `final.mp4`** — 1080x1920, 30 fps, 61.07 s (1832 frames), H.264 + AAC, -13.9 LUFS, 36 MB.
+   Checked: one frame of every shot (picture matches the line, captions in sync, effects on the right spot).
+   `./make_reel.sh` rebuilds it; `./make_preview.sh` makes a quick half-size `preview.mp4`.
 
 ## Files
 
@@ -49,11 +59,14 @@ an ending that slowly zooms out while green haze fills the room.
 | `fx.py` | per-shot camera moves and effects (push, pan, punch-ins, shake, stink lines, sweat, tears, haze …) |
 | `render.py` | renders each shot from its image / Kling clip (parallel) → `build/seg_XX.mp4` |
 | `make_reel.sh` | the whole build → `final.mp4` (1080x1920, 30 fps, H.264 + AAC, captions burned in) |
+| `scene/` (`shots.js`, `hall.js`, `cast.js`, …), `render_scene.mjs` | the code-made 3D pictures and clips (three.js 0.160, `npm install`) |
 
 ## Build the video
 
 ```bash
 pip install numpy scipy soundfile faster-whisper pocketsphinx opencv-python-headless fonttools
+npm install                        # three.js for the 3D scenes (Playwright + Chromium must be available)
+node render_scene.mjs              # 3D pictures -> images/, clips/ (PREVIEW=0.4 for quick small previews)
 ./make_reel.sh                     # captions -> sound -> mix -> shots -> final.mp4
 python3 render.py --stills out/    # 3 stills per shot for checking
 ```
