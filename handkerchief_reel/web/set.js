@@ -16,9 +16,19 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { locOf } from './layout.js';
-import { buildStreet } from './set_street.js';
-import { buildVoid, buildRestaurant, buildInterior } from './set_rest.js';
-import { buildParis, buildWedding, buildPorch } from './set_out.js';
+// place modules load one by one: a broken / unfinished module only blanks its own places
+const MODS = {};
+for (const [k, f] of [['street', './set_street.js'], ['rest', './set_rest.js'], ['out', './set_out.js']]) {
+  try { MODS[k] = await import(f); } catch (e) { console.warn(`[log] set: ${f} failed to load: ${e.message}`); MODS[k] = {}; }
+}
+const need = (mod, fn) => (MODS[mod] && MODS[mod][fn]) || (() => { throw new Error(`${fn} unavailable`); });
+const buildStreet = (...a) => need('street', 'buildStreet')(...a);
+const buildVoid = (...a) => need('rest', 'buildVoid')(...a);
+const buildRestaurant = (...a) => need('rest', 'buildRestaurant')(...a);
+const buildInterior = (...a) => need('rest', 'buildInterior')(...a);
+const buildParis = (...a) => need('out', 'buildParis')(...a);
+const buildWedding = (...a) => need('out', 'buildWedding')(...a);
+const buildPorch = (...a) => need('out', 'buildPorch')(...a);
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 
@@ -32,7 +42,7 @@ export function buildSet(world) {
   const places = {};
   const safe = (name, fn) => {
     try { places[name] = fn(env, world); }
-    catch (e) { console.error(`[log] set: place ${name} failed to build: ${e.message}`); places[name] = emptyPlace(name); }
+    catch (e) { console.warn(`[log] set: place ${name} failed to build: ${e.message}`); places[name] = emptyPlace(name); }
     group.add(places[name].group);
   };
   safe('street', buildStreet); safe('void', buildVoid); safe('restaurant', buildRestaurant); safe('interior', buildInterior);
