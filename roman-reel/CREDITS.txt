@@ -1,0 +1,48 @@
+Roman Toilet Love Story - asset credits
+=======================================
+Everything used is free and CC0 (public domain) or made from scratch for this reel.
+No login-gated downloads were used.
+
+Voice
+-----
+- voiceover.mp3 - supplied by @garden_reels (ElevenLabs), used as-is (only loudness-normalised to -16 LUFS).
+
+Characters (MakeHuman / MPFB2 for Blender - CC0 system assets)
+-------------------------------------------------------------
+- Base human mesh, default rig, ARKit face units, high-poly eyes, eyebrows, eyelashes,
+  hair "short02" and "short04" - MakeHuman Community / MPFB2 system assets (CC0).
+- Tunics (white with red clavi, ochre), belts, strapped sandals, heart eyes, blush and soot
+  layers - generated procedurally from the body mesh by our own scripts.
+
+Set (Roman public latrine)
+--------------------------
+- Mosaic floor and Pompeian-style fresco walls - painted procedurally by our own script (texgen.py).
+- Poly Haven (CC0): HDRI "kloofendal" (clamped); textures marble_01, castle_wall_slates,
+  white_rough_plaster, clay_roof_tiles_02, dark_wooden_planks.
+- Keyhole marble bench, water gutter, consoles, roof, lamp shelves - modelled procedurally.
+
+Props
+-----
+- Tersorium (sponge on a stick), love note ("AMO TE"), scroll, heart bubbles, amphora,
+  oil lamps - modelled procedurally by our own scripts (Poly Haven CC0 textures where textured).
+
+Sound effects (all CC0 or synthesized)
+--------------------------------------
+- BigSoundBank.com (Joseph Sardin) - CC0: gasoline fire #1/#2, big branching fire, fireplace,
+  water drips, paper and cloth handling, wood creak and others (ids 0496, 0666, 0778, 0785, 0864,
+  0912, 0913, 0987, 1223, 1340, 1341, 1384, 1386, 1695, 1696, 2284, 3094).
+- OpenGameArt.org - CC0: "LEGIT Audio - Fire Staff (free)", "Squish sounds effects",
+  "Water drops", "80 CC0 RPG SFX".
+- Kenney.nl - CC0: Music Jingles, RPG Audio.
+- Earlier CC0 library from previous @garden_reels reels: love chime, sparkle ding, gasps,
+  soft whooshes, light comedic acoustic music bed.
+- Synthesized in Python (numpy): lyre plucks, harp glissando, sub "oomph" layers, reverbs.
+
+Fonts
+-----
+- Poppins Bold / SemiBold - Indian Type Foundry, SIL Open Font License 1.1.
+
+Software
+--------
+- Blender 4.5 LTS (Cycles), MPFB2, ffmpeg, Python (numpy, Pillow), OpenAI Whisper + Vosk/Kaldi
+  (word timing only).
