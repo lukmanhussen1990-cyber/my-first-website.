@@ -1,8 +1,8 @@
-# "Pooping on Top of Mount Everest": delivery report (draft)
+# "Pooping on Top of Mount Everest": delivery report
 
 **Files**
 - `everest_reel_final.mp4`: 1080×1920, 30 fps, H.264 High, 1116 frames = 37.200 s, AAC 256 kb/s 48 kHz.
-- `preview_low.mp4`: the earlier quick low-res preview.
+- `preview_low.mp4`, `preview_full_140p.mp4`, `clip_5s_140p.mp4`, `clip_20s_140p.mp4`, `so_far.mp4`: the previews and in-progress cuts sent along the way.
 - `notes.md`: reference study, word timings, shot plan.
 - `CREDITS.txt`: every asset and its licence. Everything is CC0 or OFL; no attribution is required.
 
@@ -77,3 +77,45 @@ Captions: Poppins Bold, white with a thin dark outline and soft shadow, centred 
   - tent zipper, paper flutter and slap on the face, zip-lock seal, carabiner click;
   - sparkle dings and a short triumphant brass sting at the end.
 - **Music and ducking:** a very quiet CC0 comedy music bed. The effects are ducked about 3 dB and the music about 9 dB under the voice.
+
+## Self-check and fixes
+Every shot was checked automatically (black or flat frames, frame-to-frame jump detection) and by eye on frame contact sheets. This happened first on low-res Cycles stills and the 360×640 preview, then on every finished shot of the full render.
+
+**Fixed before or right after the preview:**
+- **Characters:**
+  - The hood showed ear bumps; it was rebuilt as a smooth shell.
+  - Metaball mittens came out lumpy with holes; they were rebuilt as one padded pouch with a thumb and a flared cuff.
+  - The beard was removed, and black sunglasses were added instead of goggles, as you asked.
+- **Steam:** it read as grey smoke; it is now 5× denser and lit from within, and thinned out so his face stays visible in "Much better".
+- **Thermometer:** it was hidden inside the puffy chest; it now snaps onto the suit surface, with his arms clamped at his sides.
+- **Cameras:** several were rebuilt from the real prop and character positions:
+  - the thermometer and face rack focus, and the mitten inserts;
+  - the side view for the flying toilet paper (white paper against white snow became paper against blue sky);
+  - the clip-on-backpack shot (his body was blocking the lens), the hero pose, and the ending.
+- **Sunglasses:** they now slide far enough down his nose to reveal his eyes.
+- **Bitten mitten:** its pivot was moved to his teeth; it had been swinging around the world origin.
+- **Cold hand:** the red, then blue colours are stronger so they read against the bright skin shader.
+- **Toilet paper on the friend's face:** moved to his lower face so his glaring eyes stay visible.
+- **Backpack:** it floated; it is now snapped to the suit's back surface, and its hip belt is hidden.
+- **Golden finale:** the sun is rotated to light him from the front, plus a warm grade.
+- **Ending:** split into the walk-away and a close-up of the friend's glare.
+
+**Fixed during the full render** (the render itself was never stopped):
+- **Sky box (shots 1–2):** a faint translucent box in the sky came from the environment's spindrift volume slab. It is now off; blowing snow comes from fine snow streaks plus soft wisps. This also made the render about 40 % faster.
+- **Breath-fog puffs:** they were square-edged, because the Principled Volume glow is not scaled by density. Their glow now follows the fog density and the falloff is rounder. All upcoming shots were patched before the render reached them.
+- **Shot 5:** a one-frame pop out of the crouch on "Clever!". The rise is now spread over 6 frames.
+- **Shot 6:** soft focus on the "eyes go huge" beat. The focus now tracks his face, with a deeper depth of field.
+- **Shot 14a:** the hero was too small in a static wide frame. It is now a low hero angle with a slow push-in.
+- Shots 1, 2, 5, 6 and 14a were re-rendered with these fixes.
+
+**Verified:**
+- no black frames;
+- every flagged jump is an intended action: block slams, punch-ins, the toilet-paper slap and recoils;
+- the full 37.2 s of audio is present, and your last word ends at 37.02 s with nothing cut off.
+
+## Things to know
+- **No logins needed:** every asset was freely downloadable without an account. Nothing is missing.
+- **Licences:** no CC-BY material is used, so no credit line is legally required. Credits are in `CREDITS.txt` as a courtesy.
+- **Resolution:** frames were rendered at 723×1286 with 4 samples plus denoising, then cleanly upscaled to 1080×1920. A side-by-side test showed 4 samples look the same as 6 and render about 30 % faster. A native 1080×1920 render would take about 2.2× longer.
+- **Synthesized sounds:** the "brrr" shiver is synthesized, because no wordless CC0 recording exists. The gasps are real CC0 breaths, reshaped.
+- **Implied gags:** the crude moments are implied, never shown: framing from the front, the "clink", and a cute swirl icon on the bag and the flag.
