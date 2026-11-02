@@ -32,7 +32,7 @@ BASE_GAP = 0.10
 
 # extra pause weights after each segment (comedic beats)
 PAUSE_W = {
-    "S1": 0.5, "S2": 0.7, "S3": 0.3, "S4": 0.7, "S5": 0.35, "S6": 0.6,
+    "S1": 0.5, "S2": 1.0, "S3": 0.3, "S4": 0.7, "S5": 0.35, "S6": 0.6,
     "S7": 0.6, "S8": 0.6, "S9": 0.3, "S10": 0.25, "S11": 0.35, "S12": 0.6,
     "S13": 0.4, "S14": 0.9, "S15": 1.0, "S16": 0.45, "C1": 0.7, "S17": 0.4,
     "S18": 0.8, "S19": 0.0,
@@ -175,9 +175,12 @@ def main():
             order.append(("C1", "crush", cru[0], cr_c[0]))
     # renumber narrator ids after the crush line stay S17.. (already sequential)
 
-    speech = sum(c[1] - c[0] for _, _, _, c in order) + BASE_GAP * (len(order) - 1)
+    # sentences the voice ran together (no pause in the source) stay glued: no gap inserted
+    glued = {order[i][0] for i in range(len(order) - 1)
+             if order[i][1] == order[i + 1][1] and order[i + 1][3][0] <= order[i][3][1] + 1e-3}
+    speech = sum(c[1] - c[0] for _, _, _, c in order) + BASE_GAP * (len(order) - 1 - len(glued))
     target_end = DURATION - ENDING_MIN - ENDING_BEAT
-    wsum = sum(PAUSE_W[o[0]] for o in order)
+    wsum = sum(PAUSE_W[o[0]] for o in order if o[0] not in glued)
     k = max(0.0, (target_end - INTRO - speech) / wsum)
     k = min(k, 1.9)
 
@@ -199,7 +202,7 @@ def main():
                         vis.append([round(s, 3), round(max(e, s + 0.07), 3)])
             seg["visemes"] = vis
         segments.append(seg)
-        cursor += (ce - cs) + BASE_GAP + k * PAUSE_W[sid]
+        cursor += (ce - cs) + (0.0 if sid in glued else BASE_GAP + k * PAUSE_W[sid])
     last_end = segments[-1]["end"]
     ending_start = round(min(last_end + ENDING_BEAT, DURATION - 5.4), 3)
 

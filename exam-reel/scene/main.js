@@ -1119,16 +1119,16 @@ const MEp = V(ME_SEAT.x, 0, ME_SEAT.z), CRp = V(CR_SEAT.x, 0, CR_SEAT.z);
 
 addShots('S1', [
   [0, 'wide-establish', fixed(V(7.4, 3.6, -9.6), V(6.4, 3.2, -8.3), V(0.6, 0.2, 1.2), V(1.0, 0.4, 0.8), 62)],
-  [0.42, 'me-cu-shock', cu(ME, { w: 1.23, wEnd: 0.94, fov: 38, push: 0.0, shake: 0.006 }), { whoosh: true }],
-  [0.72, 'pants-bulge', fixed(MEp.clone().add(V(1.05, 0.62, 1.15)), MEp.clone().add(V(0.9, 0.6, 1.0)), MEp.clone().add(V(0, 0.5, 0.38)), MEp.clone().add(V(0, 0.5, 0.38)), 46), { whoosh: true }],
+  [0.45, 'me-cu-shock', cu(ME, { w: 1.23, wEnd: 0.94, fov: 38, push: 0.0, shake: 0.006 }), { whoosh: true }],
 ]);
 addShots('S2', [
-  [0, 'me-low-34', cu(ME, { w: 1.5, fov: 44, yaw: 0.7, pitch: -0.12, ty: -0.25, push: 0.06 })],
-  [0.52, 'me-cu-smug', cu(ME, { w: 1.01, fov: 36, yaw: -0.3, push: 0.08 })],
+  [0, 'pants-bulge', fixed(MEp.clone().add(V(1.05, 0.62, 1.15)), MEp.clone().add(V(0.9, 0.6, 1.0)), MEp.clone().add(V(0, 0.5, 0.38)), MEp.clone().add(V(0, 0.5, 0.38)), 46), { whoosh: true }],
+  [0.36, 'me-low-34', cu(ME, { w: 1.5, fov: 44, yaw: 0.7, pitch: -0.12, ty: -0.25, push: 0.06 })],
+  [0.7, 'me-cu-smug', cu(ME, { w: 1.01, fov: 36, yaw: -0.3, push: 0.08 })],
 ]);
 addShots('S3', [
   [0, 'clock-ecu', fixed(V(0.15, 3.95, -8.25), V(0.1, 4.0, -8.6), CLOCK.position.clone(), CLOCK.position.clone(), 40), { whoosh: true }],
-  [0.62, 'me-eyes-up', cu(ME, { w: 0.81, fov: 34, pitch: -0.05, push: 0.05 })],
+  [0.55, 'me-eyes-up', cu(ME, { w: 0.81, fov: 34, pitch: -0.05, push: 0.05 })],
 ]);
 addShots('S4', [
   [0, 'board-no-toilet', fixed(V(1.75, 1.9, -6.6), V(1.8, 1.95, -6.9), V(1.6, 2.0, -10.9), V(1.75, 2.0, -10.9), 44)],
