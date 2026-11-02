@@ -55,7 +55,7 @@ const SPECS = {
     pants: ['cotton', { color: '#7a5a7a', seed: 23 }], shoe: '#8a6a5a', shoeKind: 'sneaker',
     face: { ...LADY_FACE, brow: '#cfcac2', wrinkles: true, lips: '#b8102a' } },
   // the BODYGUARD: huge, bald, black suit, small sunglasses, earpiece, very emotional inside
-  guard: { H: 1.96, skin: '#5e3b26', hair: '#120a06', hairStyle: 'shaved', glasses: 'sunSmall', earpiece: true, belly: 0.25,
+  guard: { H: 1.96, skin: '#7a5038', hair: '#120a06', hairStyle: 'shaved', glasses: 'sunSmall', earpiece: true, belly: 0.25,
     shoulder: 0.25, waist: 0.2, chestD: 0.135,
     torso: { style: 'suit', main: '#141417', shirt: '#f4f4f0', tie: '#0c0c0e' }, sleeve: ['wool', { color: '#141417', seed: 24 }],
     pants: ['wool', { color: '#141417', seed: 25 }], shoe: '#0c0c0e', shoeKind: 'sneaker',
@@ -409,7 +409,7 @@ class Character {
         const w = big ? 0.054 : 0.04, h = big ? 0.036 : 0.024, t = big ? 0.0065 : 0.0045;
         const fm = mat('#0c0c0e', { rough: 0.25, metal: 0.3 });
         this.mk(glassesGeo(0.031, 0.006, ez + 0.013, { w, h, t, earZ: -0.03, earX: HEAD.rx * 1.0 }), fm, 'glassFrame', g);
-        const lm = new THREE.MeshStandardMaterial({ color: '#0a0d12', roughness: 0.12, metalness: 0.25, envMap: env, envMapIntensity: 0.35, side: THREE.DoubleSide });
+        const lm = new THREE.MeshStandardMaterial({ color: '#06080b', roughness: 0.3, metalness: 0.0, envMap: env, envMapIntensity: 0.12, side: THREE.DoubleSide });
         this.mk(lensGeo(0.031, 0.006, ez + 0.013, { w, h }), lm, 'glassLens', g);
       }
       this.glasses = g;

@@ -184,7 +184,7 @@ export function torsoTex(style, c) {
       if (Math.abs(u - 0.43) < 0.03 && Math.abs(v - 0.52) < 0.01) col = [30, 26, 22];      // a small tear
     } else if (style === 'suit' || style === 'tux') {                  // jacket with lapels over a white shirt + tie / bow tie
       const shirt = fabric('cotton', { color: c.shirt || '#f4f4f0', seed: 36, amount: 5 });
-      const open = v > 0.42 ? 0.006 + (v - 0.42) * 0.22 : 0.0;
+      const open = v > 0.5 ? 0.005 + (v - 0.5) * 0.13 : 0.0;
       if (adu < open) {
         col = shirt(x, y);
         if (style === 'suit' && adu < 0.016 && v > 0.45 && v < 0.94) col = addc(hexToRgb(c.tie || '#7a1c2a'), ((x + y) & 1) * 8 - 4);  // tie
@@ -192,7 +192,7 @@ export function torsoTex(style, c) {
         if (style === 'tux' && v > 0.88 && v < 0.94 && adu < 0.045 && !(adu < 0.008)) col = addc(hexToRgb(c.tie || '#111114'), ((x + y) & 1) * 6);  // bow tie
         if (style === 'tux' && adu < 0.008 && v > 0.89 && v < 0.93) col = [10, 10, 12];
         if (style === 'tux' && adu < 0.005 && v < 0.85 && v > 0.5 && (y % 6) < 2) col = [30, 30, 34];                                 // studs
-      } else if (adu < open + 0.035 && v > 0.42) col = addc(f(x, y), style === 'tux' ? 18 : -14);   // lapel (satin on a tux)
+      } else if (adu < open + 0.03 && v > 0.5) col = addc(f(x, y), style === 'tux' ? 18 : -14);   // lapel (satin on a tux)
       if (adu > 0.01 && adu < 0.02 && v < 0.42 && v > 0.12 && (y % 11) < 2) col = [20, 20, 24];       // buttons
       if (c.flower && du > 0.1 && du < 0.14 && v > 0.74 && v < 0.8) col = addc(hexToRgb(c.flower), ((x * 3 + y) % 3) * 10 - 10);  // buttonhole flower
       if (du < -0.12 && du > -0.18 && v > 0.74 && v < 0.76) col = addc(f(x, y), -20);                  // breast pocket

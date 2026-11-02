@@ -74,9 +74,10 @@ export const shots = {
     const k = smooth(clamp((t - t0 - 0.1) / 0.9));
     p.glassesLow = k; face(lady, 'open', 'neutral', 'neutral'); p.headPitch = -0.2; p.pupils = [0, -0.8];
     pose(ctx);
-    const gp = lady.head.localToWorld(v3(0, -0.03 * k, 0.12)).toArray();
-    p.handR = [gp[0], gp[1] - 0.05, gp[2] + 0.02]; p.handPoseR = 'point';
-    move(ctx, { pos: [2.02, LFACE + 0.04, -2.6], target: [2.0, LFACE + 0.02, -3.15], fov: 30 }, { pos: [2.02, LFACE + 0.04, -2.68], target: [2.0, LFACE + 0.02, -3.15], fov: 30 });
+    const gp = lady.head.localToWorld(v3(0, 0.004 - 0.026 * k, 0.11)).toArray();     // the glasses' bridge
+    const lift = win(t, t0, ctx.shot.t1, 0.12, 0.3);
+    p.handR = [gp[0] - 0.04, gp[1] - 0.07 - 0.12 * (1 - lift), gp[2] + 0.035]; p.handPoseR = 'point';
+    move(ctx, { pos: [2.13, LFACE + 0.04, -2.62], target: [2.0, LFACE + 0.0, -3.15], fov: 30 }, { pos: [2.11, LFACE + 0.04, -2.7], target: [2.0, LFACE + 0.0, -3.15], fov: 30 });
     ctx.cam.handheld(0);
     shadowAt(ctx, [2.0, 1.5, -3.1], 3);
   } },
