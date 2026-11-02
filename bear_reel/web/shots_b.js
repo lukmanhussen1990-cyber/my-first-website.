@@ -27,13 +27,13 @@ export const shots = {
     const t = ctx.t, bear = ctx.W.animals.bear, p = bear.p, stop = ctx.ev('stop');
     // last step, then frozen mid-step with the front-right paw up
     const walking = t < stop;
-    bearWalk(ctx, [BP.stop[0] - 0.05, BP.stop[1] + 0.9], BP.stop, walking ? invLerp(ctx.shot.t0, stop, t) : 1, { stride: 1.5 });
-    if (!walking) { p.gait = 'idle'; p.pawLift = { leg: 'FR', amount: easeOutBack(invLerp(stop - 0.05, stop + 0.12, t)) }; }
+    bearWalk(ctx, [BP.stop[0] - 0.05, BP.stop[1] + 0.9], BP.stop, walking ? invLerp(ctx.shot.t0, stop, t) : 1);
+    if (!walking) { p.gait = 'idle'; p.pawLift = { leg: 'FL', amount: easeOutBack(invLerp(stop - 0.05, stop + 0.12, t)) }; }
     bearFace(ctx, 'wide', 'raised', 'closed'); p.ears = 1;
     p.headPitch = lerp(-0.05, 0.22, smooth(invLerp(stop - 0.1, stop + 0.2, t)));
     p.headYaw = 0.12 * smooth(invLerp(stop + 0.2, stop + 0.6, t));
-    move(ctx, { pos: [2.9, 1.15, BP.stop[1] - 2.6], target: [BP.stop[0], 1.15, BP.stop[1]], fov: 36 },
-              { pos: [2.8, 1.15, BP.stop[1] - 2.5], target: [BP.stop[0], 1.18, BP.stop[1]], fov: 35 });
+    move(ctx, { pos: [BP.stop[0] - 2.9, 1.15, BP.stop[1] - 3.9], target: [BP.stop[0] - 0.05, 0.95, BP.stop[1] - 0.9], fov: 44 },
+              { pos: [BP.stop[0] - 2.8, 1.15, BP.stop[1] - 3.75], target: [BP.stop[0] - 0.05, 0.97, BP.stop[1] - 0.9], fov: 43 });
     punch(ctx, stop, 1.12);
     ctx.W.set.state.skyDark = 0.2;
     light(ctx, [BP.stop[0], 1, BP.stop[1]], 5, 0.45);
@@ -50,8 +50,8 @@ export const shots = {
     solve(ctx);
     const nose = bear.nosePos(), head = bear.headPos();
     const fwd = nose.clone().sub(head).normalize();
-    const cam = nose.clone().addScaledVector(fwd, 0.62).add(v3(0.03, -0.02, 0));
-    ctx.cam.set({ pos: cam.toArray(), target: nose.clone().add(v3(0, 0.005, 0)).toArray(), fov: lerp(30, 27, ctx.u) }).handheld(0.0012);
+    const cam = nose.clone().addScaledVector(fwd, 0.95).add(v3(0.04, -0.03, 0));
+    ctx.cam.set({ pos: cam.toArray(), target: nose.clone().add(v3(0, 0.005, 0)).toArray(), fov: lerp(33, 30, ctx.u) }).handheld(0.0012);
     bump(ctx, s1, 1.06, 0.25); bump(ctx, s2, 1.06, 0.25);
     ctx.W.fx.swirl({ to: nose.toArray(), t, amount: 0.4 + 0.6 * sn, radius: 0.22, seed: 3 });
     ctx.W.fx.glint({ at: nose.clone().add(v3(0.02, 0.04, 0)).addScaledVector(fwd, 0.02).toArray(), t, size: 0.025 });
@@ -61,13 +61,13 @@ export const shots = {
   // ---------------------------------------------------------------- s14 "Then it walks straight toward you."
   s14: { update(ctx) {
     const t = ctx.t, bear = ctx.W.animals.bear, p = bear.p, you = ctx.W.cast.you, yp = you.p;
-    bearWalk(ctx, [BP.stop[0], BP.stop[1] - 0.4], [BP.near[0] - 0.2, BP.near[1] + 2.0], ctx.u, { stride: 1.5 });
+    bearWalk(ctx, [BP.stop[0], BP.stop[1] - 0.4], [BP.near[0] - 0.2, BP.near[1] + 2.0], ctx.u);
     bearFace(ctx, 'open', 'angry', 'closed'); p.ears = 1; p.headPitch = -0.08;
     p.lookAt = [YX, 1.4, YZ];
     yp.crouch = 0.22; face(ctx, 'stare', 'raised', 'tight'); yp.lookAt = bear.headPos ? [BP.near[0], 1.3, BP.near[1] + 3] : null;
     for (const s of ctx.ev('steps')) hit(ctx, s, 0.003, 0.15, 17);
-    move(ctx, { pos: [YX - 0.32, 1.58, YZ - 0.75], target: [BP.stop[0] - 0.3, 1.05, BP.stop[1] - 1.5], fov: 34 },
-              { pos: [YX - 0.3, 1.57, YZ - 0.62], target: [BP.near[0] - 0.2, 1.05, BP.near[1] + 2.5], fov: 31 });
+    move(ctx, { pos: [YX + 0.4, 1.6, YZ - 0.78], target: [BP.stop[0] - 0.3, 1.05, BP.stop[1] - 1.5], fov: 34 },
+              { pos: [YX + 0.38, 1.59, YZ - 0.66], target: [BP.near[0] - 0.2, 1.05, BP.near[1] + 2.5], fov: 31 });
     ctx.W.set.state.skyDark = 0.2;
     light(ctx, [0, 1, 4], 8, 0.35);
   } },
@@ -152,12 +152,11 @@ export const shots = {
     bearFace(ctx, 'happy', 'raised', 'closed'); bear.p.headPitch = 0.12;
     dog.p.visible = true; dog.p.pos = [cx + 0.95, cz + 0.05]; dog.p.rotY = -0.12; dog.p.sit = 1;
     dog.p.eyes = 'sad'; dog.p.brows = 'sad'; dog.p.mouth = 'closed';
-    solve(ctx);
-    dog.p.lookAt = bear.headPos().toArray();
+    dog.p.headYaw = -0.55; dog.p.headPitch = 0.42 + 0.04 * Math.sin(t * 2);   // looks up-left toward the big bear
     solve(ctx);
     const dh = dog.headPos();
-    move(ctx, { pos: [dh.x + 0.55, dh.y - 0.05, dh.z + 1.25], target: [dh.x - 0.05, dh.y + 0.08, dh.z], fov: 34 },
-              { pos: [dh.x + 0.5, dh.y - 0.04, dh.z + 1.1], target: [dh.x - 0.05, dh.y + 0.08, dh.z], fov: 33 });
+    move(ctx, { pos: [dh.x - 0.5, dh.y + 0.1, dh.z + 0.95], target: [dh.x - 0.03, dh.y + 0.04, dh.z], fov: 34 },
+              { pos: [dh.x - 0.45, dh.y + 0.1, dh.z + 0.85], target: [dh.x - 0.03, dh.y + 0.04, dh.z], fov: 33 });
     ctx.W.fx.sweat({ ch: dog, side: 'L', t0: ctx.ev('dog') - 0.2, t, size: 1.1 });
     light(ctx, [cx, 1, cz], 6, 0.5, [0.3, 0.5, 1]);
   } },

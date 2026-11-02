@@ -201,6 +201,11 @@ window.APP = {
   renderTime: (t) => { renderAt(t); return grab(); },
   renderView: (t, camSpec) => { renderAt(t, camSpec); return grab(); },   // time t with a camera override {pos,target,fov}
   audit,
+  // camera + key positions at time t (for framing shots)
+  probe: (t) => { renderAt(t); const r = (v) => v.toArray().map((x) => +x.toFixed(2)); const b = world.animals.bear, y = world.cast.you;
+    return { shot: shotAt(t).id, cam: r(camera.position), bearVisible: b.root.visible, bearHead: r(b.headPos()), bearNose: r(b.nosePos()), youHead: r(y.headPos()), dogHead: r(world.animals.dog.headPos()) }; },
+  // names of visible meshes whose geometry has NaN positions at time t (debugging)
+  nanCheck: (t) => { renderAt(t); const bad = []; scene.traverse((m) => { if (!m.isMesh && !m.isLine && !m.isPoints) return; let vis = true; m.traverseAncestors((a) => { if (!a.visible) vis = false; }); if (!vis || !m.visible) return; const a = m.geometry?.attributes?.position; if (!a) return; for (let i = 0; i < a.array.length; i++) if (!Number.isFinite(a.array[i])) { bad.push(`${m.name || m.type} (${m.geometry.type}, ${a.count} pts)`); break; } }); return bad; },
   plan: () => PLAN.map(({ id, t0, t1, say }) => ({ id, t0, t1, say })),
 };
 

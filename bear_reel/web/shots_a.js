@@ -27,8 +27,8 @@ export const shots = {
     p.pos = [YX - 0.12, YZ - 0.1]; p.leanSide = -0.2; face(ctx, 'open', 'raised', 'smile'); p.blush = 1;
     p.handR = [HIDE_TREE.pos[0] + 0.40, 1.47, HIDE_TREE.pos[1] + 0.12]; p.handPoseR = 'flat';
     lookCam(ctx, you);
-    move(ctx, { pos: [3.9, 2.3, 8.2], target: [-0.9, 1.7, -2.0], fov: 42 },
-              { pos: [3.2, 2.2, 7.9], target: [-1.0, 1.7, -2.0], fov: 41 });
+    move(ctx, { pos: [2.6, 1.6, 4.6], target: [-1.6, 1.5, -3.5], fov: 44 },
+              { pos: [2.25, 1.6, 4.45], target: [-1.6, 1.5, -3.5], fov: 43 });
     stinkYou(ctx, 0.45, { at: [YX + 0.1, 0.9, YZ - 0.1], scale: 1.3 });
     ctx.W.set.state.rays = 0.8;
     light(ctx, [-1, 1, -3], 12, 0.3);
@@ -41,8 +41,8 @@ export const shots = {
     // the empty tube held up beside his face, tilted toward the camera so we see it is empty
     const lift = easeOut(invLerp(ctx.shot.t0, ctx.shot.t0 + 0.35, ctx.t));
     tube.visible = true;
-    tube.position.set(YX - 0.12, lerp(1.25, 1.52, lift), YZ + 0.26);
-    tube.rotation.set(0.25, 0, 0.18);
+    tube.position.set(YX - 0.13, lerp(1.22, 1.5, lift), YZ + 0.3);
+    tube.rotation.set(0.75, 0, 0.22);
     p.gripR = tube;
     p.lookAt = [YX - 0.12, 1.52, YZ + 0.26];
     if (ctx.t > ev) { p.eyes = 'stare'; p.lookAt = null; p.headPitch = -0.02; lookCam(ctx, you); }
@@ -164,7 +164,7 @@ export const shots = {
   s09: { update(ctx) {
     const t = ctx.t, bear = ctx.W.animals.bear, p = bear.p;
     // dark backlit silhouette far up the trail, walking slowly between trees
-    bearWalk(ctx, [BP.start[0] - 2.5, BP.start[1] + 2], [BP.start[0] - 0.2, BP.start[1] - 1.5], ctx.u, { stride: 1.6 });
+    bearWalk(ctx, [BP.start[0] - 2.5, BP.start[1] + 2], [BP.start[0] - 0.2, BP.start[1] - 1.5], ctx.u);
     p.headPitch = 0.1;
     for (const [i, tt] of ctx.ev('thuds').entries()) hit(ctx, tt, 0.0035, 0.12, 18 + i);
     ctx.W.animals.birds.flyOff({ t, t0: 12.05, from: [-3.0, 7.5, 17.5], count: 5, dir: [1, 0.6, -0.3], seed: 2 });
@@ -179,7 +179,7 @@ export const shots = {
   // ---------------------------------------------------------------- s10 "It's a bear." (KEY)
   s10: { update(ctx) {
     const t = ctx.t, bear = ctx.W.animals.bear, p = bear.p, sting = ctx.ev('sting');
-    bearWalk(ctx, [BP.enter[0] - 0.1, BP.enter[1] + 2.2], [BP.enter[0], BP.enter[1]], ctx.u, { stride: 1.5 });
+    bearWalk(ctx, [BP.enter[0] - 0.1, BP.enter[1] + 2.2], [BP.enter[0], BP.enter[1]], ctx.u);
     bearFace(ctx, 'open', 'angry', 'closed'); p.headPitch = -0.12; p.ears = 1;
     if (t > sting) { p.mouth = 'growl'; }
     const cx = BP.enter[0];

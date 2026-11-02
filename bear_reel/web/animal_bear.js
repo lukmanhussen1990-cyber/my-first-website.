@@ -347,7 +347,8 @@ export class Bear {
     hlm.rotation.x = -0.18; hlm.userData.noAudit = true;
     const dps = [];
     for (const [x, y, r] of [[0.018, 0.055, 0.0075], [-0.06, 0.04, 0.006], [0.072, 0.02, 0.0055], [0.0, 0.03, 0.0045], [-0.012, 0.062, 0.005]]) {
-      dps.push(ellipsoid(r, r * 0.8, r * 0.7, 6, 4).translate(x, y, nz(x, y) - r * 0.2));
+      const z = nz(x, y); if (!Number.isFinite(z)) continue;   // droplet outside the nose outline: skip
+      dps.push(ellipsoid(r, r * 0.8, r * 0.7, 6, 4).translate(x, y, z - r * 0.2));
     }
     const dm = this.mk(merge(dps), M.drop, 'noseDrops', this.noseGrp, { cast: false, receive: false }); dm.userData.noAudit = true;
     this.noseTip = new THREE.Object3D(); this.noseTip.position.set(0, -0.005, nz(0, -0.005)); this.noseGrp.add(this.noseTip);

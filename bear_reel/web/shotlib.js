@@ -35,15 +35,17 @@ export function lookCam(ctx, ch, off = [0, 0, 0]) { ch.p.lookAt = v3(ctx.cam.spe
 
 // ---------------------------------------------------------------- BEAR
 // walk the bear along a straight line a->b (x,z) over u (0..1); sets pos, rotY (facing the travel direction) and gait phase
-export const STRIDE = 1.5;   // metres per gait cycle at walk (updated from the animals report if different)
+export const STRIDES = { walk: 1.7, run: 3.2, biped_run: 2.6, idle: 1.7 };   // metres per gait cycle (animal_bear.js GAITS)
+export const STRIDE = STRIDES.walk;
 export function bearWalk(ctx, a, b, u, o = {}) {
   const bear = ctx.W.animals.bear, p = bear.p;
   const x = lerp(a[0], b[0], u), z = lerp(a[1], b[1], u);
   p.pos = [x, z];
   p.rotY = Math.atan2(b[0] - a[0], b[1] - a[1]);
-  const dist = Math.hypot(b[0] - a[0], b[1] - a[1]) * u + (o.phase0 ?? 0) * STRIDE;
   p.gait = o.gait || 'walk';
-  p.phase = dist / (o.stride ?? STRIDE);
+  const st = o.stride ?? STRIDES[p.gait] ?? STRIDE;
+  const dist = Math.hypot(b[0] - a[0], b[1] - a[1]) * u + (o.phase0 ?? 0) * st;
+  p.phase = dist / st;
   return p;
 }
 export function bearFace(ctx, eyes, brows, mouth) { const p = ctx.W.animals.bear.p; p.eyes = eyes; p.brows = brows; p.mouth = mouth; }

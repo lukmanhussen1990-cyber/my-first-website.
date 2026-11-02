@@ -37,7 +37,7 @@ const srv = await serve();
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: Math.round(1080 * scale), height: Math.round(1920 * scale) } });
 let errors = 0;
-page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning' || m.text().startsWith('[log]')) { console.log('page:', m.type(), m.text()); if (m.type() === 'error') errors++; } });
+page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning' || m.text().startsWith('[log]')) { if (m.text().includes('already non-indexed')) return; console.log('page:', m.type(), m.text()); if (m.type() === 'error') errors++; } });
 page.on('pageerror', (e) => { console.log('pageerror:', e.message); errors++; });
 await page.goto(`http://127.0.0.1:${srv.address().port}/web/index.html?scale=${scale}${process.env.USE ? '&use=' + process.env.USE : ''}${process.env.TEST ? '&test=' + process.env.TEST : ''}`);
 await page.waitForFunction(() => window.APP_READY === true, null, { timeout: 300000 });
@@ -53,11 +53,16 @@ if (mode === 'times') {
   const plan = await page.evaluate(() => window.APP.plan());
   for (const s of plan) {
     const t = Math.round((s.t0 + (s.t1 - s.t0) * frac) * 30) / 30;
+    if (process.env.LOGSHOTS) console.log(`[shot] ${s.id}`);
     save(path.join(out, `${s.id}_${t.toFixed(2)}.jpg`), await page.evaluate((t) => window.APP.renderTime(t), t));
   }
 } else if (mode === 'view') {
   const t = Number(rest[0]), cam = JSON.parse(rest[1]), name = rest[2] || `view_${t.toFixed(2)}`;
   save(path.join(out, `${name}.jpg`), await page.evaluate(([t, cam]) => window.APP.renderView(t, cam), [t, cam]));
+} else if (mode === 'probe') {
+  for (const t of rest.map(Number)) console.log(`t=${t}:`, JSON.stringify(await page.evaluate((t) => window.APP.probe(t), t)));
+} else if (mode === 'nancheck') {
+  for (const t of rest.map(Number)) console.log(`t=${t}:`, JSON.stringify(await page.evaluate((t) => window.APP.nanCheck(t), t)));
 } else if (mode === 'audit') {
   const step = Number(rest[0] ?? 0.1);
   const total = await page.evaluate(() => window.APP.frameCount() / 30);
