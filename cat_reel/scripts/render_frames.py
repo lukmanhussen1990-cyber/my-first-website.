@@ -24,6 +24,7 @@ for part in spec.split(','):
         frames += list(range(a, b + 1)) if a <= b else list(range(a, b - 1, -1))
     elif part:
         frames.append(int(part))
+bpy.context.preferences.system.memory_cache_limit = 192    # MB: stop the movie-texture cache growing
 sc = bpy.context.scene
 sc.render.resolution_percentage = res
 sc.eevee.taa_render_samples = samples
@@ -49,5 +50,8 @@ for f in frames:
     sc.render.filepath = path
     bpy.ops.render.render(write_still=True)
     print(f'FRAME {f} done in {time.time() - t:.1f}s', flush=True)
+    for img in bpy.data.images:                 # free decoded movie frames (laptop screen)
+        if img.source == 'MOVIE':
+            img.buffers_free()
     if use_lock and os.path.exists(path + '.lock'):
         os.remove(path + '.lock')
