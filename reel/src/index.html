@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Reel Renderer</title>
+<style>
+@font-face { font-family: 'Pix'; src: url('./node_modules/@fontsource/pixelify-sans/files/pixelify-sans-latin-700-normal.woff2') format('woff2'); font-weight: 700; }
+@font-face { font-family: 'Silk'; src: url('./node_modules/@fontsource/silkscreen/files/silkscreen-latin-700-normal.woff2') format('woff2'); font-weight: 700; }
+html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+canvas { position: absolute; left: 0; top: 0; display: block; }
+</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js" } }</script>
+</head>
+<body>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>
