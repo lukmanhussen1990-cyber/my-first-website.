@@ -33,7 +33,7 @@ node tools/render.js frames --w $W --h $H --fps 30 --workers "$WORKERS" --qualit
 # audio: the voice untouched as the main sound, effects quietly underneath
 if [ -n "$VOICE" ]; then
   ffmpeg -v error -y -i "$VOICE" -i build/sfx.wav -filter_complex \
-    "[0:a]aresample=48000,aformat=channel_layouts=stereo[v];[1:a]aformat=channel_layouts=stereo[s];[v][s]amix=inputs=2:duration=first:normalize=0[a]" \
+    "[0:a]aresample=48000,pan=stereo|c0=c0|c1=c0[v];[1:a]aformat=channel_layouts=stereo[s];[v][s]amix=inputs=2:duration=first:normalize=0[a]" \
     -map "[a]" -t "$DUR" -c:a pcm_s16le build/mix.wav
 else
   cp build/sfx.wav build/mix.wav
