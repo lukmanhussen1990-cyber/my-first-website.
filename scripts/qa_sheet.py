@@ -35,8 +35,11 @@ def expected(frame):
     return w['word'] if t <= min(nxt, w['end'] + 0.55) else '-'
 
 
+maxf = int(sys.argv[4]) if len(sys.argv) > 4 else 10**9
 samples = []
 for n, a, b in scenes:
+    if a >= maxf:
+        continue
     for j in range(per):
         f = a + int((b - a) * (j + 0.5) / per)
         samples.append((n, f))
