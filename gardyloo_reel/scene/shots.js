@@ -357,7 +357,7 @@ export const SHOTS = {
   19: {
     build(W) { const H = outside(W, { bathOpen: 1 }); const you = person(W, 'you'); return { H, you }; },
     update(W, c) {
-      inWindow(c.you, 0.36); face(c.you, 'squint', 'raised', 'smile', { headPitch: 0.12, headYaw: 0.25 });
+      inWindow(c.you, 0.36); face(c.you, 'squint', 'raised', 'smile', { headPitch: 0.12, headYaw: 0.25 }); c.H.sash.rotation.y = -2.75;
       const h = c.you.headPos(); c.you.p.handL = [h.x + 0.1, h.y + 0.11, h.z + 0.13]; c.you.p.handPoseL = 'flat'; c.you.p.handRotL = handRot([-1, 0.05, 0.1], [0, 1, 0.2]);
       c.you.p.handR = [2.75, 4.22, 3.1]; c.you.p.handPoseR = 'flat';
     },
@@ -376,7 +376,7 @@ export const SHOTS = {
     build(W) { const H = outside(W, { bathOpen: 1, carDoor: 1 }); return dadOutside(W, { H }); },
     update(W, c) { poseDadOutside(c, 0, { rotY: 0.05 }); },
     after: (W, c) => onShoulder(c),
-    cam: () => camAt([DAD[0] + 0.15, 1.05, DAD[1] + 3.6], [DAD[0], 1.02, DAD[1]], 40),
+    cam: () => camAt([0.9, 1.05, 8.6], [DAD[0] - 0.05, 1.02, DAD[1]], 40),
     anchors: (W, c) => ({ shoulder: c.bundle.getWorldPosition(V()) }),
   },
   // 23 "It's on his shoulder. His best suit." ECU of the pinstripe shoulder: the bundle + one small cartoon smudge
