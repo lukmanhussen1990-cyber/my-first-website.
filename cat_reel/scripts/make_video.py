@@ -87,7 +87,7 @@ filters = []
 # flash cuts into the flashback / enemy shots + film grain in the flashback
 for n0 in (339, 495):
     filters.append(f"drawbox=x=0:y=0:w=iw:h=ih:color=white@0.38:t=fill:enable='between(n,{n0},{n0 + 1})'")
-filters.append("noise=alls=8:allf=t:enable='between(n,339,494)'")
+filters.append("noise=alls=5:allf=t:enable='between(n,339,494)'")
 for i, (txt, t0, t1) in enumerate(caps):
     tf = os.path.join(work, f'cap_{i:02d}.txt')
     with open(tf, 'w') as fh:
@@ -122,7 +122,8 @@ cmd = ['ffmpeg', '-hide_banner', '-v', 'error', '-y', '-framerate', str(FPS), '-
        '-i', os.path.join(seq, '%04d.png'), '-i', AUDIO,
        '-filter_script:v', os.path.join(work, 'filter.txt'), '-af', ln + ',aresample=48000',
        '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow' if not PREVIEW else 'veryfast',
-       '-crf', '17', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-r', str(FPS),
+       '-crf', '19', '-maxrate', '14M', '-bufsize', '28M', '-profile:v', 'high', '-level', '4.2',
+       '-pix_fmt', 'yuv420p', '-r', str(FPS),
        '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', '-shortest', OUT]
 subprocess.run(cmd, check=True)
 print('wrote', OUT)
