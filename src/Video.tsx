@@ -39,7 +39,7 @@ export const FlushKing: React.FC<{captions?: boolean; sfx?: boolean; previewScal
 	return (
 		<AbsoluteFill style={{background: '#000'}}>
 			<AbsoluteFill style={{filter: whip.blur > 0.4 ? `blur(${whip.blur.toFixed(2)}px)` : undefined}}>
-				<ThreeCanvas width={width} height={height} dpr={previewScale ?? 1} shadows={{enabled: true, type: THREE.PCFShadowMap}} gl={{antialias: false, powerPreference: 'high-performance'}}>
+				<ThreeCanvas width={width} height={height} dpr={previewScale ?? 1} shadows={previewScale ? false : {enabled: true, type: THREE.PCFShadowMap}} gl={{antialias: false, powerPreference: 'high-performance'}}>
 					<FontGate>
 						<Comp key={idx} f={f} dur={S.dur} g={frame} />
 						<Post {...post} />

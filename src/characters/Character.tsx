@@ -70,6 +70,8 @@ export type CharacterProps = {
 	shadow?: boolean;
 	frameOffset?: number;
 	headExtra?: React.ReactNode;
+	/** something worn on the back (backpack), in torso space: origin at the back surface, mid-height */
+	backItem?: React.ReactNode;
 	children?: React.ReactNode;
 };
 
@@ -528,6 +530,7 @@ export const Character: React.FC<CharacterProps> = (props) => {
 					{arm(-1, pose.armR, props.holdR, props.holdRUpright)}
 					{backBucket}
 					{cape}
+					{props.backItem ? <group position={[0, T * 0.5, -fz]}>{props.backItem}</group> : null}
 					<group position={[0, T, 0]} rotation={pose.head}>
 						{head}
 					</group>
