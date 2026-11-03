@@ -441,7 +441,7 @@ export const SHOTS = {
       sitAt(c.ow, ...couchSeat(1.85), -Math.PI / 2); c.ow.p.y = 0.14; face(c.ow, 'closed', 'neutral', 'smile', { headRoll: -0.12, leanSide: -0.08 });
       const sh = c.you.chestPos(); c.ow.p.handR = [sh.x + 0.05, sh.y + 0.08, sh.z - 0.15]; c.ow.p.handPoseR = 'flat';
     },
-    after(W, c) { c.bl.position.set(HX + COUCH[0] - 0.42, 0.98, COUCH[1] + 0.1); c.bl.rotation.set(0, Math.PI / 2, 0); },
+    after(W, c) { c.bl.position.set(HX + COUCH[0] - 0.42, 0.8, COUCH[1] + 0.1); c.bl.rotation.set(0, Math.PI / 2, 0); c.bl.scale.set(0.75, 1, 0.55); },
     cam: (W, c, lt) => camAt([HX - 6.2 + lt * 0.15, 3.0, 1.6], [HX - 4.5, 0.85, 1.6], 46),
   },
   // 44 "Neither of you" YOU's eyes POP into hearts
@@ -461,8 +461,8 @@ export const SHOTS = {
       sitAt(c.you, ...couchSeat(1.15), -Math.PI / 2); c.you.p.y = 0.14; face(c.you, 'open', 'raised', 'smile', { headRoll: 0.42, leanSide: 0.25 }); heartEyes(c.you, lt, 0);
       sitAt(c.ow, ...couchSeat(1.85), -Math.PI / 2); c.ow.p.y = 0.14; face(c.ow, 'open', 'raised', 'smile', { headRoll: -0.12 }); heartEyes(c.ow, lt, 0.05);
     },
-    after(W, c) { c.bl.position.set(HX + COUCH[0] - 0.42, 0.98, COUCH[1] + 0.1); c.bl.rotation.set(0, Math.PI / 2, 0); },
-    cam: (W, c, lt) => { const m = c.you.headPos().lerp(c.ow.headPos(), 0.5); return camAt([m.x - 1.15 + lt * 0.1, m.y - 0.05, m.z], [m.x, m.y - 0.08, m.z], 40); },
+    after(W, c) { c.bl.position.set(HX + COUCH[0] - 0.42, 0.8, COUCH[1] + 0.1); c.bl.rotation.set(0, Math.PI / 2, 0); c.bl.scale.set(0.75, 1, 0.55); },
+    cam: (W, c, lt) => { const m = c.you.headPos().lerp(c.ow.headPos(), 0.5); return camAt([m.x - 1.75 + lt * 0.12, m.y - 0.08, m.z], [m.x, m.y - 0.1, m.z], 40); },
     anchors: (W, c) => ({ head: headTop(c.you), head2: headTop(c.ow) }),
   },
   // 46 "Day one hundred." YOU, clean and shaved, at the door with ONE tiny bag; the OWNER opens his arms
@@ -670,7 +670,7 @@ export const SHOTS = {
       c.you.p.handR = P3(c.boy.headPos().add(V(0, 0.08, -0.05))); c.you.p.handPoseR = 'flat';
       c.ow.p.handL = P3(c.girl.headPos().add(V(0, 0.08, 0.05))); c.ow.p.handPoseL = 'flat';
     },
-    after(W, c) { c.bl.position.set(HX + COUCH[0] - 0.45, 0.95, COUCH[1]); c.bl.rotation.set(0, Math.PI / 2, 0); c.bl.scale.set(1.35, 1, 1); },
+    after(W, c) { c.bl.position.set(HX + COUCH[0] - 0.42, 0.78, COUCH[1]); c.bl.rotation.set(0, Math.PI / 2, 0); c.bl.scale.set(1.2, 1, 0.55); },
     cam: (W, c, lt) => camAt([HX - 6.3 - lt * 0.9, 1.35 + lt * 0.2, 1.6], [HX - 4.3, 1.05, 1.6], 50),
   },
   // 67 "You still love him." YOU with heart eyes, looking at him

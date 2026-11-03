@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sound effects for the doctor reel -> audio/sfx/*.wav + audio/sfx_cues.json (read by mix.py).
+"""Sound effects for the mansion reel -> audio/sfx/*.wav + audio/sfx_cues.json (read by mix.py).
 
 Every sound is made in code (numpy, fixed seeds, helpers from the earlier reels). No AI voice, no recordings: the
 user's own voiceover stays the main sound and every effect is kept quiet under it (mix.py ducks them while the
@@ -1114,6 +1114,90 @@ def mk_room_tone(d, seed=0):
     return place(y * env_ad(t, 0.2, 0.3, d), 0, "room", -14)
 
 
+
+# --------------------------------------------------------------------------------------------- mansion sounds
+def mk_kiss():
+    """A cartoon kiss 'MWAH': lips pressing (soft hum) then a bright smack pop with a little rising whistle."""
+    out = np.zeros(n_(0.6))
+    t = tt(0.16)
+    hum = A.svf(A.saw(np.full(len(t), 210.0)), 420, q=3, mode="bp") * att(t, 0.03) * np.exp(-t / 0.08) * 0.5
+    add_at(out, hum, 0.0)
+    t2 = tt(0.06)
+    smack = bp(rng(801).standard_normal(len(t2)), 900, 5000) * np.exp(-t2 / 0.008) * 1.6
+    add_at(out, smack, 0.13)
+    t3 = tt(0.22)
+    f = 900 * (1 + 0.8 * t3 / 0.22)
+    add_at(out, np.sin(2 * np.pi * np.cumsum(f) / SR) * env_ad(t3, 0.01, 0.12, 0.22) * 0.25, 0.14)
+    return place(out, 0, "small", -14)
+
+
+def mk_bells(n=6, every=0.32):
+    """Wedding bells: a happy descending peal (modal church-bell partials)."""
+    notes = [784.0, 659.25, 587.33, 523.25, 659.25, 784.0, 1046.5, 784.0]
+    out = np.zeros(n_(n * every + 2.5))
+    for k in range(n):
+        f = notes[k % len(notes)]
+        y = A.modal([(f * 0.5, 0.6, 1.8), (f, 1.0, 1.4), (f * 1.19, 0.5, 0.9), (f * 1.5, 0.35, 0.8), (f * 2.0, 0.4, 0.6), (f * 2.51, 0.2, 0.4)],
+                    2.2, seed=820 + k, strike=0.08, strike_tau=0.001, strike_hp=3000, beat=0.002, twin=0.3)
+        add_at(out, y * (0.9 if k % 2 else 1.0), k * every)
+    return place(hp(out, 200), 0, "hall", -10)
+
+
+def mk_giggle(d=1.2, f0=420, seed=0):
+    """A little kid's giggle 'hee-hee-hee' (glottal pulses through child 'ee/ah' formants), soft and cartoony."""
+    r = rng(840 + seed)
+    out = np.zeros(n_(d + 0.3))
+    k, i = 0.0, 0
+    while k < d:
+        ln = r.uniform(0.07, 0.11)
+        t = tt(ln)
+        f = f0 * (1.15 - 0.25 * t / ln) * (1 - 0.05 * i)
+        src = A.saw(f) + 0.25 * r.standard_normal(len(t))
+        y = A.svf(src, 950, q=5, mode="bp") + 0.8 * A.svf(src, 2600, q=7, mode="bp") + 0.3 * A.svf(src, 3600, q=8, mode="bp")
+        breath = bp(r.standard_normal(len(t)), 1500, 6000) * 0.25
+        add_at(out, (y + breath) * env_ad(t, 0.012, 0.04, ln) * r.uniform(0.7, 1.0), k)
+        k += ln + r.uniform(0.04, 0.08); i += 1
+    return place(lp(out, 7000), 0, "room", -14)
+
+
+def piano_note(f, d=1.6, vel=1.0):
+    t = tt(d)
+    y = np.zeros(len(t))
+    for k in range(1, 9):
+        fk = k * f * np.sqrt(1 + 0.0003 * k * k)
+        if fk > 6000:
+            break
+        y += (k ** -1.3) * np.sin(2 * np.pi * fk * t) * np.exp(-t / (1.4 / (1 + fk / 1000)))
+    return y * att(t, 0.004) * (1 - att(t - (d - 0.25), 0.25)) * vel
+
+
+def mk_love_music(d, bpm=76):
+    """Soft romantic music (code-made): a gentle piano arpeggio over warm pad chords, C - Am - F - G, 76 bpm."""
+    beat = 60.0 / bpm
+    chords = [(261.63, 329.63, 392.0), (220.0, 261.63, 329.63), (174.61, 220.0, 261.63), (196.0, 246.94, 293.66)]
+    melody = [659.25, 587.33, 523.25, 587.33, 523.25, 493.88, 440.0, 493.88, 523.25, 440.0, 392.0, 440.0, 587.33, 523.25, 493.88, 392.0]
+    out = np.zeros(n_(d + 2.5))
+    bar = 4 * beat
+    nb = int(np.ceil(d / bar)) + 1
+    for b in range(nb):
+        root, third, fifth = chords[b % 4]
+        t0 = b * bar
+        # pad: the chord held softly (two detuned sines per note)
+        tp = tt(bar + 0.6)
+        pad = sum(np.sin(2 * np.pi * f * 2 ** (dt / 1200) * tp) for f in (root, third, fifth) for dt in (-5, 5))
+        add_at(out, lp(pad, 1500) * env_ad(tp, 0.4, 0.6, bar + 0.6) * 0.05, t0)
+        add_at(out, piano_note(root / 2, 2.4, 0.5), t0)
+        # arpeggio in eighths: root third fifth octave fifth third ...
+        arp = [root, third, fifth, root * 2, fifth, third, fifth, root * 2]
+        for k, f in enumerate(arp):
+            add_at(out, piano_note(f, 1.4, 0.32 if k % 2 else 0.42), t0 + k * beat / 2)
+        # a slow melody note on beats 1 and 3
+        for k in range(2):
+            add_at(out, piano_note(melody[(b * 2 + k) % len(melody)], 1.8, 0.55), t0 + k * 2 * beat)
+    out = out[:n_(d)] * env_ad(tt(d), 1.2, 2.0, d)
+    return place(lp(out, 5000), 0, "hall", -12)
+
+
 def build():
     cues = []
 
@@ -1121,69 +1205,81 @@ def build():
         save(name, x, level=level, by=by)
         cues.append(dict(t=round(float(t), 3), file=f"audio/sfx/{name}.wav", gain_db=gain_db, note=note, **kw))
 
-    # living room
-    cue("gurgle_0", mk_rumble(0.9, 0), 0.75, -20.0, "a small tummy gurgle on the sofa", duck_db=4)
-    for k, ts in enumerate(T["x_marks"]):
-        cue(f"marker_{k}", mk_marker(0.2, k), ts, -16.0, "marker: a red X on the calendar", duck_db=3)
-    cue("marker_5", mk_marker(0.45, 9), T["x_five"], -14.0, "the fifth big red X", duck_db=3)
-    cue("dun_5", mk_boom(), T["x_five"] + 0.2, -18.0, "low 'dun' on the fifth X", duck_db=3)
-    cue("stretch", mk_rubber(0.45, 1), SH(4)[0] + 0.1, -16.0, "the t-shirt stretches over the balloon belly", duck_db=3)
-    cue("wobble", mk_boing(0.9, 110, 0.35, 7), T["wobble"] + 0.15, -16.0, "the belly wobbles", duck_db=3)
-    cue("mom_steps", mk_steps(3, 0.33, 61), SH(6)[0] + 0.1, -18.0, "the mom walks in", duck_db=4)
-    cue("shock", mk_shock(0.5), T["gasp"], -16.0, "comic shock hit: 'pregnant?!'", duck_db=4)
-    cue("pat", mk_rubber(0.2, 2), T["touch"], -16.0, "the mom touches the belly", duck_db=3)
-    # clinic + doctor's office
-    cue("waddle", mk_patter(1.3, 0.19, 1), SH(8)[0] + 0.05, -18.0, "YOU waddles to the clinic", duck_db=4)
-    cue("chime", mk_chime(), T["chime"], -16.0, "clinic door ding-dong", duck_db=4)
-    cue("slide_door", mk_slide_door(), T["chime"] + 0.05, -20.0, "the glass doors slide", duck_db=4)
-    cue("press", mk_rubber(0.3, 3), T["press"], -14.0, "the doctor presses the belly (squeak)", duck_db=3)
-    cue("boing", mk_boing(), T["boing"], -12.0, "the belly bounces back: BOING", duck_db=3)
-    cue("shine", mk_sparkle(), T["shine"] - 0.05, -18.0, "the glasses shine", duck_db=3)
-    cue("sparkle", mk_sparkle(), T["sparkle"], -14.0, "the glowing medicine bottle", duck_db=3)
-    cue("sting", mk_stab() if "mk_stab" in globals() else mk_shock(0.3), SH(13)[0] + 0.05, -18.0, "mysterious sting", duck_db=4)
-    for k, ts in enumerate(T["pills"]):
-        cue(f"gulp_{k}", mk_gulp(), ts, -14.0, f"gulp: pill {k + 1}", duck_db=3)
-    # waiting room
-    cue("room", mk_room_tone(SH(29)[0] - SH(17)[0]), SH(17)[0], -26.0, "quiet waiting-room air", by="int", duck_db=3)
-    for k, ts in enumerate(T["ticks"]):
-        cue(f"tick_{k}", mk_tick(tock=k % 2 == 1), ts, -12.0 if abs(ts - T["tick"]) < 0.01 else -17.0, "the wall clock ticks", duck_db=2)
-    cue("freeze", mk_scratch(), T["freeze"] - 0.05, -22.0, "the smile freezes (tiny record scratch)", duck_db=4)
-    cue("rumble_1", mk_rumble(SH(23)[1] - T["rumble"], 1, 0.3), T["rumble"], -12.0, "the stomach starts talking", duck_db=2)
-    cue("rumble_2", mk_rumble(SH(24)[1] - T["loud"] + 0.15, 2, 1.0), T["loud"], -8.0, "LOUD stomach rumble", duck_db=1.5)
-    for k, ts in enumerate(T["reactions"]):
-        cue(f"whip_{k}", mk_whoosh(0.18, 900, 3500, seed=20 + k), ts - 0.13, -18.0, "head turns", duck_db=3)
-    cue("run", mk_patter(SH(29)[1] - T["run"], 0.11, 2), T["run"], -14.0, "tiny fast running steps", duck_db=3)
-    cue("rumble_3", mk_rumble(1.2, 3, 0.5), T["run"] + 0.2, -16.0, "rumble while running", duck_db=3)
-    cue("rumble_4", mk_rumble(1.0, 4, 0.6), SH(32)[0], -16.0, "rumble: can't wait", duck_db=3)
-    cue("heart", mk_heartbeat(), SH(32)[0] + 0.1, -16.0, "heartbeat", duck_db=3)
-    cue("heart_2", mk_heartbeat(), SH(32)[0] + 0.55, -16.0, "heartbeat", duck_db=3)
-    for k, ts in enumerate(T["bangs"]):
-        cue(f"bang_{k}", mk_bang(k), ts, -14.0 if k % 2 == 0 else -16.0, "fists bang on the toilet door", duck_db=3)
-    cue("creak", mk_door_creak(1.1), T["creak"], -14.0, "the toilet door creaks open", duck_db=3)
-    cue("reveal", mk_dundundun() if "mk_dundundun" in globals() else mk_shock(0.6), T["reveal"] + 0.05, -16.0, "dun dun DUNNN: it's the doctor", duck_db=4)
-    cue("heart_3", mk_heartbeat(), SH(37)[0] + 0.05, -14.0, "heartbeat", duck_db=3)
-    cue("heart_4", mk_heartbeat(), SH(37)[0] + 0.42, -14.0, "heartbeat", duck_db=3)
-    cue("fwoomp", mk_fwoomp(), T["happens"] + 0.05, -8.0, "the giant cloud: FWOOMP", duck_db=2)
-    cue("spread", mk_whoosh(0.8, 300, 1400, seed=31), SH(39)[0] - 0.2, -16.0, "the cloud spreads", duck_db=3)
-    cue("scratch", mk_scratch(), LN(31)[1] + 0.05, -12.0, "record scratch before 'Silence.'", duck_db=2)
-    cue("crickets", mk_crickets(SH(42)[0] - T["silence"] + 0.1) if "mk_crickets" in globals() else mk_room_tone(1.0), T["silence"] + 0.15,
-        -20.0, "crickets in the silence", duck_db=3)
-    cue("stampede", mk_stampede(0.85), T["stampede"], -12.0, "everyone runs out", duck_db=3)
-    cue("zoom", mk_whoosh(0.4, 600, 3500, seed=40), T["stampede"] + 0.05, -14.0, "whoosh", duck_db=3)
-    cue("spin", mk_spin(1.8), T["empty"], -18.0, "a chair still spinning", duck_db=4)
-    cue("flutter", mk_flutter(1.4), T["empty"] + 0.2, -20.0, "the magazine floats down", duck_db=4)
-    cue("crickets_2", mk_crickets(1.6) if "mk_crickets" in globals() else mk_room_tone(1.0), T["empty"] + 0.4, -22.0, "empty room crickets", duck_db=3)
-    cue("blink", mk_blink(), SH(44)[0] + 0.35, -16.0, "the doctor blinks", duck_db=2)
-    cue("tada", mk_tada(), SH(45)[0] + 0.05, -16.0, "ta-daa: the medicine works", duck_db=4)
-    cue("scribble", mk_scribble(SH(47)[0] - T["writing"] - 0.1), T["writing"] + 0.1, -16.0, "pen scribbles the bill", duck_db=4)
-    cue("ding_50", mk_ding(), T["fifty"] + 0.05, -16.0, "ding: $50", duck_db=3)
-    cue("kaching", mk_kaching(), T["five_hundred"] - 0.16, -9.0, "KA-CHING: $500", duck_db=2)
+    # the night street
+    cue("rumble_1", mk_rumble(1.1, 1, 0.6), T["rumble"] - 0.1, -12.0, "stomach rumble", duck_db=2)
+    cue("rumble_2", mk_rumble(1.0, 2, 1.0), T["bad"] - 0.05, -11.0, "BAD: a big rumble", duck_db=2)
+    cue("stab", mk_stab(), T["bad"], -18.0, "EMERGENCY sting", duck_db=3)
+    cue("run_1", mk_patter(SH(4)[1] - SH(4)[0], 0.12, 1), T["run_toilet"], -16.0, "running steps", duck_db=3)
+    cue("rattle", mk_rattle() if "mk_rattle" in globals() else mk_bang(1), T["rattle"], -15.0, "the locked door rattles", duck_db=3)
+    for k, ts in enumerate(T["knocks1"]):
+        cue(f"knock1_{k}", mk_knock(k), ts, -11.0, "knock", duck_db=2)
+    cue("creak_1", mk_door_creak(0.8), T["door_open1"], -16.0, "the big door opens", duck_db=3)
+    cue("slam", mk_bang(3), T["slam"], -7.0, "SLAM!", duck_db=1)
+    cue("slam_boom", mk_thud(), T["slam"], -12.0, "slam thump", duck_db=2)
+    for k, ts in enumerate(T["knocks2"]):
+        cue(f"knock2_{k}", mk_bang(k), ts, -9.0 if k % 2 == 0 else -10.0, "KNOCK KNOCK! (louder)", duck_db=2)
+    cue("creak_2", mk_door_creak(0.7), T["door_open2"], -16.0, "the door opens again", duck_db=3)
+    cue("heaven", mk_pad(2.2), T["door_open2"] + 0.1, -16.0, "warm light: a heavenly chord", duck_db=4)
+    cue("sparkle_owner", mk_sparkle(), T["owner"] + 0.1, -16.0, "sparkle", duck_db=3)
+    cue("kneel", mk_thud(), T["kneel"] + 0.25, -16.0, "knees hit the step", duck_db=3)
+    cue("smile_ting", mk_sparkle(), T["smile"], -16.0, "smile ting", duck_db=3)
+    # inside
+    cue("stairs_glow", mk_sparkle(), T["stairs"] + 0.05, -15.0, "the golden stairs", duck_db=3)
+    cue("kiss", mk_kiss(), T["kiss"] - 0.12, -8.0, "MWAH!", duck_db=1)
+    cue("pop_hearts1", mk_pop(), T["hearts1"], -14.0, "the eyes pop into hearts", duck_db=2)
+    for k in range(2):
+        cue(f"beat1_{k}", mk_heartbeat(), T["hearts1"] + 0.1 + k * 0.62, -12.0, "BA-DUM", duck_db=2)
+    cue("run_2", mk_patter(SH(26)[1] - SH(26)[0], 0.085, 2), T["run"], -14.0, "sprinting up the stairs", duck_db=3)
+    cue("whoosh_run", mk_whoosh(0.4, 500, 3000, seed=3), T["run"] - 0.1, -16.0, "whoosh", duck_db=3)
+    cue("golden", mk_pad(1.8), T["golden"], -15.0, "golden toilet: aahh chord", duck_db=4)
+    cue("golden_sp", mk_sparkle(), T["golden"] + 0.2, -14.0, "sparkles", duck_db=3)
+    cue("plop", mk_plop(), T["plop"], -7.0, "PLOP!", duck_db=1)
+    cue("chand", mk_clinks(1.9, 22), T["chand"], -13.0, "the chandelier tinkles", duck_db=3)
+    cue("chand_rattle", mk_rattle() if "mk_rattle" in globals() else mk_clinks(1.0, 5), T["chand"] + 0.05, -18.0, "rattle", duck_db=3)
+    for k in range(2):
+        cue(f"beat2_{k}", mk_heartbeat(), T["heart_stairs"] + 0.15 + k * 0.62, -13.0, "BA-DUM", duck_db=2)
+    # day labels: a soft ding as each one pops in
+    for k, key in enumerate(["day2", "day30", "day60", "day100", "day200", "day365", "years5"]):
+        cue(f"label_{key}", mk_ding(), T[key] + 0.02, -18.0, f"{key} label", duck_db=3)
+        cue(f"label_w_{key}", mk_whoosh(0.25, 800, 4000, seed=10 + k), T[key] - 0.18, -20.0, "label whoosh", duck_db=3)
+    cue("dinner_clinks", mk_clinks(1.0, 31), SH(35)[0] + 0.1, -18.0, "fork clinks", duck_db=3)
+    cue("door_in", mk_door_creak(0.6), T["door_in"], -18.0, "the front door", duck_db=3)
+    cue("eyeroll", mk_slide_whistle(0.5, 700, 1300), T["eyeroll"], -18.0, "eye roll whistle", duck_db=3)
+    cue("crickets", mk_crickets(SH(42)[0] - T["zzz"]), T["zzz"], -24.0, "quiet night", duck_db=3)
+    cue("wake", mk_blink(), T["wake"], -14.0, "eyes open", duck_db=2)
+    cue("pop_hearts2", mk_pop(), T["hearts_couch"], -14.0, "heart eyes pop", duck_db=2)
+    for k in range(2):
+        cue(f"beat3_{k}", mk_heartbeat(), T["hearts_couch"] + 0.4 + k * 0.62, -13.0, "BA-DUM", duck_db=2)
+    cue("chime", mk_chime(), T["day100"] + 0.3, -17.0, "ding-dong: moving in", duck_db=3)
+    cue("unpack_1", mk_pop(), SH(47)[0] + 0.35, -18.0, "sock", duck_db=3)
+    for k in range(2):
+        cue(f"beat4_{k}", mk_heartbeat(), T["love2"] + k * 0.7, -13.0, "BA-DUM", duck_db=2)
+    cue("box", mk_click(1800, 3), T["box_open"] + 0.15, -14.0, "the box opens", duck_db=2)
+    cue("bling", mk_sparkle(), T["diamond"] + 0.12, -11.0, "BLING!", duck_db=2)
+    cue("bling_ding", mk_ding(), T["diamond"] + 0.15, -14.0, "bling ding", duck_db=2)
+    cue("yes_sp", mk_sparkle(), T["yes"] + 0.5, -16.0, "hearts everywhere", duck_db=3)
+    cue("bells", mk_bells(5, 0.3), T["wedding"] - 0.05, -12.0, "wedding bells", duck_db=3)
+    cue("claps", mk_claps(1.2, 6.0, 14), T["wedding"] + 0.05, -15.0, "guests clapping", duck_db=3)
+    cue("giggle_1", mk_giggle(1.0, 430, 1), T["years5"] + 0.5, -20.0, "kids giggle (far)", duck_db=4)
+    cue("giggle_2", mk_giggle(0.9, 470, 2), T["kids"] + 0.05, -16.0, "kids laughing", duck_db=3)
+    cue("giggle_3", mk_giggle(0.8, 400, 3), T["kids"] + 0.3, -17.0, "kids laughing", duck_db=3)
+    cue("kids_run", mk_patter(SH(63)[1] - SH(63)[0], 0.1, 4), T["kids"], -19.0, "little running feet", duck_db=3)
+    cue("potty_sp", mk_sparkle(), T["potty"] + 0.1, -15.0, "still sparkling", duck_db=3)
+    cue("night", mk_crickets(SH(66)[0] - T["night"] + 0.3), T["night"], -24.0, "night crickets", duck_db=3)
+    for k in range(2):
+        cue(f"beat5_{k}", mk_heartbeat(), T["love4"] + 0.1 + k * 0.7, -13.0, "BA-DUM", duck_db=2)
+    cue("end_sp", mk_sparkle(), T["started"] + 0.1, -15.0, "sparkle", duck_db=3)
+    cue("end_sp2", mk_sparkle(), T["poop_end"] + 0.3, -15.0, "sparkle", duck_db=3)
+    # soft romantic music from the smile to the end
+    m0 = T["smile"] - 0.3
+    cue("love_music", mk_love_music(DUR_ - m0), m0, -21.0, "soft romantic music (code-made piano + pad)", by="int", duck_db=4)
 
+    cues = [c for c in cues if c]
     cues.sort(key=lambda c: c["t"])
     json.dump(cues, open(P("audio", "sfx_cues.json"), "w"), indent=1)
     for c in cues:
         info = A.INFO[os.path.splitext(os.path.basename(c["file"]))[0]]
-        print(f"{c['t']:6.2f}  {os.path.basename(c['file']):16s} {c['gain_db']:+5.1f} dB  {info['dur']:5.2f}s  {c['note']}")
+        print(f"{c['t']:6.2f}  {os.path.basename(c['file']):18s} {c['gain_db']:+5.1f} dB  {info['dur']:5.2f}s  {c['note']}")
     print(f"{len(cues)} cues -> audio/sfx_cues.json")
 
 

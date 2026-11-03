@@ -13,6 +13,7 @@ mkdir -p build
 if [ -z "${SKIP_AUDIO:-}" ]; then
   python3 align_words.py > /dev/null
   python3 make_captions.py | head -1
+  python3 make_words.py
   python3 make_sfx.py | tail -1
   python3 mix.py | grep -E "^FINAL"
 fi
