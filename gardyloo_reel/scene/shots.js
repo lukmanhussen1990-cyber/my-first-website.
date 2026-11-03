@@ -113,12 +113,12 @@ function dadOutside(W, c) {
   c.dad.chest.add(ps); ps.position.set(-0.12, c.dad.torsoH * 0.72, c.dad.spec.chestD + 0.02); ps.rotation.x = Math.PI;
   return c;
 }
-function poseDadOutside(c, lt, { rotY = 0 } = {}) {
-  standAt(c.dad, DAD[0], DAD[1], rotY);
+function poseDadOutside(c, lt, { rotY = 0, at = DAD } = {}) {
+  standAt(c.dad, at[0], at[1], rotY);
   face(c.dad, 'stare', 'angry', 'tight');
   c.dad.p.gripR = c.case; c.dad.p.handPoseL = 'fist';
   const F = fwd(rotY), L = V(F.z, 0, -F.x);
-  c.case.position.set(DAD[0] - L.x * 0.27, 0.78, DAD[1] - L.z * 0.27); c.case.rotation.set(0, rotY + Math.PI / 2, 0);
+  c.case.position.set(at[0] - L.x * 0.27, 0.78, at[1] - L.z * 0.27); c.case.rotation.set(0, rotY + Math.PI / 2, 0);
   c.dad.p.handL = rel(c.dad, 0.06, 0.3, 0.86);
 }
 // bundle + smudge on the dad's left shoulder (after the solve)
@@ -358,10 +358,10 @@ export const SHOTS = {
     build(W) { const H = outside(W, { bathOpen: 1 }); const you = person(W, 'you'); return { H, you }; },
     update(W, c) {
       inWindow(c.you, 0.36); face(c.you, 'squint', 'raised', 'smile', { headPitch: 0.12, headYaw: 0.25 });
-      const h = c.you.headPos(); c.you.p.handL = [h.x + 0.03, h.y + 0.1, h.z + 0.15]; c.you.p.handPoseL = 'flat'; c.you.p.handRotL = handRot([-1, 0.05, 0], [0, 1, 0.2]);
+      const h = c.you.headPos(); c.you.p.handL = [h.x + 0.1, h.y + 0.11, h.z + 0.13]; c.you.p.handPoseL = 'flat'; c.you.p.handRotL = handRot([-1, 0.05, 0.1], [0, 1, 0.2]);
       c.you.p.handR = [2.75, 4.22, 3.1]; c.you.p.handPoseR = 'flat';
     },
-    cam: (W, c) => { const h = c.you.headPos(); return camAt([h.x + 0.55, h.y - 0.08, h.z + 1.15], [h.x, h.y - 0.06, h.z], 38); },
+    cam: (W, c) => { const h = c.you.headPos(); return camAt([h.x - 0.5, h.y - 0.1, h.z + 1.2], [h.x, h.y - 0.04, h.z], 38); },
   },
   // 21 "You look down." POV straight down from the window: the dad far below, frozen next to his car
   21: {
@@ -387,17 +387,17 @@ export const SHOTS = {
     cam: (W, c) => { const p = c.bundle.getWorldPosition(V()); return camAt([p.x + 0.34, p.y + 0.06, p.z + 0.34], [p.x - 0.01, p.y - 0.05, p.z + 0.02], 40); },
     anchors: (W, c) => ({ smudge: c.smudge.getWorldPosition(V()) }),
   },
-  // 24 KEY "He slowly looks up." low angle: the dad lifts his head to the little window above
+  // 24 KEY "He slowly looks up." low angle from the wall: the dad lifts his head and stares straight up at YOU
   24: {
-    build(W) { const H = outside(W, { bathOpen: 1, carDoor: 1 }); return dadOutside(W, { H }); },
+    build(W) { const H = outside(W, { bathOpen: 1, carDoor: 1 }); const l = new THREE.PointLight(0xffd0a0, 6, 3, 2); l.position.set(2.6, 1.6, 3.7); W.scene.add(l); return dadOutside(W, { H }); },
     update(W, c, lt) {
-      poseDadOutside(c, lt, { rotY: Math.PI - 0.55 });
+      poseDadOutside(c, lt, { rotY: Math.PI - 0.12, at: [2.4, 4.75] });
       const k = easeInOut(clamp((lt - 0.1) / 1.2));
       c.dad.p.headPitch = lerp(-0.25, 0.55, k); c.dad.p.lean = lerp(0, -0.12, k);
       face(c.dad, k > 0.6 ? 'stare' : 'open', k > 0.5 ? 'skeptic' : 'angry', 'tight');
     },
     after: (W, c) => onShoulder(c),
-    cam: () => camAt([0.99, 0.45, 5.41], [2.4, 2.8, 4.4], 62),
+    cam: (W, c, lt) => { const h = c.dad.headPos(); return camAt([h.x + 0.15, 1.3, h.z - 0.8], [h.x, h.y + 0.02, h.z], 46); },
     anchors: (W, c) => ({ shoulder: c.bundle.getWorldPosition(V()) }),
     still: 0.85, clip: true,
   },
