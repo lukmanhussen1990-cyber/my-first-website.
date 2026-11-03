@@ -1,0 +1,14 @@
+{
+  "name": "spot-the-5-mistakes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "40-second vertical child-safety reel built with Three.js primitives, rendered to MP4 with Playwright + ffmpeg",
+  "scripts": {
+    "preview": "node render.js --serve",
+    "render": "node render.js",
+    "check": "node render.js --check 2,16,27,35"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
