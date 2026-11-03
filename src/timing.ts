@@ -62,3 +62,31 @@ export const SCENES: SceneRange[] = SCENE_FIRST_WORD.map((wi, k) => {
 
 /** frame of word i relative to the start of scene n (1-based) */
 export const rel = (n: number, wordIndex: number) => wf(wordIndex) - SCENES[n - 1].from;
+
+// ------------------------------------------------------------------ whip pans
+/** global frames where a cut is done as a fast whip-pan (camera swings + motion blur) */
+export const WHIPS: {at: number; dir: 1 | -1}[] = [];
+export const registerWhip = (at: number, dir: 1 | -1 = 1) => {
+	if (!WHIPS.find((w) => w.at === at)) WHIPS.push({at, dir});
+};
+const WHIP_LEN = 5;
+/** yaw offset (radians) and blur (px) for a global frame */
+export function whipState(g: number): {yaw: number; blur: number} {
+	for (const w of WHIPS) {
+		const d = g - w.at;
+		if (d >= -WHIP_LEN && d < 0) {
+			const k = (d + WHIP_LEN) / WHIP_LEN; // 0..1 approaching the cut
+			return {yaw: w.dir * k * k * 0.55, blur: k * k * 16};
+		}
+		if (d >= 0 && d < WHIP_LEN) {
+			const k = 1 - d / WHIP_LEN; // 1..0 after the cut
+			return {yaw: -w.dir * k * k * 0.55, blur: k * k * 16};
+		}
+	}
+	return {yaw: 0, blur: 0};
+}
+
+export const sceneIndexAt = (g: number) => {
+	for (let i = 0; i < SCENES.length; i++) if (g >= SCENES[i].from && g < SCENES[i].to) return i;
+	return SCENES.length - 1;
+};

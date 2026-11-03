@@ -3,6 +3,7 @@ import React, {useLayoutEffect, useMemo} from 'react';
 import {useThree} from '@react-three/fiber';
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
+import {QUALITY} from './quality';
 
 export type Look = {
 	skyTop: string;
@@ -186,8 +187,8 @@ export const Stage: React.FC<StageProps> = ({look, focus = [0, 0, 0], shadowSize
 				position={sunPos}
 				target={target}
 				castShadow={sunShadow}
-				shadow-mapSize-width={2048}
-				shadow-mapSize-height={2048}
+				shadow-mapSize-width={QUALITY.shadowMap}
+				shadow-mapSize-height={QUALITY.shadowMap}
 				shadow-camera-left={-shadowSize}
 				shadow-camera-right={shadowSize}
 				shadow-camera-top={shadowSize}
