@@ -1,0 +1,209 @@
+{
+  "title": "Gardyloo (girlfriend's house reel)",
+  "voices": {
+    "N": {
+      "name": "Nassim - Corporate Narration",
+      "voice_id": "repzAAjoKlgcT2oOAIWt",
+      "model": "eleven_v4",
+      "prompt_tags": "[calm] [deadpan]",
+      "source": "same voice and settings as wedding_reel / bear_reel / thanksgiving_reel script.json (old branches)"
+    },
+    "W": {
+      "name": "Nassim - Corporate Narration (whisper)",
+      "voice_id": "repzAAjoKlgcT2oOAIWt",
+      "model": "eleven_v4",
+      "prompt_tags": "[whispering]",
+      "source": "the same Nassim voice, whispering the last word"
+    }
+  },
+  "takes": {
+    "N": "narr_B",
+    "W": "whisper_A"
+  },
+  "gain_db": {
+    "N": 0.0,
+    "W": 2.0
+  },
+  "lines": [
+    {
+      "who": "N",
+      "text": "You're at your girlfriend's house."
+    },
+    {
+      "who": "N",
+      "text": "For the first time."
+    },
+    {
+      "who": "N",
+      "text": "You go to the bathroom."
+    },
+    {
+      "who": "N",
+      "text": "You poop."
+    },
+    {
+      "who": "N",
+      "text": "You flush."
+    },
+    {
+      "who": "N",
+      "text": "Nothing.",
+      "pause_before": 0.55
+    },
+    {
+      "who": "N",
+      "text": "You flush again."
+    },
+    {
+      "who": "N",
+      "text": "Nothing.",
+      "pause_before": 0.6
+    },
+    {
+      "who": "N",
+      "text": "The water is rising."
+    },
+    {
+      "who": "N",
+      "text": "You panic."
+    },
+    {
+      "who": "N",
+      "text": "Then you see it."
+    },
+    {
+      "who": "N",
+      "text": "A window.",
+      "pause_before": 0.5
+    },
+    {
+      "who": "N",
+      "text": "You wrap it in toilet paper.",
+      "pause_before": 0.6
+    },
+    {
+      "who": "N",
+      "text": "Like a little gift."
+    },
+    {
+      "who": "N",
+      "text": "You even add a bow."
+    },
+    {
+      "who": "N",
+      "text": "You open the window."
+    },
+    {
+      "who": "N",
+      "text": "And you throw it."
+    },
+    {
+      "who": "N",
+      "text": "As far as you can."
+    },
+    {
+      "who": "N",
+      "text": "Then you hear it.",
+      "pause_before": 0.55
+    },
+    {
+      "who": "N",
+      "text": "Splat.",
+      "pause_before": 0.5
+    },
+    {
+      "who": "N",
+      "text": "And a scream.",
+      "pause_before": 0.45
+    },
+    {
+      "who": "N",
+      "text": "You look down.",
+      "pause_before": 0.55
+    },
+    {
+      "who": "N",
+      "text": "It's her dad."
+    },
+    {
+      "who": "N",
+      "text": "He just got home from work."
+    },
+    {
+      "who": "N",
+      "text": "It's on his shoulder."
+    },
+    {
+      "who": "N",
+      "text": "His best suit."
+    },
+    {
+      "who": "N",
+      "text": "He slowly looks up.",
+      "pause_before": 0.4
+    },
+    {
+      "who": "N",
+      "text": "You duck."
+    },
+    {
+      "who": "N",
+      "text": "What you don't know:",
+      "pause_before": 1.0
+    },
+    {
+      "who": "N",
+      "text": "hundreds of years ago in Edinburgh,"
+    },
+    {
+      "who": "N",
+      "text": "people threw their poop out the window and shouted \"Gardyloo!\" to warn the people below."
+    },
+    {
+      "who": "N",
+      "text": "You didn't shout anything.",
+      "pause_before": 0.6
+    },
+    {
+      "who": "N",
+      "text": "Dinner time.",
+      "pause_before": 0.8
+    },
+    {
+      "who": "N",
+      "text": "Her dad sits across from you."
+    },
+    {
+      "who": "N",
+      "text": "His hair is still wet."
+    },
+    {
+      "who": "N",
+      "text": "He says:"
+    },
+    {
+      "who": "N",
+      "text": "\"Strange thing happened today.\""
+    },
+    {
+      "who": "N",
+      "text": "He stares at you.",
+      "pause_before": 0.65
+    },
+    {
+      "who": "N",
+      "text": "You stare back.",
+      "pause_before": 0.5
+    },
+    {
+      "who": "N",
+      "text": "And you whisper:",
+      "pause_before": 0.9
+    },
+    {
+      "who": "W",
+      "text": "\u2026Gardyloo?",
+      "pause_before": 1.7
+    }
+  ]
+}
