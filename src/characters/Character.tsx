@@ -281,7 +281,8 @@ export const Character: React.FC<CharacterProps> = (props) => {
 	if (props.blink !== false && OPEN_EYES.includes(parts.eyes) && isBlinking(frame, spec.seed)) parts = {...parts, eyes: 'blink'};
 	if (parts.lookX !== undefined) parts.lookX = Math.round(parts.lookX * 2) / 2;
 	if (parts.lookY !== undefined) parts.lookY = Math.round(parts.lookY * 2) / 2;
-	const faceMat = faceMaterial(st, parts, Math.floor(frame / 2) % 8);
+	// far crowd members get small face textures and static tears (keeps the texture cache small)
+	const faceMat = lod === 'low' ? faceMaterial(st, parts, 0, 256) : faceMaterial(st, parts, Math.floor(frame / 3) % 4);
 
 	const skin = plastic(spec.skin, {rough: 0.45});
 	const topM = plastic(spec.top, {rough: 0.5});

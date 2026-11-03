@@ -520,11 +520,11 @@ function drawTears(ctx: CanvasRenderingContext2D, cx: number, cy: number, gap: n
 		ctx.beginPath();
 		ctx.moveTo(x0 - 10, y0);
 		for (let y = y0; y <= 520; y += 8) {
-			const wob = Math.sin((y + phase * 12) * 0.06) * 4;
+			const wob = Math.sin((y + phase * 26.18) * 0.06) * 4;
 			ctx.lineTo(x0 - 12 - side * 6 * ((y - y0) / 300) + wob, y);
 		}
 		for (let y = 520; y >= y0; y -= 8) {
-			const wob = Math.sin((y + phase * 12) * 0.06) * 4;
+			const wob = Math.sin((y + phase * 26.18) * 0.06) * 4;
 			ctx.lineTo(x0 + 12 - side * 6 * ((y - y0) / 300) + wob, y);
 		}
 		ctx.closePath();
@@ -532,7 +532,7 @@ function drawTears(ctx: CanvasRenderingContext2D, cx: number, cy: number, gap: n
 		// moving highlights
 		ctx.fillStyle = 'rgba(255,255,255,0.8)';
 		for (let k = 0; k < 4; k++) {
-			const y = y0 + ((k * 70 + phase * 16) % 280) + 10;
+			const y = y0 + ((k * 70 + phase * 17.5) % 280) + 10;
 			ctx.beginPath();
 			ctx.ellipse(x0 - 3 - side * 6 * ((y - y0) / 300), y, 3.5, 9, 0, 0, Math.PI * 2);
 			ctx.fill();
@@ -560,12 +560,12 @@ function drawSweat(ctx: CanvasRenderingContext2D, x: number, y: number) {
 	ctx.restore();
 }
 
-export function drawFace(canvas: HTMLCanvasElement, st: FaceStyle, p: FaceParts, tearPhase = 0) {
+export function drawFace(canvas: HTMLCanvasElement, st: FaceStyle, p: FaceParts, tearPhase = 0, size = SIZE) {
 	const ctx = canvas.getContext('2d')!;
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 	ctx.fillStyle = st.skin;
-	ctx.fillRect(0, 0, SIZE, SIZE);
-	ctx.scale(SIZE / 512, SIZE / 512);
+	ctx.fillRect(0, 0, size, size);
+	ctx.scale(size / 512, size / 512);
 	ctx.translate(256, 256);
 	ctx.scale(st.featureScale, st.featureScale);
 	ctx.translate(-256, -256);
@@ -670,10 +670,11 @@ function hexA(hex: string, a: number) {
 type Entry = {tex: THREE.CanvasTexture; mat: THREE.MeshStandardMaterial; used: number};
 const cache = new Map<string, Entry>();
 let tick = 0;
-const MAX = 90;
+const MAX = 260;
 
-export function faceMaterial(st: FaceStyle, p: FaceParts, tearPhase = 0): THREE.MeshStandardMaterial {
-	const key = JSON.stringify([st, p, p.tears ? tearPhase : 0]);
+/** size: texture resolution (1024 for close characters, 256 for far crowd members) */
+export function faceMaterial(st: FaceStyle, p: FaceParts, tearPhase = 0, size = SIZE): THREE.MeshStandardMaterial {
+	const key = JSON.stringify([st, p, p.tears ? tearPhase : 0, size]);
 	tick++;
 	const hit = cache.get(key);
 	if (hit) {
@@ -691,9 +692,9 @@ export function faceMaterial(st: FaceStyle, p: FaceParts, tearPhase = 0): THREE.
 		cache.delete(oldK);
 	}
 	const canvas = document.createElement('canvas');
-	canvas.width = SIZE;
-	canvas.height = SIZE;
-	drawFace(canvas, st, p, tearPhase);
+	canvas.width = size;
+	canvas.height = size;
+	drawFace(canvas, st, p, tearPhase, size);
 	const tex = new THREE.CanvasTexture(canvas);
 	tex.colorSpace = THREE.SRGBColorSpace;
 	tex.anisotropy = 4;

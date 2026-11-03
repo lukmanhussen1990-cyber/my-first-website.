@@ -75,7 +75,8 @@ export const GoldenThrone: React.FC<{
 			{/* glow */}
 			{glow > 0 ? (
 				<>
-					<GlowSprite position={[0, 1.6, 0]} size={6.5 * glow * pulse} color="#ffcf4a" opacity={0.55 * glow} />
+					{/* halo behind the tank (never in front of someone sitting on it) */}
+					<GlowSprite position={[0, 2.2, -1.9]} size={7 * glow * pulse} color="#ffcf4a" opacity={0.55 * glow} />
 					{light ? <pointLight position={[0, 2.2, 1.2]} color="#ffc94a" intensity={22 * glow} distance={12} decay={1.6} /> : null}
 					{sparkles ? <Sparkles frame={frame} count={34} radius={2.1} height={3.4} position={[0, 0.2, 0]} size={0.9} /> : null}
 				</>

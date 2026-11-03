@@ -109,7 +109,7 @@ export const TownSquare: React.FC<{lit?: Lighting; stage?: boolean}> = ({lit = '
 			{Array.from({length: 4}).map((_, i) => {
 				const a = (i / 4) * Math.PI * 2 + 0.6;
 				const b = a + Math.PI * 0.75;
-				return <Bunting key={'bt' + i} a={[Math.sin(a) * (R + 1), 10.5, Math.cos(a) * (R + 1)]} b={[Math.sin(b) * (R + 1), 10.5, Math.cos(b) * (R + 1)]} sag={2.5} n={24} />;
+				return <Bunting key={'bt' + i} a={[Math.sin(a) * (R + 1), 17, Math.cos(a) * (R + 1)]} b={[Math.sin(b) * (R + 1), 17, Math.cos(b) * (R + 1)]} sag={1.6} n={24} />;
 			})}
 			{Array.from({length: 6}).map((_, i) => {
 				const a = (i / 6) * Math.PI * 2 + 0.45;
