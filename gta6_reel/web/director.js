@@ -293,7 +293,7 @@ function makeScenes(D) {
       P.sit(you, 0.53);
       const a = -Math.PI / 2;
       const h = head(you);
-      const ph = h.clone().addScaledVector(facing(a), 0.32).add(V(0, -0.2, 0));
+      const ph = h.clone().addScaledVector(facing(a), 0.46).add(V(0, -0.22, 0));
       reach(you, 'R', ph.clone().add(V(0, -0.05, 0)), rotHint(you, -1, -0.6, 0));
       reach(you, 'L', ph.clone().addScaledVector(leftOf(a), 0.06).add(V(0, -0.08, 0)), rotHint(you, 1, -0.6, 0));
       const phone = props.phone; phone.visible = true;
@@ -307,7 +307,7 @@ function makeScenes(D) {
     },
     shots: [
       (ctx, su) => D.move(su, rp(-0.4, 1.4, -0.3), rp(1.5, 1.2, -0.95), rp(-0.2, 1.4, -0.4), rp(1.5, 1.2, -0.95), 46, 44),
-      (ctx, su) => { const p = props.phone.position.clone(); const h = head(you); const d = V().subVectors(h, p).normalize(); D.move(su, p.clone().addScaledVector(d, 0.42).add(V(0.04, 0.06, 0)), p, p.clone().addScaledVector(d, 0.32).add(V(0.03, 0.05, 0)), p, 40, 38); },
+      (ctx, su) => { const p = props.phone.position.clone(); const n = V().subVectors(head(you), p).normalize(); D.move(su, p.clone().addScaledVector(n, 0.24).add(V(0.02, 0.01, 0)), p, p.clone().addScaledVector(n, 0.19).add(V(0.015, 0.01, 0)), p, 42, 40); },
       faceShot(you, 1.2, 0.95, { dy: -0.05 }, { dy: -0.05 }, 38, 36),
     ],
   };
@@ -353,7 +353,7 @@ function makeScenes(D) {
       mom.face({ eyes: 'normal', brows: 'worried', mouth: ctx.speaking() ? 'open' : 'frown', open: talk(ctx.lt, 8) * 0.4 });
     },
     shots: [
-      (ctx, su) => D.move(su, rp(0.9, 1.65, 1.6), rp(3.0, 1.62, 2.35), rp(1.2, 1.65, 1.7), rp(3.0, 1.62, 2.35), 40, 38),
+      (ctx, su) => D.move(su, rp(1.0, 1.65, 3.15), rp(3.05, 1.6, 2.35), rp(1.3, 1.65, 3.05), rp(3.05, 1.6, 2.35), 40, 38),
       (ctx, su) => D.move(su, rp(-1.2, 1.5, 0.6), rp(1.6, 1.2, 1.6), rp(-1.0, 1.5, 0.5), rp(1.6, 1.2, 1.6), 50, 48),
     ],
   };
@@ -816,12 +816,12 @@ function makeScenes(D) {
     setup(ctx) {
       atPlaza();
       const ft = D.faintT();
-      const f = faceAt(1, 4) || Wd.faces[20];
+      const f = faceAt(2, 4) || Wd.faces[20];
       facesOn(ctx, 1, ctx.lt > ft ? { face: f, u: clamp((ctx.lt - ft) / 0.4) } : null);
       if (ctx.lt > ft + 0.35) st().shakeAmt = Math.max(st().shakeAmt, 10 * Math.max(0, 1 - (ctx.lt - ft - 0.35) / 0.3));
     },
     shots: [
-      (ctx, su) => { const f = faceAt(1, 4) || Wd.faces[20]; const b = f.userData.base.clone().add(PL); b.z = PL.z - 6.1; D.move(su, b.clone().add(V(0.4, 0.1, 3.2)), b.clone().add(V(0, -0.1, 0)), b.clone().add(V(0.3, 0.1, 2.6)), b.clone().add(V(0, -0.15, 0)), 44, 42); },
+      (ctx, su) => { const f = faceAt(2, 4) || Wd.faces[20]; const b = f.userData.base.clone().add(PL); b.z = PL.z - 6.1; D.move(su, b.clone().add(V(0.4, 0.1, 3.2)), b.clone().add(V(0, -0.1, 0)), b.clone().add(V(0.3, 0.1, 2.6)), b.clone().add(V(0, -0.15, 0)), 44, 42); },
     ],
   };
 
@@ -949,8 +949,8 @@ function makeScenes(D) {
       }
     },
     shots: [
-      (ctx, su) => D.move(su, pp(1.2, 1.5, 5.6), pp(0, 9, -6), pp(1.4, 1.6, 6.4), pp(0, 10, -6), 58, 60, lin),
-      (ctx, su) => D.move(su, rp(1.25, 1.35, -1.85), rp(-0.2, 1.2, -0.9), rp(1.35, 1.38, -1.95), rp(-0.2, 1.2, -0.9), 50, 52, lin),
+      (ctx, su) => D.move(su, pp(1.0, 1.6, 7.5), pp(0, 7.5, -6), pp(1.2, 1.7, 8.3), pp(0, 8.0, -6), 62, 62, lin),
+      (ctx, su) => D.move(su, rp(1.45, 1.4, -1.55), rp(-0.15, 1.3, -0.75), rp(1.5, 1.42, -1.65), rp(-0.15, 1.3, -0.75), 48, 50, lin),
     ],
   };
 

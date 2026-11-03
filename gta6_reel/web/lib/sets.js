@@ -90,7 +90,10 @@ function buildRoom(scene, W) {
   const floor = add(R, plane(7, 7, floorM), 0, 0, 0, -Math.PI / 2);
   for (let k = -3; k <= 3; k++) { const s = bx(7, 0.004, 0.02, mat(0xcfb38a), false); s.position.set(0, 0.002, k); R.add(s); }
   add(R, plane(7, 2.9, wallM), 0, 1.45, -3);
-  add(R, plane(7, 2.9, wallM), 3, 1.45, 0, 0, -Math.PI / 2);
+  // right wall with a doorway (z 1.8..2.8, up to 2.2)
+  add(R, plane(5.3, 2.9, wallM), 3, 1.45, -0.85, 0, -Math.PI / 2);
+  add(R, plane(0.7, 2.9, wallM), 3, 1.45, 3.15, 0, -Math.PI / 2);
+  add(R, plane(1.0, 0.7, wallM), 3, 2.55, 2.3, 0, -Math.PI / 2);
   add(R, plane(7, 2.9, wallM), 0, 1.45, 3.5, 0, Math.PI);
   // left wall with a window hole (z -0.4..1.0, y 0.9..2.1)
   const lw = mat(0xc8daf2, { flatShading: false, side: THREE.DoubleSide });
