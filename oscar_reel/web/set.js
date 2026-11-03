@@ -1,4 +1,4 @@
-// All places of the birthday reel (house + void). Each place is built by its own module and lives far from the others
+// The places of the oscar reel: the theatre, the theatre outside at night, a living room (TV viewers). Each place is built by its own module and lives far from the others
 // (see layout.js); only the current shot's place is visible (its lights + sky with it). Everything visual is a pure
 // function of t + state (state is reset every frame, shots override it).
 //
@@ -18,12 +18,13 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { locOf } from './layout.js';
 // place modules load one by one: a broken / unfinished module only blanks its own places
 const MODS = {};
-for (const [k, f] of [['house', './set_house.js'], ['void', './set_rest_void.js']]) {
+for (const [k, f] of [['theatre', './set_theatre.js'], ['home', './set_home.js']]) {
   try { MODS[k] = await import(f); } catch (e) { console.warn(`[log] set: ${f} failed to load: ${e.message}`); MODS[k] = {}; }
 }
 const need = (mod, fn) => (MODS[mod] && MODS[mod][fn]) || (() => { throw new Error(`${fn} unavailable`); });
-const buildHouse = (...a) => need('house', 'buildHouse')(...a);
-const buildVoid = (...a) => need('void', 'buildVoid')(...a);
+const buildTheatre = (...a) => need('theatre', 'buildTheatre')(...a);
+const buildOutside = (...a) => need('theatre', 'buildOutside')(...a);
+const buildHome = (...a) => need('home', 'buildHome')(...a);
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 
@@ -40,12 +41,12 @@ export function buildSet(world) {
     catch (e) { console.warn(`[log] set: place ${name} failed to build: ${e.message}`); places[name] = emptyPlace(name); }
     group.add(places[name].group);
   };
-  safe('house', buildHouse); safe('void', buildVoid);
+  safe('theatre', buildTheatre); safe('outside', buildOutside); safe('home', buildHome);
 
   const props = {}; for (const [k, p] of Object.entries(places)) props[k] = p.props || {};
   const colliders = [];
   const defaults = () => {
-    const s = { loc: 'house', fog: null, exposure: null, shadow: null, background: null };
+    const s = { loc: 'theatre', fog: null, exposure: null, shadow: null, background: null };
     for (const p of Object.values(places)) if (p.defaults) Object.assign(s, p.defaults());
     return s;
   };
@@ -60,7 +61,7 @@ export function buildSet(world) {
     commit(ctx) {
       const s = set.state, t = ctx.t;
       for (const [k, p] of Object.entries(places)) p.group.visible = k === s.loc;
-      const P = places[s.loc] || places.house;
+      const P = places[s.loc] || places.theatre;
       const look = P.look || {};
       const fog = s.fog || look.fog;
       if (fog) { scene.fog.color.set(fog.color); scene.fog.near = fog.near; scene.fog.far = fog.far; }

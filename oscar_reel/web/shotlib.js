@@ -1,10 +1,10 @@
 // Helpers shared by the shot files. Everything is a pure function of ctx.t.
 import * as THREE from 'three';
 import { clamp, lerp, smooth, smoother, invLerp, easeOut, easeIn, easeInOut, easeOutBack, lerpCam, noise1, hash1, v3 } from './lib.js';
-import { HOUSE, VOID } from './layout.js';
+import { HOUSE, VOID, THEATRE, HOME, OUTSIDE } from './layout.js';
 
 export { THREE, clamp, lerp, smooth, smoother, invLerp, easeOut, easeIn, easeInOut, easeOutBack, noise1, hash1, v3 };
-export { HOUSE, VOID };
+export { HOUSE, VOID, THEATRE, HOME, OUTSIDE };
 
 // camera move a -> b over the shot (eased)
 export function move(ctx, a, b, ease = smooth, u = ctx.u) { ctx.cam.set(lerpCam(a, b, ease(clamp(u)))); }
@@ -22,8 +22,7 @@ export const after = (t, t0, d = 0.25) => smooth(invLerp(t0, t0 + d, t));
 export const C = (ctx) => ctx.W.cast;
 export const YOU = (ctx) => ctx.W.cast.you;
 export const MOM = (ctx) => ctx.W.cast.mom;
-export const AUNTY = (ctx) => ctx.W.cast.aunty;
-export const GRANDPA = (ctx) => ctx.W.cast.grandpa;
+export const CH = (ctx, name) => ctx.W.cast[name];
 export const PROPS = (ctx) => ctx.W.cast.props;
 export function face(ch, eyes, brows, mouth) { const p = ch.p; if (eyes) p.eyes = eyes; if (brows) p.brows = brows; if (mouth) p.mouth = mouth; }
 export function show(ch, pos, rotY, y = 0) { const p = ch.p; p.visible = true; p.pos = pos.slice(); p.rotY = rotY; p.y = y; return p; }

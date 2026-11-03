@@ -118,7 +118,7 @@ export const PLAN = [
  },
  {
   "id": "s07",
-  "loc": "world",
+  "loc": "home",
   "t0": 8.067,
   "t1": 9.2,
   "say": "A billion people are watching.",
@@ -137,7 +137,7 @@ export const PLAN = [
  },
  {
   "id": "s08",
-  "loc": "world",
+  "loc": "home",
   "t0": 9.2,
   "t1": 10.367,
   "say": "A billion people are watching.",

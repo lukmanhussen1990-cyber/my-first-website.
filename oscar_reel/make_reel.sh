@@ -18,6 +18,7 @@ if [ -z "${SKIP_AUDIO:-}" ]; then
   python3 -I plan.py > /dev/null
   python3 -I gen_plan_js.py > /dev/null
   python3 -I add_labels.py > /dev/null
+  python3 -I make_overlay.py > /dev/null
   python3 -I make_sfx.py > /dev/null
   python3 -I mix.py | grep -E "FINAL|master \(python\)"
 fi

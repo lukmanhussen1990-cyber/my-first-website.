@@ -1,4 +1,4 @@
-// The people of the dubai aunty reel (YOU 30, MOM, the rich AUNTY from Dubai, GRANDPA - an American family). Earlier: YOU (homeless in a patched hoodie with a scruffy beard; later in a navy
+// The people of the dubai aunty reel (the actor + his lump, co-star, mom, director, conductor, musicians, front-row stars, grandma). Earlier: YOU (homeless in a patched hoodie with a scruffy beard; later in a navy
 // suit, a tuxedo, and old with white hair + glasses), the RICH LADY (long dark hair, big sunglasses, red lipstick,
 // white fur coat, giant diamond necklace, red heels; later the bride and the old lady), her huge BODYGUARD, the thin
 // WAITER, and a few guests. Rig from the mansion reel (thanksgiving/bear reels before it). Everything is a pure
@@ -8,35 +8,50 @@ import { mat, clamp, lerp, smooth, hash1, noise1, ik3, placeBone, v3 } from './l
 const PORCH_SPOT = { pos: [0, 0], rotY: 0 }, DOORWAY_SPOT = { pos: [0, 0], rotY: 0 };
 import { loftY, limbGeo, headGeo, noseGeo, earGeo, hairShell, tuft, buildHand, poseHand, gripPoint, shoeGeo, soleGeo, frontZ, merge, HEAD, heelGeo, glassesGeo, lensGeo } from './char_geo.js';
 import { fabricTex, torsoTex, makeFaceSet, skinTex, robeSkirtTex, coatSkirtTex } from './char_tex.js';
-import { buildHandheld } from './props_dubai.js';
+import { buildHandheld } from './props_oscar.js';
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const basis = (X, Y, Z) => new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y, Z));
 
 const YOU_BODY = { H: 1.76, skin: '#d9a07a', hair: '#4a2c18', shoulder: 0.19, waist: 0.15, chestD: 0.11, belly: 0.15 };
 const LADY_FACE = { eyeW: 7, eyeH: 11, mouthW: 0.9, seed: 21, brow: '#1a1210', lash: true, lips: '#c8102e', blush: '#ec8a8a' };
+const TUX = (main = '#121216', seed = 40) => ({ torso: { style: 'tux', main, shirt: '#fafafa', tie: '#0c0c0e' }, sleeve: ['wool', { color: main, seed }],
+  pants: ['wool', { color: main === '#f2f2f2' ? '#141418' : main, seed: seed + 1 }], shoe: '#0e0e10', shoeKind: 'sneaker' });
+const GOWN = (color, skin, seed = 50) => ({ dress: { color, len: 'floor' }, torso: { style: 'dress', main: color, skin }, sleeve: ['cotton', { color: skin, seed, amount: 5 }],
+  pants: ['cotton', { color: skin, seed: seed + 1, amount: 5 }], shoe: color, shoeKind: 'heel' });
 const SPECS = {
-  // YOU, 30: messy brown hair, blocky beard, grey t-shirt (only ever seen chest-up on the toilet)
-  you: { H: 1.76, skin: '#e0a882', hair: '#4a2c18', hairStyle: 'messy', beard: { color: '#3a2212', kind: 'neat' }, shoulder: 0.19, waist: 0.16, chestD: 0.11, belly: 0.3,
-    torso: { style: 'polo', main: '#8a929e' }, sleeve: ['cotton', { color: '#8a929e', seed: 11 }],
-    pants: ['denim', { color: '#3a4a68', seed: 4 }], shoe: '#f0f0f0', shoeKind: 'sneaker',
-    face: { eyeW: 8, eyeH: 12, mouthW: 1, seed: 3, brow: '#2a180c', blush: '#d65a5a', beard: '#3a2212' } },
-  // MOM: sweet American mom, tired: brown bun, reading glasses on her head... pink cardigan, mom jeans, holding her coffee mug + tissues
-  mom: { H: 1.64, skin: '#f0c8a8', hair: '#7a5030', hairStyle: 'bun', shoulder: 0.163, waist: 0.13, chestD: 0.1, belly: 0.15,
-    torso: { style: 'cardigan', main: '#e89ab0', inner: '#ffffff' }, sleeve: ['knit', { color: '#e89ab0', seed: 22 }],
-    pants: ['denim', { color: '#6a88b8', seed: 19 }], shoe: '#f2f2f2', shoeKind: 'sneaker',
-    face: { ...LADY_FACE, seed: 23, lips: '#c86070', brow: '#5a3a20' } },
-  // the RICH AUNTY FROM DUBAI: big blonde hair, huge sunglasses, red lips, gold everything, shiny purple dress
-  aunty: { H: 1.64, skin: '#f2c8a8', hair: '#e8c070', hairStyle: 'long', glasses: 'sun', necklace: 'gold', earrings: '#f2c840', bangles: '#f2c840',
-    shoulder: 0.17, waist: 0.15, chestD: 0.11, belly: 0.3, dress: { color: '#7a2a9a', len: 'floor' },
-    torso: { style: 'dress', main: '#7a2a9a', skin: '#f2c8a8' }, sleeve: ['satin', { color: '#7a2a9a', seed: 24 }],
-    pants: ['cotton', { color: '#f2c8a8', seed: 25, amount: 5 }], shoe: '#e8c040', shoeKind: 'heel',
-    face: { ...LADY_FACE, seed: 27, lips: '#d01030', brow: '#8a6a30' } },
-  // GRANDPA: bald with a white fringe, white moustache, round glasses, beige cardigan, a walking stick
-  grandpa: { H: 1.7, skin: '#e8b898', hair: '#eeece6', hairStyle: 'bald', moustache: 'thick', mColor: '#eeece6', glasses: 'round',
-    shoulder: 0.175, waist: 0.15, chestD: 0.105, belly: 0.25, torso: { style: 'cardigan', main: '#c8b48a', inner: '#e8eef4' }, sleeve: ['knit', { color: '#c8b48a', seed: 30 }],
-    pants: ['cotton', { color: '#6a5a48', seed: 31 }], shoe: '#4a3a2a', shoeKind: 'sneaker',
-    face: { eyeW: 7, eyeH: 10, mouthW: 1, seed: 51, brow: '#d8d4cc', wrinkles: true } },
+  // YOU: a made-up famous actor: slicked-back black hair, black tuxedo + bow tie (+ the lump that grows in the trousers)
+  you: { H: 1.8, skin: '#e8b090', hair: '#1a1410', hairStyle: 'slick', shoulder: 0.2, waist: 0.15, chestD: 0.11, belly: 0.05, lump: true, tails: true, ...TUX(),
+    face: { eyeW: 8, eyeH: 12, mouthW: 1, seed: 3, brow: '#1a1410', blush: '#e07070' } },
+  costar: { H: 1.7, skin: '#f2cfb4', hair: '#e8c070', hairStyle: 'long', necklace: true, shoulder: 0.16, waist: 0.12, chestD: 0.096, belly: 0, ...GOWN('#d8dce8', '#f2cfb4', 52),
+    face: { ...LADY_FACE, seed: 23, lips: '#d01030', brow: '#8a6a30' } },
+  mom: { H: 1.6, skin: '#f0c8a8', hair: '#5a3e2c', hairStyle: 'bun', earrings: '#f4f0e8', shoulder: 0.16, waist: 0.135, chestD: 0.1, belly: 0.2,
+    dress: { color: '#7a3a9a', len: 'mid' }, torso: { style: 'dress', main: '#7a3a9a', skin: '#f0c8a8' }, sleeve: ['cotton', { color: '#7a3a9a', seed: 54 }],
+    pants: ['cotton', { color: '#f0c8a8', seed: 55, amount: 5 }], shoe: '#4a2a5a', shoeKind: 'heel', face: { ...LADY_FACE, seed: 57, lips: '#c86070', brow: '#a8a49e', wrinkles: true } },
+  director: { H: 1.74, skin: '#e8b898', hair: '#f0eeea', hairStyle: 'bald', beard: { color: '#eeece6', kind: 'neat' }, glasses: 'round', shoulder: 0.19, waist: 0.16, chestD: 0.11, belly: 0.35,
+    torso: { style: 'suit', main: '#6a1a2a', shirt: '#f4f2ee', tie: '#141414' }, sleeve: ['wool', { color: '#6a1a2a', seed: 60 }], pants: ['wool', { color: '#1a1a1e', seed: 61 }], shoe: '#141414',
+    face: { eyeW: 7, eyeH: 10, seed: 63, brow: '#d8d4cc', beard: '#eeece6', wrinkles: true } },
+  conductor: { H: 1.84, skin: '#f0d0b8', hair: '#a8a49e', hairStyle: 'short', shoulder: 0.16, waist: 0.12, chestD: 0.09, belly: 0, ...TUX('#121216', 64),
+    face: { eyeW: 7, eyeH: 11, seed: 65, brow: '#8a8680' } },
+  violinist: { H: 1.66, skin: '#c58c64', hair: '#2a1a12', hairStyle: 'bun', shoulder: 0.155, waist: 0.12, chestD: 0.095, belly: 0, ...GOWN('#141418', '#c58c64', 66),
+    face: { ...LADY_FACE, seed: 67, lips: '#a8304a', brow: '#2a1a12' } },
+  trumpeter: { H: 1.76, skin: '#8a5a3a', hair: '#141010', hairStyle: 'short', shoulder: 0.19, waist: 0.15, chestD: 0.11, belly: 0.2, ...TUX('#121216', 68),
+    face: { eyeW: 7, eyeH: 11, seed: 69, brow: '#141010' } },
+  cellist: { H: 1.78, skin: '#e8b898', hair: '#6a4028', hairStyle: 'neat', glasses: 'round', shoulder: 0.18, waist: 0.15, chestD: 0.105, belly: 0.15, ...TUX('#121216', 70),
+    face: { eyeW: 7, eyeH: 11, seed: 71, brow: '#5a3a20' } },
+  celebM: { H: 1.82, skin: '#8a5a3a', hair: '#1a120c', hairStyle: 'neat', shoulder: 0.2, waist: 0.15, chestD: 0.11, belly: 0.05, ...TUX('#f2f2f2', 72),
+    face: { eyeW: 8, eyeH: 11, seed: 73, brow: '#1a120c' } },
+  celebW: { H: 1.7, skin: '#c58c64', hair: '#141010', hairStyle: 'long', shoulder: 0.16, waist: 0.12, chestD: 0.096, belly: 0, earrings: '#f2c840', ...GOWN('#c81c3a', '#c58c64', 74),
+    face: { ...LADY_FACE, seed: 75, lips: '#a8102a', brow: '#141010' } },
+  grandma: { H: 1.55, skin: '#eec8ae', hair: '#f0eeea', hairStyle: 'bun', glasses: 'round', shoulder: 0.155, waist: 0.125, chestD: 0.095, belly: 0.15,
+    dress: { color: '#6a5a98', len: 'mid' }, torso: { style: 'cardigan', main: '#bba8dc', inner: '#f4f0e8' }, sleeve: ['knit', { color: '#bba8dc', seed: 76 }],
+    pants: ['cotton', { color: '#eec8ae', seed: 77, amount: 5 }], shoe: '#6a5a7a', shoeKind: 'sneaker', face: { ...LADY_FACE, seed: 79, lips: '#b86a7a', brow: '#d8d4cc', wrinkles: true } },
+  dad: { H: 1.78, skin: '#e8b898', hair: '#5a3a20', hairStyle: 'short', shoulder: 0.205, waist: 0.18, chestD: 0.12, belly: 0.45,
+    torso: { style: 'flannel', main: '#3a6ad0', dark: '#14285a' }, sleeve: ['plaid', { color: '#3a6ad0', color2: '#14285a', seed: 80, period: 10 }],
+    pants: ['denim', { color: '#4a5a7a', seed: 81 }], shoe: '#3a3a3a', shoeKind: 'sneaker', face: { eyeW: 7, eyeH: 11, seed: 83, brow: '#5a3a20' } },
+  kid: { H: 1.25, skin: '#f0c8a8', hair: '#a8642a', hairStyle: 'short', shoulder: 0.15, waist: 0.13, chestD: 0.09, belly: 0.1,
+    torso: { style: 'hoodie', main: '#f2a830', rib: '#d88a18' }, sleeve: ['fleece', { color: '#f2a830', seed: 84 }],
+    pants: ['denim', { color: '#3a4a6a', seed: 85 }], shoe: '#e83a3a', shoeKind: 'sneaker', face: { eyeW: 9, eyeH: 13, seed: 87, brow: '#a8642a' } },
 };
 
 // default spot: all hidden at the origin (shots place everyone)
@@ -372,6 +387,15 @@ class Character {
       const em = mat(spec.earrings, { rough: 0.2 }); em.metalness = 0.85; em.emissive = new THREE.Color('#5a3a00'); em.emissiveIntensity = 0.4;
       for (const sd of [-1, 1]) { const e = this.mk(new THREE.OctahedronGeometry(0.014, 0), em, 'earring', this.head); e.position.set(sd * HEAD.rx * 1.0, -0.045, -0.005); e.scale.set(1, 1.5, 1); }
     }
+    this.lumpMesh = null; this.tail = null;
+    if (spec.lump) {                   // the cartoon lump in the back of the trousers (p.lump = radius in m; 0 = none)
+      this.lumpMesh = this.mk(new THREE.SphereGeometry(1, 14, 10), M.pants, 'lump', this.pelvis); this.lumpMesh.visible = false;
+    }
+    if (spec.tails) {                  // tailcoat tails at the back of the jacket (lift with p.tailLift)
+      const tp = new THREE.Group(); tp.name = `${this.name}.tails`; tp.position.set(0, 0.02 * s, -cd - 0.01); this.chest.add(tp);
+      for (const sx of [-1, 1]) { const g = new THREE.BoxGeometry(0.13 * s, 0.36 * s, 0.015); g.translate(0, -0.18 * s, 0); const m = this.mk(g, M.torso, 'tail', tp); m.position.x = sx * 0.068 * s; m.rotation.z = sx * 0.06; }
+      this.tail = tp;
+    }
     if (spec.hood) {                   // hoodie hood (down): a soft lump behind the neck
       const g = new THREE.SphereGeometry(1, 10, 6); g.scale(0.12 * s, 0.075 * s, 0.07 * s);
       const h = this.mk(g, M.torso, 'hood', this.chest); h.position.set(0, T * 0.95, -cd * 0.92); h.rotation.x = 0.4;
@@ -622,6 +646,11 @@ function solve(ch, t) {
     else { const k = clamp(p.glassesLow); ch.glasses.position.set(0, -0.003 * k, 0.005 * k); ch.glasses.rotation.set(0.3 * k, 0, 0); ch.glasses.scale.setScalar(1); }
   }
   if (ch.hairBack) ch.hairBack.rotation.x = p.hairSway * Math.sin(t * 2.3) * 0.08;
+  if (ch.lumpMesh) {
+    const r = p.lump || 0; ch.lumpMesh.visible = r > 0.004;
+    if (r > 0.004) { ch.lumpMesh.scale.set(r * 1.05, r * 0.92, r * 0.9); ch.lumpMesh.position.set(0, -0.035 * ch.s - r * 0.15, -(ch.spec.chestD * 0.82) - r * 0.55); }
+  }
+  if (ch.tail) ch.tail.rotation.x = -(p.tailLift || 0);
   if (ch.hips) ch.hips.visible = !p.inBush;
   if (ch.skirt) {
     ch.skirt.visible = sit < 0.5 && !p.inBush;

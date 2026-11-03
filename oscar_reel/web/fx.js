@@ -526,7 +526,7 @@ export function buildFX(world) {
       if (near <= 0.001) continue;
       fullBillboard(m, pos, r1 * TAU + t * 0.06 * (r2 - 0.5));
       m.scale.set(s, s, 1);
-      cloudLook(m, t * 0.5, r2, COL.haze, COL.haze2, { soft: 0.62, coreA: 1, lump: 0.6, pix: 0,
+      cloudLook(m, t * 0.5, r2, o.color ? C(o.color) : COL.haze, o.color2 ? C(o.color2) : COL.haze2, { soft: 0.62, coreA: 1, lump: 0.6, pix: 0,
         opacity: (o.opacity ?? 0.22) * amount * (0.8 + 0.2 * Math.sin(t * 0.9 + i * 1.7)) * near });
       m.material.depthTest = !o.overlay;
     }
@@ -931,7 +931,7 @@ export function buildFX(world) {
       const spin = st === 0 ? tau * (14 + 16 * r4) : (st === 1 ? 6 + tau * 4 : 8);
       const len = (bark ? 0.016 : 0.022 + 0.035 * r4) * size;
       const thk = (bark ? 0.004 : 0.004 + 0.003 * r2) * size;
-      chip(bark ? BARK_COLS[i % 3] : SPLINTER_COLS[i % 4], t2, bark ? len * 0.9 : thk, thk, len * fade, spin * (r2 - 0.5) * 2 + r1, spin + r2 * 3, r3 * 3);
+      chip(o.color ? (Array.isArray(o.color) ? o.color[i % o.color.length] : o.color) : bark ? BARK_COLS[i % 3] : SPLINTER_COLS[i % 4], t2, bark ? len * 0.9 : thk, thk, len * fade, spin * (r2 - 0.5) * 2 + r1, spin + r2 * 3, r3 * 3);
     }
     // little puff of wood dust + comic snap lines
     if (o.puff !== false && tau < 0.8) {
@@ -1032,6 +1032,8 @@ export function buildFX(world) {
     const s = Math.max(1e-4, sc * size * (o.amount ?? 1));
     m.scale.set(s, s, 1);
     m.material.uniforms.uOpacity.value = clamp(o.opacity ?? 1);
+    m.material.uniforms.uCol.value.copy(o.color ? C(o.color) : COL.star);
+    m.material.uniforms.uGlowCol.value.copy(o.glow ? C(o.glow) : COL.starGlow);
     m.material.uniforms.uPix.value = 0;
     m.material.depthTest = o.overlay ? false : true;
     m.visible = true;
