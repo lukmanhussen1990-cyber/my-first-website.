@@ -95,13 +95,15 @@ Below the row, a close-up of YOU's head and shoulders, front view, with a nervou
 Voice: "You're at your girlfriend's house"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot of the cosy yellow family house in golden evening light. YOU stands on the little porch at the red front door, holding a big colourful bouquet of flowers with both hands in front of his chest, back straight, nervous smile. The front door is open and the GIRLFRIEND leans out of the doorway, smiling big and waving him in with one hand. Porch light on, flower pots, the driveway with a dark-blue car on the side.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face. GIRLFRIEND (same as the character sheet): a young woman, friendly, dark-brown hair in a high ponytail, a cosy cream knit sweater, blue jeans, big warm smile.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You're at (0.28s) → your girlfriend's house (0.63s)
@@ -113,13 +115,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "For the first time"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up, shoulders up: YOU standing at the open front door, holding the bouquet of flowers up near his chin, a very nervous stiff smile, eyebrows up, one small sweat drop on his forehead. Warm light from the hallway on his face. His face is a little above the middle of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** For the first time (2.18s)
@@ -131,11 +135,13 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "You go to the bathroom"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium shot in the upstairs hallway of the house: the GIRLFRIEND smiles and points to a white bathroom door that is open a little; YOU walks toward it with polite small steps, still holding the bouquet, giving a thumbs-up. Family photos on the hallway wall, soft warm light.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face. GIRLFRIEND (same as the character sheet): a young woman, friendly, dark-brown hair in a high ponytail, a cosy cream knit sweater, blue jeans, big warm smile.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You go (3.60s) → to the bathroom (3.88s)
@@ -147,13 +153,15 @@ YOU (same as the character sheet): a young man in his mid-twenties, light-brown 
 Voice: "You poop"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium close-up, chest up: YOU inside the small mint-green bathroom (only his upper body is seen, fully dressed), eyes closed, a happy, relieved little smile. On the wall right behind him hangs a framed photo of HER DAD (the big serious man with the thick mustache) staring straight at the camera. His face is a little above the middle of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face. HER DAD (same as the character sheet): a big, tall, broad man in his fifties, short grey hair, a thick black mustache, very serious face, a dark charcoal pinstripe business suit, white shirt, navy tie, a black leather briefcase.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You poop (5.00s)
@@ -165,13 +173,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "You flush"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of one finger pressing the round chrome flush button on top of a white toilet tank. The light-blue shirt cuff is visible on the wrist. Mint-green tiles behind, soft light.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You flush (5.88s)
@@ -183,11 +193,13 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "Nothing"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up looking down into a clean white toilet bowl with the seat up: the water is completely still and calm, nothing happens. Mint-green tiles around. Nothing else in the bowl, just clear water.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** Nothing (7.04s)
@@ -199,13 +211,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "You flush again"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of the same chrome flush button being pressed hard with a thumb, the thumb bent with effort, the white tank shaking a little. Shirt cuff visible.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You flush again (7.88s)
@@ -217,17 +231,19 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "Nothing"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up of YOU looking down at the toilet (off screen) with a completely blank, deadpan face, eyes half closed, mouth a flat line. One sweat drop on his temple. Mint-green tiles behind. His face is a little above the middle of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** Nothing (9.30s)
-- **Effect:** Static, one slow blink.
+- **Effect:** Static and deadpan, one sweat drop slides down his temple.
 - **Sound:** Silence.
 
 ### Shot 09 ⭐ KEY SHOT · `shot_09.png` · 10.09-11.54 s (1.4 s)
@@ -235,11 +251,13 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "The water is rising"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up from the side of the white toilet bowl: clear water rising up close to the rim, small bubbles on top, the water almost spilling over. Clean, nothing else in the water. Mint-green tiles, slightly darker dramatic light.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** The water is rising (10.21s)
@@ -252,13 +270,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "You panic"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of YOU's face in panic: eyes very wide, eyebrows pulled up, mouth stretched in a scared grimace, several sweat drops, eyes looking to the side. Mint-green tiles behind. His face fills the upper half of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You panic (11.66s)
@@ -270,13 +290,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "Then you see it"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium close-up of YOU in the bathroom turning his head up slowly, mouth open in awe: a beam of warm golden light falls across his face from a window above (off screen). Dust sparkles in the light beam. His face is a little above the middle of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** Then you see it (12.62s)
@@ -288,11 +310,13 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "A window"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 The small square bathroom window with a white frame, high on a mint-green tiled wall, glowing with heavenly golden light, bright god-rays shining in through it, a little white curtain floating. It looks like a holy sign.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** A window (14.25s)
@@ -305,13 +329,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "You wrap it in toilet paper"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of YOU's two hands carefully wrapping a small round bundle in white toilet paper, like wrapping a present. Only the white paper bundle is visible (clean, neat), a toilet paper roll unrolling next to it. Shirt cuffs visible. Soft bathroom light.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You wrap it (15.55s) → in toilet paper (16.09s)
@@ -323,13 +349,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "Like a little gift"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up: YOU holding up a neat little white toilet-paper bundle in both palms like a precious gift, proud gentle face looking at it. Warm soft light, the bundle glows a little. His face is in the upper half, the bundle in the middle.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** Like a little gift (17.25s)
@@ -341,13 +369,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "You even add a bow"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of fingers tying a tiny pink ribbon bow on top of the small white toilet-paper bundle, very carefully, pinky finger up. Soft light.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You even (18.41s) → add a bow (18.89s)
@@ -359,13 +389,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "You open the window"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium shot from outside the house looking in: YOU opening the small bathroom window from the inside, his head and shoulders in the window frame, holding the little white bundle with the pink bow in one hand, cool evening breeze blowing the little curtain. Evening sky reflected on the glass, yellow house wall around the window.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You open the window (19.86s)
@@ -377,13 +409,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "And you throw it"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium shot inside the bathroom: YOU winding up like a baseball pitcher next to the open window, one knee raised high, arm pulled far back holding the small white bundle with the pink bow, serious focused face, tongue out a little. Dramatic side light.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** And you throw it (21.23s)
@@ -396,11 +430,13 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "As far as you can"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot of the evening sky above the neighbourhood: the small white toilet-paper bundle with the pink bow flying in a big high arc across the orange-pink sunset sky, spinning, with the yellow house and its little open bathroom window at the bottom left. Rooftops and trees below.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** As far (22.34s) → as you can (22.86s)
@@ -413,13 +449,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "Then you hear it"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up of YOU leaning out of the small bathroom window, one hand shading his eyes like a sailor, proud little smile, looking far into the distance. Yellow house wall and the white window frame around him, sunset light on his face. His face is a little above the middle of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** Then you hear it (24.16s)
@@ -443,13 +481,15 @@ Voice: "Splat And a scream"
 Voice: "You look down"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 High-angle view looking straight down from the small bathroom window: the driveway far below, the dark-blue car with its door open, and HER DAD standing frozen next to it, small and seen from above, holding his briefcase, looking at his own shoulder. The bottom of the white window frame and the yellow wall are at the bottom of the image.
 
 HER DAD (same as the character sheet): a big, tall, broad man in his fifties, short grey hair, a thick black mustache, very serious face, a dark charcoal pinstripe business suit, white shirt, navy tie, a black leather briefcase.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You look down (28.32s)
@@ -461,13 +501,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "It's her dad He just got home from work"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Full-body shot of HER DAD standing frozen in the driveway next to his dark-blue car (door still open), black leather briefcase in one hand, car keys in the other, stiff as a statue. On his left shoulder sits the small white toilet-paper bundle with the pink bow. Very serious face. Evening light. The whole man from shoes to head, standing in the center.
 
 HER DAD (same as the character sheet): a big, tall, broad man in his fifties, short grey hair, a thick black mustache, very serious face, a dark charcoal pinstripe business suit, white shirt, navy tie, a black leather briefcase.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** It's her dad (29.37s) → He just got home (30.42s) → from work (31.25s)
@@ -479,13 +521,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "It's on his shoulder His best suit"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of the shoulder of a dark charcoal pinstripe suit jacket: the small white toilet-paper bundle with the pink bow sitting on top of the shoulder, and next to it one small brown cartoon smudge on the fabric (a simple cartoon blob shape, not realistic). A fancy silk pocket square and the navy tie are visible at the edge.
 
 HER DAD (same as the character sheet): a big, tall, broad man in his fifties, short grey hair, a thick black mustache, very serious face, a dark charcoal pinstripe business suit, white shirt, navy tie, a black leather briefcase.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** It's on his shoulder (32.13s) → His best suit (33.35s)
@@ -497,13 +541,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "He slowly looks up"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Low-angle close-up from below: HER DAD in the driveway slowly lifting his head to look up at the house, very serious face, one eyebrow down, mustache stiff, the small white bundle still on his shoulder. Above him the yellow house wall and the little open bathroom window at the top of the image, evening sky.
 
 HER DAD (same as the character sheet): a big, tall, broad man in his fifties, short grey hair, a thick black mustache, very serious face, a dark charcoal pinstripe business suit, white shirt, navy tie, a black leather briefcase.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** He slowly looks up (34.82s)
@@ -516,13 +562,15 @@ PLACE: a cosy two-storey family house with warm yellow walls and white window fr
 Voice: "You duck"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium shot inside the bathroom: YOU ducked down under the window, sitting on the floor with his back pressed flat against the mint-green tiled wall, knees up, eyes very wide, both hands over his mouth. The open window above his head shows the evening sky.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You duck (36.33s)
@@ -534,11 +582,13 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "What you don't know hundreds of years ago in Edinburgh"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot of old Edinburgh hundreds of years ago in warm sepia old-film colours: a steep narrow cobblestone street between tall crooked grey stone houses, laundry hanging between the windows, people in old-fashioned clothes walking below, the castle on its rock far away at the top of the street. Film scratches and dust.
 
 PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between tall, crooked grey stone houses with small wooden windows and shutters, the castle on its rock in the distance. Warm sepia old-photo colours, like an old film.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** What you don't know (37.88s) → hundreds of years ago (39.06s) → in Edinburgh (40.14s)
@@ -550,11 +600,13 @@ PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between 
 Voice: "people threw their poop out the window"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium shot in sepia old-film colours: a woman in old-fashioned clothes (a white bonnet, a brown shawl) leaning out of an upstairs wooden window of a tall stone house, holding a wooden bucket and tipping it out over the street. Nothing is seen coming out, only the bucket tipping. Stone wall and shutters around her.
 
 PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between tall, crooked grey stone houses with small wooden windows and shutters, the castle on its rock in the distance. Warm sepia old-photo colours, like an old film.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** people threw (41.12s) → their poop (41.63s) → out the window (42.05s)
@@ -566,11 +618,13 @@ PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between 
 Voice: "and shouted "Gardyloo!""
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up in sepia old-film colours: the same woman in the white bonnet at the wooden window, one hand cupped beside her mouth, shouting a warning down to the street with a big open mouth.
 
 PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between tall, crooked grey stone houses with small wooden windows and shutters, the castle on its rock in the distance. Warm sepia old-photo colours, like an old film.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** and shouted (42.71s) → "Gardyloo!" (43.29s)
@@ -582,11 +636,13 @@ PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between 
 Voice: "to warn the people below"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot in sepia old-film colours of the narrow cobblestone street below: several people in old-fashioned clothes running away in all directions, holding their hats down on their heads, one man jumping out of the way, a chicken flapping. Funny, silly panic.
 
 PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between tall, crooked grey stone houses with small wooden windows and shutters, the castle on its rock in the distance. Warm sepia old-photo colours, like an old film.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** to warn (44.05s) → the people below (44.69s)
@@ -598,13 +654,15 @@ PLACE: old Edinburgh hundreds of years ago: a narrow cobblestone street between 
 Voice: "You didn't shout anything"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up of YOU (normal colours again) still sitting on the bathroom floor under the window, a guilty face: eyes sliding to the side, lips pressed together, eyebrows up, one sweat drop. Mint-green tiles behind. His face is a little above the middle of the image.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chrome flush button on top of the tank, a fluffy yellow towel, a small square window with a white frame high on the wall, a framed family photo on the wall.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You didn't (46.21s) → shout anything (46.80s)
@@ -616,13 +674,15 @@ PLACE: a small cosy bathroom: mint-green square tiles, a white toilet with a chr
 Voice: "Dinner time Her dad sits across from you"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot of the family dinner table at night from the end of the table: on the left side YOU (very stiff, back straight) and the GIRLFRIEND smiling next to him; on the right side the MOM serving spaghetti and the LITTLE BROTHER with a fork in his fist; and at the far end, directly facing YOU, HER DAD AT DINNER with wet messy hair and a white towel around his neck, sitting very straight, staring. Plates of spaghetti, glasses, a round wall clock on the wall behind the dad.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face. GIRLFRIEND (same as the character sheet): a young woman, friendly, dark-brown hair in a high ponytail, a cosy cream knit sweater, blue jeans, big warm smile. HER DAD AT DINNER (same as the character sheet): the same big man with the thick black mustache, but his grey hair is soaking wet and messy (fresh from a shower), a white towel around his neck over a plain grey polo shirt, very serious face. HER MOM (same as the character sheet): a kind woman in her fifties, short wavy brown hair, round glasses, a flowery blouse with a red apron. LITTLE BROTHER (same as the character sheet): a small boy about seven years old, messy hair, a red-and-white striped t-shirt, big curious eyes.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** Dinner time (48.30s) → Her dad sits (49.35s) → across from you (50.02s)
@@ -634,13 +694,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: "His hair is still wet"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up of HER DAD AT DINNER: soaking-wet messy grey hair, one big water drop falling from a lock of hair, the white towel around his neck, very serious face, thick mustache. Warm lamp light. His face is a little above the middle of the image.
 
 HER DAD AT DINNER (same as the character sheet): the same big man with the thick black mustache, but his grey hair is soaking wet and messy (fresh from a shower), a white towel around his neck over a plain grey polo shirt, very serious face.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** His hair (51.09s) → is still wet (51.49s)
@@ -652,13 +714,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: "He says "Strange thing happened today""
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Medium close-up of HER DAD AT DINNER across the table, dead serious, one eyebrow raised high, holding a fork with spaghetti frozen in the air, wet hair, towel around his neck, the round wall clock behind his head. His face is a little above the middle of the image.
 
 HER DAD AT DINNER (same as the character sheet): the same big man with the thick black mustache, but his grey hair is soaking wet and messy (fresh from a shower), a white towel around his neck over a plain grey polo shirt, very serious face.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** He says (52.55s) → "Strange thing (53.44s) → happened today" (54.13s)
@@ -671,13 +735,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: "He stares at you"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of HER DAD AT DINNER's eyes only: narrow, serious, one eyebrow up, drops of water in his wet eyebrows. Fills the image from side to side, a little above the middle.
 
 HER DAD AT DINNER (same as the character sheet): the same big man with the thick black mustache, but his grey hair is soaking wet and messy (fresh from a shower), a white towel around his neck over a plain grey polo shirt, very serious face.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** He stares at you (55.62s)
@@ -689,13 +755,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: "You stare back"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of YOU's eyes only: wide, nervous, a big sweat drop on his forehead, trying to look brave. Fills the image from side to side, a little above the middle.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** You stare back (57.03s)
@@ -707,13 +775,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: "And you whisper"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Even closer extreme close-up of HER DAD AT DINNER: only one eye and the thick mustache, a fly sitting on his mustache, he does not move at all.
 
 HER DAD AT DINNER (same as the character sheet): the same big man with the thick black mustache, but his grey hair is soaking wet and messy (fresh from a shower), a white towel around his neck over a plain grey polo shirt, very serious face.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** And you whisper (58.84s)
@@ -725,11 +795,13 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: ""
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Close-up of the round wall clock in the dining room, the red second hand moving, warm lamp light.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** (none)
@@ -741,13 +813,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: "…Gardyloo?"
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Extreme close-up of YOU's mouth and nose leaning forward, lips pursed to whisper, eyes looking up at the dad, sweat on his upper lip. Fills the image, a little above the middle.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** …Gardyloo? (61.31s)
@@ -759,13 +833,15 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: ""
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot of the whole family at the dinner table, completely frozen: the MOM holding the spaghetti spoon in the air, the LITTLE BROTHER with spaghetti hanging from his open mouth, the GIRLFRIEND slowly turning to look at YOU, HER DAD AT DINNER staring at YOU, YOU sitting very small and stiff.
 
 YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short black hair combed to the side, clean-shaven, a crisp light-blue button-up shirt tucked into dark-grey trousers, brown belt, brown shoes (dressed up to impress), polite nervous face. GIRLFRIEND (same as the character sheet): a young woman, friendly, dark-brown hair in a high ponytail, a cosy cream knit sweater, blue jeans, big warm smile. HER DAD AT DINNER (same as the character sheet): the same big man with the thick black mustache, but his grey hair is soaking wet and messy (fresh from a shower), a white towel around his neck over a plain grey polo shirt, very serious face. HER MOM (same as the character sheet): a kind woman in her fifties, short wavy brown hair, round glasses, a flowery blouse with a red apron. LITTLE BROTHER (same as the character sheet): a small boy about seven years old, messy hair, a red-and-white striped t-shirt, big curious eyes.
 
 PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plates of spaghetti, glasses of water, a round wall clock, warm yellow lamp light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** (none)
@@ -777,11 +853,13 @@ PLACE: a cosy dining room at night: a wooden table with a white tablecloth, plat
 Voice: ""
 
 ```
-STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, subject in the center, no text.
+STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky faceted shapes with visible flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles and walls). Characters have realistic proportions with simple blocky heads, small black square dot eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle depth of field. Silly and funny, never gross, everyone fully dressed.
 
 Wide shot of the cosy yellow house at night under a dark-blue starry sky, the street quiet, all windows dark except the small upstairs bathroom window, which glows warm yellow. The dark-blue car in the driveway.
 
 PLACE: a cosy two-storey family house with warm yellow walls and white window frames, a red front door with a little porch light and flower pots, a short driveway with a dark-blue car, and one small bathroom window on the upper floor right above the driveway. Golden evening light.
+
+Vertical portrait image, subject in the center, no text.
 ```
 
 - **Caption:** (none)

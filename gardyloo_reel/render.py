@@ -125,11 +125,21 @@ class ClipSource:
         return self.frames[k]
 
 
+class BlackSource:
+    """Shot with no picture (the black screen for "Splat." / "And a scream.")."""
+    w, h = W, H
+
+    def frame(self, lt):
+        return np.zeros((H, W, 3), np.uint8)
+
+
 IMAGES = os.environ.get("IMAGES_DIR", P("images"))     # override for tests with placeholder pictures
 CLIPS = os.environ.get("CLIPS_DIR", P("clips"))
 
 
 def source_for(sid, fx):
+    if SHOTS[sid].get("black"):
+        return BlackSource(), "black"
     clip, img = os.path.join(CLIPS, f"shot_{sid:02d}.mp4"), os.path.join(IMAGES, f"shot_{sid:02d}.png")
     for ext in (".png", ".jpg", ".jpeg", ".webp"):
         cand = os.path.join(IMAGES, f"shot_{sid:02d}{ext}")
@@ -138,13 +148,21 @@ def source_for(sid, fx):
             break
     if os.path.exists(clip) and not os.environ.get("NO_CLIPS"):
         c = fx.get("clip", {})
-        return ClipSource(clip, c.get("start", 0.0), c.get("speed", 1.0)), "clip"
+        src = ClipSource(clip, c.get("start", 0.0), c.get("speed", 1.0))
+        if "span" in c:                       # play clip seconds a..b over the whole shot (fast or slow motion)
+            a, b = c["span"]
+            b = min(b, src.dur - 1.0 / src.fps)
+            src.start, src.speed = a, (b - a) / (SHOTS[sid]["t1"] - SHOTS[sid]["t0"])
+        return src, "clip"
     return ImageSource(img), "image"
 
 
 # ----------------------------------------------------------------------------------------------- camera
 def camera(fx, t, t0, t1, src_w, src_h):
     """Affine 2x3 matrix (source px -> output px) for absolute time t."""
+    hold = fx.get("hold_fps")                         # old film: the camera moves in 12 fps steps
+    if hold:
+        t = t0 + math.floor((t - t0) * hold) / hold
     lt, dur = t - t0, t1 - t0
     u = lt / dur
     z0, z1 = fx.get("push", (1.0, 1.06))
@@ -156,8 +174,19 @@ def camera(fx, t, t0, t1, src_w, src_h):
         if tp <= t < tp + pd:
             z *= 1 + (k - 1) * math.sin(math.pi * (t - tp) / pd)
     (fx0, fy0), (fx1, fy1) = fx.get("pan", ((0.5, 0.5), (0.5, 0.5)))
-    e = ease(u, fx.get("pan_ease", "inout"))
+    if "pan_t" in fx:                                 # pan only between two absolute times (whip down)
+        ta, tb = fx["pan_t"]
+        e = ease((t - ta) / max(1e-6, tb - ta), fx.get("pan_ease", "inout"))
+    else:
+        e = ease(u, fx.get("pan_ease", "inout"))
     fxp, fyp = lerp(fx0, fx1, e), lerp(fy0, fy1, e)
+    if "path" in fx:                                  # focus keyframes [(t, (u, v)), ...] (eyes darting)
+        kf = fx["path"]
+        fxp, fyp = kf[0][1]
+        for (ta, pa), (tb, pb) in zip(kf, kf[1:]):
+            if t >= ta:
+                k = smoothstep(ta, tb, t)
+                fxp, fyp = lerp(pa[0], pb[0], k), lerp(pa[1], pb[1], k)
     # shake (decaying, deterministic), with extra zoom so the frame edge never shows
     sx = sy = rot = 0.0
     margin = 1.0
@@ -169,6 +198,12 @@ def camera(fx, t, t0, t1, src_w, src_h):
             sy += amp * k * noise1((t - ts) * freq, ts * 3.3 + 50)
             rot += 0.06 * amp / 40 * k * noise1((t - ts) * freq * 0.7, ts + 99)
         margin = max(margin, 1.0 + 2.2 * amp / W)
+    if fx.get("weave"):                              # old projector gate weave (jumpy, per held frame)
+        wv = fx["weave"]
+        fr = math.floor(t * (hold or 12))
+        sx += wv * (hash1(fr, 1.1) * 2 - 1)
+        sy += wv * 1.4 * (hash1(fr, 2.3) * 2 - 1)
+        margin = max(margin, 1.0 + 3.0 * wv / W)
     hh = fx.get("handheld", 0.0)                     # gentle drift (px)
     if hh:
         sx += hh * noise1(t * 0.6, 11.0)
@@ -401,6 +436,154 @@ def fx_zzz(img, t, e, M, sw, sh):
     return out
 
 
+def fx_speedlines(img, t, e, M, sw, sh):
+    """Anime speed lines: white streaks pointing at a centre (radial) or falling past (vertical), new every frame."""
+    if not (e.get("t0", -1e9) <= t < e.get("t1", 1e9)):
+        return img
+    fr = int(round(t * FPS))
+    amount = e.get("amount", 0.8)
+    if "fade" in e:
+        amount *= 1 - smoothstep(e["t1"] - e["fade"], e["t1"], t)
+    layer = img.copy()
+    n = e.get("n", 46)
+    if e.get("dir") == "vertical":
+        for i in range(n):
+            x = hash1(i, fr, 1.3) * W
+            if abs(x - W / 2) < W * e.get("clear", 0.18):
+                continue
+            y0 = hash1(i, fr, 2.9) * H * 1.2 - 0.2 * H
+            ln = (0.15 + 0.35 * hash1(i, fr, 4.1)) * H
+            th = int(2 + 7 * hash1(i, fr, 5.7))
+            cv2.line(layer, (int(x), int(y0)), (int(x), int(y0 + ln)), (255, 255, 255), th, cv2.LINE_AA)
+    else:
+        cx, cy = e.get("center", (W / 2, H / 2))
+        r_in = e.get("inner", 0.42) * H
+        for i in range(n):
+            a = 2 * math.pi * (i + hash1(i, fr, 7.7)) / n
+            r0 = r_in * (0.9 + 0.35 * hash1(i, fr, 3.1))
+            r1 = 1.3 * H
+            th = 2 + 10 * hash1(i, fr, 9.2)
+            ca, sa = math.cos(a), math.sin(a)
+            p0 = (cx + r0 * ca, cy + r0 * sa)
+            pl = (cx + r1 * ca - th * sa, cy + r1 * sa + th * ca)
+            pr = (cx + r1 * ca + th * sa, cy + r1 * sa - th * ca)
+            cv2.fillPoly(layer, [np.array([p0, pl, pr], np.int32)], (255, 255, 255), cv2.LINE_AA)
+    return cv2.addWeighted(layer, amount, img, 1 - amount, 0)
+
+
+def fx_glow(img, t, e, M, sw, sh):
+    """Holy glow: warm light blooming out of a point, pulsing, with slowly turning god-rays (screen add)."""
+    if not (e.get("t0", -1e9) <= t < e.get("t1", 1e9)):
+        return img
+    x, y, s = to_screen(M, e["at"], sw, sh)
+    amount = e.get("amount", 0.6) * (1 + e.get("pulse", 0.25) * math.sin(2 * math.pi * e.get("hz", 1.3) * t))
+    if "rise" in e:
+        amount *= smoothstep(e.get("t0", t), e.get("t0", t) + e["rise"], t)
+    rad = e.get("radius", 520)
+    yy, xx = np.ogrid[0:H, 0:W]
+    d = np.sqrt((xx - x) ** 2 + (yy - y) ** 2) / rad
+    g = np.exp(-d * d * 1.6)
+    n = e.get("rays", 10)
+    if n:
+        ang = np.arctan2(yy - y, xx - x) + 0.25 * t
+        g = g + 0.55 * np.exp(-d * 0.9) * np.clip(np.cos(ang * n), 0, 1) ** 6
+    col = np.array(e.get("color", (120, 215, 255)), np.float32)        # warm gold (BGR)
+    out = img.astype(np.float32) + (g[..., None] * amount) * col
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
+def fx_fly(img, t, e, M, sw, sh):
+    """A little cartoon fly buzzing around (loops round a point, wings flapping, dotted trail)."""
+    if not (e.get("t0", -1e9) <= t < e.get("t1", 1e9)):
+        return img
+    x0, y0, s = to_screen(M, e["at"], sw, sh)
+    rx, ry = e.get("rx", 300), e.get("ry", 170)
+    sp = e.get("speed", 1.0)
+
+    def pos(tt_):
+        q = (tt_ - e.get("t0", 0)) * sp
+        return (x0 + rx * math.sin(2.1 * q * math.pi * 0.5) + 60 * math.sin(7.3 * q),
+                y0 + ry * math.sin(3.2 * q * math.pi * 0.5 + 0.7) + 40 * math.cos(5.1 * q))
+    layer = img.copy()
+    for k in range(1, 9):                                               # dotted trail
+        px, py = pos(t - k * 0.035)
+        cv2.circle(layer, (int(px), int(py)), 4, (40, 40, 40), -1, cv2.LINE_AA)
+    out = cv2.addWeighted(layer, 0.35, img, 0.65, 0)
+    x, y = pos(t)
+    r = e.get("size", 18)
+    flap = math.sin(t * 2 * math.pi * 24)
+    wing = out.copy()
+    for side in (-1, 1):
+        cv2.ellipse(wing, (int(x + side * r * 0.7), int(y - r * 0.9)), (int(r * 0.9), int(r * (0.45 + 0.25 * flap))),
+                    side * 35, 0, 360, (255, 245, 235), -1, cv2.LINE_AA)
+    out = cv2.addWeighted(wing, 0.7, out, 0.3, 0)
+    cv2.ellipse(out, (int(x), int(y)), (int(r * 1.1), int(r * 0.8)), 0, 0, 360, (20, 20, 20), -1, cv2.LINE_AA)
+    cv2.circle(out, (int(x + r * 0.9), int(y - r * 0.1)), int(r * 0.55), (30, 30, 30), -1, cv2.LINE_AA)
+    cv2.circle(out, (int(x + r * 1.1), int(y - r * 0.25)), max(2, int(r * 0.22)), (40, 40, 200), -1, cv2.LINE_AA)
+    return out
+
+
+def old_film(img, t, e):
+    """Old-film look: sepia, flicker, grain, dust specks, vertical scratches (new random pattern every frame)."""
+    fr = int(round(t * FPS))
+    hold = math.floor(t * 12)
+    f = img.astype(np.float32)
+    lum = f @ np.array([0.114, 0.587, 0.299], np.float32)
+    sep = np.stack([lum * 0.62 + 18, lum * 0.86 + 10, lum * 1.05 + 14], -1)        # BGR sepia
+    a = e.get("amount", 1.0)
+    f = f * (1 - a) + sep * a
+    f *= 1 + 0.07 * (hash1(hold, 4.2) * 2 - 1)                                       # flicker
+    r = np.random.default_rng(fr * 7919 + 13)
+    gr = r.normal(0, 1, (H // 3, W // 3)).astype(np.float32)
+    gr = cv2.resize(gr, (W, H), interpolation=cv2.INTER_LINEAR)
+    f += gr[..., None] * 9.0
+    out = np.clip(f, 0, 255).astype(np.uint8)
+    for k in range(int(r.integers(0, 3))):                                          # scratches
+        x = int(r.uniform(0.05, 0.95) * W)
+        c = (215, 230, 240) if r.random() < 0.6 else (30, 40, 50)
+        cv2.line(out, (x, 0), (x + int(r.uniform(-20, 20)), H), c, int(r.integers(1, 3)), cv2.LINE_AA)
+    for k in range(int(r.integers(2, 9))):                                          # dust
+        p = (int(r.uniform(0, W)), int(r.uniform(0, H)))
+        cv2.ellipse(out, p, (int(r.uniform(2, 7)), int(r.uniform(1, 4))), r.uniform(0, 180), 0, 360,
+                    (25, 30, 35), -1, cv2.LINE_AA)
+    if r.random() < 0.08:                                                           # rare white blotch
+        cv2.circle(out, (int(r.uniform(0, W)), int(r.uniform(0, H))), int(r.uniform(10, 30)), (220, 235, 245), -1,
+                   cv2.LINE_AA)
+    return out
+
+
+def pixelate(img, k):
+    """PS1 look: draw the picture on a coarser pixel grid (k x k blocks)."""
+    if k <= 1:
+        return img
+    small = cv2.resize(img, (W // k, H // k), interpolation=cv2.INTER_AREA)
+    return cv2.resize(small, (W, H), interpolation=cv2.INTER_NEAREST)
+
+
+def letterbox(img, t, lb, t0, t1):
+    """Cinema black bars (western stand-off). lb = px or (px_start, px_end) over the shot."""
+    if isinstance(lb, (list, tuple)):
+        px = lerp(lb[0], lb[1], ease((t - t0) / (t1 - t0) / 0.5))
+    else:
+        px = lb
+    px = int(px)
+    if px > 0:
+        img[:px] = 0
+        img[H - px:] = 0
+    return img
+
+
+def fade_black(img, t, fd):
+    ta, d = fd
+    a = smoothstep(ta, ta + d, t)
+    if a <= 0:
+        return img
+    return (img.astype(np.float32) * (1 - a)).astype(np.uint8)
+
+
+PIXEL = int(os.environ.get("PIXEL", "2"))
+
+
 def grade(img, t, g, t0, t1):
     """Colour grade: desaturate (drain), tint (multiply towards a colour), haze (green fog), dim."""
     u = (t - t0) / (t1 - t0)
@@ -459,8 +642,11 @@ def render_frame(sid, src, fx, t):
     sh, sw = fr.shape[:2]
     M = camera(fx, t, t0, t1, sw, sh)
     img = cv2.warpAffine(fr, M, (W, H), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
+    img = pixelate(img, fx.get("pixel", PIXEL))
     if fx.get("grade"):
         img = grade(img, t, fx["grade"], t0, t1)
+    if fx.get("oldfilm"):
+        img = old_film(img, t, fx["oldfilm"])
     for e in fx.get("fx", []):
         k = e["type"]
         if k == "stink":
@@ -477,10 +663,20 @@ def render_frame(sid, src, fx, t):
             img = fx_particles(img, t, e, k)
         elif k == "zzz":
             img = fx_zzz(img, t, e, M, sw, sh)
+        elif k == "speedlines":
+            img = fx_speedlines(img, t, e, M, sw, sh)
+        elif k == "glow":
+            img = fx_glow(img, t, e, M, sw, sh)
+        elif k == "fly":
+            img = fx_fly(img, t, e, M, sw, sh)
     if fx.get("vignette", 0.25):
         img = vignette(img, fx.get("vignette", 0.25))
     if fx.get("flash"):
         img = flash(img, t, fx["flash"])
+    if fx.get("letterbox"):
+        img = letterbox(img, t, fx["letterbox"], t0, t1)
+    if fx.get("fade_out"):
+        img = fade_black(img, t, fx["fade_out"])
     return img
 
 

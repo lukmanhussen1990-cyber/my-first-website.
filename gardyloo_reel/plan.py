@@ -21,8 +21,8 @@ STYLE = ("STYLE: low-poly blocky 3D video game render, PS1 / Roblox look. Chunky
          "flat polygons, slightly pixelated low-resolution textures (pixel noise on hair, clothes, wood, tiles "
          "and walls). Characters have realistic proportions with simple blocky heads, small black square dot "
          "eyes, short block eyebrows and a tiny simple mouth. Soft realistic lighting with soft shadows, gentle "
-         "depth of field. Silly and funny, never gross, everyone fully dressed. Vertical portrait image, "
-         "subject in the center, no text.")
+         "depth of field. Silly and funny, never gross, everyone fully dressed.")
+ENDING = "Vertical portrait image, subject in the center, no text."   # every shot prompt ends with this
 
 CAST = {
     "YOU": ("YOU (same as the character sheet): a young man in his mid-twenties, light-brown skin, neat short "
@@ -146,7 +146,7 @@ SHOTS = [
          scene="Close-up of YOU looking down at the toilet (off screen) with a completely blank, deadpan face, "
                "eyes half closed, mouth a flat line. One sweat drop on his temple. Mint-green tiles behind. His "
                "face is a little above the middle of the image.",
-         effect="Static, one slow blink.",
+         effect="Static and deadpan, one sweat drop slides down his temple.",
          sound="Silence."),
     dict(start=(9, 0), size="close-up", key=True, cast=[], place=BATH,
          scene="Close-up from the side of the white toilet bowl: clear water rising up close to the rim, small "
@@ -462,7 +462,7 @@ def write_md(shots):
         else:
             who = who_in(o)
             body = STYLE + "\n\n" + o["scene"] + ("\n\n" + " ".join(who) if who else "") + \
-                ("\n\n" + o["place"] if o["place"] else "")
+                ("\n\n" + o["place"] if o["place"] else "") + "\n\n" + ENDING
             L.append("```\n" + body + "\n```\n")
         L.append(f"- **Caption:** " + " → ".join(f"{c['text']} ({c['t']:.2f}s)" for c in o["captions"])
                  if o["captions"] else "- **Caption:** (none)")
