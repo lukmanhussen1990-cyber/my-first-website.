@@ -67,9 +67,18 @@ def probe_duration(path):
     return float(out.strip())
 
 
-def transcribe(audio, model_name):
+_MODEL = {}
+
+
+def get_model(name):
     from faster_whisper import WhisperModel
-    model = WhisperModel(model_name, device="cpu", compute_type="int8")
+    if name not in _MODEL:
+        _MODEL[name] = WhisperModel(name, device="cpu", compute_type="int8")
+    return _MODEL[name]
+
+
+def transcribe(audio, model_name):
+    model = get_model(model_name)
     script_prompt = ("You walk into the police station. And you poop. Immediately. "
                      "Sir... did you just... Three days, officer! Sooo handsome. "
                      "My sugar muffin! My cuddle bear! My little honey bunny!")
@@ -148,6 +157,108 @@ def estimate(script_words):
         if nxt_line:
             t += 0.12
     return t + 0.9
+
+
+def speech_islands(audio, thresh_db=-40.0, min_gap=0.15):
+    """Speech regions of the recording (10 ms frames above a level)."""
+    hop = SR // 100
+    n = len(audio) // hop
+    fr = audio[: n * hop].reshape(n, hop)
+    db = 20 * np.log10(np.sqrt((fr ** 2).mean(axis=1)) + 1e-9)
+    on = db > thresh_db
+    gaps, i = [], 0
+    while i < n:
+        if not on[i]:
+            j = i
+            while j < n and not on[j]:
+                j += 1
+            if (j - i) / 100 >= min_gap:
+                gaps.append((i / 100, j / 100))
+            i = j
+        else:
+            i += 1
+    islands, t = [], 0.0
+    for g0, g1 in gaps:
+        if g0 > t:
+            islands.append((t, g0))
+        t = g1
+    if t < n / 100:
+        islands.append((t, n / 100))
+    return gaps, islands
+
+
+def refine_by_line(words, audio, model_name, nlines):
+    """Second pass: re-transcribe each script line in its own window (cut at
+    the pauses around it) and take those word times, which are much tighter
+    than the ones from one long transcription."""
+    gaps, _ = speech_islands(audio)
+    model = get_model(model_name)
+    dur = len(audio) / SR
+    mids = [(g0 + g1) / 2 for g0, g1 in gaps]
+
+    def nearest_gap_mid(t, lo, hi):
+        cands = [m for m in mids if lo <= m <= hi]
+        return min(cands, key=lambda m: abs(m - t)) if cands else None
+
+    fixed = 0
+    bounds = []
+    for li in range(nlines):
+        lw = [w for w in words if w["line"] == li]
+        bounds.append((lw[0]["s"], lw[-1]["e"]))
+    for li in range(nlines):
+        lw = [w for w in words if w["line"] == li]
+        s0, e0 = bounds[li]
+        prev_e = bounds[li - 1][1] if li > 0 else 0.0
+        next_s = bounds[li + 1][0] if li + 1 < nlines else dur
+        a = nearest_gap_mid(s0, prev_e - 0.3, s0 + 0.3) if li > 0 else nearest_gap_mid(s0, 0.0, s0 + 0.9)
+        b = nearest_gap_mid(e0, e0 - 0.3, next_s + 0.3) if li + 1 < nlines else dur
+        a = 0.0 if a is None else a
+        b = min(dur, e0 + 0.4) if b is None else b
+        if b - a < 0.3:
+            continue
+        pad = np.zeros(int(0.4 * SR), np.float32)
+        seg = np.concatenate([pad, audio[int(a * SR):int(b * SR)], pad])
+        prompt = " ".join(w["text"] for w in lw)
+        out, _ = model.transcribe(seg, word_timestamps=True, beam_size=5, language="en", initial_prompt=prompt)
+        heard = [{"w": x.word.strip(), "s": x.start - 0.4 + a, "e": x.end - 0.4 + a} for o in out for x in o.words]
+        if not heard:
+            continue
+        A = [norm(w["text"]) for w in lw]
+        B = [norm(h["w"]) for h in heard]
+        sm = difflib.SequenceMatcher(a=A, b=B, autojunk=False)
+        same = sum(bl.size for bl in sm.get_matching_blocks())
+        if same < 0.6 * len(lw):
+            continue
+        for bl in sm.get_matching_blocks():
+            for k in range(bl.size):
+                w, h = lw[bl.a + k], heard[bl.b + k]
+                w["s"], w["e"] = max(a, h["s"]), min(b, h["e"])
+                fixed += 1
+    # 1) a word cannot end inside a pause, 2) nor start inside one
+    for w in words:
+        for g0, g1 in gaps:
+            if g0 < w["e"] < g1 and w["s"] < g0 - 0.05:
+                w["e"] = g0
+    for w in words:
+        for g0, g1 in gaps:
+            if g0 < w["s"] < g1 and (w["s"] + w["e"]) / 2 > (g0 + g1) / 2:
+                w["s"] = g1
+    # 3) a phrase that follows a pause starts exactly where the speech resumes
+    for i, w in enumerate(words):
+        before = [(g0, g1) for g0, g1 in gaps if g1 <= w["s"] + 1e-3]
+        if not before:
+            continue
+        g0, g1 = max(before, key=lambda g: g[1])
+        prev_end = words[i - 1]["e"] if i > 0 else 0.0
+        if 0 < w["s"] - g1 < 0.55 and prev_end <= g0 + 0.15:
+            w["s"] = g1
+    for a_, b_ in zip(words, words[1:]):
+        if b_["s"] < a_["s"] + 0.04:
+            b_["s"] = a_["s"] + 0.04
+        a_["e"] = min(a_["e"], max(b_["s"], a_["s"] + 0.04))
+    for w in words:
+        w["e"] = max(w["e"], w["s"] + 0.04)
+    return gaps, fixed
 
 
 def word_loudness(audio, words):
@@ -287,7 +398,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--voice", help="voiceover audio file")
     ap.add_argument("--estimate", action="store_true", help="no voiceover: estimate pacing")
-    ap.add_argument("--model", default="small.en")
+    ap.add_argument("--model", default="medium.en")
     ap.add_argument("--script", help="script json (default: script.json)")
     ap.add_argument("--out", default=os.path.join(ROOT, "build", "timeline.json"))
     args = ap.parse_args()
@@ -302,6 +413,12 @@ def main():
             json.dump(heard, f, indent=1)
         matched = align(words, heard)
         print(f"whisper heard {len(heard)} words; {matched}/{len(words)} script words matched exactly")
+        before = [(w["s"], w["e"]) for w in words]
+        gaps, moved = refine_by_line(words, audio, args.model, len(script["lines"]))
+        changed = [(w["text"], b[0], w["s"]) for w, b in zip(words, before) if abs(w["s"] - b[0]) > 0.05]
+        print(f"per-line refinement: {moved} words re-timed, {len(gaps)} pauses found, {len(changed)} starts moved >50ms")
+        for t_, a_, b_ in changed:
+            print(f"    {t_:14s} {a_:6.2f} -> {b_:6.2f}")
         tl = build(script, words, duration, audio)
         tl["source"] = os.path.basename(args.voice)
     elif args.estimate:

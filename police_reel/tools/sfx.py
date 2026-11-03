@@ -68,7 +68,7 @@ def scratch():
     d = 0.42
     n = int(d * SR)
     t = np.arange(n) / n
-    sweep = np.where(t < 0.35, 300 + 2600 * (t / 0.35) ** 1.5, 2900 - 2500 * ((t - 0.35) / 0.65) ** 0.7)
+    sweep = np.where(t < 0.35, 300 + 2600 * (t / 0.35) ** 1.5, 2900 - 2500 * (np.clip(t - 0.35, 0, None) / 0.65) ** 0.7)
     noise = rng.standard_normal(n)
     saw = ((np.cumsum(sweep / 6) / SR) % 1.0) * 2 - 1
     y = biquad_bp(0.6 * noise + 0.8 * saw, sweep, 4.0)
@@ -155,7 +155,7 @@ def main():
     ap.add_argument('events')
     ap.add_argument('out')
     ap.add_argument('--voice')
-    ap.add_argument('--level', type=float, default=0.22,
+    ap.add_argument('--level', type=float, default=0.38,
                     help='effects loudness relative to the voice (0.22 ~ -13 dB)')
     a = ap.parse_args()
     tl = json.load(open(a.timeline))
