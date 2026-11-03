@@ -220,6 +220,8 @@ export const Forest: React.FC = () => {
 				const r = 9 + hash(i, 2) * 40;
 				const x = Math.cos(a) * r;
 				const z = Math.sin(a) * r - 6;
+				// keep a clearing in front of the throne for the camera
+				if (x > -10 && x < 10 && z > -3 && z < 16) return null;
 				return hash(i, 3) > 0.45 ? <PineTree key={i} position={[x, 0, z]} scale={1.2 + hash(i, 4) * 0.9} /> : <RoundTree key={i} position={[x, 0, z]} scale={1.1 + hash(i, 5) * 0.6} seed={i} />;
 			})}
 			{Array.from({length: 18}).map((_, i) => (

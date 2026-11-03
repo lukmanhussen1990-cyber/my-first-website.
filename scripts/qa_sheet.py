@@ -48,7 +48,7 @@ font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 tiles = []
 for n, f in samples:
     path = f'{outdir}/f{f:05d}.png'
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{f / FPS + 0.001:.3f}', '-i', video, '-frames:v', '1', '-vf', 'scale=270:480', path], check=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', video, '-vf', f'select=eq(n\\,{f}),scale=270:480', '-vsync', 'vfr', '-frames:v', '1', path], check=True)
     im = Image.open(path).convert('RGB')
     d = ImageDraw.Draw(im)
     lab = f'S{n} {f / FPS:.1f}s'

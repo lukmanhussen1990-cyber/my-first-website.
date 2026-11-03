@@ -77,7 +77,7 @@ const S7: React.FC<SceneProps> = ({f}) => {
 				<Classroom />
 				<Students t={t} mode="sit" />
 				<Character spec={TEACHER} position={[-3.5, 0, -10.6]} rotation={0.2} pose={P.withPose(P.idle(t), {armR: [-1.9, 0, -0.3]})} expr="proud" />
-				<CameraRig pos={[lerp(13, 11, k), lerp(10.5, 9.5, k), lerp(17, 15, k)]} target={[-1, 3.5, -5]} fov={52} sway={0.8} />
+				<CameraRig pos={[lerp(13, 11.5, k), lerp(10.5, 9.5, k), lerp(14.6, 13.2, k)]} target={[-1, 3.5, -5]} fov={54} sway={0.8} />
 			</Stage>
 		);
 	}
