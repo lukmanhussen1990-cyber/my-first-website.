@@ -61,7 +61,7 @@ def shot_fx(i):
         45: lambda: dict(push=(1.0, 1.08), push_ease="lin", fx=[dict(type="stink", at="shoes", scale=1.1, n=3, amount=1.0)]),
         46: lambda: dict(push=(1.0, 1.08), push_ease="lin"),
         47: lambda: dict(push=(1.0, 1.06), punch=[(T["fifty"], 1.12)]),
-        48: lambda: dict(push=(1.0, 1.06), punch=[(T["five_hundred"], 1.14)], shake=[(T["five_hundred"], 8, 0.3, 24)],
+        48: lambda: dict(push=(1.0, 1.06), punch=[(T["five_hundred"], 1.08)], shake=[(T["five_hundred"], 8, 0.3, 24)],
                          fade_out=(t1 - 0.45, 0.42)),
     }
     return F[i]() if i in F else dict(push=(1.0, 1.06))

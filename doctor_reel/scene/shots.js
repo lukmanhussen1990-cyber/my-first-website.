@@ -521,10 +521,10 @@ export const SHOTS = {
     build(W) { const c = office(W); c.you = person(W, 'you'); c.bill = S.billPaper(W.scene); return c; },
     update(W, c, lt) {
       standAt(c.you, OX - 0.2, 0.6, 0.35); face(c.you, 'happy', 'raised', 'grin');
-      const p = rel(c.you, 0.36, -0.05, 1.3); c.bill.position.set(...p); c.bill.rotation.set(0, c.you.p.rotY, 0); c.bill.userData.write(2, lt > 1.0 ? 2 : 1);
-      c.you.p.handL = rel(c.you, 0.34, 0.1, 1.2); c.you.p.handR = rel(c.you, 0.34, -0.12, 1.2); c.you.p.handPoseL = c.you.p.handPoseR = 'grip';
+      const p = rel(c.you, 0.36, -0.05, 1.08); c.bill.position.set(...p); c.bill.rotation.set(0, c.you.p.rotY, 0); c.bill.userData.write(2, lt > 1.0 ? 2 : 1);
+      c.you.p.handL = rel(c.you, 0.34, 0.075, 1.06); c.you.p.handR = rel(c.you, 0.34, -0.175, 1.06); c.you.p.handPoseL = c.you.p.handPoseR = 'grip';
     },
-    after(W, c, lt) { bellyFx(c.you, { size: 0.28 }); c.you.belly.visible = true; },
+    after(W, c, lt) { c.you.belly.visible = false; },
     cam: (W, c, lt) => { const h = c.you.headPos(), F = fwd(c.you.p.rotY); return camAt([h.x + F.x * 1.25 + 0.15, h.y - 0.25, h.z + F.z * 1.25], [h.x + F.x * 0.3, h.y - 0.3, h.z + F.z * 0.3], 48); },
   },
 };
