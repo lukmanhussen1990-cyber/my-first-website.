@@ -1,0 +1,47 @@
+Pooping in Space - asset credits
+================================
+Everything used is free: CC0 (public domain), public-domain NASA imagery, or made from scratch for this reel.
+No login-gated downloads were used.
+
+Voice
+-----
+- clever.mp3 - supplied by @garden_reels (ElevenLabs), used as-is (only loudness-normalised to -16 LUFS).
+
+Characters (MakeHuman / MPFB2 for Blender - CC0 system assets)
+-------------------------------------------------------------
+- Base human mesh, default rig, ARKit face units, high-poly eyes, eyebrows (eyebrow001/006/010),
+  eyelashes, hair "short01", "short02" and "short04", "young caucasian male" skin - MakeHuman Community /
+  MPFB2 system assets (CC0).
+- T-shirts, boxers, cargo pants, socks and the white 1969 coveralls are generated procedurally from each
+  body mesh by our own scripts. Mission patch and "NEW GUY" duct-tape label drawn by our own script.
+
+Set
+---
+- Space-station module, toilet bay, vacuum toilet, porthole and the 1969 capsule interior - modelled
+  procedurally by our own scripts.
+- Earth: NASA Blue Marble "Land_ocean_ice_2048.jpg" (NASA Goddard Space Flight Center / Visible Earth),
+  public domain (US government work), via Wikimedia Commons. Clouds and atmosphere are procedural.
+
+Props
+-----
+- Toilet-paper roll and ribbon, the "floater", plush duck, pen, spoon, tortilla, drink pouch, radio mic -
+  modelled procedurally by our own scripts.
+
+Sound effects and music (all CC0 or synthesized)
+------------------------------------------------
+- Synthesized in Python (numpy/scipy) for this reel: station hum, vacuum spin-up and suction, paper rip,
+  roll flutter, cardboard bonks, sweat bloops, slide whistle, zero-g wobble, zip line, "bwomp" and
+  "dun dun duuun" brass, freeze stab, tape stop, 1969 film-projector rattle, Quindar tones, radio squelch.
+- Earlier @garden_reels CC0 library (synthesized or CC0 sources): whooshes, boings, shrug blips, idea ding,
+  sparkle ding, gasps, cloth and paper rustles, paper flutter.
+- BigSoundBank.com (Joseph Sardin) - CC0: switch clicks, thumps.
+- OpenGameArt.org - CC0: "100 CC0 SFX" by rubberduck (spring boing), "Goofy Attitude!" by SkyleTheFrench
+  (music bed).
+
+Fonts
+-----
+- Poppins Bold / SemiBold - Indian Type Foundry, SIL Open Font License 1.1.
+
+Software
+--------
+- Blender 4.5 LTS (Cycles), MPFB2, ffmpeg, Python (numpy, scipy, Pillow), faster-whisper + Vosk (word timing only).
