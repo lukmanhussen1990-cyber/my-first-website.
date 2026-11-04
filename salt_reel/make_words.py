@@ -42,7 +42,7 @@ WORDS = [   # (text, start, end, x, y, tilt, scale)
     ("POP!", T["lid"], shot(6)[1], 640, 640, 8, 1.2),
     ("FWOOSH!", T["dump"], shot(7)[1], 540, 520, -6, 1.15),
     ("POKE!", T["pokes"][0], shot(9)[1], 700, 560, 8, 0.9),
-    ("TICK TOCK", T["clock"] + 0.1, shot(12)[1], 540, 1500, -4, 0.8),
+    ("TICK TOCK", T["clock"] + 0.1, shot(12)[1], 540, 400, -4, 0.85),
     ("VRRRRR!", T["vrrr"] + 0.08, shot(18)[1], 540, 520, -6, 1.3),
     ("BOOM!", T["boom"], shot(19)[1], 540, 760, 5, 1.9),
 ]

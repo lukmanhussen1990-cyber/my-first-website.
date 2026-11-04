@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sound effects for the mansion reel -> audio/sfx/*.wav + audio/sfx_cues.json (read by mix.py).
+"""Sound effects for the salt reel -> audio/sfx/*.wav + audio/sfx_cues.json (read by mix.py).
 
 Every sound is made in code (numpy, fixed seeds, helpers from the earlier reels). No AI voice, no recordings: the
 user's own voiceover stays the main sound and every effect is kept quiet under it (mix.py ducks them while the
@@ -1115,87 +1115,79 @@ def mk_room_tone(d, seed=0):
 
 
 
-# --------------------------------------------------------------------------------------------- mansion sounds
-def mk_kiss():
-    """A cartoon kiss 'MWAH': lips pressing (soft hum) then a bright smack pop with a little rising whistle."""
-    out = np.zeros(n_(0.6))
-    t = tt(0.16)
-    hum = A.svf(A.saw(np.full(len(t), 210.0)), 420, q=3, mode="bp") * att(t, 0.03) * np.exp(-t / 0.08) * 0.5
-    add_at(out, hum, 0.0)
-    t2 = tt(0.06)
-    smack = bp(rng(801).standard_normal(len(t2)), 900, 5000) * np.exp(-t2 / 0.008) * 1.6
-    add_at(out, smack, 0.13)
-    t3 = tt(0.22)
-    f = 900 * (1 + 0.8 * t3 / 0.22)
-    add_at(out, np.sin(2 * np.pi * np.cumsum(f) / SR) * env_ad(t3, 0.01, 0.12, 0.22) * 0.25, 0.14)
-    return place(out, 0, "small", -14)
+
+# --------------------------------------------------------------------------------------------- salt sounds
+def mk_shaker(d=1.2, hz=7.5, seed=0, k=1.0):
+    """Salt rattling in a shaker: a gritty noise burst at both ends of every shake."""
+    out = np.zeros(n_(d + 0.2))
+    r = rng(900 + seed)
+    t0 = 0.0
+    while t0 < d:
+        tb = tt(0.07)
+        y = bp(r.standard_normal(len(tb)), 2500, 9000) * np.exp(-tb / 0.018) * r.uniform(0.6, 1.0)
+        for g in range(10):
+            add_at(y, hp(r.standard_normal(n_(0.004)), 4000) * 0.6 * np.exp(-g * 0.3), r.uniform(0, 0.05))
+        add_at(out, y * k, t0)
+        t0 += 0.5 / hz
+    return place(out, 0, "small", -18)
 
 
-def mk_bells(n=6, every=0.32):
-    """Wedding bells: a happy descending peal (modal church-bell partials)."""
-    notes = [784.0, 659.25, 587.33, 523.25, 659.25, 784.0, 1046.5, 784.0]
-    out = np.zeros(n_(n * every + 2.5))
-    for k in range(n):
-        f = notes[k % len(notes)]
-        y = A.modal([(f * 0.5, 0.6, 1.8), (f, 1.0, 1.4), (f * 1.19, 0.5, 0.9), (f * 1.5, 0.35, 0.8), (f * 2.0, 0.4, 0.6), (f * 2.51, 0.2, 0.4)],
-                    2.2, seed=820 + k, strike=0.08, strike_tau=0.001, strike_hp=3000, beat=0.002, twin=0.3)
-        add_at(out, y * (0.9 if k % 2 else 1.0), k * every)
-    return place(hp(out, 200), 0, "hall", -10)
+def mk_slap():
+    t = tt(0.25)
+    y = bp(rng(910).standard_normal(len(t)), 600, 7000) * np.exp(-t / 0.012) * 1.5
+    y += np.sin(2 * np.pi * 180 * t) * np.exp(-t / 0.03) * 0.5
+    return place(y, 0, "small", -10)
 
 
-def mk_giggle(d=1.2, f0=420, seed=0):
-    """A little kid's giggle 'hee-hee-hee' (glottal pulses through child 'ee/ah' formants), soft and cartoony."""
-    r = rng(840 + seed)
-    out = np.zeros(n_(d + 0.3))
-    k, i = 0.0, 0
-    while k < d:
-        ln = r.uniform(0.07, 0.11)
-        t = tt(ln)
-        f = f0 * (1.15 - 0.25 * t / ln) * (1 - 0.05 * i)
-        src = A.saw(f) + 0.25 * r.standard_normal(len(t))
-        y = A.svf(src, 950, q=5, mode="bp") + 0.8 * A.svf(src, 2600, q=7, mode="bp") + 0.3 * A.svf(src, 3600, q=8, mode="bp")
-        breath = bp(r.standard_normal(len(t)), 1500, 6000) * 0.25
-        add_at(out, (y + breath) * env_ad(t, 0.012, 0.04, ln) * r.uniform(0.7, 1.0), k)
-        k += ln + r.uniform(0.04, 0.08); i += 1
-    return place(lp(out, 7000), 0, "room", -14)
-
-
-def piano_note(f, d=1.6, vel=1.0):
+def mk_pour(d=0.9):
+    """A mountain of salt pouring out at once: a big gritty hiss that thins out."""
     t = tt(d)
-    y = np.zeros(len(t))
-    for k in range(1, 9):
-        fk = k * f * np.sqrt(1 + 0.0003 * k * k)
-        if fk > 6000:
-            break
-        y += (k ** -1.3) * np.sin(2 * np.pi * fk * t) * np.exp(-t / (1.4 / (1 + fk / 1000)))
-    return y * att(t, 0.004) * (1 - att(t - (d - 0.25), 0.25)) * vel
+    y = bp(rng(920).standard_normal(len(t)), 1500, 9000) * att(t, 0.02) * np.exp(-t / 0.35)
+    y += lp(rng(921).standard_normal(len(t)), 400) * np.exp(-t / 0.1) * 0.6
+    return place(y, 0, "small", -14)
 
 
-def mk_love_music(d, bpm=76):
-    """Soft romantic music (code-made): a gentle piano arpeggio over warm pad chords, C - Am - F - G, 76 bpm."""
-    beat = 60.0 / bpm
-    chords = [(261.63, 329.63, 392.0), (220.0, 261.63, 329.63), (174.61, 220.0, 261.63), (196.0, 246.94, 293.66)]
-    melody = [659.25, 587.33, 523.25, 587.33, 523.25, 493.88, 440.0, 493.88, 523.25, 440.0, 392.0, 440.0, 587.33, 523.25, 493.88, 392.0]
-    out = np.zeros(n_(d + 2.5))
-    bar = 4 * beat
-    nb = int(np.ceil(d / bar)) + 1
-    for b in range(nb):
-        root, third, fifth = chords[b % 4]
-        t0 = b * bar
-        # pad: the chord held softly (two detuned sines per note)
-        tp = tt(bar + 0.6)
-        pad = sum(np.sin(2 * np.pi * f * 2 ** (dt / 1200) * tp) for f in (root, third, fifth) for dt in (-5, 5))
-        add_at(out, lp(pad, 1500) * env_ad(tp, 0.4, 0.6, bar + 0.6) * 0.05, t0)
-        add_at(out, piano_note(root / 2, 2.4, 0.5), t0)
-        # arpeggio in eighths: root third fifth octave fifth third ...
-        arp = [root, third, fifth, root * 2, fifth, third, fifth, root * 2]
-        for k, f in enumerate(arp):
-            add_at(out, piano_note(f, 1.4, 0.32 if k % 2 else 0.42), t0 + k * beat / 2)
-        # a slow melody note on beats 1 and 3
-        for k in range(2):
-            add_at(out, piano_note(melody[(b * 2 + k) % len(melody)], 1.8, 0.55), t0 + k * 2 * beat)
-    out = out[:n_(d)] * env_ad(tt(d), 1.2, 2.0, d)
-    return place(lp(out, 5000), 0, "hall", -12)
+def mk_tink(seed=0):
+    return place(A.modal([(4200 + seed * 300, 1.0, 0.05), (7900, 0.3, 0.02)], 0.15, seed=930 + seed, strike=0.05), 0.1, "small", -16)
+
+
+def mk_spin_ticks(d=1.3):
+    """The clock spinning: ticks getting faster and faster."""
+    out = np.zeros(n_(d + 0.2))
+    t0, gap = 0.0, 0.12
+    while t0 < d:
+        add_at(out, mk_tick(tock=int(t0 * 50) % 2 == 1).mean(axis=1)[:n_(0.08)], t0)
+        t0 += gap; gap = max(0.03, gap * 0.9)
+    return place(out, 0, "room", -12)
+
+
+def mk_tape(d=0.8):
+    """Duct tape pulled off the roll and wrapped round: a ripping zzzrrrp."""
+    t = tt(d)
+    rate = 60 + 50 * np.sin(np.pi * t / d)
+    clicks = (np.sin(2 * np.pi * np.cumsum(rate) / SR) > 0.7).astype(float)
+    y = bp(lp(clicks, 7000) + 0.3 * rng(940).standard_normal(len(t)), 1200, 6000) * env_ad(t, 0.03, 0.1, d)
+    return place(y, 0, "small", -14)
+
+
+def mk_blower(d=1.4, seed=0):
+    """The leaf blower at MAX: a two-stroke engine roar + a big fan whoosh, shaking."""
+    t = tt(d)
+    r = rng(950 + seed)
+    f = 95 * (1 + 0.4 * att(t, 0.4)) * (1 + 0.03 * np.sin(2 * np.pi * 9 * t))
+    eng = A.saw(f) + 0.6 * A.saw(f * 2.01) + 0.4 * r.standard_normal(len(t))
+    y = A.svf(eng, 900, q=1.2, mode="lp") * (0.8 + 0.2 * np.sin(2 * np.pi * 23 * t))
+    y += bp(r.standard_normal(len(t)), 400, 5000) * 0.9 * att(t, 0.3)
+    return place(y * env_ad(t, 0.15, 0.08, d), 0, "room", -10)
+
+
+def mk_bigboom():
+    out = np.zeros(n_(2.4))
+    add_at(out, mk_boom().mean(axis=1) * 1.2, 0.0)
+    t = tt(1.6)
+    add_at(out, bp(rng(960).standard_normal(len(t)), 300, 8000) * np.exp(-t / 0.25) * 0.8, 0.0)
+    add_at(out, bp(rng(961).standard_normal(len(t)), 2500, 9000) * att(t - 0.2, 0.3) * np.exp(-t / 0.6) * 0.3, 0.0)   # salt raining down
+    return place(out, 0, "hall", -8)
 
 
 def build():
@@ -1205,81 +1197,36 @@ def build():
         save(name, x, level=level, by=by)
         cues.append(dict(t=round(float(t), 3), file=f"audio/sfx/{name}.wav", gain_db=gain_db, note=note, **kw))
 
-    # the night street
-    cue("rumble_1", mk_rumble(1.1, 1, 0.6), T["rumble"] - 0.1, -12.0, "stomach rumble", duck_db=2)
-    cue("rumble_2", mk_rumble(1.0, 2, 1.0), T["bad"] - 0.05, -11.0, "BAD: a big rumble", duck_db=2)
-    cue("stab", mk_stab(), T["bad"], -18.0, "EMERGENCY sting", duck_db=3)
-    cue("run_1", mk_patter(SH(4)[1] - SH(4)[0], 0.12, 1), T["run_toilet"], -16.0, "running steps", duck_db=3)
-    cue("rattle", mk_rattle() if "mk_rattle" in globals() else mk_bang(1), T["rattle"], -15.0, "the locked door rattles", duck_db=3)
-    for k, ts in enumerate(T["knocks1"]):
-        cue(f"knock1_{k}", mk_knock(k), ts, -11.0, "knock", duck_db=2)
-    cue("creak_1", mk_door_creak(0.8), T["door_open1"], -16.0, "the big door opens", duck_db=3)
-    cue("slam", mk_bang(3), T["slam"], -7.0, "SLAM!", duck_db=1)
-    cue("slam_boom", mk_thud(), T["slam"], -12.0, "slam thump", duck_db=2)
-    for k, ts in enumerate(T["knocks2"]):
-        cue(f"knock2_{k}", mk_bang(k), ts, -9.0 if k % 2 == 0 else -10.0, "KNOCK KNOCK! (louder)", duck_db=2)
-    cue("creak_2", mk_door_creak(0.7), T["door_open2"], -16.0, "the door opens again", duck_db=3)
-    cue("heaven", mk_pad(2.2), T["door_open2"] + 0.1, -16.0, "warm light: a heavenly chord", duck_db=4)
-    cue("sparkle_owner", mk_sparkle(), T["owner"] + 0.1, -16.0, "sparkle", duck_db=3)
-    cue("kneel", mk_thud(), T["kneel"] + 0.25, -16.0, "knees hit the step", duck_db=3)
-    cue("smile_ting", mk_sparkle(), T["smile"], -16.0, "smile ting", duck_db=3)
-    # inside
-    cue("stairs_glow", mk_sparkle(), T["stairs"] + 0.05, -15.0, "the golden stairs", duck_db=3)
-    cue("kiss", mk_kiss(), T["kiss"] - 0.12, -8.0, "MWAH!", duck_db=1)
-    cue("pop_hearts1", mk_pop(), T["hearts1"], -14.0, "the eyes pop into hearts", duck_db=2)
-    for k in range(2):
-        cue(f"beat1_{k}", mk_heartbeat(), T["hearts1"] + 0.1 + k * 0.62, -12.0, "BA-DUM", duck_db=2)
-    cue("run_2", mk_patter(SH(26)[1] - SH(26)[0], 0.085, 2), T["run"], -14.0, "sprinting up the stairs", duck_db=3)
-    cue("whoosh_run", mk_whoosh(0.4, 500, 3000, seed=3), T["run"] - 0.1, -16.0, "whoosh", duck_db=3)
-    cue("golden", mk_pad(1.8), T["golden"], -15.0, "golden toilet: aahh chord", duck_db=4)
-    cue("golden_sp", mk_sparkle(), T["golden"] + 0.2, -14.0, "sparkles", duck_db=3)
-    cue("plop", mk_plop(), T["plop"], -7.0, "PLOP!", duck_db=1)
-    cue("chand", mk_clinks(1.9, 22), T["chand"], -13.0, "the chandelier tinkles", duck_db=3)
-    cue("chand_rattle", mk_rattle() if "mk_rattle" in globals() else mk_clinks(1.0, 5), T["chand"] + 0.05, -18.0, "rattle", duck_db=3)
-    for k in range(2):
-        cue(f"beat2_{k}", mk_heartbeat(), T["heart_stairs"] + 0.15 + k * 0.62, -13.0, "BA-DUM", duck_db=2)
-    # day labels: a soft ding as each one pops in
-    for k, key in enumerate(["day2", "day30", "day60", "day100", "day200", "day365", "years5"]):
-        cue(f"label_{key}", mk_ding(), T[key] + 0.02, -18.0, f"{key} label", duck_db=3)
-        cue(f"label_w_{key}", mk_whoosh(0.25, 800, 4000, seed=10 + k), T[key] - 0.18, -20.0, "label whoosh", duck_db=3)
-    cue("dinner_clinks", mk_clinks(1.0, 31), SH(35)[0] + 0.1, -18.0, "fork clinks", duck_db=3)
-    cue("door_in", mk_door_creak(0.6), T["door_in"], -18.0, "the front door", duck_db=3)
-    cue("eyeroll", mk_slide_whistle(0.5, 700, 1300), T["eyeroll"], -18.0, "eye roll whistle", duck_db=3)
-    cue("crickets", mk_crickets(SH(42)[0] - T["zzz"]), T["zzz"], -24.0, "quiet night", duck_db=3)
-    cue("wake", mk_blink(), T["wake"], -14.0, "eyes open", duck_db=2)
-    cue("pop_hearts2", mk_pop(), T["hearts_couch"], -14.0, "heart eyes pop", duck_db=2)
-    for k in range(2):
-        cue(f"beat3_{k}", mk_heartbeat(), T["hearts_couch"] + 0.4 + k * 0.62, -13.0, "BA-DUM", duck_db=2)
-    cue("chime", mk_chime(), T["day100"] + 0.3, -17.0, "ding-dong: moving in", duck_db=3)
-    cue("unpack_1", mk_pop(), SH(47)[0] + 0.35, -18.0, "sock", duck_db=3)
-    for k in range(2):
-        cue(f"beat4_{k}", mk_heartbeat(), T["love2"] + k * 0.7, -13.0, "BA-DUM", duck_db=2)
-    cue("box", mk_click(1800, 3), T["box_open"] + 0.15, -14.0, "the box opens", duck_db=2)
-    cue("bling", mk_sparkle(), T["diamond"] + 0.12, -11.0, "BLING!", duck_db=2)
-    cue("bling_ding", mk_ding(), T["diamond"] + 0.15, -14.0, "bling ding", duck_db=2)
-    cue("yes_sp", mk_sparkle(), T["yes"] + 0.5, -16.0, "hearts everywhere", duck_db=3)
-    cue("bells", mk_bells(5, 0.3), T["wedding"] - 0.05, -12.0, "wedding bells", duck_db=3)
-    cue("claps", mk_claps(1.2, 6.0, 14), T["wedding"] + 0.05, -15.0, "guests clapping", duck_db=3)
-    cue("giggle_1", mk_giggle(1.0, 430, 1), T["years5"] + 0.5, -20.0, "kids giggle (far)", duck_db=4)
-    cue("giggle_2", mk_giggle(0.9, 470, 2), T["kids"] + 0.05, -16.0, "kids laughing", duck_db=3)
-    cue("giggle_3", mk_giggle(0.8, 400, 3), T["kids"] + 0.3, -17.0, "kids laughing", duck_db=3)
-    cue("kids_run", mk_patter(SH(63)[1] - SH(63)[0], 0.1, 4), T["kids"], -19.0, "little running feet", duck_db=3)
-    cue("potty_sp", mk_sparkle(), T["potty"] + 0.1, -15.0, "still sparkling", duck_db=3)
-    cue("night", mk_crickets(SH(66)[0] - T["night"] + 0.3), T["night"], -24.0, "night crickets", duck_db=3)
-    for k in range(2):
-        cue(f"beat5_{k}", mk_heartbeat(), T["love4"] + 0.1 + k * 0.7, -13.0, "BA-DUM", duck_db=2)
-    cue("end_sp", mk_sparkle(), T["started"] + 0.1, -15.0, "sparkle", duck_db=3)
-    cue("end_sp2", mk_sparkle(), T["poop_end"] + 0.3, -15.0, "sparkle", duck_db=3)
-    # soft romantic music from the smile to the end
-    m0 = T["smile"] - 0.3
-    cue("love_music", mk_love_music(DUR_ - m0), m0, -21.0, "soft romantic music (code-made piano + pad)", by="int", duck_db=4)
+    cue("shake_1", mk_shaker(SH(2)[1] - T["shake"], 7.5, 1), T["shake"], -13.0, "SHAKE SHAKE: salt rattling", duck_db=3)
+    cue("shake_3", mk_shaker(SH(3)[1] - SH(3)[0], 5.0, 2, 0.6), SH(3)[0], -17.0, "a weaker rattle (nothing comes out)", duck_db=3)
+    cue("slap", mk_slap(), T["slap"], -8.0, "SLAP!", duck_db=1)
+    cue("nothing", mk_womp() if "mk_womp" in globals() else mk_blink(), SH(5)[0] + 0.15, -22.0, "sad little trombone (nothing)", duck_db=4)
+    cue("shake_6", mk_shaker(0.6, 6.0, 3), SH(6)[0], -14.0, "one more shake", duck_db=3)
+    cue("pop", mk_pop(), T["lid"], -10.0, "POP! the lid comes off", duck_db=2)
+    cue("pour", mk_pour(0.9), T["dump"], -9.0, "FWOOSH: all the salt at once", duck_db=2)
+    cue("angry", mk_stab(), T["fuck"] + 0.02, -20.0, "angry sting", duck_db=4)
+    for k, ts in enumerate(T["pokes"]):
+        cue(f"tink_{k}", mk_tink(k % 4), ts, -16.0, "the needle pokes a hole", duck_db=3)
+    cue("slow", mk_pad(1.8), T["slow"], -22.0, "slow-motion hum", duck_db=4)
+    cue("clock", mk_spin_ticks(SH(12)[1] - T["clock"]), T["clock"], -12.0, "the clock spins: tick-tick-tick", duck_db=2)
+    cue("cold", mk_womp(), T["cold"] + 0.1, -18.0, "sad trombone: cold fries", duck_db=4)
+    cue("brr", mk_rattle(), SH(14)[0] + 0.05, -20.0, "teeth chattering", duck_db=4)
+    cue("tape", mk_tape(0.9), T["tape"] + 0.05, -13.0, "duct tape", duck_db=3)
+    cue("ding", mk_ding(), T["proud"] + 0.1, -18.0, "proud ding", duck_db=3)
+    for k, ts in enumerate(T["dial"]):
+        cue(f"click_{k}", mk_click(2400 + k * 60, k), ts, -16.0, "dial click", duck_db=3)
+    cue("blower", mk_blower(SH(18)[1] - T["vrrr"] + 0.15), T["vrrr"], -13.0, "VRRRRR: the leaf blower roars", duck_db=2.5)
+    cue("boom", mk_bigboom(), T["boom"] - 0.02, -6.0, "BOOM! salt everywhere", duck_db=1)
+    cue("settle", mk_pour(1.6), T["white"], -22.0, "salt settling", duck_db=4)
+    for k, ts in enumerate(T["blink"]):
+        cue(f"blink_{k}", mk_blink(), ts, -12.0, "blink", duck_db=2)
+    cue("fry", mk_plop(), T["fry"] + 0.55, -16.0, "a single fry falls", duck_db=3)
 
-    cues = [c for c in cues if c]
     cues.sort(key=lambda c: c["t"])
     json.dump(cues, open(P("audio", "sfx_cues.json"), "w"), indent=1)
     for c in cues:
         info = A.INFO[os.path.splitext(os.path.basename(c["file"]))[0]]
-        print(f"{c['t']:6.2f}  {os.path.basename(c['file']):18s} {c['gain_db']:+5.1f} dB  {info['dur']:5.2f}s  {c['note']}")
+        print(f"{c['t']:6.2f}  {os.path.basename(c['file']):14s} {c['gain_db']:+5.1f} dB  {info['dur']:5.2f}s  {c['note']}")
     print(f"{len(cues)} cues -> audio/sfx_cues.json")
 
 

@@ -42,7 +42,7 @@ function seated(W, c, name = 'you') { c.you = person(W, name); return c; }
 const sit = (c) => { sitAt(c.you, ...SEAT, 0); c.you.p.handL = rel(c.you, 0.42, 0.2, K.top + 0.02); c.you.p.handPoseL = 'flat'; };
 // the shaker held upside down over the fries; shake = 0..1 (how hard)
 const PLATE = K.plate;
-function shakerOver(c, lt, shake = 1, hz = 7, h = 1.02) {
+function shakerOver(c, lt, shake = 1, hz = 7, h = 1.1) {
   const s = c.sh, k = Math.sin(lt * hz * Math.PI * 2);
   s.position.set(PLATE[0] + 0.04 + k * 0.012 * shake, h + k * 0.07 * shake, PLATE[2] + 0.02);
   s.rotation.set(Math.PI + k * 0.25 * shake, 0, 0.12 * k * shake);
@@ -53,19 +53,25 @@ const saltCat = (c) => c.K.cat.traverse((o) => { if (o.isMesh && o.geometry.type
 const tapedShaker = (c) => { const n = c.bl.localToWorld(c.bl.userData.nozzle.clone().add(V(0.12, 0, 0))); c.sh.position.copy(n); c.sh.rotation.set(0, BLOWER_YAW, -Math.PI / 2); };
 
 export const SHOTS = {
-  // 01 "You've been jerking off the salt" close: he shakes the salt shaker furiously over his fries
+  // 01 "You've been jerking off the salt" the joke shot: his strained face above the table, and under the table only
+  // his hand, furiously shaking the SALT SHAKER (the next shot shows it's just salt over his fries)
   1: {
     build(W) { const c = seated(W, kitchen(W)); c.sh = KT.saltShaker(W.scene); return c; },
-    update(W, c, lt) { sit(c); frus(c.you, lt, { headPitch: -0.25, lean: 0.12 }); shakerOver(c, lt, 1, 7.5); },
-    cam: (W, c, lt) => camAt([0.22, 1.2, 0.72 - lt * 0.08], [0.02, 1.0, -0.3], 46),
-    anchors: (W, c) => ({ forehead: forehead(c.you), shaker: c.sh.userData.top() }),
+    update(W, c, lt) {
+      sitAt(c.you, ...SEAT, 0); c.you.p.handL = rel(c.you, 0.42, 0.2, K.top + 0.02); c.you.p.handPoseL = 'flat';
+      frus(c.you, lt, { headPitch: 0.05, lean: 0.06, headRoll: Math.sin(lt * 7.5 * Math.PI * 2) * 0.03 });
+      const k = Math.sin(lt * 7.5 * Math.PI * 2), sh = c.sh;
+      sh.position.set(0.06, 0.5 + k * 0.05, -0.18); sh.rotation.set(0.1 + k * 0.15, 0, 0.1); c.you.p.gripR = sh;
+    },
+    cam: (W, c, lt) => camAt([0.04, 0.8, 1.35 - lt * 0.12], [0.0, 0.82, -0.45], 50),
+    anchors: (W, c) => ({ forehead: forehead(c.you), shaker: c.sh.position.clone().add(V(0, 0.12, 0)) }),
   },
   // 02 "for two minutes." wide: the kitchen, the cat watches from the counter
   2: {
     build(W) { const c = seated(W, kitchen(W)); c.sh = KT.saltShaker(W.scene); return c; },
     update(W, c, lt) { sit(c); frus(c.you, lt, { headPitch: -0.25, lean: 0.12 }); shakerOver(c, lt, 1, 7.5); },
     after(W, c, lt) { c.K.cat.userData.head.rotation.x = Math.sin(lt * 7.5 * Math.PI * 2) * 0.15; c.K.cat.userData.head.rotation.y = 0.4; },
-    cam: (W, c, lt) => camAt([0.9 - lt * 0.1, 1.5, 2.7], [0.75, 1.05, -1.2], 52),
+    cam: (W, c, lt) => camAt([-0.5 + lt * 0.08, 1.75, 1.9], [0.7, 0.98, -1.35], 52),
     anchors: (W, c) => ({ forehead: forehead(c.you), cat: [K.cat[0], K.cat[1] + 0.5, K.cat[2]] }),
   },
   // 03 "And nothing's coming out." ECU from the plate: the holes, nothing comes out
@@ -91,14 +97,14 @@ export const SHOTS = {
   // 05 "Nothing." the fries: not one grain of salt
   5: {
     build(W) { const c = seated(W, kitchen(W)); c.sh = KT.saltShaker(W.scene); return c; },
-    update(W, c, lt) { sit(c); face(c.you, 'open', 'sad', 'frown'); shakerOver(c, lt, 0.15, 3, 1.05); },
+    update(W, c, lt) { sit(c); face(c.you, 'open', 'sad', 'frown'); shakerOver(c, lt, 0.15, 3, 1.1); },
     cam: (W, c, lt) => camAt([0.02, 1.02, 0.36 - lt * 0.05], [0, 0.8, -0.08], 40),
     anchors: () => ({ fries: [PLATE[0], PLATE[1] + 0.06, PLATE[2]] }),
   },
   // 06 "Then all of it" one more shake: the lid pops off and falls
   6: {
     build(W) { const c = seated(W, kitchen(W)); c.sh = KT.saltShaker(W.scene); return c; },
-    update(W, c, lt) { sit(c); frus(c.you, lt); shakerOver(c, Math.min(lt, 0.6), lt < 0.6 ? 1 : 0, 6, 1.02); },
+    update(W, c, lt) { sit(c); frus(c.you, lt); shakerOver(c, Math.min(lt, 0.6), lt < 0.6 ? 1 : 0, 6, 1.1); },
     after(W, c, lt) { const L = c.sh.userData.lid, k = clamp((lt - 0.62) / 0.35); L.position.y = 0.085 + easeIn(k) * 0.13; L.rotation.set(k * 3.2, 0, k * 1.6); },
     cam: (W, c, lt) => camAt([0.46, 1.06, 0.42], [0.03, 0.96, -0.08], 42),
     anchors: (W, c) => ({ shaker: c.sh.userData.top() }),
@@ -106,7 +112,7 @@ export const SHOTS = {
   // 07 "at once." a mountain of salt dumps onto the fries
   7: {
     build(W) { const c = seated(W, kitchen(W)); c.sh = KT.saltShaker(W.scene); c.sh.userData.lid.visible = false; return c; },
-    update(W, c, lt) { sit(c); face(c.you, 'wide', 'raised', 'o', { headPitch: -0.3 }); shakerOver(c, 0, 0, 1, 1.02); },
+    update(W, c, lt) { sit(c); face(c.you, 'wide', 'raised', 'o', { headPitch: -0.3 }); shakerOver(c, 0, 0, 1, 1.1); },
     after(W, c, lt) { c.K.plate.userData.mount.scale.setScalar(Math.max(0.001, easeOut(clamp((lt - 0.05) / 0.3)))); },
     cam: (W, c, lt) => camAt([0.05, 1.28, 1.15 - lt * 0.15], [0, 0.88, -0.12], 46),
     anchors: (W, c) => ({ mouth: c.sh.userData.top(), mount: [PLATE[0], PLATE[1] + 0.12, PLATE[2]] }),
@@ -114,7 +120,7 @@ export const SHOTS = {
   // 08 "Fuck." YOU's angry face
   8: {
     build(W) { const c = seated(W, kitchen(W, { mount: 1 })); c.sh = KT.saltShaker(W.scene); c.sh.userData.lid.visible = false; return c; },
-    update(W, c, lt) { sit(c); face(c.you, 'squint', 'angry', lt > 0.12 && lt < 0.75 ? 'yell' : 'grimace', { headPitch: 0.05 }); shakerOver(c, 0, 0, 1, 1.02); },
+    update(W, c, lt) { sit(c); face(c.you, 'squint', 'angry', lt > 0.12 && lt < 0.75 ? 'yell' : 'grimace', { headPitch: 0.05 }); shakerOver(c, 0, 0, 1, 1.1); },
     cam: (W, c, lt) => headCam(c.you, 0.62 - lt * 0.12, -0.02, 0, -0.01, 40),
     anchors: (W, c) => ({ forehead: forehead(c.you), forehead2: forehead(c.you, -1) }),
   },
