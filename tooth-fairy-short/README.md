@@ -9,6 +9,10 @@ net swoosh.
 
 **Final video:** [`tooth_fairy_short.mp4`](tooth_fairy_short.mp4)
 
+**Stills:** full-resolution (1080×1920) key frames of all 20 scenes are in [`stills/`](stills/), and [`stills/storyboard.jpg`](stills/storyboard.jpg) shows them on one sheet.
+
+![Storyboard](stills/storyboard.jpg)
+
 ## Timing sheet
 
 Scene cuts land 1–2 frames before each spoken line. The timings come from
