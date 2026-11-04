@@ -1,0 +1,223 @@
+{
+ "title": "Talking dog reel",
+ "flow_id": "NA6PeKOClMlro0x6QumH",
+ "model": "eleven_flash_v2_5",
+ "voices": {
+  "NARRATOR": {
+   "name": "Pyle",
+   "voice_id": "weNdhGmYaizQlfiLlyJq"
+  },
+  "DOG": {
+   "name": "HorHey",
+   "voice_id": "JS8l7lQwh35gDnA8DTXd"
+  },
+  "YOU": {
+   "name": "Andrew Beta",
+   "voice_id": "nuVIy6kn92EbEZwTlTnc"
+  },
+  "MOM": {
+   "name": "Erin",
+   "voice_id": "KgfQg1ByO5uLRtY4mzkh"
+  }
+ },
+ "auto_loud": false,
+ "merge_sentences": false,
+ "lines": [
+  {
+   "id": 1,
+   "speaker": "NARRATOR",
+   "text": "You bought a collar that lets your dog talk.",
+   "node": "dd67c1RcIibX1c3Lw3KW",
+   "session": "bGeTRjl1vfl7jqfGiAOk",
+   "file": "voice/lines/01_narrator.mp3",
+   "pause": 0.35
+  },
+  {
+   "id": 2,
+   "speaker": "NARRATOR",
+   "text": "You put it on him.",
+   "node": "NbRlpxsVWqhZfzGTT9q4",
+   "session": "WigRwbyImcG4x5xy7SjU",
+   "file": "voice/lines/02_narrator.mp3",
+   "pause": 0.45
+  },
+  {
+   "id": 3,
+   "speaker": "NARRATOR",
+   "text": "The light turns green.",
+   "node": "ESCsg8j37eTScPfhl2rK",
+   "session": "zMOzLvCCmx89Bq53timW",
+   "file": "voice/lines/03_narrator.mp3",
+   "pause": 0.45
+  },
+  {
+   "id": 4,
+   "speaker": "NARRATOR",
+   "text": "The whole family is waiting.",
+   "node": "mAd2aSNTCHLD95ZnR6ZR",
+   "session": "cb1EKFpzAnvHLfiLUlut",
+   "file": "voice/lines/04_narrator.mp3",
+   "pause": 1.0
+  },
+  {
+   "id": 5,
+   "speaker": "NARRATOR",
+   "text": "What will his first words be?",
+   "node": "yq6Yxu8lxzh2KXRwDv7q",
+   "session": "G1HIqQpGrwoDX1ofsjYN",
+   "file": "voice/lines/05_narrator.mp3",
+   "pause": 0.45
+  },
+  {
+   "id": 6,
+   "speaker": "DOG",
+   "text": "I know you pooped your pants at the park.",
+   "loud": true,
+   "node": "PbI6hZAHhINcuaxKPnI6",
+   "session": "CnG7LfhG0d4GUT6GIl80",
+   "file": "voice/lines/06_dog.mp3",
+   "pause": 1.1
+  },
+  {
+   "id": 7,
+   "speaker": "NARRATOR",
+   "text": "Silence.",
+   "node": "jHNcnaCyPXb8FXgy0wUf",
+   "session": "6L25lklwiXqKBtmB3QkP",
+   "file": "voice/lines/07_narrator.mp3",
+   "pause": 0.7,
+   "lead": "gap"
+  },
+  {
+   "id": 8,
+   "speaker": "NARRATOR",
+   "text": "Last week, at the park, you pooped your pants.",
+   "node": "DFIfI5KLTKffpV9vFGPa",
+   "session": "KfvQhR9UkWkKhJjZi0qF",
+   "file": "voice/lines/08_narrator.mp3",
+   "pause": 1.0,
+   "pause_fixed": true
+  },
+  {
+   "id": 9,
+   "speaker": "NARRATOR",
+   "text": "And you told everyone it was the dog.",
+   "node": "NsEDUdLl0ErUTuo3FrKB",
+   "session": "SdUE1zbva8O8XVF1KCpO",
+   "file": "voice/lines/09_narrator.mp3",
+   "pause": 0.45
+  },
+  {
+   "id": 10,
+   "speaker": "NARRATOR",
+   "text": "Dad stops eating.",
+   "node": "NNPMs3Sy722HwWsDMUtW",
+   "session": "VHShLTm35wcCxpOAmhp5",
+   "file": "voice/lines/10_narrator.mp3",
+   "pause": 0.6,
+   "lead": 0.3
+  },
+  {
+   "id": 11,
+   "speaker": "NARRATOR",
+   "text": "Your sister starts recording.",
+   "node": "Iy81YAhaDOOWC5VsSmsL",
+   "session": "Dv5g2BRI6KkWFKf3ZsOr",
+   "file": "voice/lines/11_narrator.mp3",
+   "pause": 0.45
+  },
+  {
+   "id": 12,
+   "speaker": "DOG",
+   "text": "He blamed me. In front of the whole park.",
+   "node": "679dgjyQNTsrHgqRNfUQ",
+   "session": "PMUFas4Tfpqf9y93RbGA",
+   "file": "voice/lines/12_dog.mp3",
+   "pause": 0.7
+  },
+  {
+   "id": 13,
+   "speaker": "DOG",
+   "text": "I have never worn jeans in my life.",
+   "node": "n7N1EYJn9E5ZDxu2MSrE",
+   "session": "YUo8PXrKDAd1YQVArukC",
+   "file": "voice/lines/13_dog.mp3",
+   "pause": 0.5
+  },
+  {
+   "id": 14,
+   "speaker": "NARRATOR",
+   "text": "Everyone looks at you.",
+   "node": "8HTxIaTN3PgvwOPkklUw",
+   "session": "754RLArIIXJ8I0Hxc5Ee",
+   "file": "voice/lines/14_narrator.mp3",
+   "pause": 0.55
+  },
+  {
+   "id": 15,
+   "speaker": "YOU",
+   "text": "He's lying! Dogs can't talk!",
+   "loud": true,
+   "node": "91YelYx9NCH6K22BLemk",
+   "session": "PMeS6w072JYFPZShEZJC",
+   "file": "voice/lines/15_you.mp3",
+   "pause": 0.45
+  },
+  {
+   "id": 16,
+   "speaker": "NARRATOR",
+   "text": "The dog is literally talking.",
+   "node": "U5JvryJKM7YVxKqVn0z5",
+   "session": "gkzKpPIzx1gF1RlQtG4t",
+   "file": "voice/lines/16_narrator.mp3",
+   "pause": 0.6
+  },
+  {
+   "id": 17,
+   "speaker": "NARRATOR",
+   "text": "Then Mom puts down her spoon.",
+   "node": "lrs36qquLWyTjrOt67DX",
+   "session": "3JYZjbzV9NNgTkOg9BPA",
+   "file": "voice/lines/17_narrator.mp3",
+   "pause": 0.7
+  },
+  {
+   "id": 18,
+   "speaker": "MOM",
+   "text": "We knew.",
+   "node": "VWDMcsuQ9Evp7wFUXOpT",
+   "session": "iDvNFZQ0d5U8nzyJmmZs",
+   "file": "voice/lines/18_mom.mp3",
+   "pause": 0.7
+  },
+  {
+   "id": 19,
+   "speaker": "MOM",
+   "text": "The dog doesn't wear jeans.",
+   "node": "geBBcuHrnufWgWaDSdpx",
+   "session": "rGn87qkT8heQXFzqavsx",
+   "file": "voice/lines/19_mom.mp3",
+   "pause": 0.55
+  },
+  {
+   "id": 20,
+   "speaker": "NARRATOR",
+   "text": "The dog high-fives Mom.",
+   "node": "mM4WdWanAIapIAz3xMEr",
+   "session": "yiLD253qonwTfNaywLoE",
+   "file": "voice/lines/20_narrator.mp3",
+   "pause": 0.6
+  },
+  {
+   "id": 21,
+   "speaker": "NARRATOR",
+   "text": "And from today, you're the one who sleeps outside.",
+   "node": "guYsO8oY9tIUQ9AXA7gu",
+   "session": "hwFKRZ3jieMSeO8QjxQb",
+   "file": "voice/lines/21_narrator.mp3",
+   "pause": 1.2
+  }
+ ],
+ "tail": 2.2,
+ "target_duration": 50.0
+}
