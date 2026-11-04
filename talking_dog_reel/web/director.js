@@ -365,7 +365,7 @@ function makeScenes(D) {
       }
     },
     shots: [
-      (ctx, su) => { const L = dog.ledWorld(), a = dog.root.rotation.y + 0.25; D.move(su, L.clone().addScaledVector(facing(a), 0.8).add(V(0, -0.16, 0)), L.clone().add(V(0, 0.02, 0)), L.clone().addScaledVector(facing(a), 0.62).add(V(0, -0.12, 0)), L.clone().add(V(0, 0.02, 0)), 34, 32, lin); },
+      (ctx, su) => { const L = dog.ledWorld(), a = dog.root.rotation.y + 0.15; D.move(su, L.clone().addScaledVector(facing(a), 1.75).add(V(0, 0.0, 0)), L.clone().add(V(0, -0.06, 0)), L.clone().addScaledVector(facing(a), 1.45).add(V(0, 0.0, 0)), L.clone().add(V(0, -0.06, 0)), 37, 35, lin); },
       dogShot(1.15, 0.92, { ang: 0.12, ldy: -0.1 }, { ang: 0.1, ldy: -0.1 }, 38, 36, eo),
     ],
   };
