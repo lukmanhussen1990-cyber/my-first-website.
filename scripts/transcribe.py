@@ -15,6 +15,7 @@ def load_audio_16k(path):
 audio = sys.argv[1] if len(sys.argv) > 1 else 'voiceover.mp3'
 out = sys.argv[2] if len(sys.argv) > 2 else 'words_raw.json'
 model_name = sys.argv[3] if len(sys.argv) > 3 else 'medium.en'
+prompt = sys.argv[4] if len(sys.argv) > 4 else 'Bucket Man, Golden Throne, Stinky Hill, Swamp of Smells, Weird Bucket Boy, Flush King, WHOOSH.'
 t0 = time.time()
 model = WhisperModel(model_name, device='cpu', compute_type='int8', cpu_threads=4)
 segments, info = model.transcribe(
@@ -24,7 +25,7 @@ segments, info = model.transcribe(
     beam_size=5,
     vad_filter=False,
     condition_on_previous_text=True,
-    initial_prompt='Bucket Man, Golden Throne, Stinky Hill, Swamp of Smells, Weird Bucket Boy, Flush King, WHOOSH.',
+    initial_prompt=prompt or None,
 )
 words = []
 for seg in segments:
