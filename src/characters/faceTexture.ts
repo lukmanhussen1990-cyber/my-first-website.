@@ -54,7 +54,8 @@ export function featureXY(st: FaceStyle, px: number, py: number): [number, numbe
 export type Expression =
 	| 'neutral' | 'happy' | 'bigSmile' | 'shocked' | 'sad' | 'crying' | 'happyCry' | 'sleeping' | 'whisper'
 	| 'smug' | 'disgusted' | 'tired' | 'excited' | 'shout' | 'determined' | 'worried' | 'proud' | 'awe' | 'laugh' | 'frown'
-	| 'curious' | 'confused' | 'lonely' | 'surprised' | 'blissful' | 'blowing' | 'blank' | 'warm' | 'breath';
+	| 'curious' | 'confused' | 'lonely' | 'surprised' | 'blissful' | 'blowing' | 'blank' | 'warm' | 'breath'
+	| 'bob' | 'stare' | 'gasp' | 'shy';
 
 export const EXPRESSIONS: Record<Expression, FaceParts> = {
 	neutral: {eyes: 'dot', brows: 'normal', mouth: 'smile', blush: 0.55},
@@ -86,6 +87,10 @@ export const EXPRESSIONS: Record<Expression, FaceParts> = {
 	blank: {eyes: 'dot', brows: 'flat', mouth: 'flat', blush: 0.15},
 	warm: {eyes: 'dot', brows: 'soft', mouth: 'softSmile', blush: 0.7},
 	breath: {eyes: 'closed', brows: 'raised', mouth: 'o', blush: 0.7},
+	bob: {eyes: 'dot', brows: 'normal', mouth: 'tiny', blush: 0.55},
+	stare: {eyes: 'dot', brows: 'flat', mouth: 'flat', blush: 0.3},
+	gasp: {eyes: 'wide', brows: 'raised', mouth: 'shocked', blush: 0.4},
+	shy: {eyes: 'dot', brows: 'worried', mouth: 'tiny', blush: 1, lookY: 0.6, lookX: -0.5},
 };
 
 const SIZE = 1024; // canvas px (drawn in a 512 space scaled x2)

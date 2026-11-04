@@ -11,9 +11,9 @@ import {V3} from '../lib/anim';
 import {Bucket} from '../props/Bucket';
 import {Crown} from '../props/HandProps';
 
-export type HairKind = 'messy' | 'baldSides' | 'bun' | 'short' | 'long' | 'ponytail' | 'afro' | 'spiky' | 'buzz' | 'pigtails' | 'curly' | 'none';
+export type HairKind = 'messy' | 'baldSides' | 'bun' | 'short' | 'long' | 'ponytail' | 'afro' | 'spiky' | 'buzz' | 'pigtails' | 'curly' | 'bobFlat' | 'curlyBumpy' | 'none';
 export type HatKind = 'cap' | 'nightcap' | 'beanie' | 'none';
-export type OutfitKind = 'hoodie' | 'cardigan' | 'overalls' | 'dress' | 'tshirt' | 'pajamas' | 'shirt';
+export type OutfitKind = 'hoodie' | 'cardigan' | 'overalls' | 'dress' | 'tshirt' | 'pajamas' | 'shirt' | 'jacket';
 
 export type CharSpec = {
 	name: string;
@@ -80,6 +80,10 @@ export type CharacterProps = {
 	partyHatTilt?: number;
 	/** 0..1 puffed-up cheeks (blowing out candles) */
 	puff?: number;
+	/** something worn on the chest (name tag), in torso space: origin at the front surface, chest height */
+	chestItem?: React.ReactNode;
+	/** squash the hair flat (0 = normal, 1 = flat) */
+	hairSquash?: number;
 	children?: React.ReactNode;
 };
 
@@ -267,6 +271,39 @@ function Hair({kind, color, seed, lod}: {kind: HairKind; color: string; seed: nu
 			}
 			break;
 		}
+		case 'bobFlat': {
+			// flat brown side-part: a low cap split by a part line, combed over to one side
+			parts.push(<P key="capL" g={rbox(0.36, 0.3, 1.34, 0.1)} m={m} p={[-0.52, 0.53, -0.03]} />);
+			parts.push(<P key="capR" g={rbox(1.0, 0.36, 1.36, 0.12)} m={m} p={[0.2, 0.56, -0.03]} />);
+			parts.push(<P key="back" g={rbox(1.38, 0.82, 0.3, 0.1)} m={m} p={[0, 0.16, -0.56]} />);
+			[-1, 1].forEach((sd) => parts.push(<P key={'side' + sd} g={rbox(0.18, 0.46, 1.0, 0.08)} m={m} p={[sd * 0.67, 0.32, -0.1]} />));
+			parts.push(<P key="sweep" g={rbox(1.02, 0.22, 0.28, 0.09)} m={m} p={[0.18, 0.5, 0.55]} r={[-0.18, 0, -0.1]} />);
+			break;
+		}
+		case 'curlyBumpy': {
+			// lots of bumpy rounded blocks: big, springy curls
+			parts.push(cap(0.5, 0.5), back(0.95, 0.06), ...sides(0.7));
+			const n = lod === 'low' ? 14 : 30;
+			for (let i = 0; i < n; i++) {
+				const a = k(i + 200) * Math.PI * 2;
+				const ring = k(i + 210);
+				const r = 0.25 + ring * 0.5;
+				const x = Math.cos(a) * r;
+				const z = Math.sin(a) * r * 0.9 - 0.08;
+				const y = 0.72 + (1 - ring) * 0.22 + k(i + 220) * 0.14;
+				const s = 0.32 + k(i + 230) * 0.14;
+				parts.push(<P key={'cb' + i} g={rbox(s, s, s, s * 0.42)} m={m} p={[x, y, z]} r={[k(i + 240) * 1.2, k(i + 250) * 1.5, k(i + 260) * 1.2]} />);
+			}
+			// curls around the sides and the back, and a few over the forehead
+			for (let i = 0; i < (lod === 'low' ? 8 : 16); i++) {
+				const a = (i / 16) * Math.PI * 2;
+				if (Math.sin(a) > 0.75) continue;
+				const s = 0.3 + k(i + 300) * 0.12;
+				parts.push(<P key={'cs' + i} g={rbox(s, s, s, s * 0.42)} m={m} p={[Math.cos(a) * 0.72, 0.36 + k(i + 310) * 0.2, Math.sin(a) * 0.66 - 0.06]} r={[k(i + 320), k(i + 330), k(i + 340)]} />);
+			}
+			[-0.42, -0.08, 0.28].forEach((x, i) => parts.push(<P key={'cf' + i} g={rbox(0.34, 0.34, 0.3, 0.13)} m={m} p={[x, 0.54 + k(i + 350) * 0.06, 0.56]} r={[-0.3, 0, k(i + 360) - 0.5]} />));
+			break;
+		}
 		case 'none':
 			break;
 	}
@@ -313,7 +350,9 @@ export const Character: React.FC<CharacterProps> = (props) => {
 		<group position={[0, hy, 0]}>
 			<P g={rbox(D.headW, D.headH, D.headD, D.headR, 4)} m={headMats} />
 			<group scale={hs}>
+				<group position={[0, 0.55 * (1 - (1 - (props.hairSquash ?? 0) * 0.62)), 0]} scale={[1 + (props.hairSquash ?? 0) * 0.12, 1 - (props.hairSquash ?? 0) * 0.62, 1 + (props.hairSquash ?? 0) * 0.06]}>
 				<Hair kind={hat === 'cap' && spec.hair !== 'none' ? 'buzz' : spec.hair} color={spec.hairColor} seed={spec.seed} lod={lod} />
+			</group>
 				{hat === 'cap' ? (
 					<group>
 						<P g={rbox(1.44, 0.4, 1.42, 0.2)} m={plastic(spec.hatColor ?? '#2f63d6', {rough: 0.5})} p={[0, 0.6, -0.02]} />
@@ -377,7 +416,7 @@ export const Character: React.FC<CharacterProps> = (props) => {
 		return (
 			<group position={[x, y, 0]} rotation={rot}>
 				{sl > 0 ? <P g={rbox(D.armW + 0.04, sl, D.armD + 0.04, 0.1)} m={sleeveM} p={[0, top - sl / 2, 0]} /> : null}
-				{spec.outfit === 'hoodie' && lod === 'high' ? (
+				{(spec.outfit === 'hoodie' || spec.outfit === 'jacket') && lod === 'high' ? (
 					<P g={rbox(D.armW + 0.08, 0.15, D.armD + 0.08, 0.06)} m={plastic(darken(spec.top, 0.12), {rough: 0.55})} p={[0, top - sl + 0.07, 0]} cast={false} />
 				) : null}
 				<P g={rbox(D.armW, skinLen, D.armD, 0.1)} m={skin} p={[0, top - len + skinLen / 2, 0]} />
@@ -482,6 +521,17 @@ export const Character: React.FC<CharacterProps> = (props) => {
 		}
 		case 'pajamas':
 			break;
+		case 'jacket': {
+			const dk = plastic(darken(spec.top, 0.18), {rough: 0.45});
+			outfit.push(<P key="zip" g={rbox(0.08, T - 0.1, 0.05, 0.02)} m={plastic('#d9dde3', {metal: 0.6, rough: 0.3})} p={[0, T / 2, fz + 0.02]} cast={false} />);
+			[-1, 1].forEach((sd) => {
+				outfit.push(<P key={'col' + sd} g={rbox(0.5, 0.34, 0.14, 0.06)} m={dk} p={[sd * 0.34, T - 0.06, fz - 0.02]} r={[0.25, 0, sd * 0.35]} cast={false} />);
+				if (lod === 'high') outfit.push(<P key={'pk' + sd} g={rbox(0.52, 0.1, 0.06, 0.03)} m={dk} p={[sd * 0.55, 0.62, fz + 0.02]} cast={false} />);
+			});
+			outfit.push(<P key="hem" g={rbox(D.torsoW + 0.04, 0.16, D.torsoD + 0.04, 0.06)} m={dk} p={[0, 0.08, 0]} cast={false} />);
+			outfit.push(<P key="tee" g={rbox(0.5, 0.3, 0.04, 0.02)} m={plastic(spec.top2 ?? '#f2f2f2', {rough: 0.6})} p={[0, T - 0.2, fz - 0.005]} cast={false} />);
+			break;
+		}
 	}
 
 	if (spec.apron) {
@@ -561,6 +611,7 @@ export const Character: React.FC<CharacterProps> = (props) => {
 					{backBucket}
 					{cape}
 					{props.backItem ? <group position={[0, T * 0.5, -fz]}>{props.backItem}</group> : null}
+					{props.chestItem ? <group position={[0, T * 0.68, fz]}>{props.chestItem}</group> : null}
 					<group position={[0, T, 0]} rotation={pose.head}>
 						{head}
 					</group>
@@ -665,7 +716,7 @@ function capLogoMat() {
 // ---------------------------------------------------------------- party hat
 /** where the hat sits (base head space) for each hair style */
 const HAT_BASE: Partial<Record<HairKind, number>> = {
-	messy: 0.9, baldSides: 0.6, long: 0.76, short: 0.75, bun: 0.76, ponytail: 0.76, pigtails: 0.76, afro: 1.12, curly: 0.86, spiky: 0.92, buzz: 0.7, none: 0.6,
+	messy: 0.9, bobFlat: 0.72, curlyBumpy: 1.0, baldSides: 0.6, long: 0.76, short: 0.75, bun: 0.76, ponytail: 0.76, pigtails: 0.76, afro: 1.12, curly: 0.86, spiky: 0.92, buzz: 0.7, none: 0.6,
 };
 const hatCache = new Map<string, THREE.MeshStandardMaterial>();
 function partyHatMat(color: string) {

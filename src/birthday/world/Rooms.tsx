@@ -90,7 +90,7 @@ export const Porch: React.FC<{rock?: number; chair?: boolean; lit?: boolean; chi
 // ================================================================== our attic
 export const ATTIC = {halfW: 9, L0: 10, L1: -12, ridge: 10};
 const atticWall = () => plastic('#ffffff', {map: woodTex('#7a5a3e', [2, 2], 8, 13), rough: 0.85});
-export const Attic: React.FC = () => {
+export const Attic: React.FC<{beamColor?: string; windowColor?: string}> = ({beamColor = '#ffd9a0', windowColor = '#ffd9a0'}) => {
 	const {halfW, L0, L1, ridge} = ATTIC;
 	const len = L0 - L1;
 	const cz = (L0 + L1) / 2;
@@ -126,7 +126,7 @@ export const Attic: React.FC = () => {
 			<mesh geometry={torus(1.2, 0.16, 8, 32)} material={beam} position={[0, 6.4, L1 + 0.1]} />
 			<mesh geometry={box(2.3, 0.12, 0.12)} material={beam} position={[0, 6.4, L1 + 0.1]} />
 			<mesh geometry={box(0.12, 2.3, 0.12)} material={beam} position={[0, 6.4, L1 + 0.1]} />
-			<mesh geometry={circle(1.15, 32)} material={glowMat('#ffd9a0', 2.2)} position={[0, 6.4, L1 - 0.1]} />
+			<mesh geometry={circle(1.15, 32)} material={glowMat(windowColor, 2.2)} position={[0, 6.4, L1 - 0.1]} />
 			{/* rafters + ridge beam */}
 			{Array.from({length: 9}).map((_, i) => {
 				const z = L1 + 1.5 + i * 2.5;
@@ -142,7 +142,7 @@ export const Attic: React.FC = () => {
 			<mesh geometry={box(0.4, 0.4, len)} material={beam} position={[0, ridge - 0.25, cz]} />
 			{/* the light beam through the round window */}
 			<group position={[0, 6.4, L1 + 0.2]} rotation={[-Math.PI / 2 + 0.62, 0, 0.0]}>
-				<BeamCone length={9.5} radius={2.1} color="#ffd9a0" opacity={0.2} />
+				<BeamCone length={9.5} radius={2.1} color={beamColor} opacity={0.2} />
 			</group>
 			{/* an old lamp, a covered chair, a rocking horse */}
 			<group position={[-5.5, 0, -6]}>
