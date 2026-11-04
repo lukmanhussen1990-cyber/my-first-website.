@@ -114,7 +114,7 @@ function composite(t, st) {
   const filters = [];
   if (st.sepia) filters.push(`sepia(${st.sepia}) saturate(1.1)`);
   if (st.sat !== 1) filters.push(`saturate(${st.sat})`);
-  if (st.blue) filters.push(`hue-rotate(${-25 * st.blue}deg) saturate(${1 - 0.35 * st.blue}) brightness(${1 - 0.12 * st.blue})`);
+  if (st.blue) filters.push(`hue-rotate(${-25 * st.blue}deg) saturate(${1 - 0.35 * st.blue}) brightness(${1 + 0.05 * st.blue})`);
   g.filter = filters.length ? filters.join(' ') : 'none';
   g.drawImage(renderer.domElement, (W - W * z) / 2 + sx, (H - H * z) / 2 + sy, W * z, H * z);
   g.filter = 'none';

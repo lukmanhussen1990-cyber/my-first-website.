@@ -210,7 +210,7 @@ function makeScenes(D) {
   // ================================================================ 1-2
   S[1] = {
     setup(ctx) { D.churchCast(ctx.t); you.face({ eyes: 'normal', mouth: 'flat', blink: Math.sin(ctx.t * 3) > 0.97 ? 1 : 0 }); },
-    shots: [faceShot(you, 1.35, 1.05, { ang: 0.15 }, { ang: 0.1 }, 38, 36, lin), faceShot(you, 1.6, 1.3, { ang: -0.35, dy: -0.15, ldy: -0.2 }, { ang: -0.3, dy: -0.15, ldy: -0.2 }, 40, 38)],
+    shots: [faceShot(you, 1.3, 1.05, { ang: -0.8 }, { ang: -0.8 }, 38, 36, lin), faceShot(you, 1.6, 1.35, { ang: -1.0, dy: -0.15, ldy: -0.2 }, { ang: -1.0, dy: -0.15, ldy: -0.2 }, 40, 38)],
   };
   S[2] = {
     setup(ctx) {
@@ -222,7 +222,7 @@ function makeScenes(D) {
       fx.icon('swirl', h.clone().add(V(0, 0.42, 0)), 0.32, { rot: -ctx.t * 6 });
       fx.drop(h.clone().add(V(0.05, 0.12, 0.26)), 0.1);
     },
-    shots: [faceShot(you, 1.25, 1.0, { ang: 0.1, dy: 0.05 }, { ang: 0.1, dy: 0.05 }, 38, 36), faceShot(you, 0.95, 0.85, { ang: -0.2, dy: 0.03 }, { ang: -0.2, dy: 0.03 }, 36, 34)],
+    shots: [faceShot(you, 1.2, 1.0, { ang: -0.75, dy: 0.05 }, { ang: -0.75, dy: 0.05 }, 38, 36), faceShot(you, 0.95, 0.85, { ang: -1.1, dy: 0.03 }, { ang: -1.1, dy: 0.03 }, 36, 34)],
   };
 
   // ================================================================ 3  flashback on the toilet with the phone
@@ -244,7 +244,7 @@ function makeScenes(D) {
     },
     shots: [
       (ctx, su) => D.move(su, bp(1.55, 1.25, 0.9), bp(1.4, 0.95, -1.35), bp(1.5, 1.25, 0.7), bp(1.4, 0.98, -1.35), 46, 44),
-      (ctx, su) => { const p = props.phone.position.clone(); const n = V().subVectors(head(you), p).normalize(); D.move(su, p.clone().addScaledVector(n, 0.24).add(V(0.02, 0.02, 0)), p, p.clone().addScaledVector(n, 0.19), p, 40, 38); },
+      (ctx, su) => { const p = props.phone.position.clone(); D.move(su, p.clone().add(V(0.35, 0.12, 0.55)), p, p.clone().add(V(0.28, 0.1, 0.45)), p, 40, 36); },
       faceShot(you, 1.2, 0.95, { ang: 0.25 }, { ang: 0.2 }, 38, 36),
     ],
   };
@@ -272,7 +272,7 @@ function makeScenes(D) {
       for (let k = 0; k < 7; k++) { const p = (ctx.lt * 0.6 + k / 7) % 1, a = k * 0.9; fx.sparkle(h.clone().add(V(Math.cos(a) * 0.45, -0.2 + p * 0.7, Math.sin(a) * 0.45)), 0.1 * Math.sin(Math.PI * p)); }
       st().flashWhite = 0.2; st().vignette = 0.6;
     },
-    shots: [faceShot(bride, 1.45, 1.15, { ang: 0.3, dy: -0.05 }, { ang: 0.25, dy: -0.05 }, 38, 36, lin), faceShot(bride, 2.4, 2.1, { ang: -0.35, dy: -0.4, ldy: -0.45 }, { ang: -0.3, dy: -0.4, ldy: -0.45 }, 42, 40, lin)],
+    shots: [faceShot(bride, 1.45, 1.15, { ang: 0.3, dy: -0.05 }, { ang: 0.25, dy: -0.05 }, 38, 36, lin), faceShot(bride, 1.9, 1.7, { ang: 0.8, dy: -0.35, ldy: -0.45 }, { ang: 0.75, dy: -0.35, ldy: -0.45 }, 42, 40, lin)],
   };
   S[7] = {
     setup(ctx) { D.churchCast(ctx.t); D.bibleAt(priest, eo(seg(ctx.lt, 0.25, ctx.dur - 0.4))); priest.face({ eyes: 'normal', brows: 'raised', mouth: 'smile', look: [0, -0.7] }); },
@@ -299,8 +299,8 @@ function makeScenes(D) {
       }
     },
     shots: [
-      faceShot(you, 1.3, 1.05, { ang: 0.2 }, { ang: 0.15 }, 38, 36),
-      (ctx, su) => { const b = you.spine.localToWorld(V(0, 0.15, 0.13)); D.move(su, b.clone().add(V(0.9, 0.1, 0.05)), b, b.clone().add(V(0.7, 0.08, 0.05)), b, 40, 38); },
+      faceShot(you, 1.3, 1.05, { ang: -0.8 }, { ang: -0.8 }, 38, 36),
+      (ctx, su) => { const b = you.spine.localToWorld(V(0, 0.15, 0.13)); D.move(su, b.clone().add(V(0.55, 0.1, 0.75)), b, b.clone().add(V(0.45, 0.08, 0.6)), b, 40, 38); },
     ],
   };
   S[9] = {
@@ -323,7 +323,7 @@ function makeScenes(D) {
   };
 
   // ================================================================ 10-12  the stall and the first yell
-  const stallDoorShot = (ctx, su) => D.move(su, bp(1.0, 1.1, 2.45), bp(1.4, 1.35, 0.3), bp(1.1, 1.05, 2.2), bp(1.4, 1.3, 0.3), 54, 52);
+  const stallDoorShot = (ctx, su) => D.move(su, bp(1.1, 1.25, 4.3), bp(1.4, 1.2, 0.3), bp(1.2, 1.2, 3.8), bp(1.4, 1.2, 0.3), 56, 54);
   S[10] = {
     setup(ctx) { stallOutside(ctx); you.face({ eyes: 'squint', brows: 'angry', mouth: 'wavy' }); },
     shots: [stallDoorShot],
@@ -387,7 +387,7 @@ function makeScenes(D) {
         mom.root.visible = true;
         car.updateMatrixWorld(true);
         const seat = car.localToWorld(V(-0.4, 0, -0.25));
-        mom.at(seat.x, seat.z, car.rotation.y, 0.1);
+        mom.at(seat.x, seat.z, car.rotation.y, -0.18);
         P.sit(mom, 0.55);
         mom.root.updateMatrixWorld(true);
         const wh = car.localToWorld(V(-0.4, 1.1, 0.33));
@@ -418,7 +418,7 @@ function makeScenes(D) {
       family.forEach(p => { p.neck.rotation.x = 0.6 * d; p.face({ eyes: 'squint', mouth: 'flat' }); });
       fil.face({ eyes: 'squint', brows: 'angry', mouth: 'frown' });
     },
-    shots: [(ctx, su) => D.move(su, V(-4.2, 2.1, -15.2), V(-4.2, 0.9, -6), V(-4.2, 2.1, -14.6), V(-4.2, 0.9, -6), 46, 44), (ctx, su) => D.move(su, V(4.0, 1.25, pewZ(4) - 1.3), V(4.4, 1.15, pewZ(6)), V(4.0, 1.25, pewZ(4) - 1.0), V(4.4, 1.15, pewZ(6)), 46, 44)],
+    shots: [(ctx, su) => D.move(su, V(-4.2, 2.1, -15.2), V(-4.2, 0.9, -6), V(-4.2, 2.1, -14.6), V(-4.2, 0.9, -6), 46, 44), (ctx, su) => D.move(su, V(2.4, 1.8, -14.2), V(4.2, 1.0, -8.5), V(2.6, 1.75, -13.6), V(4.2, 1.0, -8.5), 44, 42)],
   };
   S[18] = {
     cuts: ctx => [ctx.find(/^drops/i, 0.5) - 0.05],
@@ -526,7 +526,7 @@ function makeScenes(D) {
   };
   S[25] = {
     setup(ctx) { stallOutside(ctx); },
-    shots: [(ctx, su) => D.move(su, bp(0.6, 1.2, 2.45), bp(1.4, 1.4, 0.3), bp(0.7, 1.15, 2.25), bp(1.4, 1.35, 0.3), 54, 50)],
+    shots: [(ctx, su) => D.move(su, bp(0.2, 1.3, 4.2), bp(1.4, 1.25, 0.3), bp(0.4, 1.25, 3.7), bp(1.4, 1.25, 0.3), 56, 52)],
   };
 
   // ================================================================ 26-30  the circle and rock, paper, scissors
@@ -645,7 +645,7 @@ function makeScenes(D) {
       const h = head(organist);
       for (let k = 0; k < 3; k++) { const p = (ctx.lt * 0.6 + k / 3) % 1; fx.icon('note', h.clone().add(V(0.3 + p * 0.4, 0.2 + p * 0.6, 0.3 - k * 0.2)), 0.12, { opacity: Math.sin(Math.PI * p) }); }
     },
-    shots: [faceShot(organist, 1.3, 1.05, { ang: 0.5, dy: 0.0 }, { ang: 0.45 }, 40, 38, lin), (ctx, su) => D.move(su, V(-4.4, 2.2, -14.8), V(-6.4, 1.6, -16.5), V(-4.6, 2.1, -15.2), V(-6.4, 1.6, -16.5), 46, 44)],
+    shots: [(ctx, su) => { const h = head(organist); D.move(su, h.clone().add(V(-0.75, 0.05, 1.3)), h, h.clone().add(V(-0.6, 0.05, 1.05)), h, 40, 38, lin); }, (ctx, su) => D.move(su, V(-4.4, 2.2, -14.8), V(-6.4, 1.6, -16.5), V(-4.6, 2.1, -15.2), V(-6.4, 1.6, -16.5), 46, 44)],
   };
   S[35] = {
     cuts: ctx => [ctx.find(/^and/i, 0.6)],
@@ -670,7 +670,7 @@ function makeScenes(D) {
       }
     },
     shots: [
-      (ctx, su) => { const h = head(bride); D.move(su, h.clone().add(V(1.05, 0.05, -0.55)), h.clone().add(V(0, -0.05, 0)), h.clone().add(V(0.95, 0.05, -0.45)), h.clone().add(V(0, -0.05, 0)), 44, 42, lin); },
+      (ctx, su) => { const h = head(bride); D.move(su, h.clone().add(V(1.2, 0.1, 0.5)), h.clone().add(V(-0.1, -0.15, -0.3)), h.clone().add(V(1.1, 0.1, 0.35)), h.clone().add(V(-0.1, -0.15, -0.3)), 50, 48, lin); },
       (ctx, su) => D.move(su, V(0, 2.6, -15.0), V(0, 1.1, -2), V(0, 2.4, -14.0), V(0, 1.1, -2), 50, 50, lin),
     ],
   };

@@ -189,12 +189,13 @@ function buildHall(scene, W) {
 function buildBath(scene, W) {
   const B = new THREE.Group(); B.position.copy(SET.bath); scene.add(B);
   const tile = (w, h) => mat(rep(WT.tile, w / 0.8, h / 0.8), { flatShading: false });
-  add(B, plane(5, 5, tile(5, 5)), 0, 0, 0, -Math.PI / 2);
+  // room: x -2.5..2.5, z -2.5..4.6
+  add(B, plane(5, 7.1, tile(5, 7.1)), 0, 0, 1.05, -Math.PI / 2);
   add(B, plane(5, 3, tile(5, 3)), 0, 1.5, -2.5);
-  add(B, plane(5, 3, tile(5, 3)), -2.5, 1.5, 0, 0, Math.PI / 2);
-  add(B, plane(5, 3, tile(5, 3)), 2.5, 1.5, 0, 0, -Math.PI / 2);
-  add(B, plane(5, 3, tile(5, 3)), 0, 1.5, 2.5, 0, Math.PI);
-  add(B, plane(5, 5, mat(0xf4f4f0, { flatShading: false })), 0, 3, 0, Math.PI / 2);
+  add(B, plane(7.1, 3, tile(7.1, 3)), -2.5, 1.5, 1.05, 0, Math.PI / 2);
+  add(B, plane(7.1, 3, tile(7.1, 3)), 2.5, 1.5, 1.05, 0, -Math.PI / 2);
+  add(B, plane(5, 3, tile(5, 3)), 0, 1.5, 4.6, 0, Math.PI);
+  add(B, plane(5, 7.1, mat(0xf4f4f0, { flatShading: false })), 0, 3, 1.05, Math.PI / 2);
   const stallM = mat(WT.stall);
   // stall: side panel at x=0.3 (z -2.5..0.3), front at z=0.3 (x 0.3..2.5), door x 0.9..1.9
   add(B, bx(0.05, 1.9, 2.8, stallM), 0.3, 1.2, -1.1);
@@ -236,11 +237,12 @@ function buildPark(scene, W) {
   const car = (col) => {
     const c = new THREE.Group();
     add(c, bx(1.8, 0.62, 3.8, mat(col)), 0, 0.55, 0);
-    add(c, bx(1.62, 0.6, 2.0, mat(col)), 0, 1.15, -0.25);
-    const glass = new THREE.MeshStandardMaterial({ color: 0x9fd0ef, transparent: true, opacity: 0.35, roughness: 0.1, depthWrite: false });
-    add(c, plane(1.5, 0.5, glass), 0, 1.17, 0.77, -0.35);
-    add(c, plane(1.5, 0.5, glass), 0, 1.17, -1.27, 0.25, Math.PI);
-    for (const s of [-1, 1]) add(c, plane(1.8, 0.48, glass), s * 0.815, 1.17, -0.25, 0, s * Math.PI / 2);
+    add(c, bx(1.62, 0.08, 2.0, mat(col)), 0, 1.42, -0.25);
+    for (const [x, z] of [[-0.77, 0.7], [0.77, 0.7], [-0.77, -1.2], [0.77, -1.2]]) add(c, bx(0.08, 0.56, 0.08, mat(col)), x, 1.14, z);
+    const glass = new THREE.MeshStandardMaterial({ color: 0x9fd0ef, transparent: true, opacity: 0.25, roughness: 0.1, depthWrite: false, side: THREE.DoubleSide });
+    add(c, plane(1.5, 0.5, glass), 0, 1.15, 0.72, -0.2);
+    add(c, plane(1.5, 0.5, glass), 0, 1.15, -1.22, 0.2, Math.PI);
+    for (const s2 of [-1, 1]) add(c, plane(1.85, 0.5, glass), s2 * 0.79, 1.14, -0.25, 0, s2 * Math.PI / 2);
     const wheels = [];
     for (const [x, z] of [[-0.9, 1.2], [0.9, 1.2], [-0.9, -1.25], [0.9, -1.25]]) { const w = mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.24, 10), mat(0x1a1a1a)); w.rotation.z = Math.PI / 2; w.position.set(x, 0.34, z); c.add(w); wheels.push(w); }
     for (const x of [-0.6, 0.6]) add(c, bx(0.3, 0.14, 0.04, new THREE.MeshBasicMaterial({ color: 0xfff6c8 })), x, 0.65, 1.91);
