@@ -129,8 +129,8 @@ export const SHOTS = {
       face(c.him, 'open', 'worried', k >= 1 ? 'grimace' : 'tight');
       c.him.p.handL = rel(c.him, 0.08, 0.42, 0.9); c.him.p.handR = rel(c.him, 0.08, -0.42, 0.9); c.him.p.handPoseL = c.him.p.handPoseR = 'open';
     },
-    after(W, c, lt) { const s = clamp((lt - 0.5) / 0.6); const n = s >= 1 ? 41 : Math.round(easeOut(s) * 41 + (s > 0 && s < 1 ? Math.sin(lt * 60) * 3 : 0)); c.sc.userData.screen.draw(s > 0 ? `${Math.max(0, n)} kg` : '0 kg'); },
-    cam: (W, c, lt) => { const k = K(W, lt); return camAt([X.scale - 0.6, 1.45, 3.1 - 0.3 * k], [X.scale + 0.15, 1.0, -0.2], 42); },
+    after(W, c, lt) { const s = clamp((lt - W.cut - 0.05) / 0.5); const n = s >= 1 ? 41 : Math.round(easeOut(s) * 41 + (s > 0 && s < 1 ? Math.sin(lt * 60) * 3 : 0)); c.sc.userData.screen.draw(s > 0 ? `${Math.max(0, n)} kg` : '0 kg'); },
+    cam: (W, c, lt) => { const k = K(W, lt); if (lt >= W.cut) { const q = clamp((lt - W.cut) / Math.max(0.3, W.dur - W.cut)); return camAt([X.scale + 0.3 - 0.03 * q, 1.73, 1.12 - 0.1 * q], [X.scale + 0.44, 1.74, -0.62], 40); } return camAt([X.scale - 0.6, 1.45, 3.1 - 0.3 * k], [X.scale + 0.15, 1.0, -0.2], 42); },
   },
   // ================================================================ 8 "Like a bag of cement." on the scale next to a cement bag, 41 kg
   8: {
@@ -345,9 +345,14 @@ export const SHOTS = {
       WD.mountainRange(g, 0, 0, { n: 16, spread: 16000, hMin: 1600, hMax: 3600, crushAt: [0, 0], crushR: 3000, seed: 3 });
       WD.mountainRange(g, 0, -7000, { n: 12, spread: 22000, hMin: 2200, hMax: 4200, seed: 8 });
       WD.mountainRange(g, -14000, 6000, { n: 8, spread: 12000, seed: 12 }); WD.mountainRange(g, 15000, 5000, { n: 8, spread: 12000, seed: 14 });
-      return { sp: WD.tanSpheres(g, 1500, { x: 0, z: 0, y: 1100 }) };
+      const c = { sp: WD.tanSpheres(g, 1500, { x: 0, z: 0, y: 1100 }) };
+      c.dust = WD.puffs(g, 16, 'rgba(200,190,170,1)', 0.65); return c;
     },
-    cam: (W, c, lt) => { const k = K(W, lt); return camAt([X.mtn - 4000, 6000 + 1500 * k, 26000 + 5000 * k], [X.mtn, 1200, 0], 44, { near: 20, far: 160000 }); },
+    after(W, c, lt) { c.dust.children.forEach((s, i) => { const a = (i / 16) * Math.PI * 2, kk = clamp(lt / 2.5); s.position.set(Math.cos(a) * (3000 + kk * 900), 250 + (i % 4) * 180 + kk * 300, Math.sin(a) * 1700 + 600); s.scale.setScalar(1300 + kk * 700 + (i % 3) * 300); }); },
+    cam: (W, c, lt) => {
+      if (lt < W.cut) { const q = clamp(lt / Math.max(0.3, W.cut)); return camAt([X.mtn - 3600 + 300 * q, 700, 7200 - 300 * q], [X.mtn - 800, 900, 0], 46, { near: 10, far: 160000 }); }
+      const k = clamp((lt - W.cut) / Math.max(0.3, W.dur - W.cut)); return camAt([X.mtn - 4000, 6000 + 1500 * k, 26000 + 5000 * k], [X.mtn, 1200, 0], 44, { near: 20, far: 160000 });
+    },
   },
   // ================================================================ 24 "Eighty-seven minutes:" the balance: 8 BILLION PEOPLE vs the spheres
   24: {

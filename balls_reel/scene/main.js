@@ -28,7 +28,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color('#1a1210');
 const camera = new THREE.PerspectiveCamera(40, WIDTH / HEIGHT, 0.03, 150);
 scene.add(camera);
-const W = { THREE, scene, camera, renderer, cast: [], chars: {}, id, dur: DUR, t0: SP.t0 };
+const W = { THREE, scene, camera, renderer, cast: [], chars: {}, id, dur: DUR, t0: SP.t0, plan: SP, cut: (SP.cuts && SP.cuts.length) ? SP.cuts[0] : 1e9 };
 const S = SHOTS[id];
 if (!S) throw new Error(`no shot ${id}`);
 const ctx = S.build(W) || {};

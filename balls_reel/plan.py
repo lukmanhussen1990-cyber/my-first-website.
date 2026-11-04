@@ -46,7 +46,7 @@ SHOTS = [
     dict(start=(2, 5), size="extreme close-up", scene="The scale screen: 40 g (green numbers)."),
     dict(start=(3, 0), size="close-up", scene="FRIEND, shocked, looking down."),
     dict(start=(3, 3), size="medium", scene="HIM walking funny, two round bulges in his jeans. Label: MELON SIZE."),
-    dict(start=(4, 0), size="medium", scene="HIM steps onto a big platform scale, the sign counts up to 41 kg."),
+    dict(start=(4, 0), cut=(4, 2), size="medium", scene="HIM steps onto a big platform scale; cut to the sign counting up to 41 kg."),
     dict(start=(4, 4), size="wide", scene="HIM on the big scale next to a cement bag, the sign shows 41 kg."),
     dict(start=(5, 0), size="medium", scene="He tries to stand up straight, straining, worried."),
     dict(start=(5, 5), size="medium", scene="He falls forward onto them: the floor cracks."),
@@ -62,7 +62,7 @@ SHOTS = [
     dict(start=(12, 0), size="extreme wide", scene="A huge traffic jam on a highway leading to the two giant spheres."),
     dict(start=(12, 5), size="wide", scene="Closer: one car honking in the jam. Label: MOM."),
     dict(start=(13, 0), size="extreme wide", scene="The spheres sitting on a crushed mountain range."),
-    dict(start=(13, 2), size="extreme wide", scene="Further back: mountains crushed under them."),
+    dict(start=(13, 2), cut=(13, 4), size="extreme wide", scene="Closer: the peaks crushed under them; cut further back: mountains crushed everywhere."),
     dict(start=(14, 0), size="wide", scene="A giant balance scale: 8 BILLION PEOPLE on one side, the spheres on the other."),
     dict(start=(14, 2), size="wide", scene="The spheres' side slams down: they win."),
     dict(start=(15, 0), size="space", scene="Space: the Earth circling the spheres. Labels: EARTH, HIM (SOMEWHERE)."),
@@ -100,7 +100,11 @@ def main():
     for i, s in enumerate(SHOTS):
         t0, t1 = starts[i], (starts[i + 1] if i + 1 < len(SHOTS) else END)
         caps = [c for c in chunks if t0 <= c["t"] < t1]
-        out.append({"id": i + 1, "t0": t0, "t1": round(t1, 2), "dur": round(t1 - t0, 2), "size": s["size"],
+        cuts = []
+        if "cut" in s:
+            cl, cw = s["cut"]
+            cuts.append(round(line_words(cl)[cw]["s"] - LEAD - t0, 3))
+        out.append({"id": i + 1, "t0": t0, "t1": round(t1, 2), "dur": round(t1 - t0, 2), "size": s["size"], "cuts": cuts,
                     "key": False, "voice": " ".join(c["text"] for c in caps), "captions": caps, "scene": s["scene"],
                     "black": False, "image": f"images/shot_{i + 1:02d}.png", "clip": f"clips/shot_{i + 1:02d}.mp4"})
     assert sum(len(o["captions"]) for o in out) == len(chunks)

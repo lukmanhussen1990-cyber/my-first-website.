@@ -20,7 +20,7 @@ def at(i, lt):
 T = dict(
     land=at(3, 0.47), ding40=at(3, 0.82),                         # the two small balls land on the kitchen scale, 40 g
     waddle=[at(6, k * 0.419) for k in range(1, 6) if k * 0.419 < shot(6)[1] - shot(6)[0]],
-    onscale=at(7, 0.6), ding41=at(7, 1.1),
+    onscale=at(7, 0.6), cut41=at(7, _S[7]['cuts'][0]), ding41=at(7, _S[7]['cuts'][0] + 0.55),
     strain=at(9, 0.05),
     crack=at(10, 0.32),
     sit=at(11, 0.0),

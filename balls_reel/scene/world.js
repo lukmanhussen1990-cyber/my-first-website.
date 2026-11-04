@@ -176,7 +176,7 @@ export function platformScale(parent, x, z, ry = 0) {
   const plank = canvasTex(64, 64, (c) => { noiseFill(c, 64, 64, '#b98250', 16, 4, 2); c.fillStyle = 'rgba(70,40,20,0.4)'; for (let i = 1; i < 4; i++) c.fillRect(0, i * 16, 64, 1); });
   add(g, M(boxG(1.2, 0.05, 0.9), mat(plank)), 0, 0.07, 0);
   const m = mat(PAL.navy, { rough: 0.6 });
-  add(g, M(new THREE.CylinderGeometry(0.04, 0.05, 1.6, 6).translate(0, 0.8, 0), m), 0.5, 0.07, -0.42);
+  add(g, M(new THREE.CylinderGeometry(0.04, 0.05, 1.5, 6).translate(0, 0.75, 0), m), 0.5, 0.07, -0.46);
   const scr = digitScreen(256, 160, { color: '#ff6a3c', bg: '#14161c' });
   add(g, M(new THREE.BoxGeometry(0.5, 0.34, 0.06), mat('#14161c')), 0.5, 1.75, -0.42);
   add(g, M(new THREE.PlaneGeometry(0.46, 0.3), new THREE.MeshBasicMaterial({ map: scr.t }), { cast: false }), 0.5, 1.75, -0.388);

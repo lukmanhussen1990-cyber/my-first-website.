@@ -1,13 +1,14 @@
 {
  "fps": 30,
- "duration": 45.46666666666667,
+ "duration": 48.63333333333333,
  "shots": [
   {
    "id": 1,
    "t0": 0.0,
-   "t1": 1.23,
-   "dur": 1.23,
+   "t1": 0.78,
+   "dur": 0.78,
    "size": "close-up",
+   "cuts": [],
    "key": false,
    "voice": "what if your balls",
    "captions": [
@@ -15,15 +16,15 @@
      "text": "what if",
      "line": 1,
      "who": "N",
-     "t": 0.15,
-     "end": 0.686
+     "t": 0.0,
+     "end": 0.36
     },
     {
      "text": "your balls",
      "line": 1,
      "who": "N",
-     "t": 0.686,
-     "end": 1.33
+     "t": 0.36,
+     "end": 0.88
     }
    ],
    "scene": "HIM on the street, calm, holding his phone.",
@@ -33,10 +34,11 @@
   },
   {
    "id": 2,
-   "t0": 1.23,
-   "t1": 3.15,
-   "dur": 1.92,
+   "t0": 0.78,
+   "t1": 2.58,
+   "dur": 1.8,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "doubled in size every minute?",
    "captions": [
@@ -44,15 +46,15 @@
      "text": "doubled in size",
      "line": 1,
      "who": "N",
-     "t": 1.33,
-     "end": 2.278
+     "t": 0.88,
+     "end": 1.76
     },
     {
      "text": "every minute?",
      "line": 1,
      "who": "N",
-     "t": 2.278,
-     "end": 2.994
+     "t": 1.76,
+     "end": 2.36
     }
    ],
    "scene": "HIM standing on the street next to FRIEND; she looks down.",
@@ -62,10 +64,11 @@
   },
   {
    "id": 3,
-   "t0": 3.15,
-   "t1": 4.85,
-   "dur": 1.7,
+   "t0": 2.58,
+   "t1": 4.18,
+   "dur": 1.6,
    "size": "close-up",
+   "cuts": [],
    "key": false,
    "voice": "right now, the pair weighs",
    "captions": [
@@ -73,15 +76,15 @@
      "text": "right now,",
      "line": 2,
      "who": "N",
-     "t": 3.254,
-     "end": 3.862
+     "t": 2.68,
+     "end": 3.56
     },
     {
      "text": "the pair weighs",
      "line": 2,
      "who": "N",
-     "t": 4.002,
-     "end": 4.95
+     "t": 3.82,
+     "end": 4.28
     }
    ],
    "scene": "Two small round shapes drop onto a kitchen scale: BEEP, the screen counts up.",
@@ -91,10 +94,11 @@
   },
   {
    "id": 4,
-   "t0": 4.85,
-   "t1": 6.13,
-   "dur": 1.28,
+   "t0": 4.18,
+   "t1": 5.37,
+   "dur": 1.19,
    "size": "extreme close-up",
+   "cuts": [],
    "key": false,
    "voice": "about forty grams.",
    "captions": [
@@ -102,8 +106,8 @@
      "text": "about forty grams.",
      "line": 2,
      "who": "N",
-     "t": 4.95,
-     "end": 5.97
+     "t": 4.28,
+     "end": 5.16
     }
    ],
    "scene": "The scale screen: 40 g (green numbers).",
@@ -113,10 +117,11 @@
   },
   {
    "id": 5,
-   "t0": 6.13,
-   "t1": 7.22,
-   "dur": 1.09,
+   "t0": 5.37,
+   "t1": 6.58,
+   "dur": 1.21,
    "size": "close-up",
+   "cuts": [],
    "key": false,
    "voice": "five minutes in:",
    "captions": [
@@ -124,8 +129,8 @@
      "text": "five minutes in:",
      "line": 3,
      "who": "N",
-     "t": 6.23,
-     "end": 7.178
+     "t": 5.47,
+     "end": 6.57
     }
    ],
    "scene": "FRIEND, shocked, looking down.",
@@ -135,10 +140,11 @@
   },
   {
    "id": 6,
-   "t0": 7.22,
-   "t1": 9.07,
-   "dur": 1.85,
+   "t0": 6.58,
+   "t1": 8.41,
+   "dur": 1.83,
    "size": "medium",
+   "cuts": [],
    "key": false,
    "voice": "they're the size of melons.",
    "captions": [
@@ -146,15 +152,15 @@
      "text": "they're the size",
      "line": 3,
      "who": "N",
-     "t": 7.318,
-     "end": 8.302
+     "t": 6.68,
+     "end": 7.56
     },
     {
      "text": "of melons.",
      "line": 3,
      "who": "N",
-     "t": 8.302,
-     "end": 8.91
+     "t": 7.56,
+     "end": 8.34
     }
    ],
    "scene": "HIM walking funny, two round bulges in his jeans. Label: MELON SIZE.",
@@ -164,10 +170,13 @@
   },
   {
    "id": 7,
-   "t0": 9.07,
-   "t1": 10.71,
-   "dur": 1.64,
+   "t0": 8.41,
+   "t1": 11.04,
+   "dur": 2.63,
    "size": "medium",
+   "cuts": [
+    0.925
+   ],
    "key": false,
    "voice": "ten minutes: forty kilos.",
    "captions": [
@@ -175,28 +184,29 @@
      "text": "ten minutes:",
      "line": 4,
      "who": "N",
-     "t": 9.17,
-     "end": 9.85
+     "t": 8.505,
+     "end": 9.265
     },
     {
      "text": "forty kilos.",
      "line": 4,
      "who": "N",
-     "t": 9.99,
-     "end": 10.67
+     "t": 9.435,
+     "end": 10.935
     }
    ],
-   "scene": "HIM steps onto a big platform scale, the sign counts up to 41 kg.",
+   "scene": "HIM steps onto a big platform scale; cut to the sign counting up to 41 kg.",
    "black": false,
    "image": "images/shot_07.png",
    "clip": "clips/shot_07.mp4"
   },
   {
    "id": 8,
-   "t0": 10.71,
-   "t1": 12.35,
-   "dur": 1.64,
+   "t0": 11.04,
+   "t1": 12.25,
+   "dur": 1.21,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "like a bag of cement.",
    "captions": [
@@ -204,15 +214,15 @@
      "text": "like a bag",
      "line": 4,
      "who": "N",
-     "t": 10.81,
-     "end": 11.578
+     "t": 11.135,
+     "end": 11.595
     },
     {
      "text": "of cement.",
      "line": 4,
      "who": "N",
-     "t": 11.578,
-     "end": 12.186
+     "t": 11.595,
+     "end": 12.115
     }
    ],
    "scene": "HIM on the big scale next to a cement bag, the sign shows 41 kg.",
@@ -222,10 +232,11 @@
   },
   {
    "id": 9,
-   "t0": 12.35,
-   "t1": 13.83,
-   "dur": 1.48,
+   "t0": 12.25,
+   "t1": 13.52,
+   "dur": 1.27,
    "size": "medium",
+   "cuts": [],
    "key": false,
    "voice": "you try to stand up.",
    "captions": [
@@ -233,15 +244,15 @@
      "text": "you try to",
      "line": 5,
      "who": "N",
-     "t": 12.446,
-     "end": 13.214
+     "t": 12.345,
+     "end": 13.065
     },
     {
      "text": "stand up.",
      "line": 5,
      "who": "N",
-     "t": 13.214,
-     "end": 13.786
+     "t": 13.065,
+     "end": 13.565
     }
    ],
    "scene": "He tries to stand up straight, straining, worried.",
@@ -251,10 +262,11 @@
   },
   {
    "id": 10,
-   "t0": 13.83,
-   "t1": 14.69,
-   "dur": 0.86,
+   "t0": 13.52,
+   "t1": 14.59,
+   "dur": 1.07,
    "size": "medium",
+   "cuts": [],
    "key": false,
    "voice": "you can't.",
    "captions": [
@@ -262,8 +274,8 @@
      "text": "you can't.",
      "line": 5,
      "who": "N",
-     "t": 13.926,
-     "end": 14.534
+     "t": 13.615,
+     "end": 14.555
     }
    ],
    "scene": "He falls forward onto them: the floor cracks.",
@@ -273,10 +285,11 @@
   },
   {
    "id": 11,
-   "t0": 14.69,
-   "t1": 15.66,
-   "dur": 0.97,
+   "t0": 14.59,
+   "t1": 15.86,
+   "dur": 1.27,
    "size": "medium",
+   "cuts": [],
    "key": false,
    "voice": "fifteen minutes:",
    "captions": [
@@ -284,8 +297,8 @@
      "text": "fifteen minutes:",
      "line": 6,
      "who": "N",
-     "t": 14.794,
-     "end": 15.618
+     "t": 14.69,
+     "end": 15.71
     }
    ],
    "scene": "HIM sitting on top of two giant tan spheres.",
@@ -295,10 +308,11 @@
   },
   {
    "id": 12,
-   "t0": 15.66,
-   "t1": 17.53,
-   "dur": 1.87,
+   "t0": 15.86,
+   "t1": 18.0,
+   "dur": 2.14,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "as heavy as a small car.",
    "captions": [
@@ -306,15 +320,15 @@
      "text": "as heavy as",
      "line": 6,
      "who": "N",
-     "t": 15.758,
-     "end": 16.562
+     "t": 15.955,
+     "end": 17.035
     },
     {
      "text": "a small car.",
      "line": 6,
      "who": "N",
-     "t": 16.562,
-     "end": 17.366
+     "t": 17.035,
+     "end": 17.895
     }
    ],
    "scene": "Next to a small car. Label: 1.3 TONS.",
@@ -324,10 +338,11 @@
   },
   {
    "id": 13,
-   "t0": 17.53,
-   "t1": 18.45,
-   "dur": 0.92,
+   "t0": 18.0,
+   "t1": 19.06,
+   "dur": 1.06,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "twenty minutes:",
    "captions": [
@@ -335,8 +350,8 @@
      "text": "twenty minutes:",
      "line": 7,
      "who": "N",
-     "t": 17.626,
-     "end": 18.414
+     "t": 18.105,
+     "end": 18.985
     }
    ],
    "scene": "Tanks roll in around the giant spheres.",
@@ -346,10 +361,11 @@
   },
   {
    "id": 14,
-   "t0": 18.45,
-   "t1": 19.7,
-   "dur": 1.25,
+   "t0": 19.06,
+   "t1": 20.64,
+   "dur": 1.58,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "the army arrives.",
    "captions": [
@@ -357,8 +373,8 @@
      "text": "the army arrives.",
      "line": 7,
      "who": "N",
-     "t": 18.554,
-     "end": 19.538
+     "t": 19.16,
+     "end": 20.38
     }
    ],
    "scene": "Soldiers run in and surround the spheres.",
@@ -368,10 +384,11 @@
   },
   {
    "id": 15,
-   "t0": 19.7,
-   "t1": 21.37,
-   "dur": 1.67,
+   "t0": 20.64,
+   "t1": 21.48,
+   "dur": 0.84,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "they try to move them.",
    "captions": [
@@ -379,15 +396,15 @@
      "text": "they try to",
      "line": 8,
      "who": "N",
-     "t": 19.798,
-     "end": 20.602
+     "t": 20.74,
+     "end": 21.16
     },
     {
      "text": "move them.",
      "line": 8,
      "who": "N",
-     "t": 20.602,
-     "end": 21.21
+     "t": 21.16,
+     "end": 21.56
     }
    ],
    "scene": "Tanks pull with chains, treads spinning, dust: nothing moves.",
@@ -397,10 +414,11 @@
   },
   {
    "id": 16,
-   "t0": 21.37,
-   "t1": 22.86,
-   "dur": 1.49,
+   "t0": 21.48,
+   "t1": 23.29,
+   "dur": 1.81,
    "size": "close-up",
+   "cuts": [],
    "key": false,
    "voice": "damage: zero percent.",
    "captions": [
@@ -408,8 +426,8 @@
      "text": "damage: zero percent.",
      "line": 9,
      "who": "N",
-     "t": 21.47,
-     "end": 22.702
+     "t": 21.58,
+     "end": 23.26
     }
    ],
    "scene": "The sphere, not a scratch. Label: DAMAGE: 0%.",
@@ -419,10 +437,11 @@
   },
   {
    "id": 17,
-   "t0": 22.86,
-   "t1": 23.79,
-   "dur": 0.93,
+   "t0": 23.29,
+   "t1": 24.4,
+   "dur": 1.11,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "thirty minutes:",
    "captions": [
@@ -430,8 +449,8 @@
      "text": "thirty minutes:",
      "line": 10,
      "who": "N",
-     "t": 22.962,
-     "end": 23.75
+     "t": 23.395,
+     "end": 24.315
     }
    ],
    "scene": "The spheres next to a tall building.",
@@ -441,10 +460,11 @@
   },
   {
    "id": 18,
-   "t0": 23.79,
-   "t1": 26.0,
-   "dur": 2.21,
+   "t0": 24.4,
+   "t1": 26.77,
+   "dur": 2.37,
    "size": "extreme wide",
+   "cuts": [],
    "key": false,
    "voice": "taller than an eleven-story building.",
    "captions": [
@@ -452,15 +472,15 @@
      "text": "taller than an",
      "line": 10,
      "who": "N",
-     "t": 23.89,
-     "end": 24.802
+     "t": 24.505,
+     "end": 25.525
     },
     {
      "text": "eleven-story building.",
      "line": 10,
      "who": "N",
-     "t": 24.802,
-     "end": 25.842
+     "t": 25.525,
+     "end": 26.785
     }
    ],
    "scene": "Further back: HIM a tiny dot on top. Label: HIM.",
@@ -470,10 +490,11 @@
   },
   {
    "id": 19,
-   "t0": 26.0,
-   "t1": 27.25,
-   "dur": 1.25,
+   "t0": 26.77,
+   "t1": 28.59,
+   "dur": 1.82,
    "size": "news",
+   "cuts": [],
    "key": false,
    "voice": "the world panics.",
    "captions": [
@@ -481,8 +502,8 @@
      "text": "the world panics.",
      "line": 11,
      "who": "N",
-     "t": 26.102,
-     "end": 27.086
+     "t": 26.87,
+     "end": 28.47
     }
    ],
    "scene": "NEWS ANCHOR on TV: BALL-POCALYPSE headline, red LIVE tag, ticker EVACUATE NOW.",
@@ -492,10 +513,11 @@
   },
   {
    "id": 20,
-   "t0": 27.25,
-   "t1": 28.62,
-   "dur": 1.37,
+   "t0": 28.59,
+   "t1": 29.81,
+   "dur": 1.22,
    "size": "extreme wide",
+   "cuts": [],
    "key": false,
    "voice": "your mom is stuck in traffic",
    "captions": [
@@ -503,15 +525,15 @@
      "text": "your mom is",
      "line": 12,
      "who": "N",
-     "t": 27.346,
-     "end": 28.15
+     "t": 28.695,
+     "end": 29.495
     },
     {
      "text": "stuck in traffic",
      "line": 12,
      "who": "N",
-     "t": 28.15,
-     "end": 29.134
+     "t": 29.495,
+     "end": 30.195
     }
    ],
    "scene": "A huge traffic jam on a highway leading to the two giant spheres.",
@@ -521,10 +543,11 @@
   },
   {
    "id": 21,
-   "t0": 28.62,
-   "t1": 30.21,
-   "dur": 1.59,
+   "t0": 29.81,
+   "t1": 30.96,
+   "dur": 1.15,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "because of you.",
    "captions": [
@@ -532,8 +555,8 @@
      "text": "because of you.",
      "line": 12,
      "who": "N",
-     "t": 29.134,
-     "end": 30.046
+     "t": 30.195,
+     "end": 30.835
     }
    ],
    "scene": "Closer: one car honking in the jam. Label: MOM.",
@@ -543,10 +566,11 @@
   },
   {
    "id": 22,
-   "t0": 30.21,
-   "t1": 30.92,
-   "dur": 0.71,
+   "t0": 30.96,
+   "t1": 31.92,
+   "dur": 0.96,
    "size": "extreme wide",
+   "cuts": [],
    "key": false,
    "voice": "one hour:",
    "captions": [
@@ -554,8 +578,8 @@
      "text": "one hour:",
      "line": 13,
      "who": "N",
-     "t": 30.306,
-     "end": 30.878
+     "t": 31.06,
+     "end": 31.86
     }
    ],
    "scene": "The spheres sitting on a crushed mountain range.",
@@ -565,10 +589,13 @@
   },
   {
    "id": 23,
-   "t0": 30.92,
-   "t1": 33.25,
-   "dur": 2.33,
+   "t0": 31.92,
+   "t1": 34.62,
+   "dur": 2.7,
    "size": "extreme wide",
+   "cuts": [
+    0.96
+   ],
    "key": false,
    "voice": "heavier than every mountain on earth.",
    "captions": [
@@ -576,35 +603,36 @@
      "text": "heavier than",
      "line": 13,
      "who": "N",
-     "t": 31.018,
-     "end": 31.734
+     "t": 32.02,
+     "end": 32.98
     },
     {
      "text": "every mountain",
      "line": 13,
      "who": "N",
-     "t": 31.734,
-     "end": 32.522
+     "t": 32.98,
+     "end": 33.86
     },
     {
      "text": "on earth.",
      "line": 13,
      "who": "N",
-     "t": 32.522,
-     "end": 33.094
+     "t": 33.86,
+     "end": 34.54
     }
    ],
-   "scene": "Further back: mountains crushed under them.",
+   "scene": "Closer: the peaks crushed under them; cut further back: mountains crushed everywhere.",
    "black": false,
    "image": "images/shot_23.png",
    "clip": "clips/shot_23.mp4"
   },
   {
    "id": 24,
-   "t0": 33.25,
-   "t1": 34.4,
-   "dur": 1.15,
+   "t0": 34.62,
+   "t1": 35.98,
+   "dur": 1.36,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "eighty-seven minutes:",
    "captions": [
@@ -612,8 +640,8 @@
      "text": "eighty-seven minutes:",
      "line": 14,
      "who": "N",
-     "t": 33.354,
-     "end": 34.358
+     "t": 34.72,
+     "end": 35.96
     }
    ],
    "scene": "A giant balance scale: 8 BILLION PEOPLE on one side, the spheres on the other.",
@@ -623,10 +651,11 @@
   },
   {
    "id": 25,
-   "t0": 34.4,
-   "t1": 36.36,
-   "dur": 1.96,
+   "t0": 35.98,
+   "t1": 38.06,
+   "dur": 2.08,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "heavier than the earth itself.",
    "captions": [
@@ -634,15 +663,15 @@
      "text": "heavier than",
      "line": 14,
      "who": "N",
-     "t": 34.498,
-     "end": 35.214
+     "t": 36.085,
+     "end": 37.005
     },
     {
      "text": "the earth itself.",
      "line": 14,
      "who": "N",
-     "t": 35.214,
-     "end": 36.198
+     "t": 37.005,
+     "end": 37.905
     }
    ],
    "scene": "The spheres' side slams down: they win.",
@@ -652,10 +681,11 @@
   },
   {
    "id": 26,
-   "t0": 36.36,
-   "t1": 38.14,
-   "dur": 1.78,
+   "t0": 38.06,
+   "t1": 40.25,
+   "dur": 2.19,
    "size": "space",
+   "cuts": [],
    "key": false,
    "voice": "now the earth orbits you.",
    "captions": [
@@ -663,15 +693,15 @@
      "text": "now the earth",
      "line": 15,
      "who": "N",
-     "t": 36.458,
-     "end": 37.334
+     "t": 38.16,
+     "end": 39.36
     },
     {
      "text": "orbits you.",
      "line": 15,
      "who": "N",
-     "t": 37.334,
-     "end": 37.978
+     "t": 39.36,
+     "end": 40.14
     }
    ],
    "scene": "Space: the Earth circling the spheres. Labels: EARTH, HIM (SOMEWHERE).",
@@ -681,10 +711,11 @@
   },
   {
    "id": 27,
-   "t0": 38.14,
-   "t1": 39.86,
-   "dur": 1.72,
+   "t0": 40.25,
+   "t1": 42.58,
+   "dur": 2.33,
    "size": "space",
+   "cuts": [],
    "key": false,
    "voice": "two hours: gravity wins.",
    "captions": [
@@ -692,15 +723,15 @@
      "text": "two hours:",
      "line": 16,
      "who": "N",
-     "t": 38.238,
-     "end": 38.846
+     "t": 40.35,
+     "end": 41.17
     },
     {
      "text": "gravity wins.",
      "line": 16,
      "who": "N",
-     "t": 38.986,
-     "end": 39.702
+     "t": 41.4,
+     "end": 42.52
     }
    ],
    "scene": "Gravity wins: the spheres pull everything in.",
@@ -710,10 +741,11 @@
   },
   {
    "id": 28,
-   "t0": 39.86,
-   "t1": 40.51,
-   "dur": 0.65,
+   "t0": 42.58,
+   "t1": 43.56,
+   "dur": 0.98,
    "size": "space",
+   "cuts": [],
    "key": false,
    "voice": "you become",
    "captions": [
@@ -721,8 +753,8 @@
      "text": "you become",
      "line": 17,
      "who": "N",
-     "t": 39.962,
-     "end": 40.606
+     "t": 42.68,
+     "end": 43.66
     }
    ],
    "scene": "They collapse: a bright white flash.",
@@ -732,10 +764,11 @@
   },
   {
    "id": 29,
-   "t0": 40.51,
-   "t1": 41.61,
-   "dur": 1.1,
+   "t0": 43.56,
+   "t1": 44.74,
+   "dur": 1.18,
    "size": "space",
+   "cuts": [],
    "key": false,
    "voice": "a black hole.",
    "captions": [
@@ -743,8 +776,8 @@
      "text": "a black hole.",
      "line": 17,
      "who": "N",
-     "t": 40.606,
-     "end": 41.446
+     "t": 43.66,
+     "end": 44.44
     }
    ],
    "scene": "A black hole swirling in space.",
@@ -754,10 +787,11 @@
   },
   {
    "id": 30,
-   "t0": 41.61,
-   "t1": 42.71,
-   "dur": 1.1,
+   "t0": 44.74,
+   "t1": 45.99,
+   "dur": 1.25,
    "size": "wide",
+   "cuts": [],
    "key": false,
    "voice": "which is why\u2026",
    "captions": [
@@ -765,8 +799,8 @@
      "text": "which is why\u2026",
      "line": 18,
      "who": "N",
-     "t": 41.706,
-     "end": 42.546
+     "t": 44.84,
+     "end": 46.34
     }
    ],
    "scene": "A quiet empty street.",
@@ -776,10 +810,11 @@
   },
   {
    "id": 31,
-   "t0": 42.71,
-   "t1": 45.47,
-   "dur": 2.76,
+   "t0": 45.99,
+   "t1": 48.63,
+   "dur": 2.64,
    "size": "close-up",
+   "cuts": [],
    "key": false,
    "voice": "\u2026you should never ask 'what if'.",
    "captions": [
@@ -787,22 +822,22 @@
      "text": "\u2026you should",
      "line": 19,
      "who": "N",
-     "t": 42.806,
-     "end": 43.45
+     "t": 46.09,
+     "end": 46.69
     },
     {
      "text": "never ask",
      "line": 19,
      "who": "N",
-     "t": 43.45,
-     "end": 44.058
+     "t": 46.69,
+     "end": 47.61
     },
     {
      "text": "'what if'.",
      "line": 19,
      "who": "N",
-     "t": 44.058,
-     "end": 44.594
+     "t": 47.99,
+     "end": 48.31
     }
    ],
    "scene": "HIM back on the street, normal size, holding his phone, staring at the camera. End.",

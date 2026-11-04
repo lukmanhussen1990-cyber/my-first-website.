@@ -14,7 +14,7 @@ def shot_fx(i):
         4: lambda: dict(push=(1.02, 1.1), push_ease="out"),
         5: lambda: dict(push=(1.0, 1.06), push_ease="out"),
         6: lambda: dict(push=(1.0, 1.04), fx=[LBL("MELON SIZE", t0 + 0.3, "bulge", off=(-250, -330), size=54)]),
-        7: lambda: dict(push=(1.0, 1.04), punch=[(T["ding41"], 1.04)], shake=[(T["onscale"], 10, 0.3, 24)]),
+        7: lambda: dict(push=(1.0, 1.04), punch=[(T["ding41"], 1.05)], shake=[(T["onscale"], 10, 0.3, 24)]),
         8: lambda: dict(push=(1.0, 1.04)),
         9: lambda: dict(push=(1.0, 1.05), shake=[(t0, 5, t1 - t0, 34)]),
         10: lambda: dict(push=(1.0, 1.03), shake=[(T["crack"], 36, 0.55, 24)], flash=[(T["crack"], 0.25, 0.1)]),
