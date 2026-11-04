@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 08 — HEARTBEAT +100</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.08; --kb-origin: 50% 45%; }
+  .bgd { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 42%, #3a0a12 0%, #1a0408 55%, #070103 100%); }
+  .grid { position: absolute; inset: 0; opacity: .5;
+    background: linear-gradient(rgba(61, 220, 132, .07) 1px, transparent 1px) 0 0 / 40px 40px,
+                linear-gradient(90deg, rgba(61, 220, 132, .07) 1px, transparent 1px) 0 0 / 40px 40px; }
+  .bigheart { position: absolute; left: 110px; top: 210px; width: 500px; height: 460px; opacity: .22; }
+  .bigheart svg { width: 100%; height: 100%; display: block; filter: blur(2px) drop-shadow(0 0 40px rgba(255, 50, 80, .8)); }
+  .ecg { position: absolute; left: 0; top: 700px; width: 720px; height: 240px; overflow: visible; }
+  .ecg path { fill: none; stroke: #3ddc84; stroke-width: 5; stroke-linejoin: round; stroke-linecap: round;
+    filter: drop-shadow(0 0 6px rgba(61, 220, 132, .9)); }
+  .ecg circle { fill: #c9ffe0; filter: drop-shadow(0 0 10px #3ddc84); }
+  .stat { --y: 300px; --w: 470px; --at: var(--b-card); }
+  .stat .label svg { width: 26px; height: 24px; vertical-align: -3px; margin-right: 12px; }
+  .stat .num { transform-origin: 50% 60%; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="bgd"></div>
+    <div class="grid"></div>
+    <div class="bigheart" id="bigheart"><svg viewBox="0 0 120 110">
+      <path d="M60 98 C20 72 6 50 12 32 C18 12 46 8 60 30 C74 8 102 12 108 32 C114 50 100 72 60 98 Z" fill="#ff2e4d"/></svg></div>
+    <svg class="ecg" viewBox="0 0 720 240"><path id="ecg"/><circle id="dot" r="7"/></svg>
+    <div class="stat green">
+      <div class="label"><svg id="mini" viewBox="0 0 120 110"><path d="M60 98 C20 72 6 50 12 32 C18 12 46 8 60 30 C74 8 102 12 108 32 C114 50 100 72 60 98 Z" fill="#ff4d5e"/></svg>HEARTBEAT</div>
+      <div class="num" id="num">+0</div>
+      <div class="rule"></div>
+    </div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const { card, land, beats } = ctx.scene.beats;
+  const num = ctx.$('#num');
+  ctx.count(num, 0, 100, card + .15, land, v => '+' + v);
+  ctx.bounce(num, land, .2);
+
+  // ECG trace: a spike exactly where (and when) each heartbeat sound plays
+  const x0 = -10, v = 150, base = 130, t0 = 0;              // pen speed 150 px/s, wraps around
+  const W = 760;
+  const beatX = beats.map(b => x0 + v * (b - t0));
+  const path = ctx.$('#ecg'), dot = ctx.$('#dot');
+  const yAt = x => {                                          // waveform height at absolute x (unwrapped)
+    let y = 0;
+    for (const bx of beatX) {
+      const d = x - bx;
+      if (d > -40 && d < 70) {
+        if (d < -18) y += -8 * Math.sin(Math.PI * (d + 40) / 22);
+        else if (d < -6) y += 0;
+        else if (d < 0) y += 18 * (d + 6) / 6;
+        else if (d < 6) y += 18 - 108 * d / 6;
+        else if (d < 13) y += -90 + 130 * (d - 6) / 7;
+        else if (d < 20) y += 40 - 40 * (d - 13) / 7;
+        else if (d > 34) y += -16 * Math.sin(Math.PI * (d - 34) / 36);
+      }
+    }
+    return base - y;
+  };
+  const heart = ctx.$('#bigheart'), mini = ctx.$('#mini');
+  ctx.track(t => {
+    const head = x0 + v * (t - t0);                           // unwrapped pen position
+    const start = Math.max(x0, head - 620);
+    let d = '';
+    for (let x = start; x <= head; x += 3) {
+      const sx = ((x % W) + W) % W;
+      const prevSx = (((x - 3) % W) + W) % W;
+      d += (d && sx > prevSx ? 'L' : 'M') + sx.toFixed(1) + ' ' + yAt(x).toFixed(1) + ' ';
+    }
+    path.setAttribute('d', d);
+    const hx = ((head % W) + W) % W;
+    dot.setAttribute('cx', hx.toFixed(1));
+    dot.setAttribute('cy', yAt(head).toFixed(1));
+    // hearts pump on every beat
+    let pump = 0;
+    for (const b of beats) { const k = t - b; if (k >= 0 && k < .35) pump = Math.max(pump, Math.sin(Math.PI * k / .35)); }
+    heart.style.transform = `scale(${(1 + .1 * pump).toFixed(4)})`;
+    heart.style.opacity = (.18 + .2 * pump).toFixed(3);
+    mini.style.transform = `scale(${(1 + .3 * pump).toFixed(4)})`;
+  });
+});
+</script>
+</body>
+</html>

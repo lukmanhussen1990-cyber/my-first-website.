@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 05 — the class president</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.09; --kb-origin: 50% 38%; }
+  .bgd { position: absolute; inset: 0; background:
+      radial-gradient(ellipse 70% 50% at 50% 30%, #2a1840 0%, #140b22 55%, #07050c 100%); }
+  .bokeh i { position: absolute; border-radius: 50%; filter: blur(2px); mix-blend-mode: screen;
+    animation: drift 9s ease-in-out infinite alternate; animation-delay: var(--dd); }
+  @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--bx), var(--by)); } }
+  .spot { position: absolute; left: 0; top: -40px; width: 720px; height: 1260px; mix-blend-mode: screen;
+    background: linear-gradient(180deg, rgba(255, 244, 228, .5), rgba(255, 236, 220, .12) 70%, rgba(255, 236, 220, 0));
+    clip-path: polygon(41% 0, 59% 0, 92% 100%, 8% 100%); filter: blur(14px);
+    animation: lightOn 1s linear calc(var(--b-spot) * 1s) both; }
+  .pool { position: absolute; left: 60px; top: 1080px; width: 600px; height: 170px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255, 240, 225, .42), transparent 70%);
+    animation: lightOn 1s linear calc(var(--b-spot) * 1s) both; }
+  @keyframes lightOn { 0% { opacity: 0; } 12% { opacity: .9; } 20% { opacity: .2; } 34% { opacity: 1; }
+    44% { opacity: .55; } 60%, 100% { opacity: 1; } }
+  .her { --s: 1.62; left: 198px; top: 362px; z-index: 5;
+    animation: rise 1.1s cubic-bezier(.2, .8, .2, 1) calc((var(--b-spot) + .15) * 1s) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(70px); filter: brightness(.2); }
+    to { opacity: 1; transform: none; filter: none; } }
+  .spark { position: absolute; width: 26px; height: 26px; z-index: 6; color: #fff3d6;
+    animation: twinkle 1.8s ease-in-out infinite; animation-delay: var(--td); }
+  .spark svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 0 6px rgba(255, 230, 170, .9)); }
+  @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.3) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+  .heart { position: absolute; z-index: 7; width: 34px; height: 30px; opacity: 0; }
+  .heart svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 0 8px rgba(255, 110, 150, .8)); }
+  .tag { top: 944px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="bgd"></div>
+    <div class="layer bokeh" id="bokeh"></div>
+    <div class="spot"></div>
+    <div class="pool"></div>
+    <div class="char her sway idle" data-char="president" data-expr="smile" style="--blink: 1.3"></div>
+    <div class="layer" id="fx"></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+  <div class="tag">— CLASS PRESIDENT —</div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const r = ctx.rand(21), bokeh = ctx.$('#bokeh'), fx = ctx.$('#fx');
+  const cols = ['255,120,170', '190,120,255', '255,190,140', '140,150,255'];
+  for (let i = 0; i < 18; i++) {
+    const d = 40 + r() * 120, c = cols[i % 4];
+    bokeh.insertAdjacentHTML('beforeend', `<i style="left:${r() * 720 - 40}px;top:${r() * 1100 - 40}px;width:${d}px;height:${d}px;` +
+      `background:radial-gradient(circle, rgba(${c},.34), rgba(${c},.05) 65%, transparent 70%);` +
+      `--bx:${(r() - .5) * 60}px;--by:${(r() - .5) * 60}px;--dd:${-r() * 9}s"></i>`);
+  }
+  const star = '<svg viewBox="0 0 20 20"><path d="M10 0 L12 8 L20 10 L12 12 L10 20 L8 12 L0 10 L8 8 Z" fill="currentColor"/></svg>';
+  [[150, 380], [560, 420], [120, 640], [600, 700], [210, 300], [520, 290], [640, 560]].forEach(([x, y], i) =>
+    fx.insertAdjacentHTML('beforeend', `<div class="spark" style="left:${x}px;top:${y}px;--td:${-(i * .37).toFixed(2)}s"></div>`));
+  ctx.$$('.spark').forEach(s => (s.innerHTML = star));
+
+  // "बचपन से" → a few hearts float up around her
+  const t0 = ctx.scene.beats.hearts;
+  const heartSvg = '<svg viewBox="0 0 120 110"><path d="M60 98 C20 72 6 50 12 32 C18 12 46 8 60 30 C74 8 102 12 108 32 C114 50 100 72 60 98 Z" fill="#ff7aa2"/></svg>';
+  [[200, 560, 0], [500, 600, .25], [260, 760, .5], [470, 800, .15], [360, 500, .4]].forEach(([x, y, dl]) => {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.innerHTML = heartSvg;
+    h.style.left = x + 'px'; h.style.top = y + 'px';
+    fx.appendChild(h);
+    ctx.track(t => {
+      const k = ctx.prog(t, t0 + dl, t0 + dl + 2.2);
+      h.style.opacity = (k > 0 && k < 1 ? Math.sin(Math.PI * k) : 0).toFixed(3);
+      h.style.transform = `translate(${(Math.sin(k * 6) * 10).toFixed(1)}px, ${(-120 * k).toFixed(1)}px) scale(${(.6 + .5 * k).toFixed(3)})`;
+    });
+  });
+});
+</script>
+</body>
+</html>

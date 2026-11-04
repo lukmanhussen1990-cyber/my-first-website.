@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 07 — one day left</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.1; --kb-origin: 50% 52%; }
+  .wall.dark { background:
+      radial-gradient(circle, rgba(255, 120, 120, .06) 1.7px, transparent 2.3px) 12px 14px / 46px 46px,
+      linear-gradient(180deg, #24161a 0%, #150c0f 60%, #0b0607 100%); }
+  .clock { left: 230px; top: 96px; width: 260px; height: 260px; z-index: 3; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .5)); }
+  .me { --s: 2.55; left: 105px; top: 470px; z-index: 4; }
+  .red { position: absolute; inset: 0; z-index: 8; pointer-events: none; mix-blend-mode: multiply;
+    background: radial-gradient(ellipse 90% 70% at 50% 35%, rgba(255, 70, 70, .95), rgba(170, 20, 30, .95) 60%, rgba(60, 0, 8, 1));
+    animation: alarm 1s ease-in-out infinite; animation-delay: -.5s; }
+  .redglow { position: absolute; inset: 0; z-index: 9; pointer-events: none; mix-blend-mode: screen;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 40, 40, .35), transparent 70%);
+    animation: alarm 1s ease-in-out infinite; animation-delay: -.5s; }
+  @keyframes alarm { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+  .eyeglow { position: absolute; z-index: 10; width: 130px; height: 130px; margin: -65px 0 0 -65px; border-radius: 50%;
+    mix-blend-mode: screen; opacity: 0;
+    background: radial-gradient(circle, rgba(255, 236, 170, .95), rgba(242, 193, 78, .55) 25%, rgba(242, 193, 78, 0) 65%); }
+  .flare { position: absolute; z-index: 10; height: 4px; width: 260px; margin: -2px 0 0 -130px; border-radius: 4px; opacity: 0;
+    mix-blend-mode: screen; background: linear-gradient(90deg, transparent, rgba(255, 228, 150, .95), transparent); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="wall dark"></div>
+    <div class="prop clock" data-prop="clock"></div>
+    <div class="char me" id="me" data-char="narrator" data-expr="neutral" data-brows="serious" style="--blink: 3.2"></div>
+    <div class="eyeglow" style="left:301px;top:740px"></div>
+    <div class="eyeglow" style="left:418px;top:740px"></div>
+    <div class="flare" style="left:301px;top:740px"></div>
+    <div class="flare" style="left:418px;top:740px"></div>
+    <div class="red"></div>
+    <div class="redglow"></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(async ctx => {
+  await ctx.inline();
+  const { ticks, glow } = ctx.scene.beats;
+  const clock = ctx.$('.clock');
+  const hs = clock.querySelector('.hand-s'), hm = clock.querySelector('.hand-m'), hh = clock.querySelector('.hand-h');
+  const me = ctx.$('#me');
+  const irises = [...me.querySelectorAll('.iris-fill')];
+  const svgGlow = me.querySelector('.eye-glow');
+  const blobs = ctx.$$('.eyeglow'), flares = ctx.$$('.flare');
+  const mix = (a, b, k) => '#' + [0, 2, 4].map(i => Math.round(ctx.lerp(parseInt(a.substr(i + 1, 2), 16),
+    parseInt(b.substr(i + 1, 2), 16), k)).toString(16).padStart(2, '0')).join('');
+  ctx.track(t => {
+    // 11:59 — the second hand jumps one step on every tick (with a tiny overshoot)
+    let sec = 42;
+    for (const tk of ticks) {
+      const k = ctx.prog(t, tk, tk + .12);
+      sec += k <= 0 ? 0 : k >= 1 ? 1 : ctx.ease.back(k);
+    }
+    hs.setAttribute('transform', `rotate(${(sec * 6).toFixed(2)} 150 150)`);
+    hm.setAttribute('transform', `rotate(${(59 * 6 + sec * .1).toFixed(2)} 150 150)`);
+    hh.setAttribute('transform', `rotate(${(359.5).toFixed(2)} 150 150)`);
+    // my eyes turn gold
+    const g = ctx.ease.inOut(ctx.prog(t, glow, glow + .6));
+    const pulse = g * (.85 + .15 * Math.sin((t - glow) * 5));
+    irises.forEach(el => (el.style.fill = mix('#4f93c0', '#f2c14e', g)));
+    svgGlow.setAttribute('opacity', (pulse * .9).toFixed(3));
+    blobs.forEach(b => (b.style.opacity = (pulse * .85).toFixed(3)));
+    flares.forEach(f => {
+      f.style.opacity = (g * .9 * (.6 + .4 * Math.sin((t - glow) * 3))).toFixed(3);
+      f.style.transform = `scaleX(${(.4 + .8 * g).toFixed(3)})`;
+    });
+  });
+});
+</script>
+</body>
+</html>

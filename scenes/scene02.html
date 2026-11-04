@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 02 — everyone laughs</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.07; --kb-origin: 50% 62%; }
+  .windows { left: 0; top: 0; width: 720px; height: 300px; }
+  .floor { top: 760px; }
+  .board { left: 150px; top: 322px; width: 420px; height: 232px; }
+  .board .k { margin-top: 30px; font-family: Inter, sans-serif; font-style: normal; font-weight: 700; font-size: 24px;
+    letter-spacing: .34em; margin-right: -.34em; opacity: .85; }
+  .board .big { font-weight: 700; font-size: 84px; line-height: 1.05; }
+  .board svg { position: absolute; right: 20px; top: 18px; width: 58px; height: 54px; }
+  .board svg path { fill: none; stroke: #ff6b78; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+  .sun { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 246, 220, .22), transparent 45%); }
+  .haha { position: absolute; z-index: 1200; font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;
+    font-size: 30px; color: #fff; -webkit-text-stroke: 1.5px rgba(27, 23, 34, .85);
+    text-shadow: 0 3px 0 rgba(27, 23, 34, .5); animation: haha 1.7s ease-out infinite; animation-delay: var(--hd); }
+  @keyframes haha {
+    0% { opacity: 0; transform: translateY(10px) scale(.7) rotate(var(--r, -8deg)); }
+    25% { opacity: 1; transform: translateY(-10px) scale(1) rotate(var(--r, -8deg)); }
+    80% { opacity: .9; }
+    100% { opacity: 0; transform: translateY(-46px) scale(1.05) rotate(var(--r, -8deg)); }
+  }
+  .rays { --rx: 4%; --ry: 0%; --ray-from: 110deg; --ray-a: .2; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="wall"></div>
+    <div class="prop windows" data-prop="windows"></div>
+    <div class="floor"></div>
+    <div class="board chalk">
+      <div class="k">RULE #1</div>
+      <div class="big">No Love</div>
+      <svg viewBox="0 0 120 110"><path d="M60 98 C20 72 6 50 12 32 C18 12 46 8 60 30 C74 8 102 12 108 32 C114 50 100 72 60 98 Z"/>
+        <path d="M18 14 L104 96 M104 14 L18 96"/></svg>
+    </div>
+    <div class="sun"></div>
+    <div class="layer" id="room"></div>
+    <div class="rays"></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const room = ctx.$('#room');
+  const L = 'laughing';
+  const seats = [
+    // back row
+    { x: 140, y: 700, s: .46, char: 'classmate2', expr: 'laugh', charCls: L },
+    { x: 360, y: 700, s: .46, char: 'classmate3', expr: 'laugh', charCls: L },
+    { x: 580, y: 700, s: .46, char: 'classmate1', expr: 'laugh', charCls: L },
+    // middle row
+    { x: 110, y: 855, s: .57, char: 'classmate4', expr: 'laugh', charCls: L },
+    { x: 360, y: 855, s: .57, char: 'president', expr: 'smile', charCls: 'idle' },
+    { x: 610, y: 855, s: .57, char: 'classmate3', expr: 'laugh', charCls: L },
+    // front row
+    { x: 130, y: 1035, s: .7, char: 'classmate1', expr: 'laugh', charCls: L },
+    { x: 380, y: 1035, s: .7, char: 'narrator', expr: 'smile', charCls: 'idle' },
+    { x: 630, y: 1035, s: .7, char: 'classmate2', expr: 'laugh', charCls: L },
+  ];
+  seats.forEach((o, i) => ctx.student(room, { ...o, d: i * .17 }));
+  // floating "ha ha" bubbles above the laughing students
+  const r = ctx.rand(5);
+  seats.forEach((o, i) => {
+    if (o.expr !== 'laugh') return;
+    const top = o.y - 430 * o.s + 10;
+    room.insertAdjacentHTML('beforeend',
+      `<div class="haha" style="left:${o.x + (i % 2 ? 22 : -120) * o.s / .5}px;top:${top - 14}px;` +
+      `--hd:${(-r() * 1.7).toFixed(2)}s;--r:${i % 2 ? 8 : -8}deg;font-size:${Math.round(66 * o.s)}px">ha ha</div>`);
+  });
+});
+</script>
+</body>
+</html>

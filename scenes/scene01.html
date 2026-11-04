@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 01 — DAY 1 / 100</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.11; --kb-origin: 50% 47%; }
+  .wall.night { background:
+      radial-gradient(circle, rgba(140, 160, 210, .07) 1.7px, transparent 2.3px) 12px 14px / 46px 46px,
+      linear-gradient(180deg, #161b2d 0%, #0f1322 55%, #0a0d18 100%); }
+  .windows { left: 0; top: 0; width: 720px; height: 330px; filter: brightness(.3) saturate(.55) hue-rotate(18deg); }
+  .moon { position: absolute; left: -120px; top: -160px; width: 620px; height: 620px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(170, 195, 255, .28), transparent 65%); }
+  .floor { top: 870px; background: linear-gradient(180deg, #121624, #07080e); }
+
+  .lamp { position: absolute; left: 60px; top: 250px; width: 600px; height: 260px; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255, 238, 200, .38), transparent 68%);
+    animation: lightOn .9s linear calc(var(--b-lights) * 1s) both; }
+  .board { left: 60px; top: 370px; width: 600px; height: 440px;
+    animation: boardOn .9s linear calc(var(--b-lights) * 1s) both; }
+  .daybox { position: absolute; inset: 0; padding-bottom: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    animation: lightOn .9s linear calc(var(--b-lights) * 1s) both; }
+  .daybox .day { font-family: Inter, sans-serif; font-style: normal; font-weight: 800; font-size: 54px;
+    letter-spacing: .38em; margin-right: -.38em; margin-bottom: 4px; }
+  .daybox .row { display: flex; align-items: baseline; line-height: .92; }
+  .daybox .big { font-weight: 700; font-size: 250px; }
+  .daybox .of { font-weight: 700; font-size: 88px; margin-left: 14px; opacity: .92; }
+  .noheart { position: absolute; right: 24px; bottom: 16px; width: 92px; height: 84px; overflow: visible; }
+  .noheart path { fill: none; stroke: #ff5d6c; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(255, 93, 108, .55)); }
+  .noheart .h { animation: draw .55s ease-out calc((var(--vo) + 2.2) * 1s) both; }
+  .noheart .x1 { animation: draw .2s ease-out calc((var(--vo) + 2.72) * 1s) both; }
+  .noheart .x2 { animation: draw .2s ease-out calc((var(--vo) + 2.9) * 1s) both; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes lightOn { 0% { opacity: 0; } 10% { opacity: .85; } 18% { opacity: .15; } 30% { opacity: 1; }
+    40% { opacity: .45; } 56%, 100% { opacity: 1; } }
+  @keyframes boardOn { 0% { filter: brightness(.25); } 10% { filter: brightness(.8); } 18% { filter: brightness(.3); }
+    30% { filter: brightness(1); } 40% { filter: brightness(.6); } 56%, 100% { filter: brightness(1); } }
+
+  .row-desks .prop { filter: brightness(.3) saturate(.45); }
+  .rays { --rx: 6%; --ry: -4%; --ray-from: 112deg; --ray-a: .26; }
+  .rays.cool { filter: blur(5px) hue-rotate(185deg) saturate(.55); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="wall night"></div>
+    <div class="moon"></div>
+    <div class="prop windows" data-prop="windows"></div>
+    <div class="floor"></div>
+    <div class="lamp"></div>
+    <div class="board">
+      <div class="daybox chalk">
+        <div class="day">DAY</div>
+        <div class="row"><span class="big">1</span><span class="of">/ 100</span></div>
+      </div>
+      <svg class="noheart" viewBox="0 0 120 110">
+        <path class="h" pathLength="1" d="M60 98 C20 72 6 50 12 32 C18 12 46 8 60 30 C74 8 102 12 108 32 C114 50 100 72 60 98 Z"/>
+        <path class="x1" pathLength="1" d="M18 14 L104 96"/>
+        <path class="x2" pathLength="1" d="M104 14 L18 96"/>
+      </svg>
+    </div>
+    <div class="layer row-desks" id="desks"></div>
+    <div class="rays cool"></div>
+    <div class="dust" id="dust"></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const desks = ctx.$('#desks');
+  // two rows of empty desks, dark, in front of the board
+  [[110, 930, .78], [360, 930, .78], [610, 930, .78], [-10, 1080, 1.05], [360, 1080, 1.05], [730, 1080, 1.05]]
+    .forEach(([x, y, s]) => ctx.student(desks, { x, y, s }));
+  ctx.dust(ctx.$('#dust'), 46, 11, { w: 720, h: 1000 });
+});
+</script>
+</body>
+</html>

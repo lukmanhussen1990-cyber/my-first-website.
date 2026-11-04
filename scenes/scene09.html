@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 09 — A or B?</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.04; --kb-origin: 50% 46%; }
+  .bgd { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 45%, #141631 0%, #08080f 60%, #040406 100%); }
+  .streak { position: absolute; width: 2px; height: 1500px; top: -100px; opacity: .5; transform-origin: 50% 50%;
+    background: linear-gradient(180deg, transparent, rgba(255, 120, 170, .75), transparent); }
+  .ghost { position: absolute; left: -40px; top: 540px; font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;
+    font-size: 150px; color: rgba(255, 255, 255, .07); white-space: nowrap;
+    animation: ghostWhoosh 1.6s cubic-bezier(.2, .8, .2, 1) .05s both; }
+  @keyframes ghostWhoosh { 0% { opacity: 0; transform: translateX(-200px) skewX(-15deg); } 30% { opacity: 1; }
+    100% { opacity: .55; transform: translateX(120px) skewX(-15deg); } }
+  .panel { position: absolute; left: 34px; width: 652px; height: 400px; overflow: hidden;
+    clip-path: polygon(0 7%, 100% 0, 100% 93%, 0 100%); }
+  .panel.a { top: 128px; background: linear-gradient(135deg, #5873ff 0%, #2B4CFF 45%, #1c33c4 100%);
+    animation: inL .7s cubic-bezier(.2, 1.25, .35, 1) calc(var(--b-a_in) * 1s) both; }
+  .panel.b { top: 568px; background: linear-gradient(135deg, #9a4fe0 0%, #7B2CBF 45%, #561e8c 100%);
+    animation: inR .7s cubic-bezier(.2, 1.25, .35, 1) calc(var(--b-b_in) * 1s) both; }
+  @keyframes inL { from { transform: translateX(-760px) rotate(-6deg); } to { transform: none; } }
+  @keyframes inR { from { transform: translateX(760px) rotate(6deg); } to { transform: none; } }
+  .panel .edge { position: absolute; inset: 0; }
+  .panel .edge polygon { fill: none; stroke: rgba(255, 255, 255, .45); stroke-width: 3; vector-effect: non-scaling-stroke; }
+  .panel .letter { position: absolute; top: -52px; font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;
+    font-size: 400px; line-height: 1; color: rgba(255, 255, 255, .13); animation: breathe2 2.4s ease-in-out infinite alternate; }
+  .panel.a .letter { left: 6px; }
+  .panel.b .letter { right: 14px; }
+  @keyframes breathe2 { from { transform: scale(1); } to { transform: scale(1.05); } }
+  .panel .copy { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 0 40px; }
+  .panel .opt { font-family: Inter, sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .34em; margin-right: -.34em;
+    color: rgba(255, 255, 255, .78); margin-bottom: 14px; }
+  .panel .main { font-family: 'Tiro Devanagari Hindi', serif; font-style: italic; font-weight: 700; font-size: 66px; line-height: 1.25;
+    color: #fff; text-shadow: 0 4px 0 rgba(0, 0, 0, .25), 0 0 24px rgba(0, 0, 0, .25); }
+  .panel .then { font-family: 'Tiro Devanagari Hindi', serif; font-style: italic; font-weight: 700; font-size: 48px; line-height: 1.35;
+    color: var(--gold); text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+  .panel .glint { position: absolute; top: -20%; bottom: -20%; width: 140px; left: -200px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .28), transparent); transform: skewX(-20deg);
+    animation: glint 3s ease-in-out infinite; }
+  .panel.a .glint { animation-delay: 1.4s; }
+  .panel.b .glint { animation-delay: 2.3s; }
+  @keyframes glint { 0% { left: -200px; } 40%, 100% { left: 900px; } }
+  .vs { position: absolute; left: 50%; top: 538px; width: 76px; height: 76px; margin-left: -38px; border-radius: 50%; z-index: 5;
+    background: #0b0c16; border: 3px solid rgba(255, 255, 255, .5); display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; font-size: 30px; color: var(--gold);
+    animation: popIn .6s cubic-bezier(.34, 1.56, .64, 1) calc((var(--b-b_in) + .45) * 1s) both; }
+  .subtitle { bottom: 132px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="bgd"></div>
+    <div class="layer" id="streaks"></div>
+    <div class="ghost">whoosh</div>
+    <div class="panel a"><div class="letter">A</div><div class="glint"></div>
+      <svg class="edge" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="0.3,7.2 99.7,0.4 99.7,92.8 0.3,99.6"/></svg>
+      <div class="copy"><div class="opt">OPTION A</div><div class="main" id="a1"></div><div class="then" id="a2"></div></div></div>
+    <div class="panel b"><div class="letter">B</div><div class="glint"></div>
+      <svg class="edge" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="0.3,7.2 99.7,0.4 99.7,92.8 0.3,99.6"/></svg>
+      <div class="copy"><div class="opt">OPTION B</div><div class="main" id="b1"></div><div class="then" id="b2"></div></div></div>
+    <div class="vs">or</div>
+  </div></div>
+  <div class="vignette"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const ch = ctx.scene.choices;                    // text comes from scenes.json
+  ctx.$('#a1').textContent = ch.A[0];
+  ctx.$('#a2').textContent = '— ' + ch.A[1];
+  ctx.$('#b1').textContent = ch.B[0];
+  ctx.$('#b2').textContent = '— ' + ch.B[1];
+  const box = ctx.$('#streaks');
+  [[120, 18], [300, 24], [470, 16], [610, 22]].forEach(([x, a], i) =>
+    box.insertAdjacentHTML('beforeend', `<div class="streak" style="left:${x}px;transform:rotate(${a}deg);opacity:${.25 + .1 * i}"></div>`));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+{
+  "title": "100 Days Challenge",
+  "hook": "School ne 100 din ke liye ek rule diya: **pyaar mat karna.**",
+  "fps": 30,
+  "width": 720,
+  "height": 1280,
+
+  "voice": {
+    "provider": "elevenlabs",
+    "voice_id": "qIo8SDYwOdVhx4cn8o6U",
+    "voice_name": "Rith - Calm Storytelling & Narration (Hindi, male)",
+    "model_id": "eleven_multilingual_v2",
+    "language_code": "hi",
+    "speed": 0.95,
+    "stability": 0.6,
+    "style": 0.2,
+    "similarity_boost": 0.8,
+    "pause_between_sentences": 0.5
+  },
+
+  "timing": { "tail": 0.8, "min": 5.0 },
+
+  "audio": {
+    "music": "audio/music.wav",
+    "music_db": -18,
+    "voice_lufs": -16,
+    "whoosh_on_cut": true,
+    "levels_db": { "whoosh": -10, "ding": -9, "tick": -13, "flip": -17, "heartbeat": -4, "hit": -7, "shimmer": -14 }
+  },
+
+  "cover": { "scene": 1, "at": 4.8 },
+
+  "scenes": [
+    {
+      "file": "scene01.html",
+      "about": "Big DAY 1 / 100 board, dark classroom, light rays",
+      "gold": ["नियम", "प्यार"],
+      "vo_at": 1.0, "min": 7.0,
+      "beats": { "lights": 0.35 },
+      "sfx": [["hit", "lights"]]
+    },
+    {
+      "file": "scene02.html",
+      "about": "Classroom, everyone laughing at their desks",
+      "gold": ["आसान"],
+      "vo_at": 0.8, "min": 6.0,
+      "sfx": []
+    },
+    {
+      "file": "scene03.html",
+      "about": "Day counter 7 → 20 → 45 while students vanish one by one",
+      "gold": ["आधी क्लास"],
+      "vo_at": 2.3, "min": 7.0,
+      "beats": { "flips": [0.35, 1.35, 2.35], "vanish": [0.9, 1.6, 2.3, 3.0, 3.7, 4.4] },
+      "sfx": [["flip", "flips"]]
+    },
+    {
+      "file": "scene04.html",
+      "about": "Stat card STUDENTS LEFT 13",
+      "gold": ["तेरह"],
+      "vo_at": 1.9, "min": 5.0,
+      "beats": { "card": 0.35, "land": 1.65 },
+      "sfx": [["ding", "land"]]
+    },
+    {
+      "file": "scene05.html",
+      "about": "Spotlight on the class president",
+      "gold": ["क्लास प्रेसिडेंट"],
+      "vo_at": 1.2, "min": 7.0,
+      "beats": { "spot": 0.3, "hearts": 3.35 },
+      "sfx": [["shimmer", "spot"]]
+    },
+    {
+      "file": "scene06.html",
+      "about": "Day 99: she walks over and sits at the desk next to me",
+      "gold": ["निन्यानवे", "मेरी"],
+      "vo_at": 0.9, "min": 8.0,
+      "beats": { "walk": 0.35, "stop": 3.2, "sit": 3.3, "glance": 2.9 },
+      "sfx": []
+    },
+    {
+      "file": "scene07.html",
+      "about": "Clock ticking, red light, my eyes glow gold",
+      "gold": ["एक दिन"],
+      "vo_at": 1.4, "min": 6.5,
+      "beats": { "ticks": [0.5, 1.5, 2.5, 3.5, 4.5, 5.5], "glow": 1.9 },
+      "sfx": [["tick", "ticks"]]
+    },
+    {
+      "file": "scene08.html",
+      "about": "Stat card HEARTBEAT +100",
+      "gold": ["रुकने"],
+      "vo_at": 1.8, "min": 5.5,
+      "beats": { "card": 0.3, "land": 1.5, "beats": [0.25, 1.0, 1.65, 2.2, 2.7, 3.15, 3.55, 3.92, 4.27, 4.6, 4.92] },
+      "sfx": [["heartbeat", "beats"], ["ding", "land"]]
+    },
+    {
+      "file": "scene09.html",
+      "about": "A/B ending card — comment A or B (3 s+ hold)",
+      "gold": ["A", "B"],
+      "vo_at": 1.1, "min": 8.0, "tail": 3.0,
+      "beats": { "a_in": 0.1, "b_in": 0.35 },
+      "choices": {
+        "A": ["आज रात बता दूँ", "और हार जाऊँ"],
+        "B": ["एक दिन और रुकूँ", "और जीत जाऊँ"]
+      },
+      "sfx": [["whoosh", "b_in"]]
+    }
+  ]
+}

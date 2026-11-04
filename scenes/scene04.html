@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 04 — STUDENTS LEFT 13</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-from: 1.04; --kb-to: 1.12; --kb-origin: 50% 50%; }
+  .bg { position: absolute; inset: 0; filter: blur(5px) brightness(.4) saturate(.75); }
+  .windows { left: 0; top: 0; width: 720px; height: 290px; filter: sepia(.3) hue-rotate(-12deg); }
+  .floor { top: 750px; }
+  .board { left: 180px; top: 300px; width: 360px; height: 250px; }
+  .glow { position: absolute; left: 50%; top: 520px; width: 760px; height: 760px; margin: -380px 0 0 -380px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 77, 94, .22), transparent 62%);
+    animation: fadeIn .8s ease-out calc(var(--b-card) * 1s) both, pulse 1.6s ease-in-out calc(var(--b-land) * 1s) infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  .stat { --y: 360px; --w: 470px; --at: var(--b-card); }
+  .stat .num { transform-origin: 50% 60%; }
+  .stat .sub { margin-top: 10px; font-family: Inter, sans-serif; font-weight: 600; font-size: 19px; letter-spacing: .22em;
+    color: rgba(255, 255, 255, .55); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="bg">
+      <div class="wall"></div>
+      <div class="prop windows" data-prop="windows"></div>
+      <div class="floor"></div>
+      <div class="board"></div>
+      <div class="layer" id="room"></div>
+    </div>
+    <div class="glow"></div>
+    <div class="stat">
+      <div class="label">STUDENTS LEFT</div>
+      <div class="num" id="num">30</div>
+      <div class="rule"></div>
+      <div class="sub">OF 30 · DAY 45</div>
+    </div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const { card, land } = ctx.scene.beats;
+  const room = ctx.$('#room');
+  [[120, 700, .42, 'classmate1'], [440, 700, .42, null], [273, 860, .52, null], [447, 860, .52, 'president'],
+   [620, 860, .52, 'classmate4'], [92, 1040, .64, 'classmate3'], [272, 1040, .64, 'narrator'], [632, 1040, .64, null]]
+    .forEach(([x, y, s, char]) => ctx.student(room, { x, y, s, char }));
+  const num = ctx.$('#num');
+  ctx.count(num, 30, 13, card + .2, land);
+  ctx.bounce(num, land, .2);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 06 — Day 99, she chose my desk</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.07; --kb-origin: 62% 55%; }
+  .windows { left: 0; top: 0; width: 720px; height: 300px; filter: sepia(.55) saturate(1.5) hue-rotate(-28deg) brightness(.95); }
+  .floor { top: 760px; }
+  .warm { position: absolute; inset: 0; mix-blend-mode: multiply;
+    background: linear-gradient(180deg, rgba(255, 176, 110, .55), rgba(190, 120, 150, .5)); }
+  .board { left: 36px; top: 318px; width: 300px; height: 196px; }
+  .board .k { margin-top: 20px; font-family: Inter, sans-serif; font-style: normal; font-weight: 800; font-size: 26px;
+    letter-spacing: .36em; margin-right: -.36em; }
+  .board .num { font-weight: 700; font-size: 104px; line-height: 1; }
+  .board .of { position: absolute; right: 18px; bottom: 12px; font-weight: 700; font-size: 26px; opacity: .8; }
+  .back .unit { filter: blur(1.5px) brightness(.9); }
+  .lane { position: absolute; left: 0; top: 0; width: 720px; height: 1108px; overflow: hidden; z-index: 1500; }
+  .me { --s: 1.15; left: 100px; top: 647px; }
+  .her { --s: 1.15; left: 760px; top: 527px; }
+  .bench { position: absolute; left: -30px; width: 780px; top: 880px; height: 228px; z-index: 1600; }
+  .bench .top { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: #a7b1c1;
+    border: 3px solid #1b1722; border-radius: 4px; box-shadow: inset 0 4px 0 #c6cede; }
+  .bench .front { position: absolute; left: 14px; right: 14px; top: 26px; bottom: 0; background: #646d7d;
+    border: 3px solid #1b1722; border-top: 0;
+    background-image: linear-gradient(90deg, transparent 49.6%, rgba(27, 23, 34, .55) 49.6%, rgba(27, 23, 34, .55) 50.4%, transparent 50.4%); }
+  .bench .front::after { content: ''; position: absolute; left: 0; right: 0; top: 40%; height: 3px; background: rgba(27, 23, 34, .35); }
+  .rays { --rx: 100%; --ry: 0%; --ray-from: 205deg; --ray-a: .24; filter: blur(6px) sepia(.6) saturate(1.6) hue-rotate(-15deg); }
+  .rays { z-index: 1700; }
+  .shine { position: absolute; z-index: 1650; left: 420px; top: 560px; width: 260px; height: 260px; border-radius: 50%; opacity: 0;
+    background: radial-gradient(circle, rgba(255, 200, 220, .45), transparent 65%); mix-blend-mode: screen; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="wall"></div>
+    <div class="prop windows" data-prop="windows"></div>
+    <div class="floor"></div>
+    <div class="board chalk">
+      <div class="k">DAY</div>
+      <div class="num">99</div>
+      <div class="of">/ 100</div>
+    </div>
+    <div class="layer back" id="back"></div>
+    <div class="lane">
+      <div class="char me idle" id="me" data-char="narrator" data-expr="neutral" style="--blink: .4"></div>
+      <div class="char her walking" id="her" data-char="president" data-expr="smile" style="--blink: 2.1"></div>
+    </div>
+    <div class="shine" id="shine"></div>
+    <div class="bench"><div class="top"></div><div class="front"></div></div>
+    <div class="warm"></div>
+    <div class="rays"></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(async ctx => {
+  const { walk, stop, sit, glance } = ctx.scene.beats;
+  const back = ctx.$('#back');
+  [[120, 700, .44, null], [300, 700, .44, 'classmate1'], [480, 700, .44, null], [640, 700, .44, 'classmate3']]
+    .forEach(([x, y, s, char]) => ctx.student(back, { x, y, s, char }));
+  await ctx.inline();
+
+  const her = ctx.$('#her'), me = ctx.$('#me'), shine = ctx.$('#shine');
+  const irises = [...me.querySelectorAll('.iris')];
+  ctx.track(t => {
+    // walk in from the right, stop beside my desk, sit down
+    const kx = ctx.ease.out(ctx.prog(t, walk, stop));
+    const ky = ctx.ease.inOut(ctx.prog(t, sit, sit + .55));
+    her.style.left = ctx.lerp(760, 360, kx).toFixed(1) + 'px';
+    her.style.top = (527 + 120 * ky + 6 * Math.sin(Math.PI * ky)).toFixed(1) + 'px';
+    her.classList.toggle('walking', t < stop + .05);
+    her.classList.toggle('idle', t >= stop + .05);
+    // I glance at her (eyes slide right) and blush
+    const kg = ctx.ease.inOut(ctx.prog(t, glance, glance + .35));
+    irises.forEach(g => g.setAttribute('transform', `translate(${(4.5 * kg).toFixed(2)} 0)`));
+    me.style.setProperty('--blush', (.32 + .45 * ctx.ease.out(ctx.prog(t, sit + .4, sit + 1.2))).toFixed(3));
+    shine.style.opacity = (.9 * ctx.ease.out(ctx.prog(t, sit + .3, sit + 1.1))).toFixed(3);
+  });
+});
+</script>
+</body>
+</html>

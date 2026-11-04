@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>Scene 03 — DAY 7 → 20 → 45</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .cam { --kb-to: 1.08; --kb-origin: 50% 40%; }
+  .windows { left: 0; top: 0; width: 720px; height: 290px; filter: saturate(.8) brightness(.85) sepia(.25) hue-rotate(-12deg); }
+  .floor { top: 750px; }
+  .tint { position: absolute; inset: 0; mix-blend-mode: multiply;
+    background: linear-gradient(180deg, rgba(255, 170, 110, .5), rgba(120, 110, 170, .55)); }
+  .board { left: 180px; top: 300px; width: 360px; height: 250px; }
+  .board .k { margin-top: 26px; font-family: Inter, sans-serif; font-style: normal; font-weight: 800; font-size: 34px;
+    letter-spacing: .38em; margin-right: -.38em; }
+  .board .num { display: inline-block; font-weight: 700; font-size: 150px; line-height: 1; transform-origin: 50% 55%; }
+  .board .of { position: absolute; right: 22px; bottom: 14px; font-weight: 700; font-size: 34px; opacity: .8; }
+  .puff { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; opacity: 0;
+    z-index: 1300; pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 255, 255, .0) 30%, rgba(255, 255, 255, .55) 42%, rgba(255, 255, 255, 0) 64%); }
+  .rays { --rx: 96%; --ry: 0%; --ray-from: 200deg; --ray-a: .14; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="enter"><div class="cam">
+    <div class="wall"></div>
+    <div class="prop windows" data-prop="windows"></div>
+    <div class="floor"></div>
+    <div class="board chalk">
+      <div class="k">DAY</div>
+      <div class="num" id="num">1</div>
+      <div class="of">/ 100</div>
+    </div>
+    <div class="layer" id="room"></div>
+    <div class="tint"></div>
+    <div class="rays"></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="shade-bottom"></div>
+</div>
+<script src="../anim.js"></script>
+<script>
+Reel.scene(ctx => {
+  const { flips, vanish } = ctx.scene.beats;
+  ctx.flip(ctx.$('#num'), [[0, '1'], [flips[0], '7'], [flips[1], '20'], [flips[2], '45']]);
+
+  const room = ctx.$('#room');
+  const cast = ['classmate1', 'classmate2', 'classmate3', 'classmate4'];
+  const rows = [[700, .42, [120, 280, 440, 600]], [860, .52, [100, 273, 447, 620]], [1040, .64, [92, 272, 452, 632]]];
+  const units = [];
+  rows.forEach(([y, s, xs], r) => xs.forEach((x, c) => {
+    let char = cast[(r * 3 + c) % 4], expr = 'neutral';
+    if (r === 2 && c === 1) char = 'narrator';
+    if (r === 1 && c === 2) char = 'president';
+    units.push({ ...ctx.student(room, { x, y, s, char, expr, charCls: 'idle' }), x, y, s });
+  }));
+  // half the class leaves: [row,col] in the order they vanish
+  const leavers = [[0, 1], [1, 0], [0, 3], [2, 2], [1, 3], [0, 0]].map(([r, c]) => units[r * 4 + c]);
+  leavers.forEach((u, i) => {
+    const tv = vanish[i];
+    const puff = document.createElement('div');
+    puff.className = 'puff';
+    puff.style.left = u.x + 'px';
+    puff.style.top = (u.y - 330 * u.s) + 'px';
+    puff.style.width = puff.style.height = (260 * u.s) + 'px';
+    puff.style.margin = `${-130 * u.s}px 0 0 ${-130 * u.s}px`;
+    room.appendChild(puff);
+    ctx.track(t => {
+      const k = ctx.ease.inOut(ctx.prog(t, tv, tv + .6));
+      u.seat.style.opacity = (1 - k).toFixed(3);
+      u.seat.style.transform = `translateY(${(-26 * k).toFixed(2)}px) scale(${(1 - .08 * k).toFixed(4)})`;
+      u.seat.style.filter = k > 0 ? `blur(${(5 * k).toFixed(2)}px)` : 'none';
+      const p = ctx.prog(t, tv + .05, tv + .75);
+      puff.style.opacity = (p > 0 && p < 1 ? Math.sin(Math.PI * p) * .9 : 0).toFixed(3);
+      puff.style.transform = `scale(${(.5 + 1.1 * ctx.ease.out(p)).toFixed(3)})`;
+    });
+  });
+});
+</script>
+</body>
+</html>
