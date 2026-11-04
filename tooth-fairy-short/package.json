@@ -1,0 +1,16 @@
+{
+  "name": "tooth-fairy-short",
+  "version": "1.0.0",
+  "private": true,
+  "description": "9:16 low-poly papercraft animated short rendered with Three.js in headless Chromium and synced to a provided voiceover.",
+  "type": "module",
+  "scripts": {
+    "render": "node tools/render.mjs",
+    "build": "bash tools/build.sh"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.1.0",
+    "@fontsource/montserrat": "5.1.0",
+    "three": "0.170.0"
+  }
+}
