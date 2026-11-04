@@ -43,6 +43,9 @@ export type CharSpec = {
 	mustache?: string | null;
 	backBucket?: boolean;
 	emblem?: string | null;
+	/** apron colour (worn over the outfit) */
+	apron?: string | null;
+	apronTrim?: string;
 };
 
 export type CharacterProps = {
@@ -72,6 +75,11 @@ export type CharacterProps = {
 	headExtra?: React.ReactNode;
 	/** something worn on the back (backpack), in torso space: origin at the back surface, mid-height */
 	backItem?: React.ReactNode;
+	/** party hat colour (cone hat with dots and a pompom) */
+	partyHat?: string | null;
+	partyHatTilt?: number;
+	/** 0..1 puffed-up cheeks (blowing out candles) */
+	puff?: number;
 	children?: React.ReactNode;
 };
 
@@ -130,7 +138,8 @@ function talkMouth(base: MouthKind, talk: number): MouthKind {
 	const big = talk > 0.55;
 	if (base === 'shout' || base === 'wail') return base;
 	if (base === 'whisper') return big ? 'o' : 'whisper';
-	if (base === 'smile' || base === 'bigSmile' || base === 'grin' || base === 'smirk') return big ? 'happyTalk2' : 'happyTalk1';
+	if (base === 'blow') return base;
+	if (base === 'smile' || base === 'bigSmile' || base === 'grin' || base === 'smirk' || base === 'softSmile') return big ? 'happyTalk2' : 'happyTalk1';
 	return big ? 'talk2' : 'talk1';
 }
 
@@ -277,6 +286,7 @@ export const Character: React.FC<CharacterProps> = (props) => {
 	// ---- face
 	let parts: FaceParts = {...EXPRESSIONS[props.expr ?? 'neutral'], ...(props.face ?? {})};
 	if (props.look) parts = {...parts, lookX: props.look[0], lookY: props.look[1]};
+	if (props.puff !== undefined) parts = {...parts, puff: Math.round(props.puff * 4) / 4};
 	parts = {...parts, mouth: talkMouth(parts.mouth, props.talk ?? 0)};
 	if (props.blink !== false && OPEN_EYES.includes(parts.eyes) && isBlinking(frame, spec.seed)) parts = {...parts, eyes: 'blink'};
 	if (parts.lookX !== undefined) parts.lookX = Math.round(parts.lookX * 2) / 2;
@@ -338,6 +348,8 @@ export const Character: React.FC<CharacterProps> = (props) => {
 						<P g={rbox(0.24, 0.17, 0.17, 0.07)} m={plastic(spec.mustache, {rough: 0.7})} p={[0, 0.02, 0.06]} />
 					</group>
 				) : null}
+				{props.partyHat ? <PartyHat color={props.partyHat} y={HAT_BASE[spec.hair] ?? 0.75} tilt={props.partyHatTilt ?? -0.18} /> : null}
+				{(props.puff ?? 0) > 0.05 ? <Cheeks st={st} skin={spec.skin} k={props.puff ?? 0} /> : null}
 				{props.headExtra}
 			</group>
 		</group>
@@ -472,6 +484,22 @@ export const Character: React.FC<CharacterProps> = (props) => {
 			break;
 	}
 
+	if (spec.apron) {
+		const am = plastic(spec.apron, {rough: 0.7});
+		const at = plastic(spec.apronTrim ?? darken(spec.apron, 0.25), {rough: 0.6});
+		outfit.push(<P key="abib" g={rbox(D.torsoW * 0.6, 1.15, 0.07, 0.04)} m={am} p={[0, T * 0.62 + 0.05, fz + 0.035]} />);
+		outfit.push(<P key="aband" g={rbox(D.torsoW + 0.06, 0.15, D.torsoD + 0.06, 0.05)} m={at} p={[0, 0.66, 0]} cast={false} />);
+		[-1, 1].forEach((sd) => outfit.push(<P key={'astrap' + sd} g={rbox(0.09, 0.62, 0.05, 0.02)} m={at} p={[sd * 0.42, T - 0.12, fz + 0.04]} r={[0, 0, sd * 0.42]} cast={false} />));
+		outfit.push(<P key="atrim" g={rbox(D.torsoW * 0.6 + 0.02, 0.07, 0.08, 0.03)} m={at} p={[0, T * 0.62 + 0.62, fz + 0.04]} cast={false} />);
+	}
+	const apronSkirt = spec.apron ? (
+		<group position={[0, 0.66, 0]} rotation={[Math.min(0, pose.legL[0], pose.legR[0]) * 0.92, 0, 0]}>
+			<P g={rbox(D.torsoW * 0.86, 1.55, 0.07, 0.04)} m={plastic(spec.apron, {rough: 0.7})} p={[0, -0.8, D.legD / 2 + 0.07]} />
+			<P g={rbox(D.torsoW * 0.86 + 0.02, 0.07, 0.08, 0.03)} m={plastic(spec.apronTrim ?? darken(spec.apron, 0.25), {rough: 0.6})} p={[0, -1.56, D.legD / 2 + 0.08]} cast={false} />
+			<P g={rbox(0.62, 0.36, 0.05, 0.03)} m={plastic(spec.apronTrim ?? darken(spec.apron, 0.25), {rough: 0.6})} p={[0.3, -0.55, D.legD / 2 + 0.11]} cast={false} />
+		</group>
+	) : null;
+
 	// skirt (attached to hips so it does not swing with the legs)
 	const skirt =
 		spec.outfit === 'dress' ? (
@@ -524,6 +552,7 @@ export const Character: React.FC<CharacterProps> = (props) => {
 				{leg(1, pose.legL)}
 				{leg(-1, pose.legR)}
 				{skirt}
+				{apronSkirt}
 				<group rotation={[pose.lean, pose.turn, pose.tilt]}>
 					<P g={rbox(D.torsoW, T, D.torsoD, 0.12)} m={torsoMat} p={[0, T / 2, 0]} />
 					{outfit}
@@ -632,3 +661,58 @@ function capLogoMat() {
 	}
 	return capLogo;
 }
+
+// ---------------------------------------------------------------- party hat
+/** where the hat sits (base head space) for each hair style */
+const HAT_BASE: Partial<Record<HairKind, number>> = {
+	messy: 0.9, baldSides: 0.6, long: 0.76, short: 0.75, bun: 0.76, ponytail: 0.76, pigtails: 0.76, afro: 1.12, curly: 0.86, spiky: 0.92, buzz: 0.7, none: 0.6,
+};
+const hatCache = new Map<string, THREE.MeshStandardMaterial>();
+function partyHatMat(color: string) {
+	let m = hatCache.get(color);
+	if (!m) {
+		const c = document.createElement('canvas');
+		c.width = 256;
+		c.height = 256;
+		const ctx = c.getContext('2d')!;
+		ctx.fillStyle = color;
+		ctx.fillRect(0, 0, 256, 256);
+		// soft white polka dots, rows offset
+		ctx.fillStyle = 'rgba(255,255,255,0.92)';
+		for (let row = 0; row < 6; row++) {
+			for (let k = 0; k < 6; k++) {
+				const x = k * 44 + (row % 2) * 22 + 10;
+				const y = row * 44 + 18;
+				ctx.beginPath();
+				ctx.arc(x, y, 9 + (row / 6) * 3, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		}
+		const t = new THREE.CanvasTexture(c);
+		t.colorSpace = THREE.SRGBColorSpace;
+		t.wrapS = t.wrapT = THREE.RepeatWrapping;
+		m = new THREE.MeshStandardMaterial({map: t, roughness: 0.45});
+		hatCache.set(color, m);
+	}
+	return m;
+}
+const PartyHat: React.FC<{color: string; y: number; tilt: number}> = ({color, y, tilt}) => (
+	<group position={[0.12, y - 0.04, 0.02]} rotation={[-0.08, 0, tilt]}>
+		<P g={cone(0.44, 1.12, 28)} m={partyHatMat(color)} p={[0, 0.56, 0]} />
+		<P g={torus(0.42, 0.06, 8, 28)} m={plastic('#ffd84a', {rough: 0.35, metal: 0.2})} r={[Math.PI / 2, 0, 0]} p={[0, 0.03, 0]} cast={false} />
+		<P g={sphere(0.15, 14, 10)} m={plastic('#fff6e0', {rough: 0.85})} p={[0, 1.14, 0]} />
+	</group>
+);
+
+// ---------------------------------------------------------------- puffed cheeks
+const Cheeks: React.FC<{st: FaceStyle; skin: string; k: number}> = ({st, skin, k}) => {
+	const m = plastic(skin, {rough: 0.45});
+	return (
+		<>
+			{[-1, 1].map((sd) => {
+				const [x, y] = facePoint(...featureXY(st, 256 + sd * (st.eyeGap + 30), 322 + st.mouthY - 4));
+				return <P key={sd} g={sphere(0.2, 16, 12)} m={m} p={[x, y, 0.56]} s={[1.0 * k + 0.3, 0.9 * k + 0.3, 0.55 * k]} cast={false} />;
+			})}
+		</>
+	);
+};

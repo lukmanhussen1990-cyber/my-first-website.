@@ -302,6 +302,126 @@ export function reading(t: number): Pose {
 	return {armL: [-1.25, 0, -0.42], armR: [-1.25, 0, 0.42]} as Pose;
 }
 
+/** knocking on a door with the right hand: knuckles tap in little bursts of three */
+export function knock(t: number, start = 0): Pose {
+	const tt = Math.max(0, t - start);
+	const ph = tt % 1.1; // a burst every 1.1 s
+	const tap = ph < 0.6 ? Math.max(0, Math.sin(ph * Math.PI * 5)) : 0;
+	return {
+		...idle(t, 2),
+		lean: 0.03,
+		head: [-0.04, 0, 0],
+		armR: [-1.75 + tap * 0.22, 0, 0.12],
+	};
+}
+
+/** stirring a bowl held against the tummy with the left arm */
+export function stir(t: number, seed = 0): Pose {
+	const ph = t * Math.PI * 2 * 1.3 + seed;
+	return {
+		...idle(t, seed),
+		lean: 0.08,
+		head: [0.32, 0, 0.04],
+		armL: [-0.95, 0, -0.42],
+		armR: [-1.0 + Math.sin(ph) * 0.1, 0, 0.3 + Math.cos(ph) * 0.12],
+	};
+}
+
+/** carrying something precious with both hands in front: slow, careful steps */
+export function carryCake(t: number, walking = 1): Pose {
+	const w = walk(t, 0.55, 0.45 * walking);
+	return {
+		...w,
+		lean: -0.02,
+		turn: w.turn * 0.3,
+		head: [0.22, 0, 0],
+		armL: [-1.38, 0, -0.26],
+		armR: [-1.38, 0, 0.26],
+	};
+}
+
+/** walking behind someone with both hands over their eyes (arms reach up and forward) */
+export function coverEyes(t: number, walking = 1, reach = 2.35): Pose {
+	const w = walk(t, 0.5, 0.4 * walking);
+	return {
+		...w,
+		lean: 0.02,
+		turn: 0,
+		head: [-0.12, 0, 0],
+		armL: [-reach, 0, -0.32],
+		armR: [-reach, 0, 0.32],
+	};
+}
+
+/** a very old man's slow walk with a stick in the right hand */
+export function elderWalk(t: number, walking = 1): Pose {
+	const w = walk(t, 0.42, 0.35 * walking);
+	return {
+		...w,
+		lean: 0.12,
+		head: [-0.08, w.head[1], 0],
+		armR: [-0.42 + w.armR[0] * 0.2, 0, -0.12],
+		armL: [w.armL[0] * 0.6, 0, 0.1],
+	};
+}
+
+/** old man standing, a little hunched */
+export function elderIdle(t: number, seed = 0): Pose {
+	const p = idle(t * 0.8, seed);
+	return {...p, lean: 0.1 + p.lean, head: [-0.06 + p.head[0], p.head[1], p.head[2]], armR: [-0.38, 0, -0.1]};
+}
+
+/** big breath in: shoulders rise, chest up, head tips back (k 0..1) */
+export function breathIn(k: number, base: Pose = REST): Pose {
+	return {
+		...base,
+		y: base.y + 0.06 * k,
+		lean: base.lean - 0.12 * k,
+		head: [base.head[0] - 0.22 * k, base.head[1], base.head[2]],
+		armL: [base.armL[0] + 0.1 * k, base.armL[1], base.armL[2] + 0.22 * k],
+		armR: [base.armR[0] + 0.1 * k, base.armR[1], base.armR[2] - 0.22 * k],
+	};
+}
+
+/** blowing: lean in toward the candles, arms back a little (k 0..1) */
+export function blowCandles(k: number, base: Pose = REST): Pose {
+	return {
+		...base,
+		y: base.y - 0.05 * k,
+		lean: base.lean + 0.3 * k,
+		head: [base.head[0] + 0.18 * k, base.head[1], base.head[2]],
+		armL: [base.armL[0] + 0.35 * k, base.armL[1], base.armL[2] + 0.12 * k],
+		armR: [base.armR[0] + 0.35 * k, base.armR[1], base.armR[2] - 0.12 * k],
+	};
+}
+
+/** holding a small thing (photo) up in front of the face with both hands */
+export function holdPhoto(t: number, height = 0.5): Pose {
+	const p = idle(t, 4);
+	return {...p, head: [0.18, 0, 0], armL: [-1.25 - height * 0.4, 0, -0.42], armR: [-1.25 - height * 0.4, 0, 0.42]};
+}
+
+/** squeezing through a low window: bent forward, arms reaching in */
+export function squeeze(t: number, k = 1): Pose {
+	const ph = t * Math.PI * 2 * 0.8;
+	return {
+		...REST,
+		y: -0.5 * k,
+		lean: 1.05 * k,
+		head: [-0.55 * k, Math.sin(ph) * 0.05, 0],
+		armL: [-2.6 * k + Math.sin(ph) * 0.2, 0, -0.15],
+		armR: [-2.6 * k - Math.sin(ph) * 0.2, 0, 0.15],
+		legL: [-0.6 * k + Math.sin(ph) * 0.15, 0, 0.05],
+		legR: [0.35 * k, 0, -0.05],
+	};
+}
+
+/** sitting in a rocking chair, hands on the armrests, head following the rock */
+export function sitRock(t: number, seatDrop = 2.0, rock = 0): Pose {
+	const p = sit(t, 5, seatDrop);
+	return {...p, lean: p.lean - rock * 0.3, armL: [-0.75, 0, 0.18], armR: [-0.75, 0, -0.18], legL: [-1.52, 0, 0.05], legR: [-1.52, 0, -0.05]};
+}
+
 export const armsOnly = (base: Pose, arms: Partial<Pose>): Pose => ({...base, ...arms});
 export const deg = (d: number) => (d * Math.PI) / 180;
 export {c as cos, s as sin};

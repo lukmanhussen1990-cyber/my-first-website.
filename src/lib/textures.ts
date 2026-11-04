@@ -376,3 +376,4 @@ export const newspaperTex = () =>
 			}
 		}
 	});
+export const canvasTex = make;

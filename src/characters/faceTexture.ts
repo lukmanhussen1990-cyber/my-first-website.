@@ -4,10 +4,10 @@
 import * as THREE from 'three';
 
 export type EyeKind = 'dot' | 'wide' | 'happy' | 'closed' | 'blink' | 'squeeze' | 'half' | 'sad' | 'sparkle' | 'cry' | 'angry' | 'tired' | 'side';
-export type BrowKind = 'normal' | 'raised' | 'sad' | 'angry' | 'smug' | 'worried' | 'none' | 'flat';
+export type BrowKind = 'normal' | 'raised' | 'sad' | 'angry' | 'smug' | 'worried' | 'none' | 'flat' | 'curious' | 'confused' | 'soft';
 export type MouthKind =
 	| 'smile' | 'bigSmile' | 'o' | 'shocked' | 'frown' | 'wail' | 'flat' | 'smirk' | 'wavy' | 'shout' | 'whisper' | 'sleep' | 'grin' | 'tiny'
-	| 'talk1' | 'talk2' | 'happyTalk1' | 'happyTalk2';
+	| 'talk1' | 'talk2' | 'happyTalk1' | 'happyTalk2' | 'blow' | 'squiggle' | 'tinyFrown' | 'softSmile';
 
 export type FaceParts = {
 	eyes: EyeKind;
@@ -18,6 +18,7 @@ export type FaceParts = {
 	sweat?: boolean;
 	green?: boolean; // disgusted green cheeks
 	bags?: boolean; // tired eye bags
+	puff?: number; // 0..1 puffed-up cheeks (blowing)
 	lookX?: number; // -1..1 pupils
 	lookY?: number;
 };
@@ -52,7 +53,8 @@ export function featureXY(st: FaceStyle, px: number, py: number): [number, numbe
 
 export type Expression =
 	| 'neutral' | 'happy' | 'bigSmile' | 'shocked' | 'sad' | 'crying' | 'happyCry' | 'sleeping' | 'whisper'
-	| 'smug' | 'disgusted' | 'tired' | 'excited' | 'shout' | 'determined' | 'worried' | 'proud' | 'awe' | 'laugh' | 'frown';
+	| 'smug' | 'disgusted' | 'tired' | 'excited' | 'shout' | 'determined' | 'worried' | 'proud' | 'awe' | 'laugh' | 'frown'
+	| 'curious' | 'confused' | 'lonely' | 'surprised' | 'blissful' | 'blowing' | 'blank' | 'warm' | 'breath';
 
 export const EXPRESSIONS: Record<Expression, FaceParts> = {
 	neutral: {eyes: 'dot', brows: 'normal', mouth: 'smile', blush: 0.55},
@@ -75,6 +77,15 @@ export const EXPRESSIONS: Record<Expression, FaceParts> = {
 	tired: {eyes: 'tired', brows: 'sad', mouth: 'flat', blush: 0.2, bags: true, sweat: true},
 	shout: {eyes: 'angry', brows: 'angry', mouth: 'shout', blush: 0.5},
 	determined: {eyes: 'dot', brows: 'angry', mouth: 'smirk', blush: 0.4},
+	curious: {eyes: 'dot', brows: 'curious', mouth: 'o', blush: 0.55, lookX: 0.5, lookY: -0.5},
+	confused: {eyes: 'dot', brows: 'confused', mouth: 'squiggle', blush: 0.35},
+	lonely: {eyes: 'sad', brows: 'sad', mouth: 'tinyFrown', blush: 0.15, lookY: 1},
+	surprised: {eyes: 'wide', brows: 'raised', mouth: 'o', blush: 0.5},
+	blissful: {eyes: 'happy', brows: 'soft', mouth: 'softSmile', blush: 0.95},
+	blowing: {eyes: 'closed', brows: 'raised', mouth: 'blow', blush: 0.9, puff: 1},
+	blank: {eyes: 'dot', brows: 'flat', mouth: 'flat', blush: 0.15},
+	warm: {eyes: 'dot', brows: 'soft', mouth: 'softSmile', blush: 0.7},
+	breath: {eyes: 'closed', brows: 'raised', mouth: 'o', blush: 0.7},
 };
 
 const SIZE = 1024; // canvas px (drawn in a 512 space scaled x2)
@@ -310,6 +321,14 @@ function drawBrow(ctx: CanvasRenderingContext2D, kind: BrowKind, side: -1 | 1, c
 		case 'smug':
 			if (side === 1) { yi = cy - 14; yo = cy - 18; bend = -10; } else { yi = cy + 6; yo = cy + 4; bend = 0; }
 			break;
+		case 'curious':
+			if (side === 1) { yi = cy - 18; yo = cy - 20; bend = -12; } else { yi = cy + 2; yo = cy + 2; bend = -5; }
+			break;
+		case 'confused':
+			if (side === 1) { yi = cy - 16; yo = cy - 12; bend = -10; } else { yi = cy + 12; yo = cy - 2; bend = 1; }
+			break;
+		case 'soft':
+			yi = cy - 6; yo = cy + 4; bend = -5; break;
 	}
 	ctx.beginPath();
 	ctx.moveTo(outer, yo);
@@ -360,6 +379,44 @@ function drawMouth(ctx: CanvasRenderingContext2D, kind: MouthKind, cx: number, c
 			ctx.quadraticCurveTo(cx, cy + 22, cx + 30, cy - 6);
 			ctx.stroke();
 			break;
+		case 'softSmile':
+			ctx.strokeStyle = dark;
+			ctx.lineWidth = 8;
+			ctx.beginPath();
+			ctx.moveTo(cx - 24, cy - 2);
+			ctx.quadraticCurveTo(cx, cy + 16, cx + 24, cy - 2);
+			ctx.stroke();
+			break;
+		case 'tinyFrown':
+			ctx.strokeStyle = dark;
+			ctx.lineWidth = 8;
+			ctx.beginPath();
+			ctx.moveTo(cx - 16, cy + 10);
+			ctx.quadraticCurveTo(cx, cy - 2, cx + 16, cy + 10);
+			ctx.stroke();
+			break;
+		case 'squiggle':
+			ctx.strokeStyle = dark;
+			ctx.lineWidth = 7;
+			ctx.beginPath();
+			ctx.moveTo(cx - 20, cy + 8);
+			ctx.quadraticCurveTo(cx - 10, cy - 2, cx, cy + 6);
+			ctx.quadraticCurveTo(cx + 10, cy + 14, cx + 22, cy + 2);
+			ctx.stroke();
+			break;
+		case 'blow': {
+			// pursed lips, pushed forward
+			ctx.fillStyle = inside;
+			ctx.beginPath();
+			ctx.ellipse(cx, cy + 6, 9, 11, 0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.strokeStyle = dark;
+			ctx.lineWidth = 9;
+			ctx.beginPath();
+			ctx.ellipse(cx, cy + 6, 14, 16, 0, 0, Math.PI * 2);
+			ctx.stroke();
+			break;
+		}
 		case 'tiny':
 			ctx.strokeStyle = dark;
 			ctx.lineWidth = 8;
@@ -654,6 +711,28 @@ export function drawFace(canvas: HTMLCanvasElement, st: FaceStyle, p: FaceParts,
 		ctx.stroke();
 	}
 
+	if (p.puff && p.puff > 0) {
+		// round, puffed-up cheeks with a soft highlight and a gentle outline
+		const k = p.puff;
+		for (const side of [-1, 1]) {
+			const bx = cx + side * (gap + 30);
+			const by = mouthY - 4;
+			const r = 30 + 26 * k;
+			const g = ctx.createRadialGradient(bx - side * 8, by - 14, 4, bx, by, r);
+			g.addColorStop(0, hexA('#ffffff', 0.32 * k));
+			g.addColorStop(0.45, hexA(st.blush, 0.4 * k));
+			g.addColorStop(1, hexA(st.blush, 0.12 * k));
+			ctx.fillStyle = g;
+			ctx.beginPath();
+			ctx.arc(bx, by, r, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.strokeStyle = hexA('#7a3a2a', 0.35 * k);
+			ctx.lineWidth = 4;
+			ctx.beginPath();
+			ctx.arc(bx, by, r, side > 0 ? -0.9 : Math.PI - 1.3, side > 0 ? 1.3 : Math.PI + 0.9);
+			ctx.stroke();
+		}
+	}
 	for (const side of [-1, 1] as const) drawEye(ctx, p.eyes, side, cx + side * gap, eyeY, st, p);
 	for (const side of [-1, 1] as const) drawBrow(ctx, p.brows, side, cx + side * gap, browY, st);
 	drawMouth(ctx, p.mouth, cx, mouthY, st);

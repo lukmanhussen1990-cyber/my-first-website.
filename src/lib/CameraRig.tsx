@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import {useCurrentFrame} from 'remotion';
 import {fbm1} from './random';
 import {whipState} from '../timing';
+import {QUALITY} from './quality';
 
 export type CamState = {
 	pos: [number, number, number];
@@ -39,7 +40,7 @@ export const CameraRig: React.FC<CamState & {seed?: number}> = ({pos, target, fo
 		// sway in camera space
 		cam.translateX(sx);
 		cam.translateY(sy);
-		cam.rotateY(yaw + whipState(frame).yaw);
+		cam.rotateY(yaw + (QUALITY.whips ? whipState(frame).yaw : 0));
 		cam.rotateX(pitch);
 		cam.rotateZ(roll + sr);
 		cam.fov = fov;
