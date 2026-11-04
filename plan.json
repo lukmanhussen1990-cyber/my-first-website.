@@ -1,0 +1,160 @@
+{
+  "title": "I Can See Lies",
+  "size": [720, 1280],
+  "fps": 30,
+
+  "timing": {
+    "lead": 0.3,
+    "tail": 0.5,
+    "gap": 0.45,
+    "min_scene": 6.0,
+    "_note": "scene length = lead + voice + tail (= voice + 0.8 s), never shorter than min_scene; 'hold' adds extra seconds"
+  },
+
+  "voices": {
+    "narrator":  {"voice_id": "JqrSOsJt1yEJuB9KEB0V", "name": "Adam - Calm and Emotionally Neutral"},
+    "president": {"voice_id": "TOXPlnYC7z5SQSV2Zgc5", "name": "Jade - Elegant, Calm", "tag": "MIRA"}
+  },
+  "tts": {
+    "model_id": "eleven_multilingual_v2",
+    "voice_settings": {"stability": 0.6, "similarity_boost": 0.75, "style": 0.0, "use_speaker_boost": true, "speed": 0.95}
+  },
+  "audio": {"music_db": -18, "sfx_db": -9, "loudness": -14},
+
+  "cast": {
+    "narrator":  {"sex": "m", "hair": "spiky",    "hairColor": "#20254a", "iris": "#4fa6c9", "eyes": "half"},
+    "president": {"sex": "f", "hair": "long",     "hairColor": "#1d1b30", "iris": "#8a5cc7", "eyes": "open", "badge": true, "clip": true},
+    "kai":       {"sex": "m", "hair": "messy",    "hairColor": "#5b3a29", "iris": "#6b8f3a", "eyes": "open", "glasses": true},
+    "ren":       {"sex": "m", "hair": "short",    "hairColor": "#17161c", "iris": "#6a4630", "eyes": "half", "skin": "#b98260"},
+    "hana":      {"sex": "f", "hair": "bob",      "hairColor": "#a8452f", "iris": "#c7783a", "eyes": "open"},
+    "yuna":      {"sex": "f", "hair": "ponytail", "hairColor": "#e2b450", "iris": "#3f86c4", "eyes": "open"}
+  },
+
+  "scenes": [
+    {
+      "id": "hallway",
+      "zoom": [1.0, 1.16], "origin": "50% 47%",
+      "layers": [
+        {"type": "hallway"},
+        {"type": "silhouette", "x": 360, "y": 698, "h": 128},
+        {"type": "lasers", "from": [360, 600], "at": 0.25, "stagger": 0.28,
+         "to": [[-40, 150], [760, 90], [-40, 520], [760, 600], [-40, 1010], [760, 1120], [150, 1320], [580, 1320], [250, -40], [470, -40]]},
+        {"type": "dust", "count": 46},
+        {"type": "vignette", "strength": 0.75}
+      ]
+    },
+    {
+      "id": "flashback",
+      "zoom": [1.0, 1.08], "origin": "50% 50%",
+      "layers": [
+        {"type": "memory", "label": "AGE 10", "layers": [
+          {"type": "actor", "char": "narrator", "x": 175, "y": 618, "h": 370, "kid": true, "face": "shock", "enter": "left", "at": 0.1},
+          {"type": "actor", "char": "kai", "x": 365, "y": 618, "h": 370, "kid": true, "face": "grin", "enter": "right", "at": 0.25,
+           "lie": {"at": "p2+0.25", "to": [420, -40]}}
+        ]},
+        {"type": "dust", "count": 20, "color": "255,236,200"},
+        {"type": "vignette", "strength": 0.85}
+      ]
+    },
+    {
+      "id": "classroom",
+      "whoosh": true,
+      "zoom": [1.06, 1.14], "origin": "50% 60%",
+      "layers": [
+        {"type": "classroom"},
+        {"type": "desks", "y": 735, "h": 400, "students": [
+          {"char": "ren",  "lie": "p2+0.15", "face": "smirk"},
+          {"char": "hana", "face": "neutral"},
+          {"char": "kai",  "lie": "p2+0.45", "face": "smile"},
+          {"char": "yuna", "lie": "p2+0.75", "face": "smile"}
+        ]},
+        {"type": "desks", "y": 1010, "h": 520, "students": [
+          {"char": "yuna", "lie": "p2+1.05", "face": "smirk", "tint": {"--hair": "#3a2b25", "--hair-hi": "#5a443a"}},
+          {"char": "president", "face": "smile"},
+          {"char": "kai", "lie": "p2+1.35", "face": "neutral", "tint": {"--hair": "#2c2c38", "--hair-hi": "#45455a", "--skin": "#e8b996"}},
+          {"char": "hana", "lie": "p2+1.65", "face": "smile", "tint": {"--hair": "#47301f", "--hair-hi": "#6a4a32"}}
+        ]},
+        {"type": "vignette", "strength": 0.45}
+      ]
+    },
+    {
+      "id": "lies-detected",
+      "copy": 3, "blur": 6, "dim": 0.42, "lead": 0.9,
+      "zoom": [1.14, 1.2], "origin": "50% 60%",
+      "layers+": [
+        {"type": "stat", "label": "LIES DETECTED", "value": "+6", "color": "red", "at": 0.3, "count": true, "y": 470, "big": true}
+      ]
+    },
+    {
+      "id": "spotlight",
+      "whoosh": true,
+      "zoom": [1.0, 1.07], "origin": "40% 35%",
+      "layers": [
+        {"type": "classroom", "dim": 0.78},
+        {"type": "spotlight", "x": 250},
+        {"type": "actor", "char": "president", "x": 250, "y": 1190, "h": 880, "face": "smile", "enter": "rise", "at": 0.05},
+        {"type": "hearts", "count": 16, "at": "p2", "x": [60, 460]},
+        {"type": "profile", "x": 455, "y": 300, "at": "p2-0.15",
+         "kicker": "CLASS PRESIDENT", "name": "Mira Sato",
+         "rows": [["GRADES", "A+"], ["HONESTY", "★★★★★"], ["FANS", "EVERYONE"]],
+         "footer": "RED LINES: 0"},
+        {"type": "vignette", "strength": 0.6}
+      ]
+    },
+    {
+      "id": "closeup",
+      "zoom": [1.0, 1.08], "origin": "50% 38%",
+      "layers": [
+        {"type": "dreamy"},
+        {"type": "actor", "char": "president", "face_at": [360, 640], "scale": 4.3, "face": "smile"},
+        {"type": "sparkles", "count": 12},
+        {"type": "stat", "label": "LIES DETECTED", "value": "0", "color": "green", "at": "p2+0.1", "y": 70}
+      ]
+    },
+    {
+      "id": "the-lie",
+      "whoosh": true, "hold": 1.0,
+      "zoom": [1.0, 1.12], "origin": "30% 44%",
+      "layers": [
+        {"type": "board", "text": "WHO TOOK THE\nEXAM PAPERS?"},
+        {"type": "actor", "char": "president", "x": 205, "y": 1140, "h": 690, "face": "neutral", "talk": "president",
+         "lie": {"at": "p2+0.35", "thick": true, "to": [610, -60]}},
+        {"type": "crowd", "y": 1280, "count": 5},
+        {"type": "redflash", "at": "p2+0.45"},
+        {"type": "vignette", "strength": 0.55}
+      ]
+    },
+    {
+      "id": "trust-meter",
+      "copy": 7, "blur": 6, "dim": 0.4, "lead": 0.9,
+      "zoom": [1.12, 1.18], "origin": "30% 44%",
+      "layers+": [
+        {"type": "stat", "label": "TRUST", "value": "-20", "color": "red", "at": 0.3, "count": true, "y": 330},
+        {"type": "stat", "label": "SUSPICION", "value": "+30", "color": "green", "at": 1.0, "count": true, "y": 560}
+      ]
+    },
+    {
+      "id": "eyes",
+      "zoom": [1.0, 1.05], "origin": "50% 45%",
+      "layers": [
+        {"type": "void"},
+        {"type": "eyeband", "char": "president", "y": 250, "h": 290, "face": "knowing", "from": "left", "at": 0.15},
+        {"type": "eyeband", "char": "narrator", "y": 650, "h": 290, "face": "cold", "from": "right", "at": "p2-0.35"},
+        {"type": "vignette", "strength": 0.7}
+      ]
+    },
+    {
+      "id": "choice",
+      "whoosh": true, "hold": 2.5,
+      "zoom": [1.0, 1.06], "origin": "50% 45%",
+      "layers": [
+        {"type": "burst"},
+        {"type": "actor", "char": "narrator", "face_at": [360, 520], "scale": 3.2, "face": "cold", "opacity": 0.32},
+        {"type": "ab",
+         "a": {"title": "*Expose* her", "sub": "TELL THE TEACHER", "at": "p1-0.15"},
+         "b": {"title": "Keep her *secret*", "sub": "USE IT", "at": "p2-0.15"}},
+        {"type": "vignette", "strength": 0.5}
+      ]
+    }
+  ]
+}

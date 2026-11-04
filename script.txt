@@ -1,0 +1,21 @@
+# I CAN SEE LIES - narration script
+#
+# One line per scene, in order (first line = scene01, second = scene02, ...).
+#   *word*     gold keyword in the subtitle (the asterisks are not spoken)
+#   /          starts a new subtitle page (keep each page to 2 short lines)
+#   {name}     at the start of a page: that page is spoken by another voice
+#              (voice ids live in plan.json -> "voices"; default is narrator)
+#   "quotes"   shown in the subtitle, not spoken
+# Lines starting with # are ignored. Subtitles and voice come from this file,
+# so they always match word for word.
+
+When someone lies, I see a *red line*. / I can see *lies*. Every *single* one.
+I've seen them since I was a *kid*. / The first one came from my *best friend*.
+Every morning, it's the same. / In this class, *6 people* are lying *right now*.
+*Six lies* before the first bell. / Just a *normal* Monday.
+Perfect grades. Perfect smile. / And I like the *class president*. Everyone does.
+She *never* lies. / Not once in *3 years*. Not one *red line*.
+Until *today*. / {president} "I didn't take the *exam papers*."
+The girl who never lies just *lied*. / In front of the *whole class*.
+Then her eyes found mine. / She *knows* I saw it.
+Option A: *expose her*. Tell the teacher. / Option B: *keep her secret*... and use it. / Comment *A* or *B*.

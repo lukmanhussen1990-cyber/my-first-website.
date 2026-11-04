@@ -1,0 +1,190 @@
+/* Shared look for every scene of the reel (720x1280, flat 2D story style). */
+
+@font-face { font-family: "Playfair Display"; font-style: italic; font-weight: 600; src: url(assets/fonts/PlayfairDisplay-600i.ttf); }
+@font-face { font-family: "Playfair Display"; font-style: italic; font-weight: 700; src: url(assets/fonts/PlayfairDisplay-700i.ttf); }
+@font-face { font-family: "Playfair Display"; font-style: italic; font-weight: 800; src: url(assets/fonts/PlayfairDisplay-800i.ttf); }
+@font-face { font-family: "Playfair Display"; font-style: italic; font-weight: 900; src: url(assets/fonts/PlayfairDisplay-900i.ttf); }
+@font-face { font-family: "Playfair Display"; font-style: normal; font-weight: 700; src: url(assets/fonts/PlayfairDisplay-700.ttf); }
+@font-face { font-family: "Playfair Display"; font-style: normal; font-weight: 900; src: url(assets/fonts/PlayfairDisplay-900.ttf); }
+@font-face { font-family: "Montserrat"; font-weight: 500; src: url(assets/fonts/Montserrat-500.ttf); }
+@font-face { font-family: "Montserrat"; font-weight: 600; src: url(assets/fonts/Montserrat-600.ttf); }
+@font-face { font-family: "Montserrat"; font-weight: 700; src: url(assets/fonts/Montserrat-700.ttf); }
+@font-face { font-family: "Montserrat"; font-weight: 800; src: url(assets/fonts/Montserrat-800.ttf); }
+
+:root {
+  --gold: #F2C14E;
+  --red: #ff3b4e;
+  --green: #2fd37c;
+  --blue: #2B4CFF;
+  --purple: #7B2CBF;
+  --ink: #06070c;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 720px; height: 1280px; overflow: hidden; background: #000; }
+
+/* render.py freezes time and drives every animation itself */
+html.render *, html.render *::before, html.render *::after { animation-play-state: paused !important; }
+
+#stage {
+  position: relative; width: 720px; height: 1280px; overflow: hidden;
+  background: var(--ink); font-family: "Playfair Display", Georgia, serif; color: #fff;
+}
+.cam { position: absolute; inset: 0; will-change: transform; }
+.fill { position: absolute; inset: 0; }
+svg.full { position: absolute; left: 0; top: 0; width: 720px; height: 1280px; overflow: visible; }
+.abs { position: absolute; }
+
+/* ---------- characters ---------- */
+.actor { position: absolute; }
+.actor > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.actor .eyes > g, .actor .mouth > g, .actor .brows > g { opacity: 0; }
+.actor[data-eyes="open"] .e-open, .actor[data-eyes="half"] .e-half, .actor[data-eyes="narrow"] .e-narrow,
+.actor[data-eyes="wide"] .e-wide, .actor[data-eyes="happy"] .e-happy { opacity: 1; }
+.actor[data-mouth="neutral"] .m-neutral, .actor[data-mouth="smile"] .m-smile, .actor[data-mouth="smirk"] .m-smirk,
+.actor[data-mouth="grin"] .m-grin, .actor[data-mouth="o"] .m-o { opacity: 1; }
+.actor[data-brows="neutral"] .b-neutral, .actor[data-brows="raised"] .b-raised,
+.actor[data-brows="frown"] .b-frown, .actor[data-brows="knowing"] .b-knowing { opacity: 1; }
+.actor .e-blink { animation: blink var(--blink, 4.6s) linear var(--blink-delay, 0s) infinite; }
+.actor[data-eyes="happy"] .e-blink, .actor.noblink .e-blink { animation: none; opacity: 0; }
+.actor .mouth .m-talk { animation: talk .19s linear var(--talk-at, 0s) var(--talk-n, 0); }
+@keyframes blink { 0%, 94% { opacity: 0; } 94.5%, 97.5% { opacity: 1; } 98%, 100% { opacity: 0; } }
+@keyframes talk { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+
+/* ---------- lie lines + lasers ---------- */
+.lie path { fill: none; stroke-linecap: round; }
+.lie .core { stroke: #ff5a66; }
+.lie .glow { stroke: #ff1f3d; opacity: .45; filter: blur(5px); }
+.draw { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes popDot { 0% { transform: scale(0); opacity: 0; } 40% { transform: scale(1.8); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+/* ---------- subtitles ---------- */
+.shade-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 460px; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.42) 45%, rgba(0,0,0,.72));
+}
+.sub {
+  position: absolute; left: 46px; right: 46px; bottom: 148px; opacity: 0;
+  text-align: center; color: #fff; text-wrap: balance;
+  font: italic 800 46px/1.17 "Playfair Display", Georgia, serif;
+  text-shadow: 0 3px 14px rgba(0,0,0,.75), 0 1px 2px rgba(0,0,0,.9);
+}
+.sub .gold { color: var(--gold); }
+.sub .tag {
+  display: block; margin-bottom: 14px; color: var(--gold);
+  font: 700 18px/1 Montserrat, sans-serif; letter-spacing: .34em; font-style: normal;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
+}
+.sub .tag::before, .sub .tag::after {
+  content: ""; display: inline-block; width: 28px; height: 2px; margin: 0 14px 4px;
+  background: var(--gold); vertical-align: middle; opacity: .85;
+}
+@keyframes subIn { from { opacity: 0; transform: translateY(16px); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes subOut { to { opacity: 0; transform: translateY(-8px); filter: blur(3px); } }
+
+/* ---------- stat cards ---------- */
+.stat-wrap { position: absolute; left: 0; right: 0; display: flex; justify-content: center; }
+.stat {
+  --c: var(--red);
+  min-width: 320px; padding: 22px 40px 20px; text-align: center; border-radius: 14px;
+  background: rgba(11, 13, 22, .93); border: 2px solid var(--c);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--c) 42%, transparent), 0 18px 44px rgba(0,0,0,.55);
+}
+.stat.green { --c: var(--green); }
+.stat .label { font: 700 15px/1 Montserrat, sans-serif; letter-spacing: .28em; color: #fff; opacity: .94; }
+.stat .value {
+  margin-top: 12px; font: 800 86px/1 Montserrat, sans-serif; color: var(--c);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--c) 60%, transparent);
+}
+.stat.big { min-width: 400px; padding: 30px 48px 26px; }
+.stat.big .label { font-size: 18px; }
+.stat.big .value { font-size: 120px; }
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(.3); }
+  55% { opacity: 1; transform: scale(1.12); }
+  76% { transform: scale(.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- profile card ---------- */
+.profile {
+  position: absolute; width: 238px; padding: 18px 20px 16px; border-radius: 12px;
+  background: rgba(16, 13, 30, .9); border: 1.5px solid rgba(242,193,78,.75);
+  box-shadow: 0 16px 40px rgba(0,0,0,.5), 0 0 26px rgba(242,193,78,.18);
+  font-family: Montserrat, sans-serif; transform-origin: 0 0;
+}
+.profile .kicker { font: 700 11px/1 Montserrat; letter-spacing: .26em; color: var(--gold); }
+.profile .name { font: italic 800 34px/1.1 "Playfair Display"; color: #fff; margin: 8px 0 12px; }
+.profile .row {
+  display: flex; justify-content: space-between; align-items: center; padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,.12); font: 600 11px/1 Montserrat; letter-spacing: .2em; color: rgba(255,255,255,.75);
+}
+.profile .row b { font: 700 13px/1 Montserrat; letter-spacing: .08em; color: #fff; }
+.profile .row b.stars { color: var(--gold); letter-spacing: .02em; }
+.profile .foot { margin-top: 10px; font: 800 12px/1 Montserrat; letter-spacing: .24em; color: var(--green); }
+
+/* ---------- "whoosh" on cuts ---------- */
+.whoosh {
+  position: absolute; left: 0; right: 0; top: 520px; text-align: center; opacity: 0;
+  font: italic 900 104px/1 "Playfair Display"; color: #dce9ff; letter-spacing: -.01em;
+  -webkit-text-stroke: 4px #172a63; paint-order: stroke fill;
+  text-shadow: 0 6px 0 rgba(10,18,50,.55), 0 0 30px rgba(120,170,255,.45);
+}
+@keyframes whooshText {
+  0% { opacity: 0; transform: translateX(-140px) rotate(-9deg) scale(.7); filter: blur(8px); }
+  25% { opacity: 1; transform: translateX(0) rotate(-7deg) scale(1.06); filter: blur(0); }
+  70% { opacity: 1; transform: translateX(26px) rotate(-7deg) scale(1); }
+  100% { opacity: 0; transform: translateX(160px) rotate(-6deg) scale(.96); filter: blur(6px); }
+}
+@keyframes speedLines { 0% { opacity: 0; transform: scale(.6); } 25% { opacity: .9; } 100% { opacity: 0; transform: scale(1.25); } }
+
+/* ---------- A / B ending ---------- */
+.panel {
+  position: absolute; left: -30px; width: 780px; height: 330px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+}
+.panel.a { background: linear-gradient(120deg, #4d6bff 0%, var(--blue) 45%, #1730c8 100%); clip-path: polygon(0 14%, 100% 0, 100% 86%, 0 100%); }
+.panel.b { background: linear-gradient(120deg, #9b4fe0 0%, var(--purple) 45%, #5a1796 100%); clip-path: polygon(0 0, 100% 14%, 100% 100%, 0 86%); }
+.panel::before {
+  content: ""; position: absolute; inset: 0; opacity: .14;
+  background: repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 26px);
+}
+.panel .letter {
+  position: absolute; top: 50%; transform: translateY(-52%);
+  font: italic 900 300px/1 "Playfair Display"; color: rgba(255,255,255,.15);
+}
+.panel.a .letter { left: 70px; }
+.panel.b .letter { right: 70px; }
+.panel .title { position: relative; font: italic 800 72px/1.02 "Playfair Display"; color: #fff; text-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.panel .title .gold { color: var(--gold); }
+.panel .small {
+  position: relative; margin-top: 16px; font: 600 17px/1 Montserrat; letter-spacing: .34em; color: rgba(255,255,255,.88);
+}
+@keyframes slideL { from { transform: translateX(-110%); } 70% { transform: translateX(2%); } to { transform: translateX(0); } }
+@keyframes slideR { from { transform: translateX(110%); } 70% { transform: translateX(-2%); } to { transform: translateX(0); } }
+@keyframes glowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+
+/* ---------- generic motion ---------- */
+@keyframes kenburns { from { transform: scale(var(--z0)); } to { transform: scale(var(--z1)); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes enterLeft { from { opacity: 0; transform: translateX(-260px); } to { opacity: 1; transform: none; } }
+@keyframes enterRight { from { opacity: 0; transform: translateX(260px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: none; } }
+@keyframes cardIn { 0% { opacity: 0; transform: scale(.4) rotate(-4deg); } 60% { opacity: 1; transform: scale(1.06) rotate(1deg); } 100% { opacity: 1; transform: none; } }
+@keyframes flicker {
+  0%, 100% { opacity: 1; } 8% { opacity: .82; } 9% { opacity: 1; } 47% { opacity: .9; } 48% { opacity: .65; }
+  49% { opacity: .95; } 72% { opacity: .88; } 73% { opacity: 1; }
+}
+@keyframes breathe { 0%, 100% { opacity: var(--o1, .5); } 50% { opacity: var(--o2, 1); } }
+@keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 0px), var(--dy, -80px)); } }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes floatUp { 0% { opacity: 0; transform: translateY(0) scale(.6); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-420px) scale(1.05); } }
+@keyframes swing { 0%, 100% { transform: rotate(-2.2deg); } 50% { transform: rotate(2.2deg); } }
+@keyframes flash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes bandIn { from { transform: translateX(var(--from)); } to { transform: translateX(0); } }
+@keyframes slowZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-30px, 20px); } 50% { transform: translate(20px, -30px); } 75% { transform: translate(-20px, -10px); } 100% { transform: translate(0, 0); } }
