@@ -67,6 +67,7 @@ def make_timeline(plan, lines):
     fps = plan.get("fps", 30)
     default = plan.get("timing", {})
     whoosh = plan.get("audio", {}).get("whoosh_on_cut", True)
+    duck = plan.get("audio", {}).get("sfx_duck_db", 0)              # SFX under the voice get quieter
     scenes, t = [], 0.0
     for i, sp in enumerate(plan["scenes"], 1):
         voice = ROOT / "audio" / "voice" / f"scene{i:02d}.mp3"
@@ -82,7 +83,11 @@ def make_timeline(plan, lines):
             if times is None:
                 sys.exit(f"scene {i}: sfx '{name}' refers to unknown beat '{when}'")
             for x in times if isinstance(times, list) else [times]:
-                cues.append([name, round(t + float(x), 3)] + gain)
+                at = t + float(x)
+                g = list(gain)
+                if duck and vo_dur and t + vo_at - 0.05 <= at <= t + vo_at + vo_dur:
+                    g = [round((g[0] if g else 0) + duck, 2)]
+                cues.append([name, round(at, 3)] + g)
         scenes.append(dict(
             index=i, file=sp["file"], start=round(t, 4), duration=round(dur, 4), frames=round(dur * fps),
             vo_at=vo_at, vo_dur=round(vo_dur, 4), line=lines[i - 1], cues=cues,

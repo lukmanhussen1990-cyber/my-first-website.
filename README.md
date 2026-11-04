@@ -12,6 +12,7 @@ pip install playwright numpy          # Chromium + ffmpeg must be available
 cp .env.example .env                  # put ELEVENLABS_API_KEY=... in it (only needed for new voice lines)
 ./build.sh                            # voice → plan → music/SFX → scenes → out/final.mp4
 ./build.sh 6                          # re-record only scene 6, then re-assemble
+./build.sh --mix                      # keep the recorded scenes, redo only the audio mix + export
 ```
 
 Preview a scene live (same clock as the render): `python3 -m http.server 8000`, then open
@@ -33,7 +34,7 @@ Check single frames: `python3 render.py --stills 3 --at 0.5,2,4` → `out/stills
 | `audio/music.wav`, `audio/sfx/` | Royalty‑free bed + SFX synthesized by `sfx.py` (replace with your own files of the same name). |
 | `voice.py` | ElevenLabs TTS (key from `.env`), one MP3 per line, calm pauses between sentences. |
 | `render.py` | Timeline + mix plan, frame‑accurate scene recording, cover export. |
-| `build.sh` | ffmpeg concat + voice/music/SFX mix (music −18 dB under the voice, final −14 LUFS) → H.264/AAC MP4. |
+| `build.sh` | ffmpeg concat + voice/music/SFX mix (music −18 dB under the voice, SFX ducked −6 dB while the narrator speaks, final −14 LUFS) → H.264/AAC MP4. |
 
 ## Timing rule
 

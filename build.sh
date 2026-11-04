@@ -3,6 +3,7 @@
 #
 #   ./build.sh            full build
 #   ./build.sh 3 7        re-record only scenes 3 and 7, then re-assemble
+#   ./build.sh --mix      keep the recorded scenes, only redo the audio mix + export
 #
 # Needs: python3 + playwright (pip install playwright), ffmpeg. Voice lines that already
 # exist in audio/voice/ are reused, so ElevenLabs is only called for new/missing lines.
@@ -18,7 +19,11 @@ fi
 
 echo "• plan";   python3 render.py --plan
 echo "• music + sfx"; python3 sfx.py
-echo "• record scenes"; python3 render.py "$@"
+if [ "${1:-}" = "--mix" ]; then
+  echo "• record scenes: skipped (--mix)"
+else
+  echo "• record scenes"; python3 render.py "$@"
+fi
 
 echo "• join scenes"
 ffmpeg -y -loglevel error -f concat -safe 0 -i out/concat.txt -c copy out/video.mp4
