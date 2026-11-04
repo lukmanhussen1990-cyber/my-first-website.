@@ -1,0 +1,13 @@
+build/
+__pycache__/
+*.log
+audio/sfx/
+audio/mix.wav
+audio/mix_final.wav
+node_modules
+clips/
+images/
+# the full song is the user's file: not committed (the video uses only a short clip of it)
+audio/raw/*.mp3
+audio/song_full.wav
+audio/raw/*.json
