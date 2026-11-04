@@ -1,0 +1,23 @@
+"""The voiceover script (the user's text, one entry per line / scene). Captions show these words exactly as said,
+lowercase like the reference; the timing comes from the user's own recording (faster-whisper, import_voiceover.py)."""
+TEXT = [
+    "What if your balls doubled in size every minute?",
+    "Right now, the pair weighs about forty grams.",
+    "Five minutes in: they're the size of melons.",
+    "Ten minutes: forty kilos. Like a bag of cement.",
+    "You try to stand up. You can't.",
+    "Fifteen minutes: as heavy as a small car.",
+    "Twenty minutes: the army arrives.",
+    "They try to move them.",
+    "Damage: zero percent.",
+    "Thirty minutes: taller than an eleven-story building.",
+    "The world panics.",
+    "Your mom is stuck in traffic because of you.",
+    "One hour: heavier than every mountain on Earth.",
+    "Eighty-seven minutes: heavier than the Earth itself.",
+    "Now the Earth orbits YOU.",
+    "Two hours: gravity wins.",
+    "You become a black hole.",
+    "Which is why…",
+    "…you should never ask 'what if'.",
+]
