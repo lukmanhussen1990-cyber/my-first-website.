@@ -42,6 +42,8 @@ else
   echo "== 7. thumbnail + captions.srt"
   node render/render.mjs --thumbnail
   python3 story/make_srt.py
+  echo "== 8. quality checks"
+  python3 render/verify.py
 fi
 
 END=$(date +%s)
