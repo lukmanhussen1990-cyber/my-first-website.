@@ -324,7 +324,7 @@ export const BallotBox: React.FC<{position: V3; yaw?: number; scale?: number}> =
 	<group position={position} rotation={[0, yaw, 0]} scale={scale}>
 		<RBox s={[2.4, 2.2, 2.0]} r={0.1} color="#2a5bd7" position={[0, 1.1, 0]} />
 		<Box s={[1.4, 0.06, 0.2]} color="#0c1a3a" position={[0, 2.21, 0]} />
-		<TextPlane text="BALLOT\nBOX" w={2.0} opts={{w: 512, h: 300, bg: '#ffffff', color: '#2a5bd7', radius: 30}} position={[0, 1.15, 1.01]} glow={0.4} />
+		<TextPlane text={'BALLOT\nBOX'} w={2.0} opts={{w: 512, h: 300, bg: '#ffffff', color: '#2a5bd7', radius: 30}} position={[0, 1.15, 1.01]} glow={0.4} />
 	</group>
 );
 

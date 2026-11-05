@@ -375,13 +375,22 @@ const S05d: React.FC<SP> = ({t, p, gt}) => (
 );
 
 /* 5e. "The old mayor got 12." */
-const S05e: React.FC<SP> = ({t, p, gt}) => (
-	<>
-		<ResultsScene t={t + 3} a={4000} b={Math.round(12 * easeOut(seg(t, 0.1, 0.5)))} glow={0.6} />
-		<Person look={OLD_MAYOR} t={t} seed={7} expr={t > 0.55 ? 'shocked' : 'bored'} position={[-2.6, 0, 18.5]} yaw={0.35} pose={t > 0.55 ? {armL: [-0.4, 0, 1.0], armR: [-0.4, 0, -1.0], bob: 0.1} : undefined} />
-		<Cam pos={lerp3([1.8, 5.8, 25.5], [1.4, 5.6, 24.5], smooth(p))} look={[0.4, 4.6, 15]} frameY={0.3} fov={40} t={gt} />
-	</>
-);
+const S05e: React.FC<SP> = ({t, p, gt}) => {
+	const cut = 0.62;
+	const b = Math.round(12 * easeOut(seg(t, 0.05, 0.45)));
+	return t < cut ? (
+		<>
+			<ResultsScene t={t + 3} a={4000} b={b} glow={0.6} />
+			<Cam pos={lerp3([2.4, 5.0, 23], [2.2, 4.8, 22], smooth(t / cut))} look={[1.2, 4.6, 14.4]} frameY={0.4} fov={40} t={gt} />
+		</>
+	) : (
+		<>
+			<ResultsScene t={t + 3} a={4000} b={12} glow={0.6} />
+			<Person look={OLD_MAYOR} t={t} seed={7} expr="shocked" position={[-2.6, 0, 18.5]} yaw={0.35} pose={{armL: [-0.4, 0, 1.0], armR: [-0.4, 0, -1.0], bob: Math.abs(Math.sin(t * 20)) * 0.08}} />
+			<Cam pos={lerp3([-0.6, 5.6, 25.0], [-0.9, 5.5, 24.2], smooth((t - cut) / (1.38 - cut)))} look={[-2.6, 5.3, 18.5]} frameY={0.38} fov={32} t={gt} />
+		</>
+	);
+};
 
 /* 5f. crowd shocked → cheers */
 const S05f: React.FC<SP> = ({t, p, gt}) => (

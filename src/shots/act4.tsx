@@ -122,7 +122,7 @@ const LawDesk: React.FC<{t: number; stampT: number; gt: number; camH: number; sp
 			<MayorOffice />
 			<Paper position={[0, OFFICE_DESK_Y + 0.04, -2.9]} rotation={[0, 0.03, 0]} w={3.2} tex={lawTex(t >= stampT ? 1 : 0, LAW)} glow={0.5} />
 			{pawY < 11.9 ? (
-				<group position={[0.1, pawY, -2.1]}>
+				<group position={[0.1, pawY, -2.1]} scale={0.75}>
 					<mesh geometry={rboxGeo(1.3, 3.6, 1.3, 0.2)} material={plastic(FUR, {rough: 0.75})} position={[0, 2.0, -0.5]} rotation={[0.25, 0, 0]} castShadow />
 					<mesh geometry={rboxGeo(1.45, 0.75, 1.55, 0.25)} material={plastic(CREAM, {rough: 0.8})} castShadow />
 				</group>
@@ -138,12 +138,12 @@ const LawDesk: React.FC<{t: number; stampT: number; gt: number; camH: number; sp
 						);
 					})
 				: null}
-			<Cam pos={[0.2, camH, 0.7]} look={[0, OFFICE_DESK_Y, -2.75]} frameY={0.4} fov={36} t={gt} sway={0.02} shake={shake} />
+			<Cam pos={[0.2, camH, 1.0]} look={[0, OFFICE_DESK_Y, -2.8]} frameY={0.42} fov={42} t={gt} sway={0.02} shake={shake} />
 		</>
 	);
 };
-const S17c: React.FC<SP> = ({t, gt}) => <LawDesk t={t} stampT={0.2} gt={gt} camH={14.2} />;
-const S18: React.FC<SP> = ({t, p, gt}) => <LawDesk t={t + 2} stampT={0} gt={gt} camH={lerp(14.2, 11.6, easeOut(p))} sparkle={seg(t, 0.2, 0.6)} />;
+const S17c: React.FC<SP> = ({t, gt}) => <LawDesk t={t} stampT={0.2} gt={gt} camH={15.2} />;
+const S18: React.FC<SP> = ({t, p, gt}) => <LawDesk t={t + 2} stampT={0} gt={gt} camH={lerp(15.2, 12.4, easeOut(p))} sparkle={seg(t, 0.2, 0.6)} />;
 
 /* 18b. Everybody hugging in the square */
 const HugPair: React.FC<{t: number; i: number; pos: V3; yaw: number}> = ({t, i, pos, yaw}) => {

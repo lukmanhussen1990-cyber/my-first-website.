@@ -87,11 +87,11 @@ const RuleShot = (title: string, body: string, stampT: number): React.FC<SP> => 
 				<MayorOffice />
 				<Paper position={[lerp(-6, 0, slide), OFFICE_DESK_Y + 0.04, -2.9]} rotation={[0, lerp(0.6, 0.04, slide), 0]} w={3.2} tex={lawTex(stamped, body, title)} glow={0.45} />
 				{/* the paw coming down */}
-				<group position={[0.15, pawY, -2.3]}>
+				<group position={[0.15, pawY, -2.3]} scale={0.75}>
 					<mesh geometry={rboxGeo(1.3, 3.6, 1.3, 0.2)} material={plastic(FUR, {rough: 0.75})} position={[0, 2.0, -0.5]} rotation={[0.25, 0, 0]} castShadow />
 					<mesh geometry={rboxGeo(1.45, 0.75, 1.55, 0.25)} material={plastic(CREAM, {rough: 0.8})} castShadow />
 				</group>
-				<Cam pos={[0.2, 14.2, 0.9]} look={[0, OFFICE_DESK_Y, -2.7]} frameY={0.4} fov={36} t={gt} sway={0.02} shake={shakeAt(t, [stampT], 0.8)} />
+				<Cam pos={[0.2, 15.2, 1.0]} look={[0, OFFICE_DESK_Y, -2.8]} frameY={0.42} fov={42} t={gt} sway={0.02} shake={shakeAt(t, [stampT], 0.8)} />
 			</>
 		);
 	};
@@ -244,8 +244,8 @@ const S09c: React.FC<SP> = ({t, p, gt}) => {
 	return (
 		<>
 			<ParkScene t={t * 0.3 + 3} slow={0.3} />
-			<Dog t={t} pose="run" emotion="happy" position={[0, 0, z]} speed={0.33} fx={0.4} mouthItem={<TennisBall position={[0, 0, 0]} r={0.36} />} />
-			<Cam pos={[1.4, 2.4, z + 9.4]} look={[0, 3.0, z + 1.4]} frameY={0.37} fov={34} t={gt} sway={0.08} />
+			<Dog t={t} pose="run" emotion="happy" position={[10, 0, z]} speed={0.33} fx={0.4} mouthItem={<TennisBall position={[0, 0, 0]} r={0.36} />} />
+			<Cam pos={[11.4, 2.4, z + 9.4]} look={[10, 3.0, z + 1.4]} frameY={0.37} fov={34} t={gt} sway={0.08} />
 		</>
 	);
 };
