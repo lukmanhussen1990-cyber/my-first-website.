@@ -31,7 +31,7 @@ CHUNKS = {
 
 # One entry per shot: "start" = (line, word index) where the shot's voice starts; "cut" = a camera cut inside it.
 SHOTS = [
-    dict(start=(1, 0), size="medium", scene="From behind the kneeling guy: the cowboy stands legs wide, the kneeling guy's head at his waist, bobbing."),
+    dict(start=(1, 0), cut=(1, 0), size="medium", scene="(the user's start sound) from behind, wider; cut on the first word: closer. The cowboy stands legs wide, the kneeling guy's head at his waist, bobbing. No balloon visible."),
     dict(start=(1, 3), size="close-up", scene="The cowboy's bored face from below, the timer: 10:00."),
     dict(start=(1, 7), cut=(1, 10), size="medium", scene="Still from behind; cut on 'soft': the side view reveals a pink balloon, still soft."),
     dict(start=(2, 0), cut=(2, 2), size="medium", scene="The cowboy, annoyed, hands him a pink hairdryer."),

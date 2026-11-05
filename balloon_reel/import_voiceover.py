@@ -104,10 +104,19 @@ for ti, (li, w) in enumerate(tokens):
 
 raw = subprocess.run(["ffmpeg", "-v", "error", "-i", SRC, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout
 x = np.frombuffer(raw, np.float32)
-INTRO = os.environ.get("INTRO", P("audio", "raw", "intro_yeah.mp3"))
+INTRO = os.environ.get("INTRO", P("audio", "raw", "intro.mp3"))
 LEAD_IN = 0.0
-if os.path.exists(INTRO):          # the user's intro clip ("yeah"), added unchanged before the voiceover, no captions
+def active_db(y):                  # loudness of the sounding parts (50 ms frames within 30 dB of the loudest)
+    n = int(0.05 * SR); fr = y[:len(y) // n * n].reshape(-1, n).astype(np.float64)
+    r = np.sqrt((fr ** 2).mean(1)); d = 20 * np.log10(r + 1e-9)
+    return 20 * np.log10(np.sqrt((fr[d > d.max() - 30] ** 2).mean()) + 1e-9)
+
+
+if os.path.exists(INTRO):          # the user's start sound, put before the voiceover; only its level is matched to the voice
     xi = np.frombuffer(subprocess.run(["ffmpeg", "-v", "error", "-i", INTRO, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout, np.float32)
+    g = min(max(active_db(x) - active_db(xi), 0.0), 12.0, -3.0 - 20 * np.log10(np.abs(xi).max() + 1e-9))
+    xi = (xi * 10 ** (g / 20)).astype(np.float32)
+    print(f"start sound level matched to the voice: {g:+.1f} dB")
     LEAD_IN = len(xi) / SR
     x = np.concatenate([xi, x])
     for w in words:

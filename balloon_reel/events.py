@@ -22,7 +22,7 @@ def cut(i):
 
 
 T = dict(
-    blow=at(1, 0.0), reveal=cut(3), dryer=at(4, 0.0), take=cut(4), vrrr=at(5, 0.0), hot=at(6, 0.0),
+    blow=cut(1), reveal=cut(3), dryer=at(4, 0.0), take=cut(4), vrrr=at(5, 0.0), hot=at(6, 0.0),
     boing=at(7, 0.15), melt=at(8, 0.0), fart=at(9, 0.0), tape=at(10, 0.45), going=at(11, 0.0),
     pump=at(12, 0.0), arm=at(13, 0.0), squish=cut(14), blower=at(15, 0.0), vroom=cut(15), boom=at(16, 0.15), timer=cut(16),
     cat=at(17, 0.0), leap=cut(17), ride=at(18, 0.0), aladdin=at(19, 0.0), genius=at(20, 0.0),

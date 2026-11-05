@@ -1521,7 +1521,7 @@ def build():
         cues.append(dict(t=round(float(t), 3), file=f"audio/sfx/{name}.wav", gain_db=gain_db, note=note, **kw))
 
     cue("room", mk_room_tone(DUR_), 0.0, -32.0, "quiet room air", by="int", duck_db=2)
-    cue("blow", mk_blow(SH(4)[0] + 0.1, 1.15), T["blow"], -18.0, "blowing into the balloon", duck_db=4)
+    cue("blow", mk_blow(SH(4)[0] - T["blow"] + 0.1, 1.15), T["blow"], -18.0, "blowing into the balloon", duck_db=4)
     cue("reveal", mk_boing(0.5, 300, 0.3, 18), T["reveal"] + 0.05, -22.0, "a little wobble: it's a balloon", duck_db=3)
     cue("hand", mk_whoosh(0.3, 800, 2400, seed=6), T["take"] - 0.2, -22.0, "handing over the hairdryer", duck_db=3)
     cue("dryer", mk_motor(SH(7)[0] - T["vrrr"] + 0.05, 640, 0.6, 1), T["vrrr"], -16.0, "VRRRR (hairdryer)", duck_db=3)

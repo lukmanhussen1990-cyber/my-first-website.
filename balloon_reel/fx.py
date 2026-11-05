@@ -11,7 +11,7 @@ LBL = lambda text, t0, at, off, size=56: dict(type="label", text=text, t0=t0, at
 def shot_fx(i):
     t0, t1 = shot(i)
     F = {
-        1: lambda: dict(push=(1.0, 1.05), pulse=[(t0 + k * 0.9, 1.012, 0.3) for k in range(1)], fx=[dict(type="sweat", at="kid", t0=t0 + 0.1, dist=80, slide=1.2, scale=1.2)]),
+        1: lambda: dict(push=(1.0, 1.04), fx=[dict(type="sweat", at="kid", t0=cut(1) + 0.05, dist=80, slide=1.2, scale=1.2)]),
         2: lambda: dict(push=(1.0, 1.05), fx=[TIMER("10:00", t0 + 0.05, (0.72, 0.2))]),
         3: lambda: dict(push=(1.0, 1.04), punch=[(T["reveal"], 1.04)]),
         4: lambda: dict(push=(1.0, 1.04)),

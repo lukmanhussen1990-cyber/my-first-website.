@@ -10,6 +10,12 @@ plan = json.load(open(os.path.join(HERE, "shots.json")))
 WORDS = json.load(open(os.path.join(HERE, "audio", "voiceover.words.json")))
 END = plan["duration"]
 chunks = sorted((c for s in plan["shots"] for c in s["captions"]), key=lambda c: c["t"])
+# the user's start sound (audio/raw/intro.mp3, before the voiceover) says "Oh fuck. Oh fuck." (heard with faster-whisper,
+# word edges from its loudness curve); every word that is said gets a caption
+if os.path.exists(os.path.join(HERE, "audio", "raw", "intro.mp3")):
+    IW = [("Oh", 0.08, 0.62), ("fuck.", 0.62, 1.45), ("Oh", 1.78, 2.35), ("fuck.", 2.35, 3.3)]
+    WORDS = [{"w": w, "s": a, "e": b, "line": 0} for w, a, b in IW] + WORDS
+    chunks = [{"t": 0.08, "end": 1.45, "text": "Oh fuck.", "line": 0}, {"t": 1.78, "end": 3.3, "text": "Oh fuck.", "line": 0}] + chunks
 
 
 def ts(t):

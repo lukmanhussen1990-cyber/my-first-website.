@@ -64,13 +64,16 @@ export const SHOTS = {
   1: {
     build(W) { const c = { R: room(W) }; duo(W, c); return c; },
     update(W, c, lt) { const ctr = balloonAt(c, SOFT, lt); c.bl.visible = false; cowboy(c, lt, { hold: [ctr, 0.12] }); kidBlow(c, lt); },
-    cam: (W, c, lt) => { const k = K(W, lt); return camAt([0.18, 1.18, 1.55 - 0.1 * k], [0, 1.25, -0.6], 46); },
+    cam: (W, c, lt) => {
+      if (lt < W.cut) { const q = clamp(lt / Math.max(0.5, W.cut)); return camAt([0.12, 1.3, 2.6 - 0.7 * q], [0, 1.25, -0.6], 46); }
+      const k = cutK(W, lt); return camAt([0.18, 1.18, 1.55 - 0.1 * k], [0, 1.25, -0.6], 46);
+    },
     anchors: (W, c) => ({ kid: c.kid.headPos() }),
   },
   // ================================================================ 2 "it for ten minutes" the cowboy's bored face from below (10:00)
   2: {
     build(W) { const c = { R: room(W) }; duo(W, c); return c; },
-    update(W, c, lt) { const ctr = balloonAt(c, SOFT, lt + 0.7); c.bl.visible = false; cowboy(c, lt, { hold: [ctr, 0.12] }); kidBlow(c, lt + 0.7); face(c.cb, 'squint', 'skeptic', 'frown', { lookAt: [0, 1.0, 0.0] }); },
+    update(W, c, lt) { const ctr = balloonAt(c, SOFT, lt + 4.3); c.bl.visible = false; cowboy(c, lt, { hold: [ctr, 0.12] }); kidBlow(c, lt + 0.7); face(c.cb, 'squint', 'skeptic', 'frown', { lookAt: [0, 1.0, 0.0] }); },
     cam: (W, c, lt) => { const h = c.cb.headPos(), k = K(W, lt); return camAt([0.35, 1.32, 0.45 - 0.05 * k], [h.x, h.y - 0.05, h.z], 44); },
   },
   // ================================================================ 3 "and it's still soft." behind him; cut on "soft": the side view: a pink balloon
