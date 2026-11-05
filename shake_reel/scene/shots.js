@@ -317,20 +317,12 @@ export const SHOTS = {
   25: {
     build(W) { const c = { H: house(W, { at: [0, -1.5, -2.5], size: 4 }) }; couple(W, c); c.H.f2.remove(c.H.bed); c.H.base.add(c.H.bed); c.H.bed.position.set(BX, 0, BZ); return c; },
     update(W, c, lt) {
-      sitAt(c.him, BX + 0.62, BZ - 0.3, -Math.PI / 2, FB + 0.16); Object.assign(c.him.p, { lean: -0.32 });
+      sitAt(c.him, BX + 0.55, BZ - 0.3, -0.95, FB + 0.16); Object.assign(c.him.p, { lean: -0.25 });
       const h = c.him.headPos(); c.him.p.handL = [h.x + 0.1, h.y + 0.02, h.z - 0.13]; c.him.p.handR = [h.x + 0.1, h.y + 0.02, h.z + 0.13]; c.him.p.handPoseL = c.him.p.handPoseR = 'relaxed';
-      face(c.him, 'happy', 'raised', 'grin', { headRoll: 0.06 * Math.sin(lt * 3) });
+      face(c.him, 'happy', 'raised', 'grin', { headRoll: 0.06 * Math.sin(lt * 3), lookAt: [BX - 0.55, FB + 1.45, BZ + 1.7] });
       standAt(c.gf, BX - 0.78, BZ + 0.36, -Math.PI / 2, FB + 0.6); Object.assign(c.gf.p, { pitch: -Math.PI / 2 + 0.18 }); face(c.gf, 'happy', 'raised', 'smile', { lookAt: P3(c.him.headPos()) });
     },
     cam: (W, c, lt) => { const k = K(W, lt); return camAt([BX - 0.55, FB + 1.45, BZ + 1.7 - 0.12 * k], [BX + 0.55, FB + 1.1, BZ - 0.15], 42); },
-    anchors: (W, c) => ({ him: c.him.headPos() }),
-  },
-}; couple(W, c); c.H.f2.remove(c.H.bed); c.H.base.add(c.H.bed); c.H.bed.position.set(BX, 0, BZ); return c; },
-    update(W, c, lt) {
-      inBed(c, lt, FB); face(c.him, 'happy', 'raised', 'grin'); face(c.gf, 'happy', 'raised', 'smile', { lookAt: P3(c.him.headPos()) });
-      const h = c.him.headPos(); c.him.p.handL = [h.x + 0.08, h.y + 0.05, h.z + 0.14]; c.him.p.handR = [h.x + 0.08, h.y + 0.05, h.z - 0.14]; c.him.p.handPoseL = c.him.p.handPoseR = 'relaxed';
-    },
-    cam: (W, c, lt) => { const k = K(W, lt); return camAt([BX + 0.35, FB + 1.6, BZ + 1.95 - 0.12 * k], [BX + 0.75, FB + 0.88, BZ], 42); },
     anchors: (W, c) => ({ him: c.him.headPos() }),
   },
 };
