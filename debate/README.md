@@ -8,6 +8,9 @@
 
 ## Video
 
+**`debate_video.mp4` is the finished video with both voices (5:11).** `debate.mp3` is the joined audio on its own.
+
+
 `debate_visuals.mp4` is the video track: speaker cards that highlight whoever is talking, plus captions,
 timed to the ElevenLabs clips. To make the final video with sound, put the downloaded MP3 next to this file and run:
 
