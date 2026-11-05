@@ -1,6 +1,6 @@
 # Biscuit for Mayor — scene plan
 
-Voiceover: `assets/voiceover.mp3` (107.55 s, untouched).
+Voiceover: `public/voiceover.mp3` (107.55 s, untouched).
 Video: 1080x1920, 30 fps, 108.55 s (voiceover + 1 s) = 3257 frames.
 All times below come from `words.json` (Whisper, word-level timestamps).
 

@@ -1,7 +1,7 @@
 """Transcribe the voiceover with Whisper (faster-whisper, 'small' model) using
 word-level timestamps, and write words.json.
 
-Usage: python3 scripts/transcribe.py <model_dir> assets/voiceover.mp3 words.json
+Usage: python3 scripts/transcribe.py <model_dir> public/voiceover.mp3 words.json
 """
 import json
 import sys
