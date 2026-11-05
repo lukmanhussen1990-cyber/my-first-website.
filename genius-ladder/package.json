@@ -1,0 +1,19 @@
+{
+  "name": "genius-ladder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "100% code-generated vertical cartoon short: Three.js scene, Playwright frame capture, procedural SFX, offline TTS, ffmpeg encode.",
+  "scripts": {
+    "tts": "node scripts/tts.mjs",
+    "audio": "node scripts/audio.mjs",
+    "render": "node scripts/render.mjs",
+    "build": "node scripts/tts.mjs && node scripts/audio.mjs && node scripts/render.mjs",
+    "preview": "node scripts/serve.mjs",
+    "stills": "node scripts/render.mjs --stills"
+  },
+  "dependencies": {
+    "@fontsource/lilita-one": "5.2.5",
+    "three": "0.160.0"
+  }
+}
