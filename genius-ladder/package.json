@@ -5,12 +5,13 @@
   "type": "module",
   "description": "100% code-generated vertical cartoon short: Three.js scene, Playwright frame capture, procedural SFX, offline TTS, ffmpeg encode.",
   "scripts": {
-    "tts": "node scripts/tts.mjs",
+    "narration": "node scripts/narration.mjs assets/narration.mp3",
     "audio": "node scripts/audio.mjs",
-    "render": "node scripts/render.mjs",
-    "build": "node scripts/tts.mjs && node scripts/audio.mjs && node scripts/render.mjs",
+    "render": "node scripts/render.mjs --workers 3",
+    "render:144p": "node scripts/render.mjs --scale 0.13333 --workers 3 --out genius-ladder-144p.mp4",
+    "build": "node scripts/narration.mjs && node scripts/audio.mjs && node scripts/render.mjs --workers 3",
     "preview": "node scripts/serve.mjs",
-    "stills": "node scripts/render.mjs --stills"
+    "stills": "node scripts/render.mjs --stills 0.5"
   },
   "dependencies": {
     "@fontsource/lilita-one": "5.2.5",

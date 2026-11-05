@@ -67,7 +67,7 @@ export const TIMELINE = [
   // ---------------------------------------------------------------- 1. the problem
   {
     id: 'intro',
-    dur: 3.7,
+    dur: 3.95,
     vo: [{ at: 0.12, text: 'You want to watch your friend shit, but his bathroom window is ten feet up.', caps: ['YOU WANT TO', 'WATCH YOUR', 'FRIEND SHIT,', 'BUT HIS', 'BATHROOM WINDOW', 'IS TEN FEET UP.'] }],
     shots: [
       { at: 0, cam: { pos: [2.4, 1.0, 8.2], look: [0.2, 2.75, 0], fov: 58 }, push: 0.1 },
@@ -374,10 +374,10 @@ export const TIMELINE = [
   // ---------------------------------------------------------------- 10. the reveal
   {
     id: 'reveal',
-    dur: 4.8,
+    dur: 5.0,
     vo: [
       { at: 0.12, text: 'You finally reach the top...', caps: ['YOU FINALLY', 'REACH THE TOP...'] },
-      { at: 2.55, text: "and he's been watching you shit for three years.", caps: ["AND HE'S BEEN", 'WATCHING YOU SHIT', 'FOR THREE YEARS.'] },
+      { at: 2.5, text: "and he's been watching you shit for three years.", caps: ["AND HE'S BEEN", 'WATCHING YOU SHIT', 'FOR THREE YEARS.'] },
     ],
     shots: [
       { at: 0, cam: { pos: [1.35, 0.45, 3.7], look: [0.1, 2.3, 0.9], fov: 58 }, push: 0.1 },
