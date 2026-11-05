@@ -334,6 +334,10 @@ const useCaptionCheck = (ref: React.RefObject<THREE.Mesh | null>) => {
 	const camera = useThree((s) => s.camera);
 	useLayoutEffect(() => {
 		const m = ref.current;
+		if ((window as unknown as {__dbg?: number}).__dbg === undefined) {
+			(window as unknown as {__dbg?: number}).__dbg = 1;
+			console.log('CAPTION_CHECK active', !!m);
+		}
 		if (!m) return;
 		m.updateWorldMatrix(true, false);
 		camera.updateMatrixWorld();
