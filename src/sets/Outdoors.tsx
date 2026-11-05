@@ -141,7 +141,7 @@ export const Beam: React.FC<{from: V3; to: V3; k?: number; color?: string; light
 	return (
 		<group>
 			<mesh position={mid} quaternion={quat} geometry={cylGeo(0.12, width, len, 20, true)} renderOrder={5}>
-				<meshBasicMaterial color={color} transparent opacity={0.13 * k} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} fog={false} />
+				<meshBasicMaterial color={color} transparent opacity={0.075 * k} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} fog={false} />
 			</mesh>
 			<Glow position={from} size={2.2} color={color} opacity={0.9 * k} />
 			{light ? (
@@ -166,8 +166,8 @@ export const ForestEdge: React.FC<{t: number; police?: boolean; children?: React
 		<PineForest n={90} radius={85} clear={0} seed="edge" center={[0, 0, -75]} maxZ={58} />
 		{police ? (
 			<>
-				<Car position={[-14, 0, 22]} yaw={0.5} police t={t} />
-				<Car position={[18, 0, 30]} yaw={-0.7} police t={t + 0.13} />
+				<Car position={[-9, 0, 15]} yaw={0.5} police t={t} />
+				<Car position={[11, 0, 19]} yaw={-0.7} police t={t + 0.13} />
 			</>
 		) : null}
 		{children}

@@ -25,7 +25,7 @@ export type ShotDef = {
 export const DAY_FX: FX = {bg: '#8fd3ff', bloom: 0.45, env: 0.42, contrast: 0.1, saturation: 0.16};
 export const MORNING_FX: FX = {bg: '#ffd9b0', bloom: 0.7, env: 0.55, saturation: 0.15};
 export const NIGHT_FX: FX = {bg: '#0b1030', bloom: 1.25, bloomThreshold: 0.55, env: 0.18, vignette: 0.55, saturation: 0.1};
-export const FOREST_FX: FX = {bg: '#060a1c', bloom: 1.4, bloomThreshold: 0.5, env: 0.12, vignette: 0.6, fog: {color: '#141c3c', density: 0.022}};
+export const FOREST_FX: FX = {bg: '#060a1c', bloom: 1.1, bloomThreshold: 0.6, env: 0.16, vignette: 0.5, exposure: 1.12, fog: {color: '#141c3c', density: 0.018}};
 export const OFFICE_FX: FX = {bg: '#f4e4c8', bloom: 0.45, env: 0.6};
 export const DARK_FX: FX = {bg: '#0a0812', bloom: 1.0, bloomThreshold: 0.6, env: 0.1, vignette: 0.7, contrast: 0.12};
 

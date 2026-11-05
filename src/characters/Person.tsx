@@ -239,7 +239,7 @@ const HairMesh: React.FC<{hair: Hair; color: string; hs: number}> = ({hair, colo
 				<group>
 					<mesh geometry={rboxGeo(1.44 * hs, 0.5 * hs, 1.1 * hs, 0.15)} material={m} position={[0, 0.0, -0.18 * hs]} castShadow />
 					{[-0.25, -0.05, 0.15, 0.35].map((x, i) => (
-						<mesh key={i} geometry={rboxGeo(0.07, 0.05, 1.05 * hs, 0.02)} material={m} position={[x * hs, top - 0.035, 0.05]} rotation={[0, 0.85, 0.05 * i]} />
+						<mesh key={i} geometry={rboxGeo(0.07, 0.05, 0.62 * hs, 0.02)} material={m} position={[x * 0.7 * hs, top - 0.05, 0.05]} rotation={[0, 0.85, 0]} />
 					))}
 				</group>
 			);

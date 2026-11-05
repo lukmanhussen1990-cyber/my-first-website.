@@ -176,9 +176,9 @@ export const Lights: React.FC<{preset: LightPreset; center?: V3; size?: number; 
 		case 'forest':
 			return (
 				<>
-					<hemisphereLight args={['#3e5aa8', '#0c1222', 0.5 * k]} />
-					<ambientLight intensity={0.08 * k} />
-					<Sun pos={at(sunDir ?? [0.3, 0.9, 0.3], 60)} target={c} intensity={0.45 * k} color="#8fa8ff" size={size} />
+					<hemisphereLight args={['#5a78d0', '#1a2440', 0.95 * k]} />
+					<ambientLight intensity={0.14 * k} />
+					<Sun pos={at(sunDir ?? [0.3, 0.9, 0.3], 60)} target={c} intensity={0.85 * k} color="#9fb6ff" size={size} />
 				</>
 			);
 	}

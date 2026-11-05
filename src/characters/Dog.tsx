@@ -1,4 +1,5 @@
-import React from 'react';
+import {useThree} from '@react-three/fiber';
+import React, {useLayoutEffect, useRef} from 'react';
 import * as THREE from 'three';
 import {V3, clamp, lerp, rnd} from '../lib/anim';
 import {litTex, planeGeo, plastic, rboxGeo, unlit} from '../three/cache';
@@ -327,7 +328,42 @@ const TopHat: React.FC = () => {
 	);
 };
 
+/* QA: warn when the caption box (centre ~62% down the screen) would cover the dog's face. */
+const CAP = {y0: 0.555, y1: 0.685, x0: 0.24, x1: 0.76};
+const useCaptionCheck = (ref: React.RefObject<THREE.Mesh | null>) => {
+	const camera = useThree((s) => s.camera);
+	useLayoutEffect(() => {
+		const m = ref.current;
+		if (!m) return;
+		m.updateWorldMatrix(true, false);
+		camera.updateMatrixWorld();
+		let x0 = 1;
+		let x1 = 0;
+		let y0 = 1;
+		let y1 = 0;
+		let front = false;
+		for (const [u, v] of [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42], [0, -0.45], [0, 0]]) {
+			const q = new THREE.Vector3(u * FACE_W, v * FACE_H, 0).applyMatrix4(m.matrixWorld).project(camera);
+			if (q.z < 1) front = true;
+			const sx = (q.x + 1) / 2;
+			const sy = (1 - q.y) / 2;
+			x0 = Math.min(x0, sx);
+			x1 = Math.max(x1, sx);
+			y0 = Math.min(y0, sy);
+			y1 = Math.max(y1, sy);
+		}
+		const onScreen = front && x1 > 0 && x0 < 1 && y1 > 0 && y0 < 1;
+		const facing = new THREE.Vector3(0, 0, 1).transformDirection(m.matrixWorld).dot(new THREE.Vector3().subVectors(camera.position, new THREE.Vector3().setFromMatrixPosition(m.matrixWorld)).normalize());
+		if (onScreen && facing > 0.2 && y1 > CAP.y0 && y0 < CAP.y1 && x1 > CAP.x0 && x0 < CAP.x1) {
+			const g = (window as unknown as {__gt?: number}).__gt;
+			console.log(`FACE_UNDER_CAPTION gt=${g?.toFixed(2)} face_y=${y0.toFixed(2)}-${y1.toFixed(2)} x=${x0.toFixed(2)}-${x1.toFixed(2)}`);
+		}
+	});
+};
+
 export const Dog: React.FC<DogProps> = (p) => {
+	const faceRef = useRef<THREE.Mesh>(null);
+	useCaptionCheck(faceRef);
 	const t = p.t;
 	const pose = p.pose ?? 'stand';
 	const emo = p.emotion ?? 'normal';
@@ -349,7 +385,7 @@ export const Dog: React.FC<DogProps> = (p) => {
 			<mesh geometry={rboxGeo(HW, HH, HD, 0.16)} material={furM()} castShadow receiveShadow />
 			<mesh geometry={rboxGeo(HW + 0.01, HH * 0.42, HD * 0.62, 0.12)} material={creamM()} position={[0, -HH * 0.29, HD * 0.2]} castShadow receiveShadow />
 			{faceTex ? (
-				<mesh geometry={planeGeo(FACE_W, FACE_H)} position={[0, 0, FACE_Z]} renderOrder={2}>
+				<mesh ref={faceRef} geometry={planeGeo(FACE_W, FACE_H)} position={[0, 0, FACE_Z]} renderOrder={2}>
 					<meshStandardMaterial map={faceTex} transparent alphaTest={0.02} emissiveMap={faceTex} emissive="#ffffff" emissiveIntensity={p.faceGlow ?? 0.42} roughness={0.75} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
 				</mesh>
 			) : null}

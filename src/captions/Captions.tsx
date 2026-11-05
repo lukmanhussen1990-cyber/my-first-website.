@@ -8,8 +8,9 @@ import {CAPTION_WORDS, FPS} from '../lib/timing';
 const HOLD = 0.35; // keep a word up a little after it ends when a pause follows
 const MAX_GAP = 0.6;
 
-export const Captions: React.FC = () => {
-	const frame = useCurrentFrame();
+export const Captions: React.FC<{frame?: number}> = ({frame: f0}) => {
+	const cf = useCurrentFrame();
+	const frame = f0 ?? cf;
 	const t = frame / FPS;
 	let idx = -1;
 	for (let i = 0; i < CAPTION_WORDS.length; i++) {

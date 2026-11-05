@@ -27,11 +27,11 @@ const NightEdge: React.FC<{t: number; gt: number; children?: React.ReactNode}> =
 			<Person look={GIRL} t={t} seed={33} expr="happy" hold="teddy" position={[-4.2, 0, 1.2]} yaw={0.6} scale={0.66} pose={{armL: [-0.9, 0, 0.5], armR: [-0.9, 0, -0.5]}} />
 			<Person look={MOM} t={t} seed={12} expr="happy" position={[-6.0, 0, 1.6]} yaw={0.7} pose={{armL: [-0.2, 0, 0.2]}} />
 			{[0, 1, 2].map((i) => (
-				<Person key={i} look={townsperson(520 + i)} t={t} seed={520 + i} expr="neutral" position={[-3 + i * 3.2, 0, 8 + (i % 2)]} yaw={Math.PI - 0.2} />
+				<Person key={i} look={townsperson(520 + i)} t={t} seed={520 + i} expr="neutral" position={[-5 + i * 3.2, 0, -8 - (i % 2)]} yaw={0.2} />
 			))}
 			{children}
 		</ForestEdge>
-		<Me position={[-7.6, 0, 3.2]} yaw={0.9} t={t} glow={0.32} />
+		<Me position={[-7.6, 0, -3.2]} yaw={0.9} t={t} glow={0.6} />
 	</>
 );
 
@@ -42,22 +42,22 @@ const S16: React.FC<SP> = ({t, p, gt}) => (
 	<>
 		<NightEdge t={t} gt={gt}>
 			<Dog t={t} pose="sit" emotion="normal" position={DOG_SIT} medal fx={0} />
-			<Person look={OLD_MAYOR} t={t} seed={7} expr="neutral" position={[5.5, 0, 3.5]} yaw={-2.2} blinkOff={t > 1.2} />
+			<Person look={OLD_MAYOR} t={t} seed={7} expr="neutral" position={[4.5, 0, 2.5]} yaw={-2.31} blinkOff={t > 1.2} />
 		</NightEdge>
-		<Cam pos={lerp3([2.6, 5.4, 6.6], [3.0, 5.4, 6.0], smooth(p))} look={[5.5, MAYOR_H, 3.5]} frameY={0.38} fov={32} t={gt} />
+		<Cam pos={lerp3([0.4, 5.6, -1.4], [0.9, 5.5, -0.9], smooth(p))} look={[4.5, MAYOR_H, 2.5]} frameY={0.36} fov={32} t={gt} />
 	</>
 );
 
 /* 16b. "He just walked up to Biscuit," */
 const S16b: React.FC<SP> = ({t, p, gt}) => {
-	const q = lerp3([5.5, 0, 3.5], [1.4, 0, 1.2], p);
+	const q = lerp3([4.5, 0, 2.5], [1.4, 0, 1.2], p);
 	return (
 		<>
 			<NightEdge t={t + 2} gt={gt}>
 				<Dog t={t} pose="sit" emotion="normal" position={DOG_SIT} medal fx={0} headYaw={0.4} />
-				<Person look={OLD_MAYOR} t={t} seed={7} expr="neutral" position={q} yaw={-2.1} pose={{walk: t * 7, walkAmp: 0.4}} />
+				<Person look={OLD_MAYOR} t={t} seed={7} expr="neutral" position={q} yaw={-2.4} pose={{walk: t * 7, walkAmp: 0.4}} />
 			</NightEdge>
-			<Cam pos={lerp3([-6, 6.5, 13], [-5, 6.2, 11.5], smooth(p))} look={[2, 3.0, 0.5]} frameY={0.45} fov={40} t={gt} />
+			<Cam pos={lerp3([-7.5, 6.4, -6.5], [-6.5, 6.2, -5.5], smooth(p))} look={[2, 3.4, 0.6]} frameY={0.45} fov={42} t={gt} />
 		</>
 	);
 };
@@ -67,9 +67,9 @@ const S16c: React.FC<SP> = ({t, p, gt}) => (
 	<>
 		<NightEdge t={t + 4} gt={gt}>
 			<Dog t={t} pose="sit" emotion="normal" position={DOG_SIT} medal fx={0} headYaw={0.5} />
-			<Person look={OLD_MAYOR} t={t} seed={7} expr="neutral" position={[1.4, 0, 1.2]} yaw={-2.1} pose={{kneel: easeOut(seg(t, 0.05, 0.7)), lean: 0.15 * seg(t, 0.2, 0.8)}} />
+			<Person look={OLD_MAYOR} t={t} seed={7} expr="neutral" position={[1.4, 0, 1.2]} yaw={-2.68} pose={{kneel: easeOut(seg(t, 0.05, 0.7)), lean: 0.15 * seg(t, 0.2, 0.8)}} />
 		</NightEdge>
-		<Cam pos={lerp3([-1.2, 0.9, 7.5], [-1.0, 1.0, 6.8], smooth(p))} look={[1.3, 4.6, 1.2]} frameY={0.36} fov={38} t={gt} />
+		<Cam pos={lerp3([-2.6, 1.1, -2.4], [-2.3, 1.2, -1.9], smooth(p))} look={[1.4, 4.4, 1.2]} frameY={0.34} fov={40} t={gt} />
 	</>
 );
 
@@ -78,9 +78,9 @@ const S16d: React.FC<SP> = ({t, p, gt}) => (
 	<>
 		<NightEdge t={t + 6} gt={gt}>
 			<Dog t={t} pose="roll" emotion="love" position={[0, 0, -1.2]} yaw={-0.9} fx={1} />
-			<Person look={OLD_MAYOR} t={t} seed={7} expr={t > 0.35 ? 'smile' : 'neutral'} position={[1.6, 0, 1.0]} yaw={-2.1} pose={{kneel: 1, lean: 0.35, armR: [-1.05 + Math.sin(t * 9) * 0.25, 0, 0.1], armL: [-0.95 + Math.sin(t * 9 + 1.6) * 0.22, 0, -0.1]}} />
+			<Person look={OLD_MAYOR} t={t} seed={7} expr={t > 0.35 ? 'smile' : 'neutral'} position={[1.6, 0, 1.0]} yaw={-2.51} pose={{kneel: 1, lean: 0.35, armR: [-1.05 + Math.sin(t * 9) * 0.25, 0, 0.1], armL: [-0.95 + Math.sin(t * 9 + 1.6) * 0.22, 0, -0.1]}} />
 		</NightEdge>
-		<Cam pos={lerp3([4.2, 4.6, 6.8], [3.6, 4.4, 5.8], smooth(p))} look={[0.6, 2.6, -0.2]} frameY={0.42} fov={36} t={gt} />
+		<Cam pos={lerp3([-3.4, 6.8, -6.4], [-3.0, 6.6, -5.6], smooth(p))} look={[0.5, 2.6, -0.3]} frameY={0.36} fov={40} t={gt} />
 	</>
 );
 
@@ -159,11 +159,11 @@ const S18b: React.FC<SP> = ({t, p, gt}) => (
 	<>
 		<TownKit t={t} time="morning" center={[0, 0, 18]} size={36} sunDir={[0.4, 0.6, 0.7]} fountain={false}>
 			{[[-8, 0, 14], [0, 0, 20], [8, 0, 15], [-5, 0, 26], [6, 0, 27], [-12, 0, 22], [12, 0, 23]].map((q, i) => (
-				<HugPair key={i} t={t} i={i} pos={q as V3} yaw={rnd(`hp${i}`) * 3} />
+				<HugPair key={i} t={t} i={i} pos={q as V3} yaw={Math.PI / 2 + (rnd(`hp${i}`) - 0.5) * 0.9} />
 			))}
 			<Confetti t={gt} n={220} area={[40, 30]} top={20} center={[0, 0, 20]} />
 		</TownKit>
-		<Cam pos={lerp3([2, 9, 42], [1.5, 8.6, 39], smooth(p))} look={[0, 4, 19]} frameY={0.46} fov={42} t={gt} />
+		<Cam pos={lerp3([1, 12, 40], [0.8, 11.5, 37], smooth(p))} look={[0, 3, 20]} frameY={0.46} fov={44} t={gt} />
 	</>
 );
 

@@ -39,7 +39,7 @@ const S10: React.FC<SP> = ({t, p, gt}) => {
 			<group position={paperPos} rotation={paperRot}>
 				<Paper position={[0, 0, 0]} w={3.0} tex={newspaperTex()} glow={0.55} />
 			</group>
-			<Cam pos={lerp3([0.4, 9.2, 3.4], [0.3, 8.6, 2.6], smooth(p))} look={[0, 3.8, -3.2]} frameY={0.5} fov={42} t={gt} shake={t > slam && t < slam + 0.2 ? 0.7 : 0} />
+			<Cam pos={lerp3([0.4, 9.6, 5.2], [0.3, 9.2, 4.4], smooth(p))} look={[0, 4.3, -3.8]} frameY={0.5} fov={44} t={gt} shake={t > slam && t < slam + 0.2 ? 0.7 : 0} />
 		</>
 	);
 };
@@ -51,7 +51,7 @@ const S10a: React.FC<SP> = ({t, p, gt}) => (
 		<DarkOffice />
 		<Paper position={[0, 3.24, -2.6]} rotation={[0, 0.04, 0]} w={3.0} tex={newspaperTex()} glow={0.55} />
 		<Person look={OLD_MAYOR} t={t} seed={7} expr="angry" position={[0, 0, -5.4]} pose={{armL: [-0.9, 0, 0.1], armR: [-0.9, 0, -0.1], lean: 0.18, headPitch: -0.12}} />
-		<Cam pos={lerp3([1.0, 5.4, -0.8], [0.8, 5.5, -1.6], smooth(p))} look={[0, 5.5, -5.0]} frameY={0.38} fov={32} t={gt} />
+		<Cam pos={lerp3([1.6, 5.8, 2.2], [1.3, 5.7, 1.2], smooth(p))} look={[0, 5.4, -5.2]} frameY={0.36} fov={32} t={gt} />
 	</>
 );
 
@@ -92,7 +92,7 @@ const S10b: React.FC<SP> = ({t, p, gt}) => {
 			<Lights preset="meeting" center={[0, 3, 0]} size={26} />
 			<MeetingScene t={t} turn={seg(t, 0.4, 1.2)} />
 			<Person look={OLD_MAYOR} t={t} seed={7} expr="angry" position={[0, 0, z]} yaw={Math.PI} pose={{walk: ph, walkAmp: 0.75, armL: [Math.sin(ph) * 0.7, 0, 0.25], armR: [-Math.sin(ph) * 0.7, 0, -0.25], lean: 0.1}} />
-			<Cam pos={lerp3([5, 8.0, -4], [4.2, 7.6, -3.0], smooth(p))} look={[0, 4.6, z]} frameY={0.42} fov={40} t={gt} shake={stomp} />
+			<Cam pos={[0.6, 6.4, z - 8.5]} look={[0, 4.8, z]} frameY={0.4} fov={40} t={gt} shake={stomp} />
 		</>
 	);
 };
@@ -113,7 +113,7 @@ const S10d: React.FC<SP> = ({t, p, gt}) => (
 		<Lights preset="meeting" center={[0, 3, -6]} size={26} />
 		<MeetingScene t={t + 5} dogEmo="shocked" turn={1} />
 		<Person look={OLD_MAYOR} t={t} seed={7} expr="angry" talking position={[0.6, 0, 2.2]} yaw={Math.PI} pose={{armR: [-1.62, 0, 0.1], armL: [-0.2, 0, 0.3], lean: 0.08}} />
-		<Cam pos={lerp3([2.8, 6.6, 6.4], [2.4, 6.9, 5.2], smooth(p))} look={MEET_DOG_HEAD} frameY={0.36} fov={28} t={gt} />
+		<Cam pos={lerp3([2.4, 5.9, 6.0], [2.1, 6.1, 5.0], smooth(p))} look={MEET_DOG_HEAD} frameY={0.33} fov={30} t={gt} />
 	</>
 );
 
@@ -122,7 +122,7 @@ const S11: React.FC<SP> = ({t, p, gt}) => (
 	<>
 		<Lights preset="meeting" center={[0, 5, -9]} size={20} />
 		<MeetingScene t={t + 7} dogEmo="sad" turn={1} />
-		<Cam pos={lerp3([0.9, 8.0, -3.8], [0.7, 7.9, -4.8], smooth(p))} look={MEET_DOG_HEAD} frameY={0.37} fov={32} t={gt} />
+		<Cam pos={lerp3([1.0, 8.4, -0.6], [0.8, 8.3, -1.6], smooth(p))} look={MEET_DOG_HEAD} frameY={0.31} fov={32} t={gt} />
 	</>
 );
 
@@ -189,10 +189,10 @@ const DeepForest: React.FC<{t: number; girl?: boolean; children?: React.ReactNod
 		</mesh>
 		<PineForest n={60} radius={60} clear={7} seed="deep" center={[0, 0, -66]} />
 		<BigTree position={[0, 0, -70]} />
-		<FogBank t={t} n={26} area={[50, 40]} center={[0, 0, -55]} y={1.5} opacity={0.3} />
+		<FogBank t={t} n={22} area={[50, 40]} center={[0, 0, -62]} y={1.5} opacity={0.16} />
 		{/* moonlight shafts */}
-		<Beam from={[-8, 40, -80]} to={[-2, 0, -64]} light={false} len={44} width={5} color="#9fb4ff" k={0.7} />
-		<Beam from={[12, 40, -70]} to={[6, 0, -50]} light={false} len={44} width={4} color="#9fb4ff" k={0.5} />
+		<Beam from={[-8, 40, -80]} to={[-2, 0, -64]} light={false} len={44} width={5} color="#9fb4ff" k={0.6} />
+		<Beam from={[12, 40, -70]} to={[6, 0, -50]} light={false} len={44} width={4} color="#9fb4ff" k={0.4} />
 		<pointLight position={[0, 6, -60]} intensity={25} distance={20} color="#8fa8ff" />
 		{girl ? null : null}
 		{children}
@@ -230,7 +230,7 @@ const S12e: React.FC<SP> = ({t, p, gt}) => (
 		<Searcher i={3} t={t} pos={[-4, 0, -36]} yaw={Math.PI - 0.15} aim={[-8, 1, -70]} sweep={10} />
 		<Searcher i={4} t={t} pos={[5, 0, -34]} yaw={Math.PI + 0.2} aim={[8, 1, -70]} sweep={10} light={false} />
 		<Searcher i={5} t={t} pos={[1, 0, -30]} yaw={Math.PI} aim={[0, 1, -70]} sweep={12} light={false} police />
-		<Cam pos={lerp3([2, 5.5, -22], [1.5, 5.4, -25], smooth(p))} look={[0, 3.5, -45]} frameY={0.48} fov={42} t={gt} />
+		<Cam pos={lerp3([3.5, 8.5, -15], [3.0, 8.2, -18], smooth(p))} look={[0, 3.0, -48]} frameY={0.48} fov={44} t={gt} />
 	</>
 );
 
@@ -242,7 +242,7 @@ const S13: React.FC<SP> = ({t, p, gt}) => (
 			<Searcher i={6} t={t} pos={[3.5, 0, 0]} yaw={Math.PI + 0.5} aim={[0.5, 0, -7]} light />
 		</ForestEdge>
 		<Dog t={t} pose="sniff" emotion="brave" position={[lerp(0.8, -0.4, p), 0, lerp(-5.5, -7, p)]} yaw={Math.PI - 0.6} medal fx={1} />
-		<Cam pos={lerp3([-3.4, 2.2, -12.5], [-3.0, 2.0, -12.0], smooth(p))} look={[0.4, 1.7, -6.8]} frameY={0.38} fov={34} t={gt} />
+		<Cam pos={lerp3([3.2, 1.6, -13.6], [2.2, 1.6, -14.2], smooth(p))} look={[lerp(1.87, 0.67, p), 1.9, lerp(-7.05, -8.55, p)]} frameY={0.34} fov={36} t={gt} />
 	</>
 );
 
@@ -253,7 +253,7 @@ const S13b: React.FC<SP> = ({t, p, gt}) => {
 		<>
 			<NightEdgeLights />
 			<ForestEdge t={gt}>
-				<FogBank t={t} n={22} area={[40, 30]} center={[0, 0, -28]} y={1.2} opacity={0.3} />
+				<FogBank t={t} n={18} area={[40, 30]} center={[0, 0, -34]} y={1.2} opacity={0.2} />
 				<Beam from={[-6, 4, -2]} to={[-1, 0.5, -24]} light={false} len={30} />
 				<Beam from={[6, 4, -1]} to={[2, 0.5, -26]} light len={30} />
 			</ForestEdge>
@@ -272,7 +272,7 @@ const S14: React.FC<SP> = ({t, p, gt}) => (
 			<Searcher i={7} t={t} pos={[7, 0, 6]} yaw={Math.PI + 0.3} aim={[9, 2, -30]} police light={false} />
 			<Searcher i={8} t={t} pos={[-7, 0, 7]} yaw={Math.PI - 0.3} aim={[-9, 2, -30]} light={false} />
 		</ForestEdge>
-		<Me position={[-1.8, 0, 3.8]} yaw={Math.PI} t={t} glow={0.32} />
+		<Me position={[-1.8, 0, 3.8]} yaw={Math.PI} t={t} glow={0.6} />
 		<pointLight position={[0, 6, -2]} intensity={30} distance={14} color="#b0c4ff" />
 		<Cam pos={lerp3([0.4, 4.6, -7.2], [0.3, 4.5, -6.0], smooth(p))} look={[0, 4.4, 3.8]} frameY={0.42} fov={38} t={gt} />
 	</>
@@ -291,17 +291,17 @@ const S14b: React.FC<SP> = ({t, p, gt}) => {
 };
 
 /* 14c. "Then we heard a bark." — Biscuit finds her, licks her face, she smiles */
-const DOG_FIND: V3 = [-1.9, 0, -65.6];
+const DOG_FIND: V3 = [-2.5, 0, -65.0];
 const S14c: React.FC<SP> = ({t, p, gt}) => {
 	const lick = t > 0.7 && t < 1.6 ? Math.abs(Math.sin((t - 0.7) * 9)) : 0;
 	return (
 		<>
 			<DeepForest t={t + 6} />
 			<GirlSitting t={t} expr={t > 0.95 ? 'laugh' : 'worried'} shiver={t < 0.9} yaw={-0.35} />
-			<Dog t={t} pose="stand" emotion={t > 0.95 ? 'happy' : 'brave'} position={DOG_FIND} yaw={1.05} lick={lick} headPitch={0.12} medal fx={1} />
+			<Dog t={t} pose="stand" emotion={t > 0.95 ? 'happy' : 'brave'} position={DOG_FIND} yaw={0.7} lick={lick} headPitch={0.12} medal fx={1} />
 			<SpeechBubble text="WOOF!" position={[-2.6, 5.4, -65.2]} w={2.6} k={easeOut(seg(t, 0.0, 0.18)) * (t < 0.9 ? 1 : Math.max(0, 1 - (t - 0.9) * 5))} />
 			<pointLight position={[0, 4, -60]} intensity={30} distance={14} color="#ffe2b0" />
-			<Cam pos={lerp3([-0.6, 3.6, -58.2], [-0.5, 3.4, -59.2], smooth(p))} look={[-0.6, 2.4, -66]} frameY={0.42} fov={36} t={gt} />
+			<Cam pos={lerp3([1.2, 3.5, -56.4], [1.0, 3.4, -57.4], smooth(p))} look={[-0.6, 2.5, -66]} frameY={0.38} fov={38} t={gt} />
 		</>
 	);
 };
@@ -313,11 +313,11 @@ const S14d: React.FC<SP> = ({t, p, gt}) => {
 		<>
 			<NightEdgeLights />
 			<ForestEdge t={gt}>
-				<FogBank t={t} n={24} area={[40, 20]} center={[0, 0, -18]} y={1.0} opacity={0.32} />
+				<FogBank t={t} n={18} area={[40, 16]} center={[0, 0, -26]} y={1.0} opacity={0.24} />
 				<Beam from={[-5, 3.6, 2]} to={[0, 2, z]} light len={24} />
 				<Beam from={[5, 3.6, 3]} to={[0.5, 2.5, z]} light={false} len={24} />
 			</ForestEdge>
-			<Glow position={[0, 4, z - 3]} size={12} color="#bcd0ff" opacity={0.45} />
+			<Glow position={[0, 4, z - 6]} size={10} color="#bcd0ff" opacity={0.2} />
 			<Dog t={t} pose="walk" emotion="proud" position={[0, 0, z]} speed={0.6} medal fx={0.8} />
 			<Cam pos={[0.6, 1.3, -6.2]} look={[0, 2.9, z + 1.4]} frameY={0.36} fov={40} t={gt} />
 		</>
@@ -340,7 +340,7 @@ const S15: React.FC<SP> = ({t, p, gt}) => {
 		<>
 			<NightEdgeLights />
 			<ForestEdge t={gt}>
-				<FogBank t={t} n={18} area={[40, 16]} center={[0, 0, -20]} y={1.0} opacity={0.25} />
+				<FogBank t={t} n={14} area={[40, 16]} center={[0, 0, -26]} y={1.0} opacity={0.18} />
 				<Beam from={[-4, 3.6, 2]} to={[0, 1.5, z]} light len={20} />
 			</ForestEdge>
 			<WalkOut t={t} z={z} expr="happy" />
@@ -359,7 +359,7 @@ const S15b: React.FC<SP> = ({t, p, gt}) => {
 				<Beam from={[-4, 3.6, 3]} to={[0, 2, z]} light len={18} />
 			</ForestEdge>
 			<WalkOut t={t + 2} z={z} expr="laugh" />
-			<Cam pos={[1.9, 2.9, z + 4.6]} look={[0.3, 2.4, z + 0.7]} frameY={0.4} fov={36} t={gt} />
+			<Cam pos={[2.0, 3.5, z + 6.0]} look={[0.6, 3.1, z + 0.7]} frameY={0.36} fov={36} t={gt} />
 		</>
 	);
 };
@@ -385,16 +385,16 @@ const S15d: React.FC<SP> = ({t, p, gt}) => (
 	<>
 		<NightEdgeLights />
 		<ForestEdge t={gt}>
-			<Searcher i={10} t={t} pos={[-6, 0, 6]} yaw={Math.PI - 0.4} aim={[-1, 1, -4]} />
-			{[0, 1, 2, 3].map((i) => (
-				<Person key={i} look={townsperson(500 + i)} t={t} seed={500 + i} expr="laugh" position={[3 + i * 2.6, 0, 7 + (i % 2) * 2]} yaw={Math.PI + 0.3} pose={{armL: [0, 0, 2.6 + Math.sin(t * 9 + i) * 0.25], armR: [0, 0, -2.6], bob: Math.abs(Math.sin(t * 7 + i)) * 0.3}} />
+			{[0, 1, 2, 3, 4].map((i) => (
+				<Person key={i} look={townsperson(500 + i)} t={t} seed={500 + i} expr="laugh" position={[-5.5 + i * 2.8, 0, -7 - (i % 2) * 1.5]} yaw={(i - 2) * -0.15} pose={{armL: [0, 0, 2.6 + Math.sin(t * 9 + i) * 0.25], armR: [0, 0, -2.6], bob: Math.abs(Math.sin(t * 7 + i)) * 0.3}} />
 			))}
 		</ForestEdge>
-		<Me position={[-3.2, 0, 4]} yaw={Math.PI + 0.5} t={t} glow={0.32} bob={Math.abs(Math.sin(t * 7)) * 0.2} />
+		<Me position={[-3.4, 0, -4.4]} yaw={0.4} t={t} glow={0.6} bob={Math.abs(Math.sin(t * 7)) * 0.2} />
 		<Person look={GIRL} t={t} seed={33} expr="laugh" hold="teddy" position={[0, 0, -1.2]} scale={0.66} pose={{armL: [-0.9, 0, 0.5], armR: [-0.9, 0, -0.5]}} />
 		<Person look={MOM} t={t} seed={12} expr="cryHappy" position={[0, 0, 0.2]} yaw={Math.PI} pose={{kneel: 1, lean: 0.3, armL: [-1.45, 0, -0.55], armR: [-1.45, 0, 0.55]}} />
-		<Dog t={t} pose="sit" emotion="happy" position={[-2.4, 0, -1.6]} yaw={0.5} medal fx={1} />
-		<Cam pos={lerp3([3.4, 4.2, -7.0], [2.8, 4.0, -6.2], smooth(p))} look={[-0.4, 2.6, -0.6]} frameY={0.42} fov={38} t={gt} />
+		<Dog t={t} pose="sit" emotion="happy" position={[2.6, 0, -2.4]} yaw={-0.5} medal fx={1} />
+		<pointLight position={[2, 6, 4]} intensity={40} distance={16} color="#ffe2b8" />
+		<Cam pos={lerp3([4.8, 5.6, 7.2], [4.2, 5.4, 6.2], smooth(p))} look={[0.4, 3.1, -1.2]} frameY={0.34} fov={38} t={gt} />
 	</>
 );
 

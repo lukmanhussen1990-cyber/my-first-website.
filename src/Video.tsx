@@ -10,8 +10,10 @@ const WHIP = 0.14; // seconds of blur on each side of a whip-pan cut
 
 export const findShot = (gt: number) => SHOTS.find((s) => gt >= s.start && gt < s.end) ?? SHOTS[SHOTS.length - 1];
 
-export const Video: React.FC<{captions?: boolean; audio?: boolean; preview?: boolean}> = ({captions = true, audio = true, preview = false}) => {
-	const frame = useCurrentFrame();
+export const Video: React.FC<{captions?: boolean; audio?: boolean; preview?: boolean; step?: number}> = ({captions = true, audio = true, preview = false, step = 1}) => {
+	// step > 1 = fast QA flip-book (every Nth frame)
+	const frame = useCurrentFrame() * step;
+	(window as unknown as {__gt?: number}).__gt = frame / FPS;
 	const gt = frame / FPS;
 	const shot = findShot(gt);
 	const d = shot.end - shot.start;
@@ -47,7 +49,7 @@ export const Video: React.FC<{captions?: boolean; audio?: boolean; preview?: boo
 			</AbsoluteFill>
 			{flash > 0.01 ? <AbsoluteFill style={{backgroundColor: '#ffffff', opacity: flash}} /> : null}
 			{Overlay ? <Overlay {...sp} /> : null}
-			{captions ? <Captions /> : null}
+			{captions ? <Captions frame={frame} /> : null}
 			{audio ? (
 				<>
 					{/* voiceover (unchanged) + code-made music & sfx, pre-mixed by scripts/make-audio.mjs */}

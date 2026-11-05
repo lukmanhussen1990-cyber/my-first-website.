@@ -7,6 +7,8 @@ import {Video} from './Video';
 export const RemotionRoot: React.FC = () => (
 	<>
 		<Composition id="DogMayor" component={Video} width={1080} height={1920} fps={30} durationInFrames={TOTAL_FRAMES} defaultProps={{captions: true, audio: true}} />
+		{/* QA flip-book: every 6th frame, low resolution, no audio */}
+		<Composition id="Check" component={Video} width={1080} height={1920} fps={30} durationInFrames={Math.ceil(TOTAL_FRAMES / 6)} defaultProps={{captions: true, audio: false, preview: true, step: 6}} />
 		<Composition
 			id="DogTest"
 			component={DogTest}
