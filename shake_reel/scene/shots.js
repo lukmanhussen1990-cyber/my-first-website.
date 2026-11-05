@@ -196,7 +196,7 @@ export const SHOTS = {
       c.bricks.forEach((m, i) => { const t0 = (i * 0.21) % 1.6, f = Math.max(0, lt - t0); m.visible = lt > t0; m.position.set(HS.PL.street - 3.5 + (i % 5) * 1.8, Math.max(0.05, 8.5 - (i % 3) * 2.5 - 4.9 * f * f), 0.3 + (i % 2) * 0.4); m.rotation.set(f * 6, f * 3, 0); });
     },
     cam: (W, c, lt) => {
-      if (lt >= W.cut) { const q = clamp((lt - W.cut) / 1.4); return camAt([HS.PL.street + 1.6, 2.4, 6.0 - 0.3 * q], [HS.PL.street, 3.8, 0], 46); }
+      if (lt >= W.cut) { const q = clamp((lt - W.cut) / 1.4); return camAt([HS.PL.street + 0.8, 3.2, 9.5 - 0.4 * q], [HS.PL.street, 4.3, 0], 46); }
       return camAt([HS.PL.street + 1.0, 2.2, 15], [HS.PL.street, 4.6, 0], 46);
     },
   },
@@ -313,9 +313,19 @@ export const SHOTS = {
     after(W, c, lt) { c.disco.userData.ball.rotation.y = lt * 2; c.lights.forEach((l, i) => { l.intensity = 4 + 4 * Math.max(0, Math.sin(lt * 9 + i * 2)); }); },
     cam: (W, c, lt) => { const k = K(W, lt); return camAt([0.0, 3.0, 13.5 + 0.5 * k], [0, 3.0, -2.5], 48); },
   },
-  // ================================================================ 25 "Fucking genius." arms behind his head, proud
+  // ================================================================ 25 "Fucking genius." sitting back on the headboard, hands behind his head
   25: {
     build(W) { const c = { H: house(W, { at: [0, -1.5, -2.5], size: 4 }) }; couple(W, c); c.H.f2.remove(c.H.bed); c.H.base.add(c.H.bed); c.H.bed.position.set(BX, 0, BZ); return c; },
+    update(W, c, lt) {
+      sitAt(c.him, BX + 0.62, BZ - 0.3, -Math.PI / 2, FB + 0.16); Object.assign(c.him.p, { lean: -0.32 });
+      const h = c.him.headPos(); c.him.p.handL = [h.x + 0.1, h.y + 0.02, h.z - 0.13]; c.him.p.handR = [h.x + 0.1, h.y + 0.02, h.z + 0.13]; c.him.p.handPoseL = c.him.p.handPoseR = 'relaxed';
+      face(c.him, 'happy', 'raised', 'grin', { headRoll: 0.06 * Math.sin(lt * 3) });
+      standAt(c.gf, BX - 0.78, BZ + 0.36, -Math.PI / 2, FB + 0.6); Object.assign(c.gf.p, { pitch: -Math.PI / 2 + 0.18 }); face(c.gf, 'happy', 'raised', 'smile', { lookAt: P3(c.him.headPos()) });
+    },
+    cam: (W, c, lt) => { const k = K(W, lt); return camAt([BX - 0.55, FB + 1.45, BZ + 1.7 - 0.12 * k], [BX + 0.55, FB + 1.1, BZ - 0.15], 42); },
+    anchors: (W, c) => ({ him: c.him.headPos() }),
+  },
+}; couple(W, c); c.H.f2.remove(c.H.bed); c.H.base.add(c.H.bed); c.H.bed.position.set(BX, 0, BZ); return c; },
     update(W, c, lt) {
       inBed(c, lt, FB); face(c.him, 'happy', 'raised', 'grin'); face(c.gf, 'happy', 'raised', 'smile', { lookAt: P3(c.him.headPos()) });
       const h = c.him.headPos(); c.him.p.handL = [h.x + 0.08, h.y + 0.05, h.z + 0.14]; c.him.p.handR = [h.x + 0.08, h.y + 0.05, h.z - 0.14]; c.him.p.handPoseL = c.him.p.handPoseR = 'relaxed';
