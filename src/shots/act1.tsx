@@ -184,7 +184,7 @@ const S04: React.FC<SP> = ({t, p, gt}) => (
 			<Banner text="VOTE SATURDAY!" position={[-8, 9, 30]} w={12} bg="#2a5bd7" />
 			<Crowd t={t} n={10} seed={21} origin={[8, 0, 20]} cols={5} spacing={[4, 4]} expr="happy" pose={(i) => ({walk: t * 5 + i, walkAmp: 0.4})} />
 		</TownKit>
-		<Cam pos={lerp3([-16, 5, 66], [-12, 12, 58], smooth(p))} look={[-2, 13, -6]} frameY={0.42} fov={48} t={gt} sway={0.08} />
+		<Cam pos={lerp3([-14, 5, 55], [-11, 12, 50], smooth(p))} look={[-2, 13, -6]} frameY={0.42} fov={48} t={gt} sway={0.08} />
 	</>
 );
 
