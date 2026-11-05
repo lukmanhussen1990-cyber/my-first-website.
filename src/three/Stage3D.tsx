@@ -1,6 +1,9 @@
 import {ThreeCanvas} from '@remotion/three';
 import {useFrame, useThree} from '@react-three/fiber';
-import {BloomEffect, EffectComposer, EffectPass, RenderPass, ToneMappingEffect, ToneMappingMode, VignetteEffect, BrightnessContrastEffect, HueSaturationEffect} from 'postprocessing';
+import {BloomEffect, EffectComposer, EffectPass, FXAAEffect, RenderPass, ToneMappingEffect, ToneMappingMode, VignetteEffect, BrightnessContrastEffect, HueSaturationEffect} from 'postprocessing';
+
+// Anti-aliasing: 'fxaa' is much faster in software WebGL; 'msaa' (4x) is the slow, highest-quality option.
+const AA = (typeof window !== 'undefined' && (window as unknown as {remotion_inputProps?: string}).remotion_inputProps?.includes('"msaa"')) ? 'msaa' : 'fxaa';
 import React, {useLayoutEffect, useMemo} from 'react';
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -32,7 +35,7 @@ export const DEFAULT_FX: Required<Omit<FX, 'fog'>> & {fog: FX['fog']} = {
 const Post: React.FC<{fx: typeof DEFAULT_FX}> = ({fx}) => {
 	const {gl, scene, camera, size} = useThree();
 	const parts = useMemo(() => {
-		const composer = new EffectComposer(gl, {frameBufferType: THREE.HalfFloatType, multisampling: 4});
+		const composer = new EffectComposer(gl, {frameBufferType: THREE.HalfFloatType, multisampling: AA === 'msaa' ? 4 : 0});
 		const bloom = new BloomEffect({intensity: 0.6, luminanceThreshold: 0.82, luminanceSmoothing: 0.25, mipmapBlur: true, radius: 0.75});
 		const tone = new ToneMappingEffect({mode: ToneMappingMode.NEUTRAL});
 		const vignette = new VignetteEffect({darkness: 0.35, offset: 0.32});
@@ -40,6 +43,7 @@ const Post: React.FC<{fx: typeof DEFAULT_FX}> = ({fx}) => {
 		const hs = new HueSaturationEffect({saturation: 0.12});
 		composer.addPass(new RenderPass(scene, camera));
 		composer.addPass(new EffectPass(camera, bloom, tone, bc, hs, vignette));
+		if (AA === 'fxaa') composer.addPass(new EffectPass(camera, new FXAAEffect()));
 		return {composer, bloom, tone, vignette, bc, hs};
 	}, [gl, scene, camera]);
 
