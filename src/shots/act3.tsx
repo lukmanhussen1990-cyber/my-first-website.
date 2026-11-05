@@ -242,7 +242,7 @@ const S13: React.FC<SP> = ({t, p, gt}) => (
 			<Searcher i={6} t={t} pos={[3.5, 0, 0]} yaw={Math.PI + 0.5} aim={[0.5, 0, -7]} light />
 		</ForestEdge>
 		<Dog t={t} pose="sniff" emotion="brave" position={[lerp(0.8, -0.4, p), 0, lerp(-5.5, -7, p)]} yaw={Math.PI - 0.6} medal fx={1} />
-		<Cam pos={lerp3([3.2, 1.6, -13.6], [2.2, 1.6, -14.2], smooth(p))} look={[lerp(1.87, 0.67, p), 1.9, lerp(-7.05, -8.55, p)]} frameY={0.34} fov={36} t={gt} />
+		<Cam pos={lerp3([4.6, 1.5, -16.8], [3.6, 1.5, -17.3], smooth(p))} look={[lerp(1.87, 0.67, p), 1.9, lerp(-7.05, -8.55, p)]} frameY={0.3} fov={34} t={gt} />
 	</>
 );
 
