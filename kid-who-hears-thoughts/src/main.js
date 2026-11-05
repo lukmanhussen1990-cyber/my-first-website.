@@ -10,7 +10,7 @@ import {makeCharacter, makeChicken, makeDog} from './characters.js';
 import {drawCaption} from './captions.js';
 import {FONT, basic, box, clamp, cone, cyl, easeInOutCubic, glowTex, lerp, mat, mesh, rbox, rnd, sph, torus} from './lib.js';
 import {M, P, buildTown} from './town.js';
-import {makeBubble} from './thoughtBubble.js';
+import {bubbleTex, makeBubble} from './thoughtBubble.js';
 import {SHOTS} from './shots.js';
 
 const params = new URLSearchParams(location.search);
@@ -529,6 +529,9 @@ window.renderFrame = (i, opts = {}) => {
 	if (!fn) throw new Error(`no shot ${shot.id}`);
 	fn(S, {t: lt, p: state.p, d, gt: t});
 	applyMood(state.mood ?? shot.mood);
+	// bubbles slightly below pure white when bloom is strong (night) so their text stays readable
+	const bloomy = bloom.enabled && bloom.strength >= 0.6;
+	for (const b of bubbles) b.sprite.material.color.setScalar(bloomy ? 0.84 : 1);
 	scene.updateMatrixWorld();
 	grade.uniforms.fade.value = 0;
 	composer.render();
@@ -564,5 +567,7 @@ window.collectEvents = () => {
 	state.collect = null;
 	return ev;
 };
+/** Canvas of a thought bubble (used by the thumbnail). */
+window.bubbleCanvas = (text) => bubbleTex(text).image;
 window.timeline = timeline;
 window.ready = true;

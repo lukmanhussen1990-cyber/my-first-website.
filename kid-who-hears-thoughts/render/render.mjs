@@ -72,6 +72,8 @@ if (has('events')) {
 				noCaptions: true,
 				thumbnail: (ctx, w, h) => {
 					const k = w / 1080;
+					ctx.drawImage(window.bubbleCanvas('???'), w * 0.38, h * 0.02, w * 0.6, w * 0.4);
+					ctx.drawImage(window.bubbleCanvas('pizza'), w * 0.02, h * 0.1, w * 0.42, w * 0.28);
 					ctx.save();
 					ctx.textAlign = 'center';
 					ctx.textBaseline = 'middle';

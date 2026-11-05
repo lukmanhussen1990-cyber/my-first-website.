@@ -727,9 +727,8 @@ export const SHOTS = {
 		S.glow({water: 2.0});
 		S.put(S.C.walter, WALTER_SQ, PI, {headYaw: 0.35, headPitch: 0.12}, 'teary-smile');
 		S.put(S.C.leo, LEO_SQ, PI, {headPitch: -0.3}, 'happy', false, {focus: false});
-		S.bubble('Thank you.', [151.7, 6.4, 16.8], 1.9, 0.05, {color: '#fff6c8'});
-		const h = head(S.C.walter, WALTER_SQ);
-		S.cam({from: [h[0] + 1.0, h[1] + 0.9, h[2] - 6.4], to: [h[0] + 0.8, h[1] + 0.8, h[2] - 5.6], look: [h[0] + 0.6, h[1] + 1.0, h[2]], fov: 40, frameY: 0.5});
+		S.bubble('Thank you.', [149.5, 6.9, 16.9], 1.45, 0.05, {color: '#fff3c0'});
+		S.cam({from: [150.6, 5.8, 7.8], to: [150.5, 5.7, 8.6], look: [149.9, 5.6, 16.4], fov: 40, frameY: 0.5});
 	},
 	a5_together(S, {t}) {
 		squareCrowd(S, t + 11, 'cheer');
@@ -745,7 +744,7 @@ export const SHOTS = {
 		S.glow({water: 2.0});
 		S.put(S.C.walter, WALTER_SQ, PI - 0.4, {armR: [-0.35, 0, -0.95], headPitch: 0.15}, 'big-smile', false, {focus: false});
 		S.put(S.C.leo, [148.2, 0, 16.4], PI + 0.6, {headPitch: -0.4}, 'big-smile', false, {focus: false});
-		S.cam({from: [145.5, 2.4, 11.5], to: [145.8, 2.6, 12.0], look: [149.2, 4.4, 16.3], fov: 40, frameY: 0.5});
+		S.cam({from: [145.4, 3.4, 8.4], to: [145.7, 3.5, 8.9], look: [149.2, 4.4, 16.3], fov: 40, frameY: 0.48});
 	},
 	end_pullup(S, {t, d}) {
 		squareCrowd(S, t + 13, 'cheer');
