@@ -1,0 +1,15 @@
+{
+  "name": "kid-who-hears-thoughts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The Kid Who Could Hear Everyone's Thoughts - a vertical short made 100% from code (Three.js + Playwright + numpy + ffmpeg).",
+  "scripts": {
+    "build": "./build.sh",
+    "preview": "./build.sh --preview"
+  },
+  "dependencies": {
+    "playwright": "1.63.0",
+    "three": "0.180.0"
+  }
+}
