@@ -78,7 +78,7 @@ const Env: React.FC<{intensity: number; bg: string; fog: FX['fog']}> = ({intensi
 	return null;
 };
 
-export const Stage3D: React.FC<{fx?: FX; children: React.ReactNode; width?: number; height?: number}> = ({fx, children, width = 1080, height = 1920}) => {
+export const Stage3D: React.FC<{fx?: FX; children: React.ReactNode; width?: number; height?: number; dpr?: number}> = ({fx, children, width = 1080, height = 1920, dpr = 1}) => {
 	const f = {...DEFAULT_FX, ...(fx ?? {})};
 	return (
 		<ThreeCanvas
@@ -87,7 +87,7 @@ export const Stage3D: React.FC<{fx?: FX; children: React.ReactNode; width?: numb
 			shadows={{type: THREE.PCFSoftShadowMap}}
 			camera={{fov: 40, near: 0.1, far: 2000, position: [0, 5, 20]}}
 			gl={{antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: true}}
-			dpr={1}
+			dpr={dpr}
 			style={{backgroundColor: f.bg}}
 		>
 			<Env intensity={f.env} bg={f.bg} fog={f.fog} />

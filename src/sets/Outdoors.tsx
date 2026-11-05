@@ -37,7 +37,7 @@ export const Park: React.FC<{children?: React.ReactNode}> = ({children}) => (
 /* ---------- Night forest ---------- */
 
 /** Instanced tall pine trees (trunks + 3 cone layers). */
-export const PineForest: React.FC<{n?: number; radius?: number; clear?: number; seed?: string; center?: V3; minZ?: number}> = ({n = 70, radius = 70, clear = 9, seed = 'pf', center = [0, 0, 0], minZ = -1e9}) => {
+export const PineForest: React.FC<{n?: number; radius?: number; clear?: number; seed?: string; center?: V3; maxZ?: number; clearX?: number}> = ({n = 70, radius = 70, clear = 9, seed = 'pf', center = [0, 0, 0], maxZ = 1e9, clearX = 0}) => {
 	const meshes = useMemo(() => {
 		const trunkG = cylGeo(0.5, 0.8, 1, 8);
 		const coneG = coneGeo(1, 1, 8);
@@ -52,7 +52,7 @@ export const PineForest: React.FC<{n?: number; radius?: number; clear?: number; 
 			const x = Math.cos(a) * d;
 			const z = Math.sin(a) * d;
 			i++;
-			if (z < minZ) continue;
+			if (z > maxZ || Math.abs(x) < clearX) continue;
 			pos.push([x, z, 0.8 + rnd(`${seed}s${i}`) * 0.7]);
 		}
 		const trunks = new THREE.InstancedMesh(trunkG, trunkM, pos.length);
@@ -84,7 +84,7 @@ export const PineForest: React.FC<{n?: number; radius?: number; clear?: number; 
 		});
 		return [trunks, leaves, leaves2];
 			// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [n, radius, clear, seed, center[0], center[2], minZ]);
+	}, [n, radius, clear, seed, center[0], center[2], maxZ, clearX]);
 	return (
 		<group>
 			{meshes.map((m, i) => (
@@ -163,7 +163,7 @@ export const ForestEdge: React.FC<{t: number; police?: boolean; children?: React
 		<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 30]} receiveShadow material={plastic('#4a3a30', {rough: 0.95})}>
 			<planeGeometry args={[10, 80]} />
 		</mesh>
-		<PineForest n={110} radius={110} clear={0} seed="edge" center={[0, 0, -40]} minZ={-90} />
+		<PineForest n={90} radius={85} clear={0} seed="edge" center={[0, 0, -75]} maxZ={58} />
 		{police ? (
 			<>
 				<Car position={[-14, 0, 22]} yaw={0.5} police t={t} />

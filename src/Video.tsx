@@ -10,7 +10,7 @@ const WHIP = 0.14; // seconds of blur on each side of a whip-pan cut
 
 export const findShot = (gt: number) => SHOTS.find((s) => gt >= s.start && gt < s.end) ?? SHOTS[SHOTS.length - 1];
 
-export const Video: React.FC<{captions?: boolean; audio?: boolean}> = ({captions = true, audio = true}) => {
+export const Video: React.FC<{captions?: boolean; audio?: boolean; preview?: boolean}> = ({captions = true, audio = true, preview = false}) => {
 	const frame = useCurrentFrame();
 	const gt = frame / FPS;
 	const shot = findShot(gt);
@@ -40,7 +40,7 @@ export const Video: React.FC<{captions?: boolean; audio?: boolean}> = ({captions
 			</svg>
 			<AbsoluteFill style={{filter: whip > 0.02 ? 'url(#whipblur)' : undefined, transform: whip > 0.02 ? `translateX(${dir * whip * 90}px) scale(1.06)` : undefined}}>
 				<AssetGate>
-					<Stage3D fx={shot.fx}>
+					<Stage3D fx={shot.fx} dpr={preview ? 0.2 : 1}>
 						<shot.C key={shot.id} {...sp} />
 					</Stage3D>
 				</AssetGate>
@@ -50,7 +50,8 @@ export const Video: React.FC<{captions?: boolean; audio?: boolean}> = ({captions
 			{captions ? <Captions /> : null}
 			{audio ? (
 				<>
-					<Audio src={staticFile('voiceover.mp3')} volume={1} />
+					{/* voiceover (unchanged) + code-made music & sfx, pre-mixed by scripts/make-audio.mjs */}
+					<Audio src={staticFile('audio/mix.wav')} volume={1} />
 				</>
 			) : null}
 		</AbsoluteFill>

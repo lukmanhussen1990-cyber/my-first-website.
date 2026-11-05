@@ -4,3 +4,6 @@ ref_frames/
 # Third-party style reference: kept locally for study only, not committed.
 assets/reference.mp4
 .remotion/
+# Generated stems (re-make with: node scripts/make-audio.mjs)
+public/audio/music.wav
+public/audio/sfx.wav

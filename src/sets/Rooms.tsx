@@ -189,9 +189,9 @@ export const DarkOffice: React.FC<{lamp?: number; children?: React.ReactNode}> =
 					ctx.fillRect(w * 0.38, h * 0.5, w * 0.24, 8);
 				})} glow={0.2} />
 			</group>
-			<Desk position={[0, 0, -3]} w={11} h={4.6} d={4.6} color="#4a2a18" />
+			<Desk position={[0, 0, -3]} w={11} h={3.0} d={4.6} color="#4a2a18" />
 			{/* banker's lamp */}
-			<group position={[3.6, 4.8, -4]}>
+			<group position={[3.6, 3.2, -4]}>
 				<Cyl r={0.5} h={0.2} mat={plastic('#ffcc3a', {metal: 0.7, rough: 0.3})} position={[0, 0.1, 0]} />
 				<Cyl r={0.08} h={1.4} mat={plastic('#ffcc3a', {metal: 0.7, rough: 0.3})} position={[0, 0.8, 0]} />
 				<mesh geometry={cylGeo(0.35, 0.9, 0.6, 16, true)} material={plastic('#1f7a4a', {clearcoat: 0.6, side: THREE.DoubleSide})} position={[0, 1.6, 0.2]} rotation={[0.2, 0, 0]} />
