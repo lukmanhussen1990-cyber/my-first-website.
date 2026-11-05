@@ -184,7 +184,7 @@ export function buildWorld(scene) {
 
   // bathroom window: frame + see-through glass
   const bw = windowAt(W.x, W.sill, W.w, W.top - W.sill, false);
-  bw.children[5].scale.y = 1; // mullion stays
+  bw.children[5].visible = false; // no centre bar: keep the view into the bathroom clear
   const glass = new THREE.Mesh(
     new THREE.PlaneGeometry(W.w, W.top - W.sill),
     new THREE.MeshLambertMaterial({ color: '#7fb0ff', transparent: true, opacity: 0.16, depthWrite: false })

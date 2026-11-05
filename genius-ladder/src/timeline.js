@@ -223,7 +223,7 @@ export const TIMELINE = [
     vo: [{ at: 0.12, text: 'Except it slides down the wall and you eat the fucking grass.', caps: ['EXCEPT IT SLIDES', 'DOWN THE WALL', 'AND YOU EAT', 'THE FUCKING GRASS.'] }],
     shots: [
       { at: 0, cam: { pos: [5.6, 1.7, 3.0], look: [0, 1.45, 1.55], fov: 56 }, push: 0.07 },
-      { at: 1.85, cam: { pos: [-0.6, 0.22, -0.05], look: [0.05, 0.1, 0.25], fov: 42 }, push: 0.12, track: { actor: 'you', part: 'head' } },
+      { at: 1.85, cam: { pos: [-0.62, 0.42, -0.3], look: [0, 0, 0], fov: 42 }, push: 0.12, track: { actor: 'you', part: 'head' } },
     ],
     sfx: [
       { at: 0.24, word: 'SKRRRT!', sound: 'skrrt', color: 'lime', tilt: 8, pos: [0.6, 0.28], dur: 1.1 },
@@ -266,7 +266,7 @@ export const TIMELINE = [
     dur: 2.3,
     vo: [{ at: 0.12, text: 'So you glue rubber on the feet.', caps: ['SO YOU GLUE', 'RUBBER ON', 'THE FEET.'] }],
     shots: [
-      { at: 0, cam: { pos: [0.55, 0.36, 2.45], look: [0.02, 0.1, 1.42], fov: 40 }, push: 0.12 },
+      { at: 0, cam: { pos: [-1.35, 0.75, 3.35], look: [0.25, 0.3, 1.5], fov: 40 }, push: 0.12 },
       { at: 1.15, cam: { pos: [1.75, 1.25, 3.9], look: [0.2, 1.0, 1.3], fov: 50 }, push: 0.08 },
     ],
     sfx: [
@@ -305,7 +305,7 @@ export const TIMELINE = [
     vo: [{ at: 0.15, text: 'Then his fucking dog pisses on it.', caps: ['THEN HIS', 'FUCKING DOG', 'PISSES ON IT.'] }],
     shots: [
       { at: 0, cam: { pos: [2.6, 1.25, 5.4], look: [0.7, 0.55, 1.5], fov: 52 }, push: 0.08 },
-      { at: 0.95, cam: { pos: [0.95, 0.3, 2.85], look: [0.18, 0.28, 1.6], fov: 42 }, push: 0.12 },
+      { at: 0.95, cam: { pos: [-1.3, 0.48, 1.72], look: [0.3, 0.3, 1.78], fov: 42 }, push: 0.1 },
       { at: 2.05, cam: { pos: [1.4, 1.45, 5.8], look: [-0.6, 1.3, 0.9], fov: 56 }, push: 0.08 },
     ],
     sfx: [
@@ -329,7 +329,7 @@ export const TIMELINE = [
         { t: 1.02, leg: 1, e: 'snap' },
         { t: 1.08, pee: 0 },
         { t: 1.16, pee: 1, puddle: 0.12, e: 'linear' },
-        { t: 1.95, pee: 1, puddle: 0.85, headY: 55, wag: 13, e: 'linear' },
+        { t: 1.95, pee: 1, puddle: 0.85, headY: -12, headZ: 14, wag: 13, e: 'linear' },
         { t: 2.02, pee: 0, leg: 0, e: 'snap' },
         { t: 2.2, x: 0.32, walk: 6.5, walkAmp: 0 },
         { t: 2.3, ry: 90, walkAmp: 1, headY: 0, e: 'snap' },

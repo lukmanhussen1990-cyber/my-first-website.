@@ -3,7 +3,7 @@ export const CONFIG = {
   width: 1080,
   height: 1920,
   fps: 30,
-  watermark: 'YOUR_CHANNEL',
+  watermark: '@garden_reels',
   font: 'Lilita One',
 
   caption: {
