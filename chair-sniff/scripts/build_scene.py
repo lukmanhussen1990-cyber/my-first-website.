@@ -132,6 +132,12 @@ model(PH("wall_clock"), "Clock", 0.34, "z", -1.4, ROOM_Y1 - 0.03, 2.05)
 for i, (x, y) in enumerate([(x, y) for x in (-3.6, -1.2, 1.2, 3.6) for y in (-1.8, 1.4)]):
     model(PH("mounted_fluorescent_lights"), f"Fixture{i}", 1.1, "max", x, y, H - 0.04)
 
+# cheaper sun shadows: only furniture, chairs and people cast them (fixtures/plants/small props don't)
+for o in SET.all_objects:
+    if o.type == "MESH" and o.name.split("__")[0].startswith(("Fixture", "Plant", "Notes", "Stationery", "Binder", "Lamp",
+                                                              "Clock", "Monitor", "Desktop", "Laptop", "Whiteboard")):
+        o.visible_shadow = False
+
 # chairs (front faces the desk = +Y -> face = pi)
 CHAIR_Y = -1.05
 chA = model(PH("dining_chair_02"), "ChairA_padded", 0.97, "z", 0.0, -1.0, face=PI, coll=PROPS, chair=True)

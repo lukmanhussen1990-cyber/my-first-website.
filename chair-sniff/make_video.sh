@@ -6,8 +6,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-.venv/bin/python}
 ASSETS=${ASSETS:-assets}
-SAMPLES=${SAMPLES:-4}            # EEVEE samples per pixel (4 = what final.mp4 used)
-JOBS=${JOBS:-2}                  # parallel Blender render processes sharing the frame range
+SAMPLES=${SAMPLES:-2}            # EEVEE samples per pixel (2 = what final.mp4 used)
+JOBS=${JOBS:-1}                  # parallel Blender processes sharing the frame range (only helps with spare CPU)
 STEPS=${STEPS:-"assets transcribe timing characters scene render encode"}
 DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 voiceover.mp3)
 mkdir -p build captions
