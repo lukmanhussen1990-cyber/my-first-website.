@@ -19,16 +19,32 @@ export function makeHuman(look) {
   const tilt = new THREE.Group();
   root.add(squash); squash.add(yaw); yaw.add(tilt);
 
+  const pantsMat = new THREE.MeshLambertMaterial({ color: pants, flatShading: true });
   const hips = at(new THREE.Group(), 0, HIP_H, 0);
   tilt.add(hips);
-  hips.add(at(box(0.4, 0.17, 0.24, pants), 0, 0.0, 0));
+  hips.add(at(box(0.4, 0.17, 0.24, pantsMat), 0, 0.0, 0));
+  // cartoon "puffy pants": a little tent (with a flag) and a big balloon, both pants fabric
+  const tent = new THREE.Group();
+  const tentBody = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.2, 4), pantsMat);
+  tentBody.rotation.set(Math.PI / 2, Math.PI / 4, 0);
+  tentBody.position.set(0, -0.05, 0.2);
+  tent.add(tentBody, at(box(0.012, 0.16, 0.012, '#e8e8e8'), 0, 0.03, 0.3), at(box(0.07, 0.045, 0.006, '#e23b2e'), 0.035, 0.09, 0.3));
+  hips.add(tent);
+  const puffG = new THREE.Group();
+  const puffMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), pantsMat);
+  puffMesh.castShadow = true;
+  puffG.add(puffMesh);
+  const seam = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.025, 4, 14), mat('#e9d27a'));
+  seam.rotation.y = Math.PI / 2;
+  puffG.add(seam);
+  hips.add(puffG);
 
   // legs
   const leg = (side) => {
     const hip = at(new THREE.Group(), 0.105 * side, -0.03, 0);
-    hip.add(at(box(0.175, 0.44, 0.2, pants), 0, -0.21, 0));
+    hip.add(at(box(0.175, 0.44, 0.2, pantsMat), 0, -0.21, 0));
     const knee = at(new THREE.Group(), 0, -0.42, 0);
-    knee.add(at(box(0.16, 0.38, 0.18, pants), 0, -0.18, 0));
+    knee.add(at(box(0.16, 0.38, 0.18, pantsMat), 0, -0.18, 0));
     knee.add(at(box(0.175, 0.085, 0.3, shoes), 0, -0.37, 0.055));
     hip.add(knee);
     hips.add(hip);
@@ -174,6 +190,15 @@ export function makeHuman(look) {
       belly.visible = (s.belly ?? 0) > 0.01;
       belly.scale.setScalar(Math.max(0.01, s.belly ?? 0));
       pockets.visible = !!s.pockets;
+      pantsMat.color.set(s.pants || pants);
+      tent.visible = (s.tent ?? 0) > 0.01;
+      tent.scale.setScalar(Math.max(0.01, s.tent ?? 0));
+      const pf = s.puff ?? 0;
+      puffG.visible = pf > 0.01;
+      const po = s.puffOff || [0, -0.12, 0.12 + 0.48 * pf];
+      puffG.position.set(po[0], po[1], po[2]);
+      const psq = s.puffSq ?? 1;
+      puffG.scale.set(pf / Math.sqrt(psq), pf * 0.9 * psq, pf * 1.08 / Math.sqrt(psq));
       root.visible = s.vis !== false;
 
       const j = { ...JOINTS };

@@ -243,3 +243,35 @@ export function makeParticles(max = 260) {
     },
   };
 }
+
+// ---------------------------------------------------------------- simple keyframed objects
+export function makeThing(kind) {
+  const root = new THREE.Group();
+  const olive = '#55652c', dark = '#3d4a1d';
+  if (kind === 'button') {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 8), mat('#4a4f57'));
+    b.rotation.x = Math.PI / 2;
+    root.add(b);
+    for (const [x, y] of [[-0.012, 0.012], [0.012, 0.012], [-0.012, -0.012], [0.012, -0.012]]) root.add(at(box(0.008, 0.008, 0.03, '#1b1d22'), x, y, 0));
+  } else if (kind === 'tank') {
+    root.add(at(box(2.2, 0.75, 3.4, olive), 0, 0.65, 0));
+    for (const sx of [-1, 1]) root.add(at(box(0.55, 0.6, 3.7, '#2b2f24'), 1.05 * sx, 0.32, 0));
+    const tur = at(new THREE.Group(), 0, 1.2, -0.2);
+    tur.add(box(1.3, 0.5, 1.5, dark));
+    tur.add(at(box(0.18, 0.18, 2.2, dark), 0, 0.05, 1.7));
+    tur.add(at(box(0.16, 0.12, 0.16, '#222'), 0.35, 0.33, -0.3));
+    root.add(tur);
+    root.add(at(box(0.6, 0.06, 0.4, '#f2f2f2'), -0.6, 1.04, 1.2));
+  }
+  root.traverse((o) => o.isMesh && (o.castShadow = true));
+  return {
+    root,
+    apply(s) {
+      root.visible = s.vis !== false;
+      const p = s.p || [0, 0, 0];
+      root.position.set(p[0], p[1], p[2]);
+      root.rotation.set((s.rx ?? 0) * DEG, (s.ry ?? 0) * DEG, (s.rz ?? 0) * DEG);
+      root.scale.setScalar(s.s ?? 1);
+    },
+  };
+}

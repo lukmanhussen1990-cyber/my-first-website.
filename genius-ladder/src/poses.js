@@ -70,6 +70,12 @@ export const POSES = {
   skim: P({ shLx: 60, shRx: 72, shLz: 4, shRz: 2, shLy: -35, shRy: -10, elL: 45, elR: 28, spine: 8, neckX: 6 }),
   pocketsOut: P({ shLz: 28, shRz: 28, shLx: -6, shRx: -6, elL: 4, elR: 4, neckX: 10, spine: 4 }),
   keysUp: P({ shRx: 145, shRz: 22, elR: 50, shLz: 30, shLx: -10, shLy: -90, elL: 105 }),
+  // ---- "double" story
+  sack: P({ shLz: 22, shRz: 22, shLx: 30, shRx: 30, shLy: -60, shRy: -60, elL: 70, elR: 70, hipLz: 0, hipRz: 0, kneeL: 25, kneeR: 25, hipLx: 15, hipRx: 15 }),
+  push: P({ shLx: 92, shRx: 92, shLz: 22, shRz: 22, elL: 10, elR: 10, spine: 14, hipLx: 22, kneeL: 25, hipRx: -18, kneeR: 8 }),
+  phoneCall: P({ shRx: 120, shRz: 28, shRy: 40, elR: 150, neckZ: 10, shLz: 8 }),
+  reachPocket: P({ shRx: 50, shRz: 4, elR: 15, spine: 22, neckX: 25, shLz: 10 }),
+  holdUp: P({ shRx: 115, shRz: 14, elR: 90, neckX: -4, shLz: 8 }),
   sitBino: P({ hipY: -0.36, hipLx: 88, hipRx: 88, hipLz: 6, hipRz: 6, kneeL: 88, kneeR: 88, spine: 4, neckX: -4, shLx: 70, shRx: 70, shLz: 24, shRz: 24, shLy: -55, shRy: -55, elL: 120, elR: 120 }),
 };
 

@@ -4,7 +4,7 @@ import { loadStory } from './stories.js';
 import { compileTimeline, contentTime, sampleActors, activeShot, shakeAt, inFreeze, activeCaption } from './director.js';
 import { buildWorld, WORLD } from './world.js';
 import { makeHuman, makeDog } from './characters.js';
-import { makeCardboardBox, makeLadder, makeToilet, makePee, makeParticles, LADDER_LEN } from './props.js';
+import { makeCardboardBox, makeLadder, makeToilet, makePee, makeParticles, makeThing, LADDER_LEN } from './props.js';
 import { drawCaption, drawSfx, drawWatermark } from './captions.js';
 import { clamp, lerp, ease, DEG } from './anim.js';
 
@@ -39,7 +39,9 @@ const actors = {
   box1: makeCardboardBox(1),
   box2: makeCardboardBox(2),
   box3: makeCardboardBox(3),
+  ...Object.fromEntries(Object.entries(STORY.SET.things || {}).map(([n, kind]) => [n, makeThing(kind)])),
 };
+const THINGS = Object.keys(STORY.SET.things || {});
 for (const a of Object.values(actors)) scene.add(a.root);
 const toilet = makeToilet();
 toilet.position.set(WORLD.toilet.x, WORLD.bathFloor, WORLD.toilet.z);
@@ -69,7 +71,7 @@ function applyActors(st, ct) {
     ls.p = [(ls.p || [0, 0])[0], WALL_Z + LADDER_LEN * Math.sin(lean)];
   }
   actors.ladder.apply(ls);
-  for (const name of ['box1', 'box2', 'box3']) actors[name].apply(st[name] || { vis: false });
+  for (const name of ['box1', 'box2', 'box3', ...THINGS]) actors[name].apply(st[name] || { vis: false });
   for (const name of HUMANS) {
     const s = { ...(st[name] || { vis: false }) };
     if (s.on === 'ladder') {

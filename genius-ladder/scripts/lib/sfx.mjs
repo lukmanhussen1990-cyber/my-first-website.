@@ -252,3 +252,73 @@ Object.assign(SFX, {
     return normalize(x, 0.6);
   },
 });
+
+Object.assign(SFX, {
+  boing() {
+    const x = buf(0.6);
+    let ph = 0;
+    for (let i = 0; i < x.length; i++) {
+      const t = i / SR;
+      const f = 180 + 260 * Math.exp(-t * 6) + 40 * Math.sin(t * 2 * Math.PI * 14) * Math.exp(-t * 3);
+      ph += (2 * Math.PI * f) / SR;
+      x[i] = Math.sin(ph) * Math.exp(-t / 0.22);
+    }
+    return normalize(x, 0.8);
+  },
+  tick() {
+    const x = buf(0.12);
+    ping(x, 0, 2600, 0.008, 1);
+    burst(x, 0, 0.004, 9000, 0.6, 161);
+    return normalize(x, 0.6);
+  },
+  fanfare() {
+    const x = buf(1.6);
+    const notes = [[0, 392], [0.18, 392], [0.36, 523], [0.62, 659], [0.62, 523], [0.62, 392]];
+    for (const [at, f] of notes) {
+      let ph = 0;
+      for (let i = Math.round(at * SR); i < x.length; i++) {
+        const t = i / SR - at;
+        ph += f / SR;
+        x[i] += (2 * (ph % 1) - 1) * 0.3 * Math.min(1, t / 0.02) * Math.exp(-t / (at > 0.5 ? 0.6 : 0.12));
+      }
+    }
+    let y = 0;
+    const k = lpK(2400);
+    for (let i = 0; i < x.length; i++) { y += k * (x[i] - y); x[i] = y; }
+    return normalize(x, 0.7);
+  },
+  honk() {
+    const x = buf(0.9);
+    for (const [at, d] of [[0, 0.22], [0.35, 0.35]]) for (const f of [415, 494]) {
+      let ph = 0;
+      for (let i = Math.round(at * SR); i < Math.min(x.length, Math.round((at + d) * SR)); i++) {
+        ph += f / SR;
+        x[i] += (ph % 1 < 0.5 ? 0.3 : -0.3);
+      }
+    }
+    return normalize(x, 0.6);
+  },
+  ring() {
+    const x = buf(1.0);
+    for (const at of [0, 0.5]) for (let i = Math.round(at * SR); i < Math.round((at + 0.35) * SR); i++) {
+      const t = i / SR;
+      x[i] += Math.sin(2 * Math.PI * 1400 * t) * (Math.sin(2 * Math.PI * 22 * t) > 0 ? 0.5 : 0.1);
+    }
+    return normalize(x, 0.55);
+  },
+  pfft() {
+    const x = buf(1.1), r = rand(171);
+    let y = 0;
+    for (let i = 0; i < x.length; i++) {
+      const t = i / SR;
+      y += lpK(900 + 2200 * Math.exp(-t * 2)) * (r() - y);
+      x[i] = y * Math.min(1, t / 0.03) * Math.exp(-t / 0.5) * (0.7 + 0.3 * Math.sin(t * 2 * Math.PI * 35));
+    }
+    return normalize(x, 0.7);
+  },
+  beep() {
+    const x = buf(0.6);
+    for (const [at, f] of [[0, 880], [0.18, 1320], [0.36, 660]]) for (let i = Math.round(at * SR); i < Math.round((at + 0.12) * SR); i++) x[i] += Math.sin(2 * Math.PI * f * (i / SR)) * 0.5;
+    return normalize(x, 0.5);
+  },
+});

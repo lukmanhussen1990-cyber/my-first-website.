@@ -65,7 +65,7 @@ export function buildWorld(scene, set = {}) {
   key.shadow.radius = 4;
   key.target.position.set(0, 1, 1);
   scene.add(key, key.target);
-  const rim = new THREE.DirectionalLight('#7f9bff', 0.7);
+  const rim = new THREE.DirectionalLight('#8fa6ff', 1.25);
   rim.position.set(-8, 6, -6);
   scene.add(rim);
 
@@ -335,6 +335,60 @@ export function buildWorld(scene, set = {}) {
     const glow = new THREE.PointLight('#ffb35c', 3, 4, 1.5);
     glow.position.set(2.0, 4.2, 0.6);
     scene.add(glow);
+  }
+  if (set.road) {
+    const rx = set.road;
+    const road = box(5, 0.03, 120, '#3a3d44');
+    road.position.set(rx, 0.015, 0);
+    road.castShadow = false;
+    road.receiveShadow = true;
+    scene.add(road);
+    for (let z = -58; z < 60; z += 4) scene.add(at(box(0.18, 0.035, 1.8, '#f2d22a'), rx, 0.02, z));
+    for (const sx of [-1, 1]) scene.add(at(box(0.12, 0.035, 120, '#f4f4f4'), rx + 2.35 * sx, 0.02, 0));
+    const cars = ['#e23b2e', '#2a7fd8', '#f2c230', '#ffffff', '#4fb36a', '#9b59b6'];
+    for (let k = 0; k < 9; k++) {
+      const car = new THREE.Group();
+      const c = cars[k % cars.length];
+      car.add(at(box(1.7, 0.6, 3.6, c), 0, 0.55, 0), at(box(1.5, 0.5, 1.9, c), 0, 1.1, -0.2), at(box(1.45, 0.4, 1.8, '#9fd0ff', { emissive: '#1d3d5a' }), 0, 1.1, -0.2));
+      for (const [wx, wz] of [[-0.85, 1.2], [0.85, 1.2], [-0.85, -1.2], [0.85, -1.2]]) car.add(at(box(0.25, 0.5, 0.5, '#1b1b1b'), wx, 0.25, wz));
+      car.add(at(box(0.3, 0.15, 0.05, '#ffe9a8', { emissive: '#ffcc55' }), -0.5, 0.6, 1.81), at(box(0.3, 0.15, 0.05, '#ffe9a8', { emissive: '#ffcc55' }), 0.5, 0.6, 1.81));
+      car.position.set(rx + (k % 2 ? 1.2 : -1.2), 0, -16 - Math.floor(k / 2) * 5.2);
+      car.traverse((o) => o.isMesh && (o.castShadow = true));
+      scene.add(car);
+    }
+    for (let z = -40; z < 40; z += 9) {
+      scene.add(at(box(0.15, 4, 0.15, '#9aa3ad'), rx + 3.4, 2, z), at(box(1.2, 0.12, 0.3, '#9aa3ad'), rx + 2.9, 4, z), at(box(0.4, 0.1, 0.3, '#fff4c2', { emissive: '#ffd27a' }), rx + 2.5, 3.93, z));
+    }
+  }
+  if (set.planet) {
+    const [px, py, pz] = set.planet;
+    const pl = new THREE.Group();
+    pl.add(new THREE.Mesh(new THREE.IcosahedronGeometry(5, 2), mat('#2a6fd8')));
+    const r3 = rng(9);
+    for (let k = 0; k < 9; k++) {
+      const land = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4 + r3() * 1.3, 1), mat(k % 3 ? '#4caf3a' : '#3f9a2c'));
+      const a = r3() * Math.PI * 2, b = (r3() - 0.5) * 2.4;
+      land.position.set(Math.cos(a) * Math.cos(b) * 4.15, Math.sin(b) * 4.15, Math.sin(a) * Math.cos(b) * 4.15);
+      land.scale.set(1, 0.55, 1);
+      land.lookAt(0, 0, 0);
+      land.rotateX(Math.PI / 2);
+      pl.add(land);
+    }
+    // the giant sleeping-bag lump, visible from space
+    const lump = new THREE.Mesh(new THREE.IcosahedronGeometry(0.95, 1), mat('#2f8f4e'));
+    lump.position.set(0.6, 3.3, 3.6);
+    lump.scale.set(1, 0.8, 1.1);
+    pl.add(lump);
+    pl.add(at(box(0.08, 0.6, 0.08, '#f4f4f4'), 0.6, 4.4, 3.9));
+    pl.add(at(box(0.5, 0.3, 0.03, '#e23b2e'), 0.85, 4.55, 3.9));
+    const sat = new THREE.Group();
+    sat.add(box(0.4, 0.4, 0.6, '#d9d9d9'), at(box(1.4, 0.04, 0.5, '#2a4fa8', { emissive: '#0d1e4a' }), 0, 0, 0));
+    sat.position.set(-4.5, 3.5, 5.5);
+    sat.rotation.set(0.4, 0.6, 0.2);
+    pl.add(sat);
+    pl.position.set(px, py, pz);
+    pl.traverse((o) => o.isMesh && (o.castShadow = false));
+    scene.add(pl);
   }
   return { key, hemi, glass };
 }

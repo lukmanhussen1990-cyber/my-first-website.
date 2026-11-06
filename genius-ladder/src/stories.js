@@ -2,6 +2,7 @@
 export const STORIES = {
   ladder: { module: './timeline.js', narration: 'assets/narration.mp3', out: 'genius-ladder.mp4' },
   sneak: { module: './timeline-sneak.js', narration: 'assets/sneak_in.mp3', out: 'sneak-in.mp4' },
+  double: { module: './timeline-double.js', narration: 'assets/double.mp3', out: 'double-every-minute.mp4' },
 };
 export async function loadStory(id = 'ladder') {
   const s = STORIES[id];
