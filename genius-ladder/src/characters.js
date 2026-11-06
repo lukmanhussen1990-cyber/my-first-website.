@@ -30,14 +30,18 @@ export function makeHuman(look) {
   tentBody.position.set(0, -0.05, 0.2);
   tent.add(tentBody, at(box(0.012, 0.16, 0.012, '#e8e8e8'), 0, 0.03, 0.3), at(box(0.07, 0.045, 0.006, '#e23b2e'), 0.035, 0.09, 0.3));
   hips.add(tent);
+  // a straight "extra pant leg": fabric tube along +Z with a hem cuff at the far end
   const puffG = new THREE.Group();
-  const puffMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), pantsMat);
-  puffMesh.castShadow = true;
-  puffG.add(puffMesh);
-  const seam = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.025, 4, 14), mat('#e9d27a'));
-  seam.rotation.y = Math.PI / 2;
-  puffG.add(seam);
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8), pantsMat);
+  tube.rotation.x = Math.PI / 2;
+  tube.castShadow = true;
+  const cuffMat = new THREE.MeshLambertMaterial({ color: pants, flatShading: true });
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 1.12, 1, 8), cuffMat);
+  cuff.rotation.x = Math.PI / 2;
+  cuff.castShadow = true;
+  puffG.add(tube, cuff);
   hips.add(puffG);
+  const axis = new THREE.Vector3();
 
   // legs
   const leg = (side) => {
@@ -195,10 +199,16 @@ export function makeHuman(look) {
       tent.scale.setScalar(Math.max(0.01, s.tent ?? 0));
       const pf = s.puff ?? 0;
       puffG.visible = pf > 0.01;
-      const po = s.puffOff || [0, -0.12, 0.12 + 0.48 * pf];
+      const len = 1.1 * pf, rad = 0.07 + 0.08 * pf;
+      const yawP = (s.puffYaw ?? 0) * DEG, pitchP = (s.puffPitch ?? 0) * DEG;
+      puffG.rotation.set(-pitchP, yawP, 0, 'YXZ');
+      axis.set(0, 0, 1).applyEuler(puffG.rotation);
+      const po = s.puffOff || [axis.x * (0.08 + len / 2), -0.12 + axis.y * (0.08 + len / 2), 0.08 + axis.z * (0.08 + len / 2)];
       puffG.position.set(po[0], po[1], po[2]);
-      const psq = s.puffSq ?? 1;
-      puffG.scale.set(pf / Math.sqrt(psq), pf * 0.9 * psq, pf * 1.08 / Math.sqrt(psq));
+      tube.scale.set(rad, len, rad);
+      cuff.scale.set(rad, Math.min(0.12, len * 0.15), rad);
+      cuff.position.set(0, 0, len / 2 - Math.min(0.12, len * 0.15) / 2);
+      cuffMat.color.copy(pantsMat.color).multiplyScalar(0.72);
       root.visible = s.vis !== false;
 
       const j = { ...JOINTS };

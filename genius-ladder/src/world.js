@@ -375,12 +375,15 @@ export function buildWorld(scene, set = {}) {
       pl.add(land);
     }
     // the giant sleeping-bag lump, visible from space
-    const lump = new THREE.Mesh(new THREE.IcosahedronGeometry(0.95, 1), mat('#2f8f4e'));
-    lump.position.set(0.6, 3.3, 3.6);
-    lump.scale.set(1, 0.8, 1.1);
+    // the giant pants tube lying on the surface, visible from space
+    const n = new THREE.Vector3(0.12, 0.62, 0.78).normalize();
+    const lump = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 5.2, 8), mat('#2f8f4e'));
+    lump.position.copy(n).multiplyScalar(5.15);
+    lump.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0).sub(n.clone().multiplyScalar(n.x)).normalize());
     pl.add(lump);
-    pl.add(at(box(0.08, 0.6, 0.08, '#f4f4f4'), 0.6, 4.4, 3.9));
-    pl.add(at(box(0.5, 0.3, 0.03, '#e23b2e'), 0.85, 4.55, 3.9));
+    const tip = n.clone().multiplyScalar(5.2).add(new THREE.Vector3(2.6, 0, 0));
+    pl.add(at(box(0.08, 0.7, 0.08, '#f4f4f4'), tip.x, tip.y + 0.4, tip.z));
+    pl.add(at(box(0.5, 0.3, 0.03, '#e23b2e'), tip.x + 0.25, tip.y + 0.6, tip.z));
     const sat = new THREE.Group();
     sat.add(box(0.4, 0.4, 0.6, '#d9d9d9'), at(box(1.4, 0.04, 0.5, '#2a4fa8', { emissive: '#0d1e4a' }), 0, 0, 0));
     sat.position.set(-4.5, 3.5, 5.5);

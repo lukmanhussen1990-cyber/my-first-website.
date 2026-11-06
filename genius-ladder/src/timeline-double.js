@@ -45,7 +45,7 @@ export const TIMELINE = [
     keys: {
       ...hidden('friend', 'doctor', 'soldier1', 'soldier2', 'dog', 'button', 'tank'),
       you: [
-        { t: 0, vis: true, x: 1.0, y: 0, z: 4.0, ry: 20, rx: 0, sq: 1, pose: 'stand', face: 'blank', tent: 0, puff: 0, puffOff: null, puffSq: 1, pants: null, hold: null, belly: 0, walkAmp: 0 },
+        { t: 0, vis: true, x: 1.0, y: 0, z: 4.0, ry: 20, rx: 0, sq: 1, pose: 'stand', face: 'blank', tent: 0, puff: 0, puffOff: null, puffYaw: 0, puffPitch: 0, pants: null, hold: null, belly: 0, walkAmp: 0 },
         { t: 1.6, pose: 'stand', j: { neckX: 38 }, face: 'focus', e: 'snap' },
         { t: 2.5, pose: 'stand', j: { neckX: 4 }, face: 'blank', e: 'snap' },
       ],
@@ -195,18 +195,18 @@ export const TIMELINE = [
       friend: [{ t: 0, vis: false }],
       button: [{ t: 0, vis: false }],
       you: [
-        { t: 0, x: -3.4, y: 0, z: 0.32, ry: 0, rx: 0, pose: 'push', face: 'strain', thumb: false, pants: BAG, puff: 1.35, puffSq: 0.75, puffOff: [0, -0.1, 0.25] },
-        { t: 0.4, x: -3.45, puffSq: 0.68, e: 'snap' },
-        { t: 0.8, x: -3.35, puffSq: 0.8, e: 'snap' },
-        { t: 1.2, x: -3.45, puffSq: 0.68, e: 'snap' },
-        { t: 1.6, x: -3.35, puffSq: 0.8, e: 'snap' },
-        { t: 2.1, x: 3.4, y: 1.7, z: -1.6, rx: 82, pose: 'flail', face: 'shock', puffSq: 1, puffOff: null, e: 'step' },
+        { t: 0, x: -3.4, y: 0, z: 0.32, ry: 0, rx: 0, pose: 'push', face: 'strain', thumb: false, pants: BAG, puff: 1.6, puffYaw: 90, puffPitch: 0, puffOff: [0, -0.12, 0.3] },
+        { t: 0.4, x: -3.45, e: 'snap' },
+        { t: 0.8, x: -3.35, e: 'snap' },
+        { t: 1.2, x: -3.45, e: 'snap' },
+        { t: 1.6, x: -3.35, e: 'snap' },
+        { t: 2.1, x: 3.4, y: 1.7, z: -1.6, rx: 82, pose: 'flail', face: 'shock', puff: 1.35, puffYaw: 0, puffPitch: 90, puffOff: [0, 0.6, 0.36], e: 'step' },
         { t: 2.6, z: -0.6, y: 1.75, e: 'linear' },
-        { t: 3.1, z: 0.0, y: 1.5, rx: 90, pose: 'superman', face: 'dazed', e: 'in' },
-        { t: 3.25, y: 1.75, e: 'out' },
-        { t: 3.4, y: 1.5, e: 'in' },
-        { t: 3.55, y: 1.6, e: 'out' },
-        { t: 3.7, y: 1.5, e: 'in' },
+        { t: 3.1, z: 0.0, y: 0.56, rx: 90, pose: 'superman', face: 'dazed', e: 'in' },
+        { t: 3.25, y: 0.85, e: 'out' },
+        { t: 3.4, y: 0.56, e: 'in' },
+        { t: 3.55, y: 0.68, e: 'out' },
+        { t: 3.7, y: 0.56, e: 'in' },
       ],
     },
   },
@@ -224,12 +224,12 @@ export const TIMELINE = [
     ],
     sfx: [tick(), { at: 1.3, sound: 'fanfare', gain: 0.7 }],
     bursts: [
-      { at: 1.4, pos: [-4.5, 3.3, 5.2], n: 40, colors: confetti, speed: 1.6, up: 3, size: 0.07, flat: true, life: 2.2 },
-      { at: 2.8, pos: [-2.5, 3.3, 5.2], n: 40, colors: confetti, speed: 1.6, up: 3, size: 0.07, flat: true, life: 1.6 },
+      { at: 1.4, pos: [-4.5, 1.6, 5.2], n: 40, colors: confetti, speed: 1.6, up: 3, size: 0.07, flat: true, life: 2.2 },
+      { at: 2.8, pos: [-2.5, 1.6, 5.2], n: 40, colors: confetti, speed: 1.6, up: 3, size: 0.07, flat: true, life: 1.6 },
     ],
     keys: {
       you: [
-        { t: 0, x: -4.0, y: 0, z: 5.2, ry: 90, rx: 0, pose: 'stand', face: 'smug', pants: BAG, puff: 3.4, puffSq: 1, puffOff: [0, 0.75, -2.3], walk: 0, walkAmp: 1 },
+        { t: 0, x: -4.0, y: 0, z: 5.2, ry: 90, rx: 0, pose: 'stand', face: 'smug', pants: BAG, puff: 3.4, puffYaw: 180, puffPitch: 0, puffOff: [0, -0.5, -2.02], walk: 0, walkAmp: 1 },
         { t: 4.41, x: 1.6, walk: 6, e: 'linear' },
       ],
       friend: [{ t: 0, vis: true, x: 3.4, y: 0, z: 7.4, ry: -120, rx: 0, pose: 'wave', face: 'shock', hold: null }, { t: 0.3, pose: 'wave2', e: 'snap' }, { t: 0.6, pose: 'wave', e: 'snap' }, { t: 0.9, pose: 'wave2', e: 'snap' }],
@@ -251,7 +251,7 @@ export const TIMELINE = [
     keys: {
       friend: [{ t: 0, vis: false }],
       you: [
-        { t: 0, x: 40, y: 0, z: 1.0, ry: 0, pose: 'stand', face: 'blank', walkAmp: 0, puff: 7, puffOff: [0, 2.4, -4.2] },
+        { t: 0, x: 40, y: 0, z: 1.0, ry: 0, pose: 'stand', face: 'blank', walkAmp: 0, puff: 7, puffYaw: 90, puffOff: [0, -0.21, -1.2] },
         { t: 1.4, pose: 'reachUp', face: 'shock', e: 'snap' },
       ],
       tank: [{ t: 0, vis: true, p: [40, 0, 24], ry: 180 }, { t: 2.4, p: [40, 0, 8.5], e: 'out' }],
@@ -274,7 +274,7 @@ export const TIMELINE = [
     sfx: [tick(), { at: 0.15, word: 'RING RING!', sound: 'ring', color: 'yellow', tilt: 6, pos: [0.6, 0.28] }, { at: 2.0, sound: 'beep', gain: 0.6 }],
     keys: {
       ...hidden('soldier1', 'soldier2'),
-      you: [{ t: 0, x: 40, y: 0, z: 1.0, ry: 30, pose: 'phoneCall', hold: 'phone', face: 'blank', puff: 12, puffOff: [0, 4.6, -6.8] }],
+      you: [{ t: 0, x: 40, y: 0, z: 1.0, ry: 30, pose: 'phoneCall', hold: 'phone', face: 'blank', puff: 12, puffYaw: 90, puffOff: [0, 0.19, -1.9] }],
     },
   },
   // 12 -----------------------------------------------------------------------
@@ -285,7 +285,7 @@ export const TIMELINE = [
     shots: [{ at: 0, cam: { pos: [1.7, 1.7, 8.8], look: [1.0, 1.3, 4.2], fov: 52 }, push: 0.2 }],
     keys: {
       tank: [{ t: 0, vis: false }],
-      you: [{ t: 0, x: 0.6, y: 0, z: 4.2, ry: 90, pose: 'stand', hold: null, face: 'blank', puff: 3.0, puffOff: [0, 0.5, -1.9] }],
+      you: [{ t: 0, x: 0.6, y: 0, z: 4.2, ry: 90, pose: 'stand', hold: null, face: 'blank', puff: 3.0, puffYaw: 180, puffOff: [0, -0.53, -1.8] }],
       doctor: [{ t: 0, vis: true, x: 2.0, y: 0, z: 4.2, ry: -90, rx: 0, pose: 'stand', j: { neckX: -10 }, face: 'serious', hold: null }],
     },
   },
