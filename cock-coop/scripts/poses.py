@@ -1,0 +1,254 @@
+"""Pose library (Mixamo-style stiff body poses, no facial acting). See rigpose.py for conventions."""
+from rigpose import mirror
+
+A = "aim"; R = "rot"
+ARMS_DOWN = {"LeftArm": (A, (0.13, 0.03, -1)), "LeftForeArm": (A, (0.05, -0.12, -1)), "LeftHand": (A, (0.02, -0.1, -1)),
+             "RightArm": (A, (-0.13, 0.03, -1)), "RightForeArm": (A, (-0.05, -0.12, -1)), "RightHand": (A, (-0.02, -0.1, -1))}
+STAND = dict(ARMS_DOWN)
+LEGS_SIT = {"LeftUpLeg": (A, (0.1, -1, -0.04)), "LeftLeg": (A, (0.03, 0.08, -1)), "LeftFoot": (A, (0, -1, -0.35)),
+            "RightUpLeg": (A, (-0.1, -1, -0.04)), "RightLeg": (A, (-0.03, 0.08, -1)), "RightFoot": (A, (0, -1, -0.35))}
+SIT = dict(LEGS_SIT, **{"Spine": (R, (4, 0, 0)),
+           "LeftArm": (A, (0.12, -0.35, -1)), "LeftForeArm": (A, (0.0, -1, -0.25)), "LeftHand": (A, (0, -1, -0.4)),
+           "RightArm": (A, (-0.12, -0.35, -1)), "RightForeArm": (A, (0.0, -1, -0.25)), "RightHand": (A, (0, -1, -0.4))})
+SIT_TYPE = dict(SIT, **{"LeftArm": (A, (0.15, -0.55, -1)), "LeftForeArm": (A, (-0.15, -1, 0.08)), "LeftHand": (A, (-0.1, -1, 0)),
+                        "RightArm": (A, (-0.15, -0.55, -1)), "RightForeArm": (A, (0.15, -1, 0.08)), "RightHand": (A, (0.1, -1, 0)),
+                        "Spine": (R, (8, 0, 0)), "Head": (R, (8, 0, 0))})
+SIT_GLANCE = dict(SIT, **{"Neck": (R, (0, 0, -25)), "Head": (R, (-3, 0, -30)), "Spine2": (R, (0, 0, -10))})
+SIT_GLANCE_L = dict(SIT, **{"Neck": (R, (0, 0, 25)), "Head": (R, (-3, 0, 30)), "Spine2": (R, (0, 0, 10))})
+SIT_HEAVY = dict(LEGS_SIT, **{"Spine": (R, (-6, 0, 0)), "Head": (R, (-8, 0, 0)),
+                 "LeftArm": (A, (0.8, -0.2, -0.6)), "LeftForeArm": (A, (0.7, -0.4, -0.4)),
+                 "RightArm": (A, (-0.8, -0.2, -0.6)), "RightForeArm": (A, (-0.7, -0.4, -0.4))})
+# half way between standing and sitting: hips back, torso forward
+SIT_MID = {"Hips": (R, (28, 0, 0)), "Spine": (R, (6, 0, 0)), "Head": (R, (-12, 0, 0)),
+           "LeftUpLeg": (A, (0.1, -0.75, -0.65)), "LeftLeg": (A, (0.03, 0.3, -1)), "LeftFoot": (A, (0, -1, -0.35)),
+           "RightUpLeg": (A, (-0.1, -0.75, -0.65)), "RightLeg": (A, (-0.03, 0.3, -1)), "RightFoot": (A, (0, -1, -0.35)),
+           "LeftArm": (A, (0.18, -0.5, -1)), "LeftForeArm": (A, (0.05, -0.8, -0.6)),
+           "RightArm": (A, (-0.18, -0.5, -1)), "RightForeArm": (A, (-0.05, -0.8, -0.6))}
+BEND = {"Hips": (R, (55, 0, 0)), "Spine": (R, (14, 0, 0)), "Spine1": (R, (10, 0, 0)), "Spine2": (R, (6, 0, 0)),
+        "Neck": (R, (-10, 0, 0)), "Head": (R, (-5, 0, 0)),
+        "LeftUpLeg": (A, (0.06, 0.3, -1)), "LeftLeg": (A, (0.04, -0.3, -1)), "LeftFoot": (A, (0, -1, -0.3)),
+        "RightUpLeg": (A, (-0.06, 0.3, -1)), "RightLeg": (A, (-0.04, -0.3, -1)), "RightFoot": (A, (0, -1, -0.3)),
+        "LeftArm": (A, (0.25, -0.5, -1)), "LeftForeArm": (A, (0.1, -0.5, -1)), "LeftHand": (A, (0, -0.4, -1)),
+        "RightArm": (A, (-0.25, -0.5, -1)), "RightForeArm": (A, (-0.1, -0.5, -1)), "RightHand": (A, (0, -0.4, -1))}
+# deep bend + bent knees: nose goes down to seat height; hands on knees
+SNIFF = {"Hips": (R, (62, 0, 0)), "Spine": (R, (16, 0, 0)), "Spine1": (R, (12, 0, 0)), "Spine2": (R, (8, 0, 0)),
+         "Neck": (R, (-6, 0, 0)), "Head": (R, (6, 0, 0)),
+         "LeftUpLeg": (A, (0.12, -0.55, -1)), "LeftLeg": (A, (0.05, 0.55, -1)), "LeftFoot": (A, (0, -1, -0.3)),
+         "RightUpLeg": (A, (-0.12, -0.55, -1)), "RightLeg": (A, (-0.05, 0.55, -1)), "RightFoot": (A, (0, -1, -0.3)),
+         "LeftArm": (A, (0.25, -0.55, -1)), "LeftForeArm": (A, (0.05, -0.3, -1)), "LeftHand": (A, (0, -0.4, -1)),
+         "RightArm": (A, (-0.25, -0.55, -1)), "RightForeArm": (A, (-0.05, -0.3, -1)), "RightHand": (A, (0, -0.4, -1))}
+SNIFF_IN = dict(SNIFF, **{"Head": (R, (12, 0, 0)), "Neck": (R, (0, 0, 0))})   # head pushed further down (inhale)
+SNIFF_HAPPY = dict(SNIFF, **{"Spine2": (R, (8, 6, 0)), "Head": (R, (4, 10, 0)),
+                             "RightArm": (A, (-0.5, -0.3, 0.2)), "RightForeArm": (A, (-0.1, -0.2, 1)), "RightHand": (A, (0, 0, 1))})
+RECOIL = {"Hips": (R, (-6, 0, 0)), "Spine": (R, (-10, 0, 0)), "Spine1": (R, (-8, 0, 0)), "Neck": (R, (-8, 0, 0)), "Head": (R, (-18, 0, 8)),
+          "LeftUpLeg": (A, (0.08, 0.35, -1)), "LeftLeg": (A, (0.06, 0.4, -1)), "LeftFoot": (A, (0, -1, -0.3)),
+          "RightUpLeg": (A, (-0.08, -0.15, -1)), "RightLeg": (A, (-0.06, -0.05, -1)),
+          "LeftArm": (A, (0.7, -0.6, 0.2)), "LeftForeArm": (A, (-0.2, -0.5, 1)), "LeftHand": (A, (-0.1, -0.3, 1)),
+          "RightArm": (A, (-0.7, -0.6, 0.2)), "RightForeArm": (A, (0.2, -0.5, 1)), "RightHand": (A, (0.1, -0.3, 1))}
+RECOIL_BIG = {"Hips": (R, (-14, 0, 0)), "Spine": (R, (-16, 0, 0)), "Spine1": (R, (-12, 0, 0)), "Neck": (R, (-12, 0, 0)), "Head": (R, (-25, 0, -12)),
+              "LeftUpLeg": (A, (0.15, -0.55, -0.8)), "LeftLeg": (A, (0.1, 0.2, -1)), "LeftFoot": (A, (0, -1, 0.2)),
+              "RightUpLeg": (A, (-0.08, 0.2, -1)), "RightLeg": (A, (-0.06, 0.25, -1)),
+              "LeftArm": (A, (0.8, -0.2, 0.7)), "LeftForeArm": (A, (0.3, -0.2, 1)), "LeftHand": (A, (0.1, 0, 1)),
+              "RightArm": (A, (-0.8, -0.2, 0.7)), "RightForeArm": (A, (-0.3, -0.2, 1)), "RightHand": (A, (-0.1, 0, 1))}
+FIST = dict(STAND, **{"RightArm": (A, (-0.3, -0.15, 1)), "RightForeArm": (A, (-0.05, -0.1, 1)), "RightHand": (A, (0, 0, 1)),
+                      "Spine": (R, (-4, 0, -6)), "Head": (R, (-10, 0, 0)),
+                      "LeftArm": (A, (0.3, 0.1, -1)), "LeftForeArm": (A, (-0.25, -0.6, -0.4))})
+FIST_DOWN = dict(STAND, **{"RightArm": (A, (-0.25, -0.35, -0.7)), "RightForeArm": (A, (0.1, -0.5, 1)), "RightHand": (A, (0, -0.2, 1)),
+                           "Spine": (R, (6, 0, 4)), "Head": (R, (5, 0, 0))})
+WALK_C = {"LeftUpLeg": (A, (0.04, -0.42, -1)), "LeftLeg": (A, (0.04, -0.38, -1)), "LeftFoot": (A, (0, -1, 0.05)),
+          "RightUpLeg": (A, (-0.04, 0.38, -1)), "RightLeg": (A, (-0.04, 0.62, -1)), "RightFoot": (A, (0, -0.6, -1)),
+          "LeftArm": (A, (0.13, 0.28, -1)), "LeftForeArm": (A, (0.05, 0.05, -1)), "LeftHand": (A, (0.02, 0.0, -1)),
+          "RightArm": (A, (-0.13, -0.3, -1)), "RightForeArm": (A, (-0.05, -0.55, -1)), "RightHand": (A, (-0.02, -0.3, -1)),
+          "Spine": (R, (3, 0, 4))}
+WALK_P = {"LeftUpLeg": (A, (0.04, 0.02, -1)), "LeftLeg": (A, (0.04, 0.05, -1)), "LeftFoot": (A, (0, -1, -0.3)),
+          "RightUpLeg": (A, (-0.04, -0.28, -1)), "RightLeg": (A, (-0.04, 0.45, -1)), "RightFoot": (A, (0, -1, -0.5)),
+          "LeftArm": (A, (0.13, 0.0, -1)), "LeftForeArm": (A, (0.05, -0.15, -1)), "LeftHand": (A, (0.02, -0.1, -1)),
+          "RightArm": (A, (-0.13, 0.0, -1)), "RightForeArm": (A, (-0.05, -0.15, -1)), "RightHand": (A, (-0.02, -0.1, -1)),
+          "Spine": (R, (3, 0, 0))}
+WALK = [WALK_C, WALK_P, mirror(WALK_C), mirror(WALK_P)]
+SNEAK_C = dict(WALK_C, **{"Hips": (R, (18, 0, 0)), "Spine": (R, (8, 0, 4)), "Head": (R, (-14, 0, 0)),
+                          "LeftArm": (A, (0.3, -0.4, -0.9)), "LeftForeArm": (A, (0.1, -1, -0.1)),
+                          "RightArm": (A, (-0.3, -0.4, -0.9)), "RightForeArm": (A, (-0.1, -1, -0.1))})
+SNEAK_P = dict(WALK_P, **{"Hips": (R, (18, 0, 0)), "Spine": (R, (8, 0, 0)), "Head": (R, (-14, 0, 0)),
+                          "LeftArm": (A, (0.3, -0.4, -0.9)), "LeftForeArm": (A, (0.1, -1, -0.1)),
+                          "RightArm": (A, (-0.3, -0.4, -0.9)), "RightForeArm": (A, (-0.1, -1, -0.1))})
+SNEAK = [SNEAK_C, SNEAK_P, mirror(SNEAK_C), mirror(SNEAK_P)]
+SPRAY = dict(STAND, **{"Spine": (R, (12, 0, 0)), "Spine1": (R, (6, 0, 0)), "Head": (R, (18, 0, 0)),
+                       "RightArm": (A, (-0.08, -1, -0.75)), "RightForeArm": (A, (0.2, -1, -0.55)), "RightHand": (A, (0.2, -1, -0.15))})
+HOLD = dict(STAND, **{"Spine": (R, (6, 0, 0)), "Head": (R, (12, 0, 0)),
+                      "LeftArm": (A, (0.15, -1, -0.55)), "LeftForeArm": (A, (-0.35, -1, 0.0)), "LeftHand": (A, (-0.4, -1, 0)),
+                      "RightArm": (A, (-0.15, -1, -0.55)), "RightForeArm": (A, (0.35, -1, 0.0)), "RightHand": (A, (0.4, -1, 0))})
+HOLD_LOW = dict(HOLD, **{"Hips": (R, (35, 0, 0)), "Spine": (R, (12, 0, 0)), "Head": (R, (5, 0, 0)),
+                         "LeftUpLeg": (A, (0.06, 0.1, -1)), "RightUpLeg": (A, (-0.06, 0.1, -1)),
+                         "LeftArm": (A, (0.15, -0.8, -1)), "LeftForeArm": (A, (-0.3, -1, -0.3)),
+                         "RightArm": (A, (-0.15, -0.8, -1)), "RightForeArm": (A, (0.3, -1, -0.3))})
+PUSH = dict(STAND, **{"Hips": (R, (15, 0, 0)), "Spine": (R, (6, 0, 0)), "Head": (R, (-10, 0, 0)),
+                      "LeftArm": (A, (0.1, -1, -0.4)), "LeftForeArm": (A, (-0.05, -1, 0.1)),
+                      "RightArm": (A, (-0.1, -1, -0.4)), "RightForeArm": (A, (0.05, -1, 0.1))})
+PRESENT = dict(STAND, **{"LeftArm": (A, (1, -0.4, -0.5)), "LeftForeArm": (A, (1, -0.6, 0.1)), "LeftHand": (A, (1, -0.5, 0.2)),
+                         "RightArm": (A, (-1, -0.4, -0.5)), "RightForeArm": (A, (-1, -0.6, 0.1)), "RightHand": (A, (-1, -0.5, 0.2)),
+                         "Head": (R, (-6, 0, 0))})
+PROUD = dict(STAND, **{"LeftArm": (A, (0.7, 0.15, -0.7)), "LeftForeArm": (A, (-0.6, -0.2, -0.3)), "LeftHand": (A, (-0.5, -0.2, -0.6)),
+                       "RightArm": (A, (-0.7, 0.15, -0.7)), "RightForeArm": (A, (0.6, -0.2, -0.3)), "RightHand": (A, (0.5, -0.2, -0.6)),
+                       "Spine": (R, (-5, 0, 0)), "Head": (R, (-8, 0, 0))})
+# nose stuck: torso pulls back while the head stays down (neck stretched)
+STUCK = dict(SNIFF, **{"Hips": (R, (48, 0, 0)), "Spine": (R, (8, 0, 0)), "Neck": (R, (18, 0, 0)), "Head": (R, (20, 0, 0)),
+                       "LeftArm": (A, (0.5, 0.5, -0.6)), "LeftForeArm": (A, (0.6, 0.0, -0.6)),
+                       "RightArm": (A, (-0.5, 0.5, -0.6)), "RightForeArm": (A, (-0.6, 0.0, -0.6))})
+STUCK2 = dict(STUCK, **{"Hips": (R, (42, 0, 0)), "Spine": (R, (4, 0, 0)), "Neck": (R, (24, 0, 0)), "Head": (R, (24, 0, 0)),
+                        "LeftArm": (A, (0.2, -0.9, 0.2)), "LeftForeArm": (A, (0.6, -0.4, 0.8)),
+                        "RightArm": (A, (-0.2, -0.9, 0.2)), "RightForeArm": (A, (-0.6, -0.4, 0.8))})
+PLACE = dict(SNIFF, **{"Hips": (R, (45, 0, 0)), "Head": (R, (20, 0, 0)),
+                       "LeftArm": (A, (0.12, -1, -0.9)), "LeftForeArm": (A, (-0.25, -1, -0.5)), "LeftHand": (A, (-0.3, -1, -0.5)),
+                       "RightArm": (A, (-0.12, -1, -0.9)), "RightForeArm": (A, (0.25, -1, -0.5)), "RightHand": (A, (0.3, -1, -0.5))})
+SHOCK = dict(STAND, **{"Spine": (R, (-4, 0, 0)), "Head": (R, (-4, 0, 0)),
+                       "LeftArm": (A, (0.4, -0.5, 0.4)), "LeftForeArm": (A, (-0.6, 0.0, 0.8)), "LeftHand": (A, (-0.4, 0, 1)),
+                       "RightArm": (A, (-0.4, -0.5, 0.4)), "RightForeArm": (A, (0.6, 0.0, 0.8)), "RightHand": (A, (0.4, 0, 1))})
+# lying on the back after the fall (used with the rig object rotated back 90 deg)
+FALLEN = {"LeftUpLeg": (A, (0.3, -0.9, -0.3)), "LeftLeg": (A, (0.25, -0.3, -1)), "RightUpLeg": (A, (-0.3, -0.9, -0.3)),
+          "RightLeg": (A, (-0.25, -0.3, -1)), "Head": (R, (20, 0, 10)),
+          "LeftArm": (A, (1, 0.2, 0.2)), "LeftForeArm": (A, (1, -0.3, 0.4)),
+          "RightArm": (A, (-1, 0.2, 0.2)), "RightForeArm": (A, (-1, -0.3, 0.4))}
+SIT_LEAN = dict(LEGS_SIT, **{"Hips": (R, (35, 0, 0)), "Spine": (R, (16, 0, 0)), "Spine1": (R, (10, 0, 0)), "Head": (R, (6, 0, 0)),
+                "LeftUpLeg": (A, (0.12, -1, 0.3)), "RightUpLeg": (A, (-0.12, -1, 0.3)),
+                "LeftArm": (A, (0.3, -0.5, -1)), "LeftForeArm": (A, (0.1, -0.6, -1)),
+                "RightArm": (A, (-0.3, -0.5, -1)), "RightForeArm": (A, (-0.1, -0.6, -1))})
+SIT_ROLL = dict(LEGS_SIT, **{"Spine": (R, (-4, 0, 0)), "Head": (R, (2, 0, 0)),
+                "LeftUpLeg": (A, (0.14, -1, -0.1)), "LeftLeg": (A, (0.05, -0.25, -1)),
+                "RightUpLeg": (A, (-0.14, -1, -0.1)), "RightLeg": (A, (-0.05, 0.3, -1)),
+                "LeftArm": (A, (0.25, -0.2, -1)), "LeftForeArm": (A, (0.05, -1, -0.2)),
+                "RightArm": (A, (-0.25, -0.2, -1)), "RightForeArm": (A, (-0.05, -1, -0.2))})
+# close-up variant: chin lifted so the face (not the top of the head) is seen next to the seat
+SNIFF_CU = dict(SNIFF, **{"Neck": (R, (-22, 0, 0)), "Head": (R, (-30, 0, 0))})
+SNIFF_CU_IN = dict(SNIFF, **{"Neck": (R, (-18, 0, 0)), "Head": (R, (-22, 0, 0))})
+
+# ---------------------------------------------------------------- Cubicle Wall poses
+BALANCE = {"LeftUpLeg": (A, (0.22, 0.03, -1)), "LeftLeg": (A, (0.18, -0.12, -1)), "LeftFoot": (A, (0.1, -1, -0.3)),
+           "RightUpLeg": (A, (-0.22, 0.03, -1)), "RightLeg": (A, (-0.18, -0.12, -1)), "RightFoot": (A, (-0.1, -1, -0.3)),
+           "Hips": (R, (8, 0, 0)), "Spine": (R, (4, 0, 0)), "Head": (R, (-6, 0, 0)),
+           "LeftArm": (A, (1, 0.05, 0.05)), "LeftForeArm": (A, (1, -0.1, 0.12)), "LeftHand": (A, (1, -0.1, 0.0)),
+           "RightArm": (A, (-1, 0.05, 0.05)), "RightForeArm": (A, (-1, -0.1, 0.12)), "RightHand": (A, (-1, -0.1, 0.0))}
+BALANCE_L = dict(BALANCE, **{"Spine": (R, (4, 14, 0)), "Spine1": (R, (0, 6, 0)), "Head": (R, (-6, -10, 0)),
+                             "LeftArm": (A, (1, 0.05, -0.45)), "LeftForeArm": (A, (1, -0.1, -0.35)),
+                             "RightArm": (A, (-1, 0.05, 0.6)), "RightForeArm": (A, (-1, -0.1, 0.75))})
+BALANCE_R = mirror(BALANCE_L)
+CLIMB = dict(STAND, **{"RightUpLeg": (A, (-0.1, -1, 0.15)), "RightLeg": (A, (-0.05, 0.08, -1)), "RightFoot": (A, (0, -1, -0.3)),
+                       "LeftUpLeg": (A, (0.06, 0.18, -1)), "LeftLeg": (A, (0.05, 0.25, -1)), "Hips": (R, (14, 0, 0)),
+                       "Spine": (R, (10, 0, 0)), "Head": (R, (-10, 0, 0)),
+                       "LeftArm": (A, (0.25, -1, -0.2)), "LeftForeArm": (A, (0.1, -1, -0.5)),
+                       "RightArm": (A, (-0.25, -1, -0.2)), "RightForeArm": (A, (-0.1, -1, -0.5))})
+HOLD_UP = dict(STAND, **{"LeftArm": (A, (0.35, -0.35, 1)), "LeftForeArm": (A, (0.05, -0.25, 1)), "LeftHand": (A, (0, -0.2, 1)),
+                         "RightArm": (A, (-0.35, -0.35, 1)), "RightForeArm": (A, (-0.05, -0.25, 1)), "RightHand": (A, (0, -0.2, 1)),
+                         "Spine": (R, (-6, 0, 0)), "Head": (R, (-18, 0, 0))})
+FALLING = {"Hips": (R, (-10, 0, 0)), "Spine": (R, (-12, 0, 0)), "Head": (R, (12, 0, 0)),
+           "LeftUpLeg": (A, (0.15, -0.9, -0.5)), "LeftLeg": (A, (0.1, -0.6, -0.8)),
+           "RightUpLeg": (A, (-0.1, -0.7, -0.7)), "RightLeg": (A, (-0.05, -0.2, -1)),
+           "LeftArm": (A, (0.7, -0.4, 0.6)), "LeftForeArm": (A, (0.5, -0.2, 0.9)),
+           "RightArm": (A, (-0.7, -0.4, 0.6)), "RightForeArm": (A, (-0.5, -0.2, 0.9))}
+SIT_LEVER = dict(SIT, **{"RightArm": (A, (-0.35, -0.05, -1)), "RightForeArm": (A, (-0.12, -0.45, -1)), "RightHand": (A, (0, -0.6, -1)),
+                         "Spine": (R, (10, -4, 0)), "Head": (R, (18, 0, -12))})
+SIT_LEVER_PULL = dict(SIT_LEVER, **{"RightForeArm": (A, (-0.15, -0.15, -1)), "RightHand": (A, (0, -0.2, -1))})
+SIT_DANGLE = dict(SIT, **{"LeftUpLeg": (A, (0.1, -1, -0.12)), "LeftLeg": (A, (0.04, -0.4, -1)), "LeftFoot": (A, (0, -1, -0.5)),
+                          "RightUpLeg": (A, (-0.1, -1, -0.12)), "RightLeg": (A, (-0.03, 0.45, -1)), "RightFoot": (A, (0, -1, -0.7)),
+                          "LeftArm": (A, (0.3, -0.3, -1)), "LeftForeArm": (A, (0.1, -1, -0.3)),
+                          "RightArm": (A, (-0.3, -0.3, -1)), "RightForeArm": (A, (-0.1, -1, -0.3)), "Head": (R, (-8, 0, 0))})
+SIT_DANGLE_B = mirror(SIT_DANGLE)
+SIT_RING = dict(SIT, **{"LeftUpLeg": (A, (0.14, -1, 0.06)), "LeftLeg": (A, (0.04, 0.5, -1)), "LeftFoot": (A, (0, -1, -0.15)),
+                        "RightUpLeg": (A, (-0.14, -1, 0.06)), "RightLeg": (A, (-0.04, 0.5, -1)), "RightFoot": (A, (0, -1, -0.15))})
+SIT_PEEK = dict(SIT_RING, **{"Spine": (R, (6, 0, 0)), "Neck": (R, (6, 0, 0)), "Head": (R, (14, 0, 0)),
+                             "LeftArm": (A, (0.25, -0.6, -0.6)), "LeftForeArm": (A, (-0.2, -1, 0.1)),
+                             "RightArm": (A, (-0.25, -0.6, -0.6)), "RightForeArm": (A, (0.2, -1, 0.1))})
+SIT_SPIN = dict(SIT, **{"LeftArm": (A, (1, -0.1, 0.35)), "LeftForeArm": (A, (1, -0.2, 0.5)),
+                        "RightArm": (A, (-1, -0.1, 0.35)), "RightForeArm": (A, (-1, -0.2, 0.5)), "Head": (R, (-12, 0, 0))})
+FLY = {"Spine": (R, (-12, 0, 0)), "Head": (R, (-10, 0, 10)),
+       "LeftArm": (A, (0.6, 0.2, 0.8)), "LeftForeArm": (A, (0.5, 0.0, 0.9)),
+       "RightArm": (A, (-0.9, -0.2, 0.4)), "RightForeArm": (A, (-0.8, -0.4, 0.5)),
+       "LeftUpLeg": (A, (0.35, -0.6, -0.7)), "LeftLeg": (A, (0.2, -0.2, -1)),
+       "RightUpLeg": (A, (-0.2, 0.4, -0.9)), "RightLeg": (A, (-0.1, 0.6, -0.8))}
+LOOK_WALL = dict(STAND, **{"Head": (R, (-20, 0, 0)), "Neck": (R, (-8, 0, 0))})
+SIT_SLUMP = dict(SIT, **{"Spine": (R, (18, 0, 0)), "Spine1": (R, (8, 0, 0)), "Head": (R, (10, 0, 0)),
+                         "LeftArm": (A, (0.15, -0.2, -1)), "RightArm": (A, (-0.15, -0.2, -1))})
+
+# ---------------------------------------------------------------- Pregnant Man poses
+HANDS_BELLY = {"LeftArm": (A, (0.3, -0.35, -1)), "LeftForeArm": (A, (-0.55, -0.8, -0.05)), "LeftHand": (A, (-0.7, -0.45, -0.2)),
+               "RightArm": (A, (-0.3, -0.35, -1)), "RightForeArm": (A, (0.55, -0.8, -0.05)), "RightHand": (A, (0.7, -0.45, -0.2))}
+RUB_A = dict(STAND, **HANDS_BELLY, **{"Head": (R, (22, 0, 0)), "Neck": (R, (8, 0, 0))})
+RUB_B = dict(RUB_A, **{"LeftForeArm": (A, (-0.45, -0.85, 0.15)), "RightForeArm": (A, (0.6, -0.75, -0.2))})
+SHOVE = dict(STAND, **{"Head": (R, (25, 0, 0)), "Spine": (R, (8, 0, 0)),
+                       "LeftArm": (A, (0.25, -0.55, -1)), "LeftForeArm": (A, (-0.35, -1, 0.05)), "LeftHand": (A, (-0.3, -1, 0.1)),
+                       "RightArm": (A, (-0.25, -0.55, -1)), "RightForeArm": (A, (0.35, -1, 0.05)), "RightHand": (A, (0.3, -1, 0.1))})
+SHOVE_IN = dict(SHOVE, **{"LeftArm": (A, (0.25, -0.25, -1)), "LeftForeArm": (A, (-0.45, -0.85, -0.1)),
+                          "RightArm": (A, (-0.25, -0.25, -1)), "RightForeArm": (A, (0.45, -0.85, -0.1))})
+BUCKLE = dict(STAND, **{"Head": (R, (28, 0, 0)), "Spine": (R, (6, 0, 0)),
+                        "LeftArm": (A, (0.35, -0.4, -1)), "LeftForeArm": (A, (-0.4, -0.9, 0.05)), "LeftHand": (A, (-0.5, -0.8, 0)),
+                        "RightArm": (A, (-0.35, -0.4, -1)), "RightForeArm": (A, (0.4, -0.9, 0.05)), "RightHand": (A, (0.5, -0.8, 0))})
+LAUGH_POINT = dict(SIT, **{"Spine": (R, (-16, 0, 0)), "Spine1": (R, (-8, 0, 0)), "Neck": (R, (-10, 0, 0)), "Head": (R, (-22, 0, 0)),
+                           "RightArm": (A, (-0.15, -1, 0.15)), "RightForeArm": (A, (-0.05, -1, 0.12)), "RightHand": (A, (0, -1, 0.1)),
+                           "LeftArm": (A, (0.3, -0.3, -1)), "LeftForeArm": (A, (-0.6, -0.75, 0.05)), "LeftHand": (A, (-0.7, -0.4, -0.1))})
+LAUGH_POINT_B = dict(LAUGH_POINT, **{"Spine": (R, (-8, 0, 0)), "Spine1": (R, (-4, 0, 0)), "Head": (R, (-12, 0, 0)),
+                                     "RightArm": (A, (-0.15, -1, 0.05)), "RightForeArm": (A, (-0.05, -1, 0.0))})
+HOLD_BELLY_WALK = [dict(w, **HANDS_BELLY, **{"Spine": (R, (-6, 0, 0)), "Head": (R, (-6, 0, 0))}) for w in WALK]
+PROUD_WALK = [dict(w, **{"Spine": (R, (-8, 0, 0)), "Spine1": (R, (-4, 0, 0)), "Head": (R, (-10, 0, 0)),
+                         "LeftArm": dict(w).get("LeftArm", (A, (0.13, 0, -1))), "RightArm": dict(w).get("RightArm", (A, (-0.13, 0, -1)))})
+              for w in WALK]
+STRAPS = dict(STAND, **{"Head": (R, (10, 0, 0)),
+                        "LeftArm": (A, (0.35, -0.3, -0.25)), "LeftForeArm": (A, (-0.45, -0.25, 0.85)), "LeftHand": (A, (-0.3, 0.1, 1)),
+                        "RightArm": (A, (-0.35, -0.3, -0.25)), "RightForeArm": (A, (0.45, -0.25, 0.85)), "RightHand": (A, (0.3, 0.1, 1))})
+PUNCH_WIND = dict(STAND, **{"Spine": (R, (0, 0, 18)), "RightArm": (A, (-0.4, 0.4, -0.7)), "RightForeArm": (A, (0.2, -0.9, 0.3)),
+                            "LeftArm": (A, (0.3, -0.6, -0.6)), "LeftForeArm": (A, (-0.2, -0.8, 0.5)),
+                            "LeftUpLeg": (A, (0.1, -0.25, -1)), "RightUpLeg": (A, (-0.1, 0.2, -1))})
+PUNCH = dict(PUNCH_WIND, **{"Spine": (R, (6, 0, -16)), "RightArm": (A, (-0.05, -1, 0.05)), "RightForeArm": (A, (0.0, -1, 0.05)),
+                            "RightHand": (A, (0, -1, 0))})
+DISAPPOINTED = dict(STAND, **{"Spine": (R, (10, 0, 0)), "Spine1": (R, (6, 0, 0)), "Neck": (R, (12, 0, 0)), "Head": (R, (18, 0, 0)),
+                              "LeftArm": (A, (0.05, 0.05, -1)), "LeftForeArm": (A, (0.02, 0.0, -1)),
+                              "RightArm": (A, (-0.05, 0.05, -1)), "RightForeArm": (A, (-0.02, 0.0, -1))})
+WAIT_LOOK = dict(STAND, **{"Head": (R, (8, 0, 0)), "Spine": (R, (4, 0, 0))})
+SURPRISED = dict(SHOCK, **{"Spine": (R, (-10, 0, 0)), "Head": (R, (-12, 0, 0))})
+SIT_BACK = dict(SIT, **{"Spine": (R, (-6, 0, 0)), "Head": (R, (-6, 0, 0)), "LeftArm": (A, (0.6, 0.1, -0.8)), "RightArm": (A, (-0.6, 0.1, -0.8))})
+# ---- Cock Coop
+_ARMS = lambda p: {k: v for k, v in p.items() if "Arm" in k or "Hand" in k}
+HUG = dict(STAND, **{"Spine": (R, (-5, 0, 0)), "Head": (R, (12, 0, 10)),
+                     "LeftArm": (A, (0.38, -0.7, -0.5)), "LeftForeArm": (A, (-0.8, -0.55, 0.2)), "LeftHand": (A, (-0.85, -0.3, 0.1)),
+                     "RightArm": (A, (-0.38, -0.7, -0.5)), "RightForeArm": (A, (0.8, -0.55, 0.2)), "RightHand": (A, (0.85, -0.3, 0.1))})
+HUG_B = dict(HUG, **{"Spine": (R, (-5, 0, 8)), "Head": (R, (10, 0, -6))})
+CARRY_WALK = [dict(w, **_ARMS(HUG), **{"Head": (R, (8, 0, 0))}) for w in WALK]
+LIE = dict(STAND, **{"LeftArm": (A, (0.3, -0.1, -1)), "RightArm": (A, (-0.3, -0.1, -1)),
+                     "LeftForeArm": (A, (0.2, -0.3, -1)), "RightForeArm": (A, (-0.2, -0.3, -1))})
+LIE_LOOK_R = dict(LIE, **{"Head": (R, (0, 0, -40)), "Neck": (R, (0, 0, -15))})
+SWAT_UP = dict(LIE, **{"Head": (R, (0, 0, 28)), "RightArm": (A, (-0.35, -0.75, 0.55)),
+                       "RightForeArm": (A, (0.5, -0.55, 0.65)), "RightHand": (A, (0.55, -0.4, 0.7))})
+SWAT_OUT = dict(LIE, **{"Head": (R, (0, 0, 20)), "RightArm": (A, (-0.85, -0.5, 0.15)),
+                        "RightForeArm": (A, (-0.6, -0.75, 0.3)), "RightHand": (A, (-0.5, -0.8, 0.2))})
+SOFA_HOLD = dict(LIE, **{"Head": (R, (18, 0, 0)), "Neck": (R, (10, 0, 0)),
+                         "LeftUpLeg": (A, (0.1, -0.35, -1)), "LeftLeg": (A, (0.05, 0.25, -1)),
+                         "LeftArm": (A, (0.45, -0.45, -0.75)), "LeftForeArm": (A, (-0.7, -0.6, 0.3)), "LeftHand": (A, (-0.8, -0.4, 0.2)),
+                         "RightArm": (A, (-0.45, -0.45, -0.75)), "RightForeArm": (A, (0.7, -0.6, 0.3)), "RightHand": (A, (0.8, -0.4, 0.2))})
+CROSS = dict(STAND, **{"Spine": (R, (-4, 3, 0)), "Head": (R, (-6, 5, 0)),
+                       "LeftArm": (A, (0.3, -0.35, -0.9)), "LeftForeArm": (A, (-0.9, -0.45, 0.15)), "LeftHand": (A, (-0.9, -0.2, 0.2)),
+                       "RightArm": (A, (-0.3, -0.42, -0.9)), "RightForeArm": (A, (0.9, -0.55, 0.22)), "RightHand": (A, (0.9, -0.25, 0.25))})
+HAMMER_UP = dict(STAND, **{"Spine": (R, (8, 0, -6)), "Head": (R, (14, 0, 0)),
+                           "RightArm": (A, (-0.4, -0.5, 0.45)), "RightForeArm": (A, (-0.1, 0.25, 1)), "RightHand": (A, (0, 0.35, 1)),
+                           "LeftArm": (A, (0.2, -0.75, -0.35)), "LeftForeArm": (A, (-0.35, -1, 0.15)), "LeftHand": (A, (-0.3, -1, 0.1))})
+HAMMER_DOWN = dict(HAMMER_UP, **{"Spine": (R, (12, 0, -4)), "RightArm": (A, (-0.3, -0.85, -0.05)),
+                                 "RightForeArm": (A, (-0.05, -1, -0.3)), "RightHand": (A, (0, -1, -0.45))})
+PROUD_HAMMER = dict(PROUD, **{"RightArm": (A, (-0.3, -0.25, -0.9)), "RightForeArm": (A, (-0.1, -1, 0.25)), "RightHand": (A, (0, -1, 0.2))})
+RUN_C = {"Spine": (R, (14, 0, 0)), "Head": (R, (-12, 0, 0)),
+         "LeftUpLeg": (A, (0.05, -0.75, -0.65)), "LeftLeg": (A, (0.04, -0.25, -1)), "LeftFoot": (A, (0, -1, -0.1)),
+         "RightUpLeg": (A, (-0.05, 0.45, -0.9)), "RightLeg": (A, (-0.04, 1, -0.45)), "RightFoot": (A, (0, 0.2, -1)),
+         "LeftArm": (A, (0.18, 0.55, -0.8)), "LeftForeArm": (A, (0.05, -0.4, 0.9)), "LeftHand": (A, (0, -0.3, 1)),
+         "RightArm": (A, (-0.18, -0.6, -0.75)), "RightForeArm": (A, (-0.05, -0.85, 0.5)), "RightHand": (A, (0, -0.8, 0.6))}
+RUN_P = {"Spine": (R, (14, 0, 0)), "Head": (R, (-12, 0, 0)),
+         "LeftUpLeg": (A, (0.05, -0.2, -1)), "LeftLeg": (A, (0.04, 0.35, -1)), "LeftFoot": (A, (0, -1, -0.3)),
+         "RightUpLeg": (A, (-0.05, -0.55, -0.8)), "RightLeg": (A, (-0.04, 0.6, -0.8)), "RightFoot": (A, (0, -0.6, -1)),
+         "LeftArm": (A, (0.15, 0.05, -1)), "LeftForeArm": (A, (0.05, -0.8, 0.5)),
+         "RightArm": (A, (-0.15, 0.05, -1)), "RightForeArm": (A, (-0.05, -0.8, 0.5))}
+RUN = [RUN_C, RUN_P, mirror(RUN_C), mirror(RUN_P)]
+REACH = dict(STAND, **{"Head": (R, (6, 0, 0)), "RightArm": (A, (-0.12, -1, 0.05)), "RightForeArm": (A, (-0.02, -1, 0.05)),
+                       "RightHand": (A, (0, -1, 0))})
+PULL = dict(STAND, **{"Spine": (R, (0, 0, -15)), "Head": (R, (4, 0, -12)), "RightArm": (A, (-0.75, -0.6, 0.0)),
+                      "RightForeArm": (A, (-0.85, -0.45, 0.05)), "RightHand": (A, (-0.9, -0.3, 0))})
+PUSH_LATCH = dict(STAND, **{"Head": (R, (14, 0, 0)), "RightArm": (A, (-0.1, -0.85, -0.45)), "RightForeArm": (A, (0.05, -1, -0.05)),
+                            "RightHand": (A, (0.05, -1, 0))})
+OOPS = dict(STAND, **{"Head": (R, (-4, 0, -30)), "Spine": (R, (-3, 0, -12)),
+                      "LeftArm": (A, (0.5, -0.4, -0.4)), "LeftForeArm": (A, (0.1, -0.6, 0.8)), "LeftHand": (A, (0, -0.4, 1)),
+                      "RightArm": (A, (-0.5, -0.4, -0.4)), "RightForeArm": (A, (-0.1, -0.6, 0.8)), "RightHand": (A, (0, -0.4, 1))})

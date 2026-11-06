@@ -16,6 +16,7 @@ MANIFEST = json.load(open(os.path.join(HERE, "..", "assets_manifest.json")))
 OUT = os.path.abspath(sys.argv[1])
 ONLY = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
 UA = {"User-Agent": "chair-sniff-pipeline/1.0"}
+TITLE = os.path.basename(os.path.dirname(HERE)).replace("-", " ").title()
 
 
 def get(url, dest):
@@ -69,7 +70,7 @@ def objaverse(uid):
 
 
 def main():
-    credits = ["Chair Sniff - third-party asset credits", "=" * 40,
+    credits = [f"{TITLE} - third-party asset credits", "=" * 40,
                "CC-BY 4.0 models were published on Sketchfab by the authors below and downloaded through the",
                "Objaverse mirror (huggingface.co/datasets/allenai/objaverse). CC-BY: https://creativecommons.org/licenses/by/4.0/",
                "Characters: MakeHuman / MPFB2 (output is CC0). Rigs: MPFB2 built-in 'mixamo' skeleton.", ""]
