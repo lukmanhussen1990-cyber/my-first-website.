@@ -12,7 +12,8 @@ export const WORLD = {
   toilet: { x: 0, z: -1.25 },
 };
 
-export function buildWorld(scene) {
+export function buildWorld(scene, set = {}) {
+  const inRect = (x, z, r) => r && x > r[0] && x < r[1] && z > r[2] && z < r[3];
   scene.background = new THREE.Color(pal.sky);
   scene.fog = new THREE.Fog(pal.sky, 28, 75);
 
@@ -84,6 +85,8 @@ export function buildWorld(scene) {
   for (let i = 0; i < 5200; i++) {
     const x = (r() - 0.5) * 16, z = 0.2 + Math.pow(r(), 1.3) * 11;
     if (x < -1.6 && x > -5.2 && z < 2.4) continue; // patio
+    if (set.pool && inRect(x, z, [set.pool[0] - 0.4, set.pool[1] + 0.4, set.pool[2] - 0.4, set.pool[3] + 0.4])) continue;
+    if (set.stairs && inRect(x, z, [3.9, 7.1, 0, 1.2])) continue;
     p.set(x, 0, z);
     e.set((r() - 0.5) * 0.5, r() * 6, (r() - 0.5) * 0.5);
     q.setFromEuler(e);
@@ -238,7 +241,21 @@ export function buildWorld(scene) {
     fence.add(b);
   };
   let i = 0;
-  for (let z = 0.2; z < 11; z += 0.22) { plank(-8.5, z, Math.PI / 2, i++); plank(8.5, z, Math.PI / 2, i++); }
+  for (let z = 0.2; z < 11; z += 0.22) {
+    plank(-8.5, z, Math.PI / 2, i++);
+    if (!(set.gate && Math.abs(z - set.gate[1]) < 0.55)) plank(8.5, z, Math.PI / 2, i++);
+  }
+  if (set.gate) {
+    const [gx, gz] = set.gate;
+    const g = new THREE.Group();
+    g.add(at(box(0.06, 1.95, 1.0, '#f4f1ea'), 0, 0.975, 0));
+    g.add(at(box(0.08, 0.6, 0.6, '#d8d2c4'), 0, 0.36, 0)); // doggy-door frame
+    g.add(at(box(0.09, 0.5, 0.5, '#2a1d14'), 0, 0.36, 0)); // the hole
+    g.add(at(box(0.08, 0.1, 0.1, '#c9a640'), 0.0, 1.0, -0.38)); // latch
+    g.position.set(gx, 0, gz);
+    g.traverse((o) => o.isMesh && (o.receiveShadow = true));
+    fence.add(g);
+  }
   for (let x = -8.5; x <= 8.5; x += 0.22) plank(x, 11, 0, i++);
   for (const [x0, x1, z] of [[-8.5, 8.5, 11.05]]) {
     for (const y of [0.4, 1.5]) fence.add(at(box(x1 - x0, 0.1, 0.06, pal.fenceDark), (x0 + x1) / 2, y, z - 0.1));
@@ -259,12 +276,65 @@ export function buildWorld(scene) {
   tree(-6.5, 13.5, 1.5, false); tree(-2, 14.5, 1.8, true); tree(3.5, 13.2, 1.4, false); tree(7.5, 14.5, 1.9, true);
   tree(-11, 6, 1.6, true); tree(11, 3, 1.7, false); tree(-11, 1, 1.3, false); tree(11.5, 9, 1.4, true);
   // bushes along the wall
-  for (const [x, z, s2] of [[-1.3, 0.5, 0.55], [1.5, 0.45, 0.5], [5.2, 0.5, 0.6], [-7.6, 0.6, 0.65], [7.6, 0.6, 0.55]]) {
+  for (const [x, z, s2] of [[-1.3, 0.5, 0.55], [1.5, 0.45, 0.5], [5.2, 0.5, 0.6], [-7.6, 0.6, 0.65], [7.6, 0.6, 0.55]].filter(([x]) => !(set.stairs && x > 1 && x < 8))) {
     const b = new THREE.Mesh(new THREE.IcosahedronGeometry(s2, 0), mat(pal.treeDark));
     b.position.set(x, s2 * 0.6, z);
     b.castShadow = true;
     scene.add(b);
   }
 
+  // ------------------------------------------------------------ optional set pieces
+  if (set.pool) {
+    const [x0, x1, z0, z1] = set.pool;
+    const water = box(x1 - x0, 0.5, z1 - z0, '#2aa7e6', { emissive: '#0a3d66' });
+    water.position.set((x0 + x1) / 2, -0.22, (z0 + z1) / 2);
+    water.castShadow = false;
+    water.receiveShadow = true;
+    scene.add(water);
+    const r2 = rng(7);
+    for (let k = 0; k < 14; k++) {
+      const rip = box(0.3 + r2() * 0.5, 0.01, 0.05, '#8fd8ff', { emissive: '#2a6f99' });
+      rip.position.set(x0 + 0.3 + r2() * (x1 - x0 - 0.6), 0.035, z0 + 0.2 + r2() * (z1 - z0 - 0.4));
+      rip.castShadow = false;
+      scene.add(rip);
+    }
+    const c = '#e9e4da', w = 0.32;
+    for (const [cx, cz, sx, sz] of [[(x0 + x1) / 2, z0 - w / 2, x1 - x0 + 2 * w, w], [(x0 + x1) / 2, z1 + w / 2, x1 - x0 + 2 * w, w], [x0 - w / 2, (z0 + z1) / 2, w, z1 - z0], [x1 + w / 2, (z0 + z1) / 2, w, z1 - z0]]) {
+      const b = box(sx, 0.08, sz, c);
+      b.position.set(cx, 0.04, cz);
+      b.receiveShadow = true;
+      scene.add(b);
+    }
+    // ladder rails + a lounger for the rich-house look
+    for (const dz of [-0.2, 0.2]) scene.add(at(box(0.04, 0.5, 0.04, '#cfd6dd'), x1 + 0.05, 0.25, z0 + 0.8 + dz));
+    const lounger = new THREE.Group();
+    lounger.add(at(box(0.7, 0.12, 1.8, '#ffffff'), 0, 0.3, 0), at(box(0.7, 0.12, 0.6, '#ffffff'), 0, 0.55, -0.85));
+    lounger.children[1].rotation.x = 0.6;
+    lounger.position.set(x0 - 1.4, 0, (z0 + z1) / 2);
+    lounger.traverse((o) => o.isMesh && (o.castShadow = true));
+    scene.add(lounger);
+  }
+  if (set.stairs) {
+    for (let k = 0; k < 10; k++) {
+      const st = box(0.3, (k + 1) * 0.3, 1.0, k % 2 ? '#d9c39a' : '#cfb88d');
+      st.position.set(7.0 - k * 0.3 - 0.15, ((k + 1) * 0.3) / 2, 0.6);
+      st.receiveShadow = true;
+      scene.add(st);
+    }
+    const bal = box(2.8, 0.16, 1.45, '#cfb88d');
+    bal.position.set(2.7, 2.92, 0.72);
+    bal.receiveShadow = true;
+    scene.add(bal);
+    for (let x = 1.35; x <= 4.0; x += 0.33) scene.add(at(box(0.05, 0.9, 0.05, '#ffffff'), x, 3.45, 1.4));
+    scene.add(at(box(2.75, 0.07, 0.08, '#ffffff'), 2.68, 3.92, 1.4));
+    // bedroom door (open, warm light inside)
+    scene.add(at(box(1.0, 2.1, 0.04, '#3b2418', { emissive: '#4a2a10' }), 2.0, 4.05, 0.01));
+    scene.add(at(box(1.2, 0.1, 0.1, pal.windowFrame), 2.0, 5.15, 0.05));
+    const leaf = at(box(0.06, 2.05, 0.95, '#8a5a3c'), 1.5, 4.03, 0.48);
+    scene.add(leaf);
+    const glow = new THREE.PointLight('#ffb35c', 3, 4, 1.5);
+    glow.position.set(2.0, 4.2, 0.6);
+    scene.add(glow);
+  }
   return { key, hemi, glass };
 }

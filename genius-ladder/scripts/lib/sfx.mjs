@@ -190,3 +190,65 @@ export function crickets(sec) {
   }
   return normalize(x, 1);
 }
+
+Object.assign(SFX, {
+  squish() {
+    const x = buf(0.4), r = rand(111);
+    let y = 0;
+    for (let i = 0; i < x.length; i++) {
+      const t = i / SR;
+      const k = lpK(400 + 1400 * Math.abs(Math.sin(t * 2 * Math.PI * 9)));
+      y += k * (r() - y);
+      x[i] = y * Math.sin(Math.PI * Math.min(1, t / 0.35));
+    }
+    thump(x, 0, 180, 90, 0.05, 0.4);
+    return normalize(x, 0.7);
+  },
+  whoosh() {
+    const x = buf(0.8), r = rand(121);
+    let lo = 0, hi = 0;
+    for (let i = 0; i < x.length; i++) {
+      const t = i / SR;
+      const fc = 300 + 3200 * Math.sin(Math.PI * Math.min(1, t / 0.7));
+      lo += lpK(fc) * (r() - lo);
+      hi += lpK(fc * 0.5) * (lo - hi);
+      x[i] = (lo - hi) * Math.sin(Math.PI * Math.min(1, t / 0.75));
+    }
+    return normalize(x, 0.7);
+  },
+  sploosh() {
+    const x = buf(1.6), r = rand(131);
+    thump(x, 0, 120, 45, 0.2, 0.8);
+    burst(x, 0, 0.9, 2500, 1.4, 132);
+    burst(x, 0.02, 0.6, 7000, 0.5, 133, 1500);
+    for (let n = 0; n < 26; n++) { // bubbles: short rising blips
+      const at = 0.15 + ((r() + 1) / 2) * 1.2, f0 = 350 + ((r() + 1) / 2) * 600;
+      let ph = 0;
+      for (let i = Math.round(at * SR); i < Math.min(x.length, Math.round((at + 0.05) * SR)); i++) {
+        const u = (i / SR - at) / 0.05;
+        ph += (2 * Math.PI * f0 * (1 + u * 1.5)) / SR;
+        x[i] += Math.sin(ph) * Math.sin(Math.PI * u) * 0.18 * (1 - at / 1.6);
+      }
+    }
+    return normalize(x, 0.95);
+  },
+  woof() {
+    const x = buf(0.3), r = rand(141);
+    let ph = 0, y = 0;
+    const k = lpK(1800);
+    for (let i = 0; i < x.length; i++) {
+      const t = i / SR;
+      const f = 520 - 260 * Math.min(1, t / 0.16);
+      ph += f / SR;
+      const src = (2 * (ph % 1) - 1) * 0.8 + r() * 0.35;
+      y += k * (src - y);
+      x[i] = y * Math.min(1, t / 0.01) * Math.exp(-t / 0.09);
+    }
+    return normalize(x, 0.85);
+  },
+  jingle() {
+    const x = buf(0.7), r = rand(151);
+    for (let n = 0; n < 14; n++) ping(x, ((r() + 1) / 2) * 0.45, 3000 + ((r() + 1) / 2) * 3500, 0.05, 0.4);
+    return normalize(x, 0.6);
+  },
+});

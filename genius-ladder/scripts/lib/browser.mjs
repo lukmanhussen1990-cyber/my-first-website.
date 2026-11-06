@@ -4,7 +4,7 @@ import { serve } from '../serve.mjs';
 
 const require = createRequire(import.meta.url);
 
-export async function openPage({ scale = 1, debug = false } = {}) {
+export async function openPage({ scale = 1, debug = false, story = 'ladder' } = {}) {
   const { chromium } = require('playwright');
   const server = await serve(0);
   const browser = await chromium.launch({
@@ -14,7 +14,7 @@ export async function openPage({ scale = 1, debug = false } = {}) {
   const page = await browser.newPage({ viewport: { width: 400, height: 400 }, deviceScaleFactor: 1 });
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log('[page]', m.text()); });
   page.on('pageerror', (e) => console.log('[page error]', e.message));
-  const q = new URLSearchParams({ render: '1', scale: String(scale) });
+  const q = new URLSearchParams({ render: '1', scale: String(scale), story });
   if (debug) q.set('debug', '1');
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html?${q}`);
   await page.waitForFunction('window.__ready === true', null, { timeout: 120000 });

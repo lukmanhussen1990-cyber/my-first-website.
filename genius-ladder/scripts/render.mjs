@@ -15,14 +15,16 @@ const opt = (name, def) => {
   const i = args.indexOf(`--${name}`);
   return i < 0 ? def : args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : true;
 };
-const BUILD = path.join(ROOT, 'build');
+import { STORIES } from '../src/stories.js';
+const STORY = String(opt('story', 'ladder'));
+const BUILD = path.join(ROOT, 'build', STORY);
 const OUT = path.join(ROOT, 'out');
 fs.mkdirSync(BUILD, { recursive: true });
 fs.mkdirSync(OUT, { recursive: true });
 
 async function stills(spec) {
   const scale = Number(opt('scale', 0.3));
-  const { page, close } = await openPage({ scale, debug: true });
+  const { page, close } = await openPage({ scale, debug: true, story: STORY });
   const info = await page.evaluate(() => window.timelineInfo());
   let times;
   if (String(spec).includes(',')) times = String(spec).split(',').map(Number);
@@ -47,7 +49,7 @@ async function stills(spec) {
 }
 
 async function renderFrames(from, to, file, onFrame, scale = 1) {
-  const { page, close } = await openPage({ scale });
+  const { page, close } = await openPage({ scale, story: STORY });
   const ff = spawn('ffmpeg', [
     '-v', 'error', '-y', '-f', 'image2pipe', '-framerate', '30', '-c:v', 'mjpeg', '-i', '-',
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '14', '-pix_fmt', 'yuv420p', file,
@@ -64,7 +66,7 @@ async function renderFrames(from, to, file, onFrame, scale = 1) {
 }
 
 async function full() {
-  const { page, close } = await openPage({ scale: 0.1 });
+  const { page, close } = await openPage({ scale: 0.1, story: STORY });
   const info = await page.evaluate(() => window.timelineInfo());
   await close();
   let from = 0, to = info.frames;
@@ -90,18 +92,18 @@ async function full() {
   for (let w = 0; w < workers; w++) {
     const a = from + w * per, b = Math.min(to, a + per);
     if (a >= b) continue;
-    const f = path.join(BUILD, `part${w}.mp4`);
+    const f = path.join(BUILD, `part-${opt('scale', 1)}-${w}.mp4`);
     parts.push(f);
     jobs.push(renderFrames(a, b, f, tick, Number(opt('scale', 1))));
   }
   await Promise.all(jobs);
   console.log(`\nrendered ${to - from} frames in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-  const list = path.join(BUILD, 'parts.txt');
+  const list = path.join(BUILD, `parts-${opt('scale', 1)}.txt`);
   fs.writeFileSync(list, parts.map((p) => `file '${p}'`).join('\n'));
-  const video = path.join(BUILD, range ? 'range_video.mp4' : 'video.mp4');
+  const video = path.join(BUILD, range ? 'range_video.mp4' : `video-${opt('scale', 1)}.mp4`);
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', video]);
   const audio = path.join(BUILD, 'audio.wav');
-  const final = opt('out', null) ? path.join(OUT, opt('out')) : range ? path.join(BUILD, 'range.mp4') : path.join(OUT, 'genius-ladder.mp4');
+  const final = opt('out', null) ? path.join(OUT, opt('out')) : range ? path.join(BUILD, 'range.mp4') : path.join(OUT, STORIES[STORY].out);
   const aArgs = fs.existsSync(audio)
     ? ['-ss', String(from / info.fps), '-t', String((to - from) / info.fps), '-i', audio, '-map', '0:v', '-map', '1:a', '-c:a', 'aac', '-b:a', '192k']
     : [];

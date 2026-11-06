@@ -51,6 +51,25 @@ export const POSES = {
   crossArms: P({ shLx: 28, shRx: 26, shLz: 12, shRz: 12, shLy: -80, shRy: -80, elL: 112, elR: 104, spine: -4, neckX: 2 }),
   // friend on the toilet
   sitPhone: P({ hipY: -0.36, hipLx: 88, hipRx: 88, hipLz: 6, hipRz: 6, kneeL: 88, kneeR: 88, spine: 20, neckX: 32, shLx: 38, shRx: 38, shLz: 8, shRz: 8, shLy: -25, shRy: -25, elL: 88, elR: 88 }),
+  // ---- "sneak in" story
+  bellyHold: P({ shLx: 32, shRx: 32, shLz: 12, shRz: 12, shLy: -55, shRy: -55, elL: 80, elR: 80, neckX: 8 }),
+  wave: P({ shRx: 155, shRz: 40, elR: 35, shLz: 8 }),
+  wave2: P({ shRx: 150, shRz: 12, elR: 20, shLz: 8 }),
+  tree: P({ hipRx: 35, hipRz: 60, kneeR: 128, shLx: 178, shRx: 178, shLz: -5, shRz: -5, elL: 12, elR: 12 }),
+  sneak: P({ hipY: -0.1, hipLx: 30, kneeL: 45, hipRx: -12, kneeR: 30, spine: 22, shLx: 75, elL: 100, shRx: 40, elR: 110, neckX: -12 }),
+  sneakB: P({ hipY: -0.1, hipRx: 30, kneeR: 45, hipLx: -12, kneeL: 30, spine: 22, shRx: 75, elR: 100, shLx: 40, elL: 110, neckX: -12 }),
+  crawl: P({ hipY: -0.36, spine: 86, shLx: 88, shRx: 88, shLz: 6, shRz: 6, elL: 0, elR: 0, hipLx: 0, kneeL: 92, hipRx: 0, kneeR: 92, neckX: -55 }),
+  crawlKickA: P({ hipY: -0.36, spine: 86, shLx: 140, shRx: 60, shLz: 30, shRz: 20, elL: 20, elR: 10, hipLx: -25, kneeL: 30, hipRx: 5, kneeR: 100, neckX: -55 }),
+  crawlKickB: P({ hipY: -0.36, spine: 86, shLx: 60, shRx: 140, shLz: 20, shRz: 30, elL: 10, elR: 20, hipLx: 5, kneeL: 100, hipRx: -25, kneeR: 30, neckX: -55 }),
+  rubA: P({ shLx: 30, elL: 85, shLy: -50, shRx: 55, elR: 60, shRy: -65, shRz: 8, neckX: 14 }),
+  rubB: P({ shLx: 45, elL: 70, shLy: -60, shRx: 25, elR: 90, shRy: -40, shRz: 14, neckX: 10 }),
+  superman: P({ shLx: 172, shRx: 172, shLz: 10, shRz: 10, elL: 0, elR: 0, hipLz: 4, hipRz: 4, neckX: -60 }),
+  floatBack: P({ shLz: 75, shRz: 75, shLx: 10, shRx: 10, hipLz: 18, hipRz: 18, kneeL: 15, kneeR: 15, neckX: 35 }),
+  hop: P({ hipLx: 30, kneeL: 60, hipRx: 30, kneeR: 60, shLx: 150, shRx: 150, shLz: 30, shRz: 30, spine: -8 }),
+  run: P({ spine: 16, shLx: 60, shRx: 120, shLz: 30, shRz: 30, elL: 60, elR: 60, neckX: -10 }),
+  skim: P({ shLx: 60, shRx: 72, shLz: 4, shRz: 2, shLy: -35, shRy: -10, elL: 45, elR: 28, spine: 8, neckX: 6 }),
+  pocketsOut: P({ shLz: 28, shRz: 28, shLx: -6, shRx: -6, elL: 4, elR: 4, neckX: 10, spine: 4 }),
+  keysUp: P({ shRx: 145, shRz: 22, elR: 50, shLz: 30, shLx: -10, shLy: -90, elL: 105 }),
   sitBino: P({ hipY: -0.36, hipLx: 88, hipRx: 88, hipLz: 6, hipRz: 6, kneeL: 88, kneeR: 88, spine: 4, neckX: -4, shLx: 70, shRx: 70, shLz: 24, shRz: 24, shLy: -55, shRy: -55, elL: 120, elR: 120 }),
 };
 

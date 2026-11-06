@@ -7,12 +7,15 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './serve.mjs';
-import { TIMELINE } from '../src/timeline.js';
+import { loadStory } from '../src/stories.js';
 import { autoCaps } from '../src/director.js';
 import { decode, writeWav, SR } from './lib/pcm.mjs';
 
-const src = path.resolve(ROOT, process.argv[2] || 'assets/narration.mp3');
-const BUILD = path.join(ROOT, 'build');
+const ai = process.argv.indexOf('--story');
+const { TIMELINE, narration, id: STORY } = await loadStory(ai > 0 ? process.argv[ai + 1] : 'ladder');
+const fileArg = process.argv.slice(2).find((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--story');
+const src = path.resolve(ROOT, fileArg || narration);
+const BUILD = path.join(ROOT, 'build', STORY);
 fs.mkdirSync(path.join(BUILD, 'vo'), { recursive: true });
 
 // 1. find spoken segments (pauses >= 0.25 s below -35 dB)
@@ -56,7 +59,7 @@ speech.forEach(([a, b], i) => {
   // short fades so cuts never click
   const f = Math.round(0.012 * SR);
   for (let k = 0; k < f; k++) { clip[k] *= k / f; clip[clip.length - 1 - k] *= k / f; }
-  const file = `build/vo/${seg.key.replace('#', '_')}.wav`;
+  const file = `build/${STORY}/vo/${seg.key.replace('#', '_')}.wav`;
   writeWav(path.join(ROOT, file), [clip]);
 
   // loudness envelope (10 ms)
@@ -87,4 +90,4 @@ speech.forEach(([a, b], i) => {
   console.log(`${seg.key.padEnd(10)} ${a.toFixed(2)}-${b.toFixed(2)}s  ${seg.caps.map((c, k) => `${st[k].toFixed(2)} ${c}`).join(' | ')}`);
 });
 fs.writeFileSync(path.join(BUILD, 'vo.json'), JSON.stringify(out, null, 2));
-console.log('wrote build/vo.json');
+console.log(`wrote build/${STORY}/vo.json`);

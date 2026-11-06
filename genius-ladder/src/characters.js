@@ -40,6 +40,18 @@ export function makeHuman(look) {
   const spine = at(new THREE.Group(), 0, 0.06, 0);
   hips.add(spine);
   spine.add(at(box(0.5, 0.58, 0.28, shirt), 0, 0.28, 0));
+  const belly = new THREE.Mesh(new THREE.IcosahedronGeometry(0.24, 1), mat(shirt));
+  belly.position.set(0, 0.2, 0.1);
+  belly.scale.set(1, 0.95, 1);
+  belly.castShadow = true;
+  spine.add(belly);
+  if (look.tie) {
+    spine.add(at(box(0.16, 0.26, 0.02, '#f4f4f4'), 0, 0.45, 0.142));
+    spine.add(at(box(0.07, 0.34, 0.025, look.tie), 0, 0.38, 0.152));
+  }
+  const pockets = new THREE.Group();
+  for (const sx of [-1, 1]) pockets.add(at(box(0.07, 0.13, 0.11, '#f2f2f2'), 0.235 * sx, -0.1, 0.03));
+  hips.add(pockets);
 
   // arms
   const arm = (side) => {
@@ -125,6 +137,12 @@ export function makeHuman(look) {
     head.add(h);
     head.add(at(box(0.3, 0.14, 0.08, look.hair), 0, 0.15, -0.135)); // back of head
   }
+  if (look.bun) {
+    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), mat(look.hair));
+    b.position.set(0, 0.36, -0.1);
+    b.castShadow = true;
+    head.add(b);
+  }
   if (look.hat) {
     const h = new THREE.Mesh(new THREE.SphereGeometry(0.2, 9, 5, 0, Math.PI * 2, 0, Math.PI * 0.5), mat(look.hat));
     h.scale.set(1, 1.15, 1.02);
@@ -140,7 +158,7 @@ export function makeHuman(look) {
 
   // hand props
   const props = makeHandProps();
-  armR.hand.add(props.hammer, props.glue, props.phone, props.rubber);
+  armR.hand.add(props.hammer, props.glue, props.phone, props.rubber, props.butter, props.net, props.keys);
   head.add(props.bino);
 
   const api = {
@@ -151,7 +169,11 @@ export function makeHuman(look) {
       const sxz = 1 / Math.sqrt(Math.max(0.2, sq));
       squash.scale.set(sxz * (s.sx ?? 1), sq, sxz * (s.sx ?? 1));
       yaw.rotation.y = (s.ry ?? 0) * DEG;
-      tilt.rotation.set((s.rx ?? 0) * DEG, 0, (s.rz ?? 0) * DEG);
+      const wad = (s.waddle ?? 0) * Math.sin((s.walk ?? 0) * Math.PI * 2);
+      tilt.rotation.set((s.rx ?? 0) * DEG, 0, ((s.rz ?? 0) + wad) * DEG);
+      belly.visible = (s.belly ?? 0) > 0.01;
+      belly.scale.setScalar(Math.max(0.01, s.belly ?? 0));
+      pockets.visible = !!s.pockets;
       root.visible = s.vis !== false;
 
       const j = { ...JOINTS };
@@ -188,6 +210,9 @@ export function makeHuman(look) {
       props.glue.visible = s.hold === 'glue';
       props.phone.visible = s.hold === 'phone';
       props.rubber.visible = s.hold === 'rubber';
+      props.butter.visible = s.hold === 'butter';
+      props.net.visible = s.hold === 'net';
+      props.keys.visible = s.hold === 'keys';
       props.bino.visible = !!s.bino;
     },
   };
@@ -222,6 +247,7 @@ const FACES = {
   strain: { eye: [1.2, 0.18], brow: [-0.01, 18], mouth: 'wide' },
   focus: { eye: [1, 0.7], brow: [-0.012, 10], mouth: 'smirk' },
   blank: { eye: [1, 1], brow: [0.01, 0], mouth: 'line' },
+  sad: { eye: [1, 0.75], brow: [0.006, -18], mouth: 'line' },
 };
 
 function makeHandProps() {
@@ -259,8 +285,15 @@ function makeHandProps() {
     bino.add(tube, lens);
   }
   bino.add(at(box(0.06, 0.03, 0.05, '#202024'), 0, 0.2, 0.22));
-  for (const o of [hammer, glue, phone, rubber, bino]) o.traverse((m) => m.isMesh && (m.castShadow = true));
-  return { hammer, glue, phone, rubber, bino };
+  const butter = at(box(0.11, 0.07, 0.17, '#ffe066'), 0, -0.07, 0.05);
+  const net = new THREE.Group();
+  net.add(at(box(0.035, 0.035, 2.0, '#d9d9d9'), 0, 0, 0.75));
+  net.add(at(box(0.4, 0.03, 0.34, '#4fb3ff', { transparent: true, opacity: 0.7 }), 0, 0, 1.9));
+  net.position.set(0, -0.05, 0);
+  const keys = new THREE.Group();
+  keys.add(at(box(0.05, 0.05, 0.01, '#f2c230'), 0, -0.1, 0.05), at(box(0.03, 0.09, 0.01, '#f2c230'), 0.04, -0.15, 0.05), at(box(0.03, 0.08, 0.01, '#cfd6dd'), -0.03, -0.14, 0.05));
+  for (const o of [hammer, glue, phone, rubber, bino, butter, net, keys]) o.traverse((m) => m.isMesh && (m.castShadow = true));
+  return { hammer, glue, phone, rubber, bino, butter, net, keys };
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +342,7 @@ export function makeDog() {
     root,
     apply(s) {
       root.visible = s.vis !== false;
-      root.position.set(s.x ?? 0, 0, s.z ?? 0);
+      root.position.set(s.x ?? 0, s.y ?? 0, s.z ?? 0);
       yaw.rotation.y = (s.ry ?? 0) * DEG;
       const ph = (s.walk ?? 0) * Math.PI * 2;
       const amp = s.walkAmp ?? 0;

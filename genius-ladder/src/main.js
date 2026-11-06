@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
-import { TIMELINE } from './timeline.js';
+import { loadStory } from './stories.js';
 import { compileTimeline, contentTime, sampleActors, activeShot, shakeAt, inFreeze, activeCaption } from './director.js';
 import { buildWorld, WORLD } from './world.js';
 import { makeHuman, makeDog } from './characters.js';
@@ -12,6 +12,8 @@ const params = new URLSearchParams(location.search);
 const SCALE = parseFloat(params.get('scale') || '1');
 const DEBUG = params.has('debug');
 const RENDER_MODE = params.has('render');
+const STORY = await loadStory(params.get('story') || 'ladder');
+const TIMELINE = STORY.TIMELINE;
 const W = CONFIG.width, H = CONFIG.height, FPS = CONFIG.fps;
 const RW = Math.round(W * SCALE), RH = Math.round(H * SCALE);
 
@@ -26,11 +28,12 @@ renderer.toneMapping = THREE.NoToneMapping;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, W / H, 0.05, 200);
-buildWorld(scene);
+buildWorld(scene, STORY.SET);
 
+const CAST = STORY.CAST || { you: CONFIG.you, friend: { ...CONFIG.friend, brow: '#1d1209' } };
+const HUMANS = Object.keys(CAST);
 const actors = {
-  you: makeHuman(CONFIG.you),
-  friend: makeHuman({ ...CONFIG.friend, brow: '#1d1209' }),
+  ...Object.fromEntries(HUMANS.map((n) => [n, makeHuman(CAST[n])])),
   dog: makeDog(),
   ladder: makeLadder(),
   box1: makeCardboardBox(1),
@@ -49,7 +52,7 @@ scene.add(particles.mesh);
 // ------------------------------------------------------------------ timeline
 let voTiming = {};
 try {
-  const r = await fetch('build/vo.json', { cache: 'no-store' });
+  const r = await fetch(`build/${STORY.id}/vo.json`, { cache: 'no-store' });
   if (r.ok) voTiming = await r.json();
 } catch {}
 const TL = compileTimeline(TIMELINE, voTiming);
@@ -60,14 +63,14 @@ const WALL_Z = 0.03;
 
 function applyActors(st, ct) {
   // ladder first (people can stand on it)
-  const ls = st.ladder || {};
+  const ls = st.ladder || { vis: false };
   if (ls.wall) {
     const lean = (ls.lean ?? 0) * DEG;
     ls.p = [(ls.p || [0, 0])[0], WALL_Z + LADDER_LEN * Math.sin(lean)];
   }
   actors.ladder.apply(ls);
   for (const name of ['box1', 'box2', 'box3']) actors[name].apply(st[name] || { vis: false });
-  for (const name of ['you', 'friend']) {
+  for (const name of HUMANS) {
     const s = { ...(st[name] || { vis: false }) };
     if (s.on === 'ladder') {
       actors.ladder.point(s.s ?? 1, s.out ?? 0.16, tmpV);
@@ -203,7 +206,7 @@ await document.fonts.ready;
 if (!RENDER_MODE) {
   document.body.classList.add('preview');
   document.getElementById('stage').appendChild(out);
-  const audio = new Audio('build/audio.wav');
+  const audio = new Audio(`build/${STORY.id}/audio.wav`);
   const scrub = document.getElementById('scrub');
   const label = document.getElementById('time');
   scrub.max = TL.total;
