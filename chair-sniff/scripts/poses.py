@@ -118,3 +118,6 @@ SIT_ROLL = dict(LEGS_SIT, **{"Spine": (R, (-4, 0, 0)), "Head": (R, (2, 0, 0)),
                 "RightUpLeg": (A, (-0.14, -1, -0.1)), "RightLeg": (A, (-0.05, 0.3, -1)),
                 "LeftArm": (A, (0.25, -0.2, -1)), "LeftForeArm": (A, (0.05, -1, -0.2)),
                 "RightArm": (A, (-0.25, -0.2, -1)), "RightForeArm": (A, (-0.05, -1, -0.2))})
+# close-up variant: chin lifted so the face (not the top of the head) is seen next to the seat
+SNIFF_CU = dict(SNIFF, **{"Neck": (R, (-22, 0, 0)), "Head": (R, (-30, 0, 0))})
+SNIFF_CU_IN = dict(SNIFF, **{"Neck": (R, (-18, 0, 0)), "Head": (R, (-22, 0, 0))})
