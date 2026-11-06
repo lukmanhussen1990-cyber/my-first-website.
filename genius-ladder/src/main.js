@@ -149,9 +149,44 @@ function projectWorld(p) {
   return [(v.x * 0.5 + 0.5) * W, (-v.y * 0.5 + 0.5) * H];
 }
 
+const cBox = new THREE.Box3(), cv = new THREE.Vector3();
+function censorRects() {
+  const rects = [];
+  for (const n of HUMANS) {
+    const mesh = actors[n].censorMesh?.();
+    if (!mesh) continue;
+    mesh.updateWorldMatrix(true, false);
+    const pos = mesh.geometry.attributes.position;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, ok = false;
+    for (let k = 0; k < pos.count; k++) {
+      cv.fromBufferAttribute(pos, k).applyMatrix4(mesh.matrixWorld).project(camera);
+      if (cv.z > 1) continue;
+      ok = true;
+      const px = (cv.x * 0.5 + 0.5) * RW, py = (-cv.y * 0.5 + 0.5) * RH;
+      x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+    }
+    if (!ok) continue;
+    const pad = 14 * SCALE;
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(RW, x1 + pad); y1 = Math.min(RH, y1 + pad);
+    if (x1 - x0 > 1 && y1 - y0 > 1) rects.push([x0, y0, x1 - x0, y1 - y0]);
+  }
+  return rects;
+}
+
 function composite(t, frame) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(renderer.domElement, 0, 0, RW, RH);
+  // censor blur over the tube (strong gaussian, clipped to its screen box)
+  for (const [x, y, w, h] of censorRects()) {
+    const r = Math.max(14 * SCALE, Math.min(46 * SCALE, Math.hypot(w, h) * 0.07));
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 18 * SCALE);
+    ctx.clip();
+    ctx.filter = `blur(${r}px)`;
+    for (let k = 0; k < 2; k++) ctx.drawImage(out, x - r * 2, y - r * 2, w + r * 4, h + r * 4, x - r * 2, y - r * 2, w + r * 4, h + r * 4);
+    ctx.restore();
+  }
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   drawWatermark(ctx, W, H);
   for (const ev of TL.sfx) {

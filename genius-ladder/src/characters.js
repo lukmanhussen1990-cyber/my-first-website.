@@ -32,7 +32,8 @@ export function makeHuman(look) {
   hips.add(tent);
   // a straight "extra pant leg": fabric tube along +Z with a hem cuff at the far end
   const puffG = new THREE.Group();
-  const tube = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8), pantsMat);
+  const tubeMat = new THREE.MeshLambertMaterial({ color: '#8b5a3a', flatShading: true });
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8), tubeMat);
   tube.rotation.x = Math.PI / 2;
   tube.castShadow = true;
   const cuffMat = new THREE.MeshLambertMaterial({ color: pants, flatShading: true });
@@ -183,6 +184,10 @@ export function makeHuman(look) {
 
   const api = {
     root, head, skull, hips, armL, armR, legL, legR,
+    // world-space box of the censored tube (null when hidden) — used for the blur
+    censorMesh() {
+      return root.visible && puffG.visible ? tube : null;
+    },
     apply(s) {
       root.position.set(s.x ?? 0, s.y ?? 0, s.z ?? 0);
       const sq = s.sq ?? 1;
@@ -208,7 +213,8 @@ export function makeHuman(look) {
       tube.scale.set(rad, len, rad);
       cuff.scale.set(rad, Math.min(0.12, len * 0.15), rad);
       cuff.position.set(0, 0, len / 2 - Math.min(0.12, len * 0.15) / 2);
-      cuffMat.color.copy(pantsMat.color).multiplyScalar(0.72);
+      cuff.visible = false;
+      tubeMat.color.set(s.puffColor || '#8b5a3a');
       root.visible = s.vis !== false;
 
       const j = { ...JOINTS };
