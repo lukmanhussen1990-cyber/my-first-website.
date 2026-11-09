@@ -190,11 +190,11 @@ def make(ctx):
     s = shot["sign"]
     cast("sign", Mom)
     sp = ctx["SIGN_POS"]
-    mom_sign = (sp.x - 0.62, sp.y - 0.38)
+    mom_sign = (sp.x - 0.45, sp.y - 0.32)  # right next to the sign so her raised hand reaches it
     perform(Mom, s, [(None, dict(x=mom_sign[0], y=mom_sign[1], rz=-25, pose="akimbo", face=angry)),
-                     (13.9, {}), (14.25, dict(pose="armup", rz=-10)), (14.7, {}), (15.0, dict(pose="akimbo", rz=-25))])
-    cam.shot(F(s[0]), F(s[1]), (sp.x + 0.15, sp.y - 1.75, 1.42), (sp.x - 0.1, sp.y, 1.38), lens=30,
-             pos1=(sp.x + 0.08, sp.y - 1.15, 1.42), tgt1=(sp.x - 0.02, sp.y, 1.36))
+                     (13.9, {}), (14.25, dict(pose="armup", rz=-5)), (14.7, {}), (15.0, dict(pose="akimbo", rz=-25))])
+    cam.shot(F(s[0]), F(s[1]), (sp.x - 0.05, sp.y - 2.45, 1.45), (sp.x - 0.22, sp.y, 1.45), lens=28,
+             pos1=(sp.x - 0.08, sp.y - 2.0, 1.45), tgt1=(sp.x - 0.2, sp.y, 1.45))
 
     # ---- 8 not me ------------------------------------------------------------------------
     s = shot["not_me"]
