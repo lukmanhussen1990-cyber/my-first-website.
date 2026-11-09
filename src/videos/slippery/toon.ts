@@ -404,6 +404,18 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
         p.ell(px, py, 32 * u, 0.06 * HH, shade(col, 0.8), ow, 0, 180, deg);
       }
     }
+  } else if (o.hat === "turban") {
+    // wrapped turban (pagdi): a dome a little wider than the crown, three wrap bands, a knot on the facing side
+    const col = o.cap ?? "#f08a2c", cut = crown + 0.36 * HH;
+    const dome: P2[] = [];
+    for (let i = 0; i <= 24; i++) { const a = Math.PI + (Math.PI * i) / 24; dome.push([cx + 1.12 * H.a * Math.cos(a), cut + 0.62 * HH * Math.sin(a)]); }
+    dome.push([cx + 1.12 * H.a, cut + 4 * u], [cx - 1.12 * H.a, cut + 4 * u]);
+    const D = R(dome);
+    p.shadedFill(D, col, mul(col, SH_FELT), light, H.a, 0.35);
+    p.clip(D, () => { for (let k = 0; k < 3; k++) { const y = cut - (8 + k * 15) * u; p.arc(cx, y + 30 * u, 1.3 * H.a, 34 * u, 200, 340, 3 * u, shade(col, 0.78)); } });
+    p.poly(D, null, ow);
+    const s = side ? 1 : facing || 1, [kx, ky] = R([[cx + s * 0.8 * H.a, cut - 0.3 * HH]])[0];
+    p.ell(kx, ky, 12 * u, 10 * u, shade(col, 0.9), ow * 0.8);
   } else if (o.hat === "tophat") {
     const yb = crown + 0.22 * HH, ht = 0.8 * HH, wb = 0.31 * W, wt = 0.33 * W, col = "#2e2a36";
     const body = R([...sag(yb, wb).reverse(), [cx - wt, yb - ht], [cx + wt, yb - ht]]);
