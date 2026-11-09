@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Backyard Poop Volcano</title>
+<style>
+  @font-face { font-family: 'Fredoka'; font-weight: 700; src: url('/node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Fredoka'; font-weight: 600; src: url('/node_modules/@fontsource/fredoka/files/fredoka-latin-600-normal.woff2') format('woff2'); }
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+  canvas { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+  #cap { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; overflow: visible; filter: drop-shadow(0 10px 7px rgba(0,0,0,.42)); }
+  #capt { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 124px; fill: #fff; stroke: #000; stroke-width: 24px; stroke-linejoin: round; paint-order: stroke fill; }
+  #follow { position: absolute; left: 540px; top: 1640px; transform: translate(-50%, -50%) scale(0); font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 74px;
+    color: #fff; background: #0095f6; border-radius: 26px; padding: 28px 110px 34px; box-shadow: 0 12px 28px rgba(0,0,0,.35); white-space: nowrap; }
+  #follow.on { background: #efefef; color: #111; }
+  #ripple { position: absolute; left: 540px; top: 1640px; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 8px solid #fff; opacity: 0; }
+  #wm { position: absolute; right: 38px; bottom: 44px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 38px; color: rgba(255,255,255,.82); text-shadow: 0 2px 6px rgba(0,0,0,.65), 0 0 2px rgba(0,0,0,.6); letter-spacing: .5px; }
+  #cursor { position: absolute; left: 0; top: 0; width: 110px; height: 110px; opacity: 0; filter: drop-shadow(0 6px 6px rgba(0,0,0,.4)); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <svg id="cap" viewBox="0 0 1080 1920"><g id="capg"><text id="capt" x="0" y="0" text-anchor="middle" dominant-baseline="central"></text></g></svg>
+  <div id="wm">@garden_reels</div>
+  <div id="follow">Follow</div>
+  <div id="ripple"></div>
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M5 2 L5 19 L9.5 15 L12.5 22 L15.5 20.7 L12.5 14 L18.5 14 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+</div>
+<script type="importmap">{ "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }</script>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
