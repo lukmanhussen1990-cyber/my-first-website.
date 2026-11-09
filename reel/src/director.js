@@ -35,8 +35,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
   you.root.traverse((o) => { if (o.isMesh && o.material === you.mats.shirt) shirtMeshes.push(o); });
   const fuzz = [];
   const addFuzz = (parent, n, r, h, seed, y = 0) => { const f = makeFuzz(n, r, h, seed); f.position.y = y; parent.add(f); fuzz.push(f); };
-  addFuzz(you.j.spine, 150, 0.195, 0.27, 3, -0.02);
-  addFuzz(you.j.chest, 170, 0.215, 0.3, 4, -0.04);
+  addFuzz(you.j.spine, 90, 0.195, 0.27, 3, -0.02);
+  addFuzz(you.j.chest, 100, 0.215, 0.3, 4, -0.04);
   addFuzz(you.j.shL, 45, 0.062, 0.3, 5, -0.3); addFuzz(you.j.shR, 45, 0.062, 0.3, 6, -0.3);
   addFuzz(you.j.elL, 40, 0.054, 0.26, 7, -0.27); addFuzz(you.j.elR, 40, 0.054, 0.26, 8, -0.27);
   const setSweater = (on) => {
@@ -968,6 +968,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     setSweater(t >= K.sweaterOn);
     if (s.world === 'room') roomDefaults(t); else { yardDefaults(t); handPancake.visible = false; }
     s.fn(lt, t, ctx, s);
+    you.earring.rotation.set(0.18 * Math.sin(t * 4.3), 0, 0.22 * Math.sin(t * 6.1 + 0.7));
     camera.updateMatrixWorld();
     shake(t);
     updateParticles(t, s.world, scene);

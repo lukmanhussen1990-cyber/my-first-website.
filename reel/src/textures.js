@@ -320,3 +320,22 @@ export function fanLabel() {
   g.fillStyle = '#333'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillText('FAN', 64, 42);
   return tex(c);
 }
+
+// Dark-ink tattoo: inverted pentagram in a circle (transparent background).
+export function pentagramTattoo() {
+  const [c, g] = canvas(256, 256);
+  g.clearRect(0, 0, 256, 256);
+  g.strokeStyle = 'rgba(28,22,32,0.92)'; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.lineWidth = 11;
+  g.beginPath(); g.arc(128, 128, 104, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 10;
+  g.beginPath();
+  for (let i = 0; i <= 5; i++) {
+    const a = Math.PI / 2 + (i * 4 * Math.PI) / 5;   // starts pointing down (canvas y is down)
+    const x = 128 + Math.cos(a) * 98, y = 128 + Math.sin(a) * 98;
+    if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+  }
+  g.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}

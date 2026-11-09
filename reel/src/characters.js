@@ -301,7 +301,30 @@ export function mixPose(a, b, t) {
 
 // ---------- the cast ----------
 export function makeYou() {
-  return makeHuman({ skin: '#eab38a', shirt: '#2d6be0', pants: '#1f2b47', shoes: '#f7f7f5', hair: '#5b3720', hairStyle: 'short', seed: 1 });
+  const h = makeHuman({ skin: '#eab38a', shirt: '#2d6be0', pants: '#1f2b47', shoes: '#f7f7f5', hair: '#5b3720', hairStyle: 'short', seed: 1 });
+  // silver cross earring on his left ear (swings a little; animated by the director)
+  const silver = new THREE.MeshStandardMaterial({ color: '#c3c8d0', metalness: 1.0, roughness: 0.28, envMapIntensity: 1.1 });
+  const ear = new THREE.Group();
+  ear.position.set(0.146, -0.028, 0.004);
+  const hoop = mesh(new THREE.TorusGeometry(0.0065, 0.0016, 6, 14), silver, { cast: false });
+  hoop.rotation.y = Math.PI / 2; ear.add(hoop);
+  const cross = new THREE.Group(); cross.position.set(0.004, -0.034, 0); cross.rotation.y = Math.PI / 4; ear.add(cross);
+  const v = mesh(new THREE.BoxGeometry(0.0065, 0.044, 0.0065), silver, { cast: false });
+  const hz = mesh(new THREE.BoxGeometry(0.027, 0.0065, 0.0065), silver, { cast: false });
+  hz.position.y = 0.009; cross.add(v, hz);
+  const link = mesh(new THREE.TorusGeometry(0.003, 0.0012, 4, 8), silver, { cast: false });
+  link.position.y = -0.008; link.rotation.y = Math.PI / 2; ear.add(link);
+  h.headC.add(ear);
+  h.earring = ear;
+  // neck tattoo on the front-left facet of the neck
+  const tatMat = new THREE.MeshStandardMaterial({ map: TX.pentagramTattoo(), transparent: true, alphaTest: 0.08, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -4, depthWrite: false });
+  const tat = mesh(new THREE.PlaneGeometry(0.04, 0.04), tatMat, { cast: false, receive: true });
+  const ang = Math.PI / 6, r = 0.0555 * Math.cos(Math.PI / 6) + 0.0035;
+  tat.position.set(Math.sin(ang) * r, 0.03, Math.cos(ang) * r);
+  tat.rotation.y = ang;
+  h.j.neck.add(tat);
+  h.tattoo = tat;
+  return h;
 }
 
 export function makeDad() {
