@@ -407,9 +407,9 @@ export function makeVelcroMaterial() {
 }
 
 // fuzzy hairs scattered over a set of meshes' bounding cylinders
-export function makeFuzz(count, radius, height, seed = 1, color = '#a7a9ae') {
-  const geo = new THREE.ConeGeometry(0.006, 0.035, 3);
-  geo.translate(0, 0.017, 0);
+export function makeFuzz(count, radius, height, seed = 1, color = '#9fa1a6') {
+  const geo = new THREE.ConeGeometry(0.0038, 0.017, 3);
+  geo.translate(0, 0.008, 0);
   const m = new THREE.InstancedMesh(geo, mat(color, { roughness: 1 }), count);
   const r = mulberry32(seed);
   const d = new THREE.Object3D();
@@ -418,7 +418,7 @@ export function makeFuzz(count, radius, height, seed = 1, color = '#a7a9ae') {
     d.position.set(Math.cos(a) * radius, y, Math.sin(a) * radius * 0.66);
     d.lookAt(Math.cos(a) * radius * 3, y + (r() - 0.5) * 0.3, Math.sin(a) * radius * 2);
     d.rotateX(Math.PI / 2);
-    d.scale.setScalar(0.6 + r() * 0.9);
+    d.scale.setScalar(0.6 + r() * 0.7);
     d.updateMatrix(); m.setMatrixAt(i, d.matrix);
   }
   m.castShadow = false;
