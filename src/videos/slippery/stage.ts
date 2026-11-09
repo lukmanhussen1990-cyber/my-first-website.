@@ -140,7 +140,7 @@ export const PLANS: Record<string, Plan> = {
     room: () => ({ ...ROOM_BASE, tableBowl: true, container: "none", giant: 0 }),
     cards: (t) => {
       const out: Card[] = [...person("guy", GUY, 3, R(-2.3, 0.4, -1.8), t, { mode: "sit", facing: 1, expr: t >= tJump + 0.15 ? "shock" : "smile" })];
-      const S0: V3 = R(-1.6, 0.62, -1.15), E0: V3 = R(-0.85, 0.07, -0.5);
+      const S0: V3 = R(-1.6, 0.62, -1.15), E0: V3 = R(-1.2, 0.08, -0.5);
       if (t < tJump) out.push(fish("f", add(S0, [0.03 * Math.sin(t * 2), 0.015 * Math.sin(t * 3), 0]), { expr: "happy", w: 0.19, t, mirror: Math.sin(t * 0.9) > 0 }));
       else if (t < tLand) {
         const u = (t - tJump) / (tLand - tJump), p = lerp3(S0, E0, u);
@@ -151,7 +151,7 @@ export const PLANS: Record<string, Plan> = {
         out.push(fish("f", add(E0, [0, 0.07 * Math.sin(Math.PI * v), 0]), { expr: "angry", w: 0.22, t, roll: (k % 2 ? 1 : -1) * 1.15, mirror: true }));
       }
       out.push(...((): Card[] => { const u = timed(t, tJump - 0.03, 0.55); return u === null ? [] : [fx(`splash|${Math.round(u * 12)}`, 800, 800, (p) => fxSplash(p, Math.round(u * 12) / 12), R(-1.6, 0.72, -1.12), 0.5)]; })());
-      out.push(...puff(t, tLand, R(-0.85, 0.1, -0.45), 0.6));
+      out.push(...puff(t, tLand, R(-1.2, 0.1, -0.45), 0.6));
       return out;
     },
   },
