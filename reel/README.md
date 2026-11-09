@@ -69,8 +69,8 @@ hanging_picture_frame_01/02, throw_pillows_01, rubber_duck_toy, side_table_01, w
 wooden_bookshelf_worn; textures wood_floor, painted_plaster_wall,
 rough_pine_door; HDRI kloofendal_48d_partly_cloudy_puresky.
 
-**Sound: Kenney** (CC0, https://kenney.nl): Impact Sounds, Interface Sounds, RPG Audio, Music Jingles
-(pizzicato bed).
+**Sound: Kenney** (CC0, https://kenney.nl): Impact Sounds, Interface Sounds, RPG Audio.
+No background music (set `MUSIC = True` in `scripts/audio.py` to add Kenney's pizzicato jingles back).
 
 **Fonts:** Poppins ExtraBold (OFL, Google Fonts), DejaVu Sans (hearts / sparkles glyphs).
 

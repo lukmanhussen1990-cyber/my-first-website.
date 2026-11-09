@@ -1,4 +1,4 @@
-"""Mix voiceover + sound effects + background music -> audio/mix.wav
+"""Mix voiceover + sound effects (background music optional, off by default) -> audio/mix.wav
 
 Sound effects are Kenney CC0 packs (assets/kenney). Gasp, police siren, fart and the music bed
 can be replaced with your own files: drop them in audio/sfx/ with these names and re-run
@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from timeline import EVENTS  # noqa: E402
 
 SR = 48000
+MUSIC = False  # no background music: voiceover + sound effects only
 TOTAL = 55.5
 K = os.path.join(ROOT, "assets", "kenney")
 USER = os.path.join(ROOT, "audio", "sfx")
@@ -125,11 +126,12 @@ def main(out_path):
     vo = norm(vo, 0.89)
     place(mix, vo, 0.0)
 
-    music, _ = music_bed()
-    fade = np.ones(n)
-    fade[-int(1.2 * SR):] = np.linspace(1, 0, int(1.2 * SR))
-    music = norm(music, 1.0) * fade[: len(music)]
-    place(mix, music, 0.0, -25)  # low under the voice
+    if MUSIC:  # background music is off (requested); set MUSIC = True to bring it back
+        music, _ = music_bed()
+        fade = np.ones(n)
+        fade[-int(1.2 * SR):] = np.linspace(1, 0, int(1.2 * SR))
+        music = norm(music, 1.0) * fade[: len(music)]
+        place(mix, music, 0.0, -25)  # low under the voice
 
     a = lambda *p: load(os.path.join(K, *p))  # noqa: E731
     E = EVENTS
