@@ -36,13 +36,19 @@ vo = load('audio/vo_final.wav')
 place(vo, 0.0, 0.0)
 S = {k: load(user_or(k, f'audio/sfx/{k}.wav')) for k in ['moan_long', 'moan_short1', 'moan_short2', 'velcro', 'thud', 'fan', 'glass', 'boing1', 'boing2', 'boing3', 'ding', 'whoosh', 'click', 'pop', 'popfx', 'roof']}
 short_i = 0; boing_i = 0
+moan_track = np.zeros(N)
+def place_moan(sig, t, gain_db, length, fade_out):
+    sig = sig[:int(length * SR)].copy(); f = min(len(sig), int(fade_out * SR)); sig[-f:] *= np.linspace(1, 0, f)
+    i = int(t * SR); n = min(len(sig), N - i)
+    if n > 0: moan_track[i:i + n] += np.abs(sig[:n]) * db(gain_db)
 for e in cues['events']:
     ty, t, g = e['type'], e['t'], 20 * np.log10(max(e.get('gain', 1), 1e-3))
     if ty == 'moan':
-        if e.get('variant') == 'long': place(S['moan_long'], t, -6 + g, 0.0, length=e['dur'], fade_out=0.4)
+        if e.get('variant') == 'long':
+            place(S['moan_long'], t, -5 + g, 0.0, length=e['dur'], fade_out=0.12); place_moan(S['moan_long'], t, 0, e['dur'], 0.12)
         else:
             k = 'moan_short1' if short_i % 2 == 0 else 'moan_short2'; short_i += 1
-            place(S[k], t, -6 + g, 0.05, length=e['dur'] + 0.1, fade_out=0.2)
+            place(S[k], t, -5 + g, 0.05, length=e['dur'] + 0.1, fade_out=0.2); place_moan(S[k], t, 0, e['dur'] + 0.1, 0.2)
     elif ty == 'boing':
         place(S[f'boing{min(3, boing_i + 1)}'], t, -7 + g, [-0.3, 0.3, 0][boing_i % 3]); boing_i += 1
     elif ty == 'fan': place(S['fan'], t, -9 + g, 0.15, length=e['dur'], fade_out=0.15)
@@ -65,6 +71,12 @@ duck = 1 - 0.55 * np.clip(env / 0.05, 0, 1)
 duck = np.convolve(duck, np.ones(int(0.12 * SR)) / int(0.12 * SR), mode='same')
 mix[:, :mus.shape[1]] += mus * db(-21) * duck[:mus.shape[1]]
 
+# moan loudness at 30 fps -> timeline (drives the mouth while moaning)
+fh = SR // 30
+menv = np.array([moan_track[k * fh:(k + 1) * fh].mean() if k * fh < N else 0 for k in range(N // fh + 1)])
+menv = np.clip(menv / (np.percentile(menv[menv > 1e-4], 90) + 1e-9), 0, 1) if (menv > 1e-4).any() else menv
+tl = json.load(open('src/timeline.json')); tl['moanEnv'] = [round(float(v), 3) for v in np.convolve(menv, [0.25, 0.5, 0.25], mode='same')]
+json.dump(tl, open('src/timeline.json', 'w'))
 raw = 'build/mix_raw.wav'
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'f32le', '-ac', '2', '-ar', str(SR), '-i', '-', '-c:a', 'pcm_f32le', raw], input=mix.T.astype(np.float32).tobytes(), check=True)
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9,alimiter=limit=0.84:attack=3:release=60:level=disabled',

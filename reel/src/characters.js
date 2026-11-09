@@ -242,7 +242,7 @@ export function makeHuman(cfg) {
     for (const n of JOINTS) { const g = h.j[n]; g.rotation.set(0, 0, 0); }
     h.j.hips.position.set(0, hipY, 0);
     root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); root.scale.set(1, 1, 1);
-    body.scale.set(1, 1, 1); body.position.set(0, 0, 0);
+    body.scale.set(1, 1, 1); body.position.set(0, 0, 0); body.rotation.set(0, 0, 0);
     root.visible = true;
     h.fingerL.visible = h.fingerR.visible = false;
     // relaxed default pose
@@ -274,7 +274,7 @@ export function makeHuman(cfg) {
     if (mm === 'grin') M.grin.scale.set(1, 0.55 + 0.7 * o, 1);
     if (mm === 'smile') M.smile.scale.set(1, 0.8 + 0.4 * o, 1);
   };
-  h.squash = (s) => body.scale.set(1 / Math.sqrt(s), s, 1 / Math.sqrt(s));
+  h.squash = (s, pivotY = 0) => { body.scale.set(1 / Math.sqrt(s), s, 1 / Math.sqrt(s)); body.position.y = pivotY * (1 - s); };
   h.reset();
   root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
   return h;
@@ -407,9 +407,9 @@ export function makeVelcroMaterial() {
 }
 
 // fuzzy hairs scattered over a set of meshes' bounding cylinders
-export function makeFuzz(count, radius, height, seed = 1, color = '#9fa1a6') {
-  const geo = new THREE.ConeGeometry(0.0038, 0.017, 3);
-  geo.translate(0, 0.008, 0);
+export function makeFuzz(count, radius, height, seed = 1, color = '#85878c') {
+  const geo = new THREE.ConeGeometry(0.003, 0.012, 3);
+  geo.translate(0, 0.005, 0);
   const m = new THREE.InstancedMesh(geo, mat(color, { roughness: 1 }), count);
   const r = mulberry32(seed);
   const d = new THREE.Object3D();

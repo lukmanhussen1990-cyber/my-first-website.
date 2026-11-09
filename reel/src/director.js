@@ -67,7 +67,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
 
   // ---------------- particles ----------------
   const r0 = mulberry32(1234);
-  const fluffMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.014, 0), mat('#b7b9be', { roughness: 1 }), 260);
+  const fluffMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.0085, 0), mat('#9c9ea3', { roughness: 1 }), 260);
   fluffMesh.frustumCulled = false; fluffMesh.castShadow = false;
   const shardGeo = new THREE.BufferGeometry();
   shardGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0.04, 0, -0.025, -0.02, 0.002, 0.03, -0.025, -0.002], 3));
@@ -134,8 +134,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
   burst({ kind: 'glass', world: 'room', t: K.crash, o: V(ROOM.window.x, ROOM.window.y, -2.98), n: 200, speed: 4.5, life: 2.2, dir: V(0, 0.1, -1) });
   burst({ kind: 'dust', world: 'room', t: K.crash, o: V(ROOM.window.x, ROOM.window.y, -2.9), n: 25, speed: 1.4, life: 0.9, dir: V(0, 0, 1) });
   for (const tb of [K.b1, K.b2, K.b3]) burst({ kind: 'fluff', world: 'yard', t: tb, o: V(YARD.tramp.x, 1.0, YARD.tramp.z), n: 18, speed: 1.6, life: 1.2 });
-  burst({ kind: 'dust', world: 'yard', t: K.land, o: V(-0.42, roofSurfaceY(0.95), 0.95), n: 45, speed: 1.3, life: 1.4, dir: V(0, 0.4, 0) });
-  burst({ kind: 'fluff', world: 'yard', t: K.land, o: V(-0.42, roofSurfaceY(0.95) + 0.3, 0.95), n: 40, speed: 1.5, life: 1.6 });
+  burst({ kind: 'dust', world: 'yard', t: K.land, o: V(-0.42, roofSurfaceY(0.32), 0.45), n: 30, speed: 0.9, life: 1.0, dir: V(0, 0.3, 0.4), small: true });
+  burst({ kind: 'fluff', world: 'yard', t: K.land, o: V(-0.42, roofSurfaceY(0.32) + 0.4, 0.4), n: 40, speed: 1.5, life: 1.6 });
 
   function updateParticles(t, world, scene) {
     scene.add(fluffMesh, glassMesh, dust, sparks);
@@ -158,7 +158,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
           d.position.copy(b.o).addScaledVector(dir, sp * drift);
           d.position.y += -0.35 * age * age + Math.sin(age * 3 + i) * 0.03;
           d.rotation.set(age * 6 * rx, age * 5 * ry, 0);
-          d.scale.setScalar((0.6 + rr * 1.4) * (1 - smooth(invLerp(b.life * 0.6, b.life, age))));
+          d.scale.setScalar((0.5 + rr * 0.9) * (1 - smooth(invLerp(b.life * 0.6, b.life, age))));
           d.updateMatrix(); fluffMesh.setMatrixAt(fi++, d.matrix);
         } else if (b.kind === 'glass') {
           if (gi >= 220) continue;
@@ -177,8 +177,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
           const p = tmpV2.copy(b.o).addScaledVector(dir, sp * drift);
           p.y += age * 0.12;
           dp.position.setXYZ(di, p.x, p.y, p.z);
-          dp.size.setX(di, (0.12 + rr * 0.22) * (1 + age * 2.2));
-          dp.alpha.setX(di, 0.55 * (1 - invLerp(0, b.life, age)) * smooth(age / 0.05));
+          dp.size.setX(di, (b.small ? 0.05 + rr * 0.08 : 0.1 + rr * 0.16) * (1 + age * 1.6));
+          dp.alpha.setX(di, (b.small ? 0.35 : 0.45) * (1 - invLerp(0, b.life, age)) * smooth(age / 0.05));
           dp.color.setXYZ(di, 0.92, 0.86, 0.78);
           di++;
         }
@@ -220,11 +220,11 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     { text: 'BOING!', t: K.b3, x: 540, y: 300, rot: -0.05, seed: 13, dur: 0.8, size: 138 },
   ];
   const events = [
-    { type: 'moan', t: 0.0, dur: 3.2, gain: 0.9, variant: 'long' },
-    { type: 'moan', t: Wd(18), dur: 0.8, gain: 0.45, variant: 'short' },
+    { type: 'moan', t: 0.0, dur: Math.min(4.05, K.freeze + 0.05), gain: 0.95, variant: 'long' },
+    { type: 'moan', t: Wd(18), dur: 1.0, gain: 0.5, variant: 'short' },
     { type: 'whoosh', t: K.whip - 0.05, gain: 0.5 },
     { type: 'pop', t: K.sweaterOn, gain: 0.5 },
-    { type: 'moan', t: Wd(46) - 0.05, dur: 1.1, gain: 0.7, variant: 'short' },
+    { type: 'moan', t: Wd(46) - 0.05, dur: 1.3, gain: 0.75, variant: 'short' },
     { type: 'thud', t: K.stick, gain: 1.0 },
     { type: 'velcro', t: K.rip - 0.12, gain: 1.0 },
     { type: 'whoosh', t: K.rip + 0.05, gain: 0.45 },
@@ -236,12 +236,12 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     { type: 'boing', t: K.b1, gain: 0.85 }, { type: 'boing', t: K.b2, gain: 0.9 }, { type: 'boing', t: K.b3, gain: 1.0 },
     { type: 'whoosh', t: K.b3 + 0.1, gain: 0.45 },
     { type: 'roof', t: K.land, gain: 0.9 },
-    { type: 'moan', t: K.itch - 0.05, dur: 0.9, gain: 0.55, variant: 'short' },
+    { type: 'moan', t: K.itch - 0.05, dur: 1.2, gain: 0.6, variant: 'short' },
     { type: 'ding', t: K.ding, gain: 0.9 },
   ];
   for (const p of pops) events.push({ type: 'popfx', t: p.t, gain: 0.35 });
   const moans = events.filter((e) => e.type === 'moan');
-  const moanAmt = (t) => { let m = 0; for (const e of moans) { const a = t - e.t; if (a >= 0 && a <= e.dur) m = Math.max(m, Math.sin(Math.PI * a / e.dur) ** 0.6 * (0.6 + 0.4 * Math.sin(a * 7))); } return m; };
+  const moanAmt = (t) => { if (T.moanEnv) return clamp(env(T.moanEnv, t) * 1.3); let m = 0; for (const e of moans) { const a = t - e.t; if (a >= 0 && a <= e.dur) m = Math.max(m, Math.sin(Math.PI * a / e.dur) ** 0.6 * (0.6 + 0.4 * Math.sin(a * 7))); } return m; };
 
   // camera shakes
   const shakes = [
@@ -319,7 +319,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
   const CHAIR_YAW = -Math.PI / 2 - 0.35;
   const chairFwd = V(Math.sin(CHAIR_YAW), 0, Math.cos(CHAIR_YAW));
   const GMA_POS = ROOM.chair.clone().addScaledVector(chairFwd, 0.05).setY(0.6 - gma.hipY);
-  const ROOF_YOU = V(-0.42, 0, 0.95), ROOF_DAD = V(0.5, 0, 0.8);
+  const ROOF_YOU = V(-0.42, 0, 0.32), ROOF_DAD = V(0.5, 0, 0.28);
   const roofAng = Math.atan2(YARD.roofRidgeY - YARD.roofEaveY, YARD.roofEaveZ);
 
   function seatGrandma(t, knitting = true) {
@@ -356,11 +356,12 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     gma.root.visible = false;
     setSky(sunset);
     handPancake.visible = false;
+    yard.trampMat.scale.y = 0.02;
   }
   const C = (hex) => new THREE.Color(hex);
   const SKY = {
     day: { top: C('#3d86e0'), hor: C('#d2eaff'), bot: C('#a7cfa3'), sun: C('#fff2d0'), dir: V(-0.45, 0.62, 0.62), light: C('#fff0d4'), li: 3.1, hs: C('#cfe6ff'), hg: C('#6a9a50'), hi: 1.0 },
-    set: { top: C('#2f3f86'), hor: C('#ff9a58'), bot: C('#5e4660'), sun: C('#ffb36a'), dir: V(0.03, 0.12, -0.99), light: C('#ff9f55'), li: 2.4, hs: C('#ffb48a'), hg: C('#4a3a5a'), hi: 0.75 },
+    set: { top: C('#2f3f86'), hor: C('#ff9a58'), bot: C('#5e4660'), sun: C('#ffb36a'), dir: V(-0.6, 0.14, -0.79), light: C('#ff9f55'), li: 2.4, hs: C('#ffb48a'), hg: C('#4a3a5a'), hi: 0.75 },
   };
   function setSky(s) {
     const a = SKY.day, b = SKY.set, u = yard.skyU;
@@ -371,7 +372,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     yard.sun.color.copy(a.light).lerp(b.light, s); yard.sun.intensity = lerp(a.li, b.li, s);
     yard.hemi.color.copy(a.hs).lerp(b.hs, s); yard.hemi.groundColor.copy(a.hg).lerp(b.hg, s); yard.hemi.intensity = lerp(a.hi, b.hi, s);
     yard.fill.intensity = lerp(0, 1.1, s); yard.fill.color.set('#ffc898');
-    const lightDir = a.dir.clone().lerp(V(0.15, 0.38, -0.91), s).normalize();
+    const lightDir = a.dir.clone().lerp(V(-0.45, 0.4, -0.8), s).normalize();
     yard.sunDir = lightDir;
   }
   function sunShadow(center, ext) {
@@ -388,9 +389,9 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
 
   // 1a: close-up on your blissful face sliding up and down (don't reveal what "it" is)
   shot('1a', 0, K.whip, 'room', (lt, t, ctx) => {
-    const bob = Math.sin(t * 2 * Math.PI * 0.85);
-    you.j.hips.position.y = you.hipY - 0.05 + bob * 0.055;
-    pose(you, { kneeL: 0.12 - bob * 0.1, kneeR: 0.12 - bob * 0.1, hipL: -0.06 + bob * 0.05, hipR: -0.06 + bob * 0.05, neck: [-0.18, 0, 0.06 * Math.sin(t * 2.1)], head: [-0.22, 0.05 * Math.sin(t * 1.3), 0.08 * Math.sin(t * 1.7)] });
+    const bob = Math.sin(t * 2 * Math.PI * 1.75);
+    you.j.hips.position.y = you.hipY - 0.06 + bob * 0.07;
+    pose(you, { kneeL: 0.14 - bob * 0.13, kneeR: 0.14 - bob * 0.13, hipL: -0.07 + bob * 0.06, hipR: -0.07 + bob * 0.06, neck: [-0.18, 0, 0.07 * Math.sin(t * 3.4)], head: [-0.24 + 0.05 * bob, 0.06 * Math.sin(t * 2.6), 0.09 * Math.sin(t * 3.0)] });
     const m = Math.max(moanAmt(t), voice(t) * 0.5);
     you.setFace({ eyes: 'half', mouth: 'o', open: 0.35 + 0.65 * m, t });
     const hp = headPos(you);
@@ -402,8 +403,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
   // 1b: whip-pan to the door: dad walks in with pancakes and freezes
   shot('1b', K.whip, Wd(16) - 0.04, 'room', (lt, t, ctx) => {
     // you keep rubbing off-screen
-    const bob = Math.sin(t * 2 * Math.PI * 0.85);
-    you.j.hips.position.y = you.hipY - 0.05 + bob * 0.055;
+    const bob = Math.sin(t * 2 * Math.PI * 1.75);
+    you.j.hips.position.y = you.hipY - 0.06 + bob * 0.07;
     // dad walks in from the hallway then freezes
     const walkEnd = K.freeze - 0.05;
     const wp = clamp(invLerp(K.dadIn, walkEnd, t));
@@ -432,12 +433,12 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const push = smooth(invLerp(K.freeze, K.freeze + 1.0, t));
     camera.fov = lerp(34, lerp(31, 26, push), w); camera.updateProjectionMatrix();
     camera.position.copy(camPos); camera.lookAt(look);
-    ctx.mb = lt < 0.34 ? 7 : 1; ctx.shutter = 0.9;
+    ctx.mb = lt < 0.34 ? 6 : 1; ctx.shutter = 0.9;
   });
 
   // 2a: pull back — you're scratching your back on the door frame
   shot('2a', Wd(16) - 0.04, Wd(21) - 0.03, 'room', (lt, t, ctx, s) => {
-    const ph = t * 2 * Math.PI * 1.25;
+    const ph = t * 2 * Math.PI * 2.0;
     const sq = 0.5 + 0.5 * Math.sin(ph);
     you.j.hips.position.y = you.hipY - 0.04 - sq * 0.13;
     pose(you, {
@@ -465,8 +466,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const hp = headPos(dad);
     const fwd = V(Math.sin(dadYawToYou), 0, Math.cos(dadYawToYou));
     const glasses = hp.clone().add(V(0, 0.03, 0)).addScaledVector(fwd, 0.17);
-    const camPos = glasses.clone().addScaledVector(fwd, lerp(1.15, 0.62, k)).add(V(0.02, -0.04, 0));
-    frame(camPos, glasses, lerp(30, 11, k), lerp(0.36, 0.33, k));
+    const camPos = glasses.clone().addScaledVector(fwd, lerp(1.15, 0.72, k)).add(V(0.02, -0.04, 0));
+    frame(camPos, glasses, lerp(30, 15, k), lerp(0.36, 0.33, k));
     ctx.dof = { focus: camPos.distanceTo(glasses), aperture: lerp(0.003, 0.012, k), maxblur: 0.01 };
     if (dad.lensMat) dad.lensMat.opacity = 0.16 + 0.12 * k;
     if (t > s.t1 - 0.45) ctx.sparkles2d.push({ pos: glasses.clone().add(V(0, 0.02, 0)).addScaledVector(V(-fwd.z, 0, fwd.x), 0.05), size: 70 * smooth(invLerp(s.t1 - 0.45, s.t1 - 0.25, t)) * (1 - smooth(invLerp(s.t1 - 0.2, s.t1, t))), alpha: 1, dx: 0, dy: 0 });
@@ -496,7 +497,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const k = easeOut(clamp(lt / (s.t1 - s.t0)));
     const camPos = hp.clone().addScaledVector(chairFwd, lerp(1.75, 1.35, k)).add(V(0, -0.38 + 0.01 * fast, 0));
     frame(camPos, hp, 40, 0.3, 0.012 * fast);
-    ctx.mb = 4; ctx.shutter = 0.7;
+    ctx.mb = 3; ctx.shutter = 0.7;
     ctx.speedLines = 0.9;
     ctx.dof = { focus: camPos.distanceTo(hp), aperture: 0.0016 };
   });
@@ -505,7 +506,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
   shot('3b', Wd(37) - 0.06, Wd(40) - 0.03, 'room', (lt, t, ctx, s) => {
     seatGrandma(t, false);
     const up = easeOutBack(clamp(lt / 0.35), 2);
-    pose(gma, { shL: [lerp(-0.6, -1.45, up), 0, 0.42], elL: [lerp(-1.3, -0.55, up), 0, 0], shR: [lerp(-0.6, -1.45, up), 0, -0.42], elR: [lerp(-1.3, -0.55, up), 0, 0], spine: [lerp(0.15, -0.06, up), 0, 0], head: [-0.08, 0, 0.06] });
+    pose(gma, { shL: [lerp(-0.6, -0.95, up), 0, 0.55], elL: [lerp(-1.3, -0.2, up), 0, 0], shR: [lerp(-0.6, -0.95, up), 0, -0.55], elR: [lerp(-1.3, -0.2, up), 0, 0], spine: [lerp(0.15, -0.06, up), 0, 0], head: [-0.08, 0, 0.06] });
     gma.squash(1 + 0.05 * wobble(lt, 3, 5));
     gma.setFace({ eyes: 'happy', mouth: 'grin', open: 0.5 + 0.4 * voice(t), t });
     gma.root.updateMatrixWorld(true);
@@ -513,8 +514,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const mid = hl.clone().add(hr).multiplyScalar(0.5);
     sweater.visible = true;
     sweater.scale.setScalar(0.92 + 0.08 * up);
-    setWorld(sweater, mid.clone().add(V(0, -0.24, 0)).addScaledVector(chairFwd, 0.07), yawQ(CHAIR_YAW).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), 0.06 * Math.sin(t * 5))));
-    sparkle(mid.clone().add(V(0, -0.2, 0)).addScaledVector(chairFwd, 0.1), 0.42, 26, t, s.t0 + 0.15, s.t1 + 0.3, 31, 0.13);
+    setWorld(sweater, mid.clone().add(V(0, -0.2, 0)).addScaledVector(chairFwd, 0.12), yawQ(CHAIR_YAW).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), 0.06 * Math.sin(t * 5))));
+    sparkle(mid.clone().add(V(0, -0.2, 0)).addScaledVector(chairFwd, 0.16), 0.42, 26, t, s.t0 + 0.15, s.t1 + 0.3, 31, 0.13);
     const hp = headPos(gma);
     const k = easeOut(clamp(lt / (s.t1 - s.t0)));
     const camPos = hp.clone().addScaledVector(chairFwd, lerp(2.7, 2.35, k)).add(V(0, -0.35, 0));
@@ -632,8 +633,9 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     }
     // camera: from the wall framing, tilt and drift up to the fan
     const k = smoother(invLerp(K.rip - 0.05, K.fanStick + 0.25, t));
-    const camPos = V(-1.45, 1.25, 1.7).lerp(V(-0.55, 1.15, 2.55), k);
-    const look = V(-3.15, 1.15, -0.05).lerp(V(0.25, 1.95, -0.05), k);
+    const camPos = V(-1.45, 1.25, 1.7).lerp(V(-0.4, 1.15, 2.75), k);
+    const follow = Math.sin(Math.PI * clamp(invLerp(K.rip - 0.1, K.fanStick + 0.35, t)));
+    const look = V(-3.15, 1.15, -0.05).lerp(V(0.25, 1.95, -0.05), k).lerp(focus, 0.85 * follow);
     camera.fov = lerp(44, 50, k); camera.updateProjectionMatrix();
     camera.position.copy(camPos); camera.lookAt(look);
     ctx.mb = t > K.rip && t < K.fanStick ? 5 : 1;
@@ -646,22 +648,24 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     armProp.visible = true;
     const press = smooth(invLerp(s.t0 + 0.15, K.press, t));
     const btn = V(SW.x - 0.03, SW.y, SW.z);
-    const from = V(-0.75, -0.18, 0.62).normalize();
+    const from = V(-0.62, -0.28, -0.72).normalize();
     const tip = btn.clone().addScaledVector(from, lerp(0.22, 0.0, press) + 0.008);
     armProp.position.copy(tip).addScaledVector(from, 0.078);
     armProp.quaternion.setFromUnitVectors(V(0, 0, -1), from.clone().negate());
     room.button.position.z = 0.016 - (t > K.press ? 0.008 : 0);
     // the plate of pancakes hovers in the foreground (other hand)
     dad.root.visible = true;
-    place(dad, SW.x - 0.62, -0.2, SW.z + 0.62, Math.PI * 0.75);
-    dad.root.traverse((o) => { if (o.isMesh && o !== undefined) o.visible = o.visible; });
-    dadPlate(Math.PI * 0.75);
-    const camPos = V(SW.x - 0.36, SW.y + 0.06, SW.z + 0.3);
-    camera.fov = 30; camera.updateProjectionMatrix();
-    camera.position.copy(camPos); camera.lookAt(V(SW.x, SW.y - 0.05, SW.z + 0.02));
-    ctx.dof = { focus: camPos.distanceTo(btn), aperture: 0.009, maxblur: 0.012 };
-    // hide dad's body; only the plate+hand read as a blurry foreground shape
-    hideExceptPlate(dad, true);
+    const camPos = V(SW.x - 0.42, SW.y + 0.08, SW.z + 0.34);
+    camera.fov = 32; camera.updateProjectionMatrix();
+    camera.position.copy(camPos); camera.lookAt(V(SW.x, SW.y - 0.04, SW.z - 0.03));
+    ctx.dof = { focus: camPos.distanceTo(btn), aperture: 0.008, maxblur: 0.012 };
+    // only the plate of pancakes shows, soft in the lower-right foreground
+    hideExceptPlate(dad, true); dad.palmL.visible = false;
+    camera.updateMatrixWorld();
+    const fwdC = new THREE.Vector3(); camera.getWorldDirection(fwdC);
+    const rightC = new THREE.Vector3().crossVectors(fwdC, UP).normalize();
+    const platePos = camPos.clone().addScaledVector(fwdC, 0.3).addScaledVector(rightC, 0.1).add(V(0, -0.15, 0));
+    setWorld(dad.plate.group, platePos, yawQ(Math.atan2(fwdC.x, fwdC.z)));
   });
   function hideExceptPlate(h, on) {
     h.root.traverse((o) => { if (o.isMesh) o.visible = !on; });
@@ -681,7 +685,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const hp = headPos(dad);
     const camDir = V(Math.sin(yaw - 1.1), 0, Math.cos(yaw - 1.1));
     const k = easeInOut(clamp(lt / (s.t1 - s.t0)));
-    const camPos = hp.clone().addScaledVector(camDir, lerp(0.95, 0.72, k)).add(V(0, -0.06, 0));
+    const camPos = hp.clone().addScaledVector(camDir, lerp(1.45, 1.15, k)).add(V(0, -0.1, 0));
     frame(camPos, hp, 30, 0.3);
     ctx.dof = { focus: camPos.distanceTo(hp), aperture: 0.004 };
     const g0 = Wd(74) + 0.05;
@@ -696,11 +700,11 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const { om, grip } = hangOnFan(t, ctx);
     you.setFace({ eyes: 'wide', mouth: 'o', open: 0.7 + 0.3 * Math.sin(t * 20), t });
     const k = easeIn(clamp(lt / (s.t1 - s.t0)));
-    const camPos = V(1.15, 1.05, 2.05).lerp(V(0.85, 0.9, 1.6), k);
-    camera.fov = 52; camera.updateProjectionMatrix();
+    const camPos = V(2.3, 0.95, 2.9).lerp(V(2.0, 0.9, 2.5), k);
+    camera.fov = 50; camera.updateProjectionMatrix();
     camera.position.copy(camPos); camera.lookAt(V(0.0, 2.05, -0.1));
     camera.rotateZ(0.06 * Math.sin(t * 3));
-    ctx.mb = om > 4 ? 8 : 4; ctx.shutter = 0.85;
+    ctx.mb = om > 4 ? 6 : 3; ctx.shutter = 0.75;
     ctx.speedLines = clamp(om / 18);
     shakes.length; // (shake below)
     camera.position.x += 0.01 * clamp(om / 25) * noise1(t * 50, 5);
@@ -739,7 +743,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const look = V(0.75, 1.85, -1.5);
     camera.fov = 50; camera.updateProjectionMatrix();
     camera.position.copy(camPos); camera.lookAt(look);
-    ctx.mb = 6; ctx.shutter = 0.7;
+    ctx.mb = 5; ctx.shutter = 0.7;
     ctx.flash = t > K.crash ? 0.55 * Math.exp(-(t - K.crash) * 14) : 0;
   });
 
@@ -800,7 +804,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     camera.fov = 46; camera.updateProjectionMatrix();
     camera.position.copy(camPos); camera.lookAt(look);
     sunShadow(V(1, 0, 6), 9);
-    ctx.mb = st.air ? 3 : 1;
+    ctx.mb = st.air ? 2 : 1;
   });
 
   // launch from the last bounce to the roof
@@ -830,7 +834,7 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
       p = ROOF_LAND;
       sitOnRoof(you, ROOF_YOU, 0.0, t);
       const k = t - K.land;
-      you.squash(1 - 0.22 * Math.exp(-k * 7) * Math.cos(k * 16));
+      you.squash(1 - 0.22 * Math.exp(-k * 7) * Math.cos(k * 16), you.hipY);
       you.setFace({ eyes: k < 0.5 ? 'wide' : 'open', mouth: 'o', open: 0.4 + 0.3 * voice(t), t });
     }
     // dad already sits there (hidden by framing until 10b)
@@ -838,16 +842,17 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     dadPlate(0);
     dad.setFace({ eyes: 'open', mouth: 'flat', t });
     const k = smoother(invLerp(s.t0, K.land + 0.1, t));
-    const camPos = V(-5.2, 2.6, 11.5).lerp(V(-2.6, 5.25, 4.4), k);
-    const look = p.clone().add(V(0, 0.6, 0)).lerp(V(-0.42, 5.45, 0.9), k * 0.6);
-    camera.fov = lerp(52, 40, k); camera.updateProjectionMatrix();
+    const camPos = V(-5.2, 2.6, 11.5).lerp(V(-3.0, 6.5, 3.6), k);
+    const look = p.clone().add(V(0, 0.6, 0)).lerp(V(-0.1, 5.9, 0.3), k * 0.85);
+    camera.fov = lerp(52, 42, k); camera.updateProjectionMatrix();
     camera.position.copy(camPos); camera.lookAt(look);
     sunShadow(V(0, 3, 4), 10);
-    ctx.mb = t < K.land ? 4 : 1;
+    ctx.mb = t < K.land ? 3 : 1;
   });
   function sitOnRoof(h, P, lean = 0, t = 0) {
-    place(h, P.x, roofSurfaceY(P.z) - h.hipY + 0.08, P.z, 0);
-    sit(h, roofAng);
+    place(h, P.x, roofSurfaceY(P.z) - h.hipY + 0.1, P.z, 0);
+    const hip = -Math.PI / 2 + roofAng + 0.08;
+    pose(h, { hipL: [hip, 0, 0.08], hipR: [hip, 0, -0.08], kneeL: 0.35, kneeR: 0.45, ankleL: -0.35, ankleR: -0.3, spine: [0.04, 0, 0] });
     h.j.hips.rotation.x = lean;
   }
 
@@ -863,10 +868,10 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     pose(dad, { neck: [0, -0.15, 0], head: [0, -0.1, 0] });
     dad.setFace({ eyes: 'open', mouth: 'flat', t });
     const k = smoother(invLerp(Wd(101), Wd(104) + 0.1, t));
-    const camPos = V(-0.55, 5.4, 3.0).lerp(V(0.05, 5.45, 3.35), k);
+    const camPos = V(1.6, 6.45, 3.1).lerp(V(2.6, 6.5, 3.4), k);
     const yH = headPos(you), dH = headPos(dad);
     const tgt = yH.clone().lerp(yH.clone().lerp(dH, 0.5), k);
-    frame(camPos, tgt, lerp(32, 40, k), 0.3);
+    frame(camPos, tgt, lerp(32, 38, k), 0.32);
     sunShadow(V(0, 5, 1), 4);
   });
 
@@ -890,8 +895,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const to = you.palmL.getWorldPosition(new THREE.Vector3()).add(V(0, 0.03, 0));
     const pp = t < K.hand1 ? from : to;
     setWorld(handPancake, pp, yawQ(t));
-    const camPos = V(0.02, 5.3, 2.95);
-    frame(camPos, V(0.03, 5.35, 0.88), 40, 0.33);
+    const camPos = V(2.3, 6.45, 3.3);
+    frame(camPos, V(0.05, 5.98, 0.3), 36, 0.34);
     sunShadow(V(0, 5, 1), 4);
     ctx.warmth = 0.2;
   });
@@ -913,8 +918,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const hp = headPos(you);
     sparkle(hp.clone().add(V(0, 0.25, 0.05)), 0.28, 10, t, s.t0 + 0.4, s.t1 + 0.2, 51, 0.07);
     const k = easeInOut(clamp(lt / (s.t1 - s.t0)));
-    const camPos = hp.clone().add(V(0.12, -0.06, lerp(1.05, 0.85, k)));
-    frame(camPos, hp, 32, 0.3);
+    const camPos = hp.clone().add(V(0.6, 0.06, lerp(2.15, 1.85, k)));
+    frame(camPos, hp, 30, 0.33);
     ctx.dof = { focus: camPos.distanceTo(hp), aperture: 0.004 };
     sunShadow(V(0, 5, 1), 4);
     ctx.warmth = 0.3;
@@ -938,8 +943,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     you.setFace({ eyes: t > K.voiceEnd ? 'happy' : 'open', mouth: 'grin', open: 0.4, t });
     dad.setFace({ eyes: 'open', mouth: bite > 0.5 ? 'flat' : 'smile', t });
     const k = easeInOut(clamp(lt / (s.t1 - s.t0 - 0.5)));
-    const camPos = V(0.2, lerp(5.2, 5.0, k), lerp(5.4, 8.6, k));
-    frame(camPos, V(0.05, 5.3, 0.9), lerp(38, 42, k), 0.6);
+    const camPos = V(lerp(2.4, 3.6, k), lerp(6.25, 6.45, k), lerp(3.6, 5.4, k));
+    frame(camPos, V(-0.05, 5.95, 0.3), lerp(36, 40, k), 0.56);
     sunShadow(V(0, 5, 1), 5);
     ctx.warmth = 0.35; ctx.bloom = 0.5; ctx.exposure = 1.05;
     if (t > K.ding - 0.05) {

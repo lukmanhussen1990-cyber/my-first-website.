@@ -230,23 +230,24 @@ export function painting(kind) {
 export function shingles() {
   const [c, g] = canvas(512, 512);
   const r = mulberry32(41);
-  g.fillStyle = '#7a3b2e'; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = '#4a2a24'; g.fillRect(0, 0, 512, 512);
   const rowH = 32;
   for (let row = 0; row < 16; row++) {
     const off = (row % 2) * 24;
     for (let x = -48; x < 512; x += 48) {
-      const l = 30 + r() * 12;
-      g.fillStyle = hsl(10 + r() * 8, 45, l);
+      const l = 22 + r() * 10;
+      g.fillStyle = hsl(8 + r() * 10, 38, l);
       g.beginPath();
       g.moveTo(x + off + 2, row * rowH);
       g.lineTo(x + off + 46, row * rowH);
       g.lineTo(x + off + 46, row * rowH + rowH - 4);
       g.quadraticCurveTo(x + off + 24, row * rowH + rowH + 4, x + off + 2, row * rowH + rowH - 4);
       g.fill();
-      g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x + off + 2, row * rowH + rowH - 5, 44, 3);
+      g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x + off + 2, row * rowH + rowH - 6, 44, 5);
+      g.fillStyle = 'rgba(255,220,200,0.12)'; g.fillRect(x + off + 2, row * rowH, 44, 3);
     }
   }
-  return tex(c, { repeat: [3, 2] });
+  return tex(c, { repeat: [5, 3.5] });
 }
 
 // Clapboard siding for the house exterior.
