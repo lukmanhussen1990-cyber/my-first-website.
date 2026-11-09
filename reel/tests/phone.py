@@ -15,8 +15,8 @@ cam = sc.camera
 hp = you.matrix_world @ you.pose.bones["head"].head
 cam.location = (hp.x - 0.25, hp.y - 1.1, hp.z - 0.1); cam.rotation_euler = (math.radians(90), 0, math.radians(-12)); cam.data.lens = 35
 sc.render.resolution_percentage = 25
-V = {"a": {}, "b": {"upperarm01.R": (25, 0, 0)}, "c": {"upperarm01.R": (0, 0, -25)}, "d": {"upperarm01.R": (0, 0, 25)},
-     "e": {"upperarm01.R": (0, 35, 0)}, "f": {"upperarm01.R": (0, -35, 0)}, "g": {"lowerarm01.R": (0, 0, 25)}, "h": {"wrist.R": (0, 0, 40)}}
+V = {"a": {}, "b": {"upperarm01.R": (25, 0, 0)}, "c": {"upperarm01.R": (40, 0, 0)}, "d": {"upperarm01.R": (25, 0, 0), "head": (0, 0, -15)},
+     "e": {"upperarm01.R": (25, 0, 0), "head": (0, 0, 15)}, "f": {"upperarm01.R": (0, 30, 0)}, "g": {"upperarm01.R": (0, -30, 0)}, "h": {"upperarm01.R": (25, -25, 0)}}
 for k, d in V.items():
     for b in you.pose.bones: b.rotation_euler = base[b.name]
     for bn, (x, y, z) in d.items():

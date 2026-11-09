@@ -316,13 +316,14 @@ def make(ctx):
     bh = world(Baby, "head", 33.5)
     cam.shot(F(s[0]), F(s[1]), bh + Vector((0.12, -0.6, 0.12)), bh, lens=38, push=0.2)
 
+    PHONE = {"upperarm01.R": (40, 0, 0), "head": (0, 0, 12)}  # hand at his ear = on the phone (like the reference)
     # ---- 18 the smartest thing ----------------------------------------------------------------------------------
     s = shot["smart"]
     cast("smart", You)
     sp_ = (1.25, -0.45)
     perform(You, s, [(None, dict(x=sp_[0], y=sp_[1], rz=-20, pose="stand", face=dict(smile, eyeSquintLeft=0.3,
                                                                                     eyeSquintRight=0.3))),
-                     (36.6, {}), (36.85, dict(pose="phone"))])
+                     (36.6, {}), (36.85, dict(pose="phone", d=PHONE))])
     h18 = Vector((sp_[0], sp_[1], 1.5))
     cam.shot(F(s[0]), F(s[1]), h18 + fwd(-20, 1.7) + Vector((-0.2, 0, -0.15)), h18 + Vector((0, 0, -0.2)), lens=34,
              push=0.2)
@@ -330,7 +331,7 @@ def make(ctx):
     # ---- 19 calling the police ---------------------------------------------------------------------------------------
     s = shot["call"]
     cast("call", You)
-    beats = [(None, dict(x=sp_[0], y=sp_[1], rz=-20, pose="phone", face={}))]
+    beats = [(None, dict(x=sp_[0], y=sp_[1], rz=-20, pose="phone", face={}, d=PHONE))]
     t = 38.4
     i = 0
     while t < 41.2:
