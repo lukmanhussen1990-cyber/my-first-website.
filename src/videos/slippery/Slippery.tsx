@@ -32,6 +32,7 @@ const Inner: React.FC<{ id: number }> = ({ id }) => {
   const f = useCurrentFrame();
   const { camera, scene } = useThree();
   const world = useMemo(() => new World(), []);
+  const q = useMemo(quality, []);
   const fx = useMemo(() => ({
     ink: new InkPass(scene, camera as THREE.PerspectiveCamera),
     lens: new LensBlur({ maxCoC: 24, nearScale: 1.2 }),
@@ -40,10 +41,10 @@ const Inner: React.FC<{ id: number }> = ({ id }) => {
     grade: new GradeEffect(GRADES.day, GRADE_STRENGTH.day),
   }), [camera, scene]);
   const post = useMemo(() => (
-    <EffectComposer multisampling={quality().msaa}>
-      {[fx.ink, fx.lens.pre, fx.lens.main, fx.bloom, fx.tone, fx.grade].map((o, i) => <primitive key={i} object={o} dispose={null} />)}
+    <EffectComposer multisampling={q.msaa}>
+      {[q.ink && fx.ink, q.lens && fx.lens.pre, q.lens && fx.lens.main, q.bloom && fx.bloom, fx.tone, fx.grade].filter(Boolean).map((o, i) => <primitive key={i} object={o as object} dispose={null} />)}
     </EffectComposer>
-  ), [fx]);
+  ), [fx, q]);
   const cam = camera as THREE.PerspectiveCamera;
   const { focus, cInf } = world.update(id, f, cam, scene);
   noInkFallback(world.root);
@@ -55,7 +56,7 @@ const Inner: React.FC<{ id: number }> = ({ id }) => {
 
 const dprOverride = () => (getInputProps() as { post?: { dpr?: number } }).post?.dpr;
 /** render-speed knobs (inputProps { post: { msaa, shadow } }); defaults = full quality */
-const quality = () => ({ msaa: 4, ...((getInputProps() as { post?: { msaa?: number } }).post ?? {}) });
+const quality = () => ({ msaa: 4, ink: true, lens: true, bloom: true, ...((getInputProps() as { post?: { msaa?: number; ink?: boolean; lens?: boolean; bloom?: boolean } }).post ?? {}) });
 const ShotView: React.FC<{ id: number; alpha: number }> = ({ id, alpha }) => (
   <AbsoluteFill style={{ opacity: alpha }}>
     <ThreeCanvas width={1080} height={1920} {...(dprOverride() ? { dpr: dprOverride() } : {})} shadows
