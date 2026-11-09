@@ -30,6 +30,7 @@ SCALE = int(arg("--scale", "67"))
 SAMPLES = int(arg("--samples", "4"))
 LO, HI = map(int, arg("--frames", "1-99999").split("-"))
 WORKER, WORKERS = int(arg("--worker", "0")), int(arg("--workers", "1"))
+STEP = int(arg("--step", "1"))  # 2 = every other frame (fast rough preview)
 BLEND = bpy.data.filepath
 FPS = 30
 CHARS = ("You", "Mom", "Baby", "Cop1", "Cop2")
@@ -53,7 +54,7 @@ jobs = jobs[WORKER::WORKERS] + [j for k, j in enumerate(jobs) if k % WORKERS != 
 
 T0 = time.time()
 for name, lo, hi in jobs:
-    todo = [f for f in range(lo, hi + 1) if not os.path.exists(os.path.join(OUT, f"f_{f:04d}.png"))]
+    todo = [f for f in range(lo, hi + 1, STEP) if not os.path.exists(os.path.join(OUT, f"f_{f:04d}.png"))]
     if not todo:
         continue
     bpy.ops.wm.open_mainfile(filepath=BLEND)
@@ -67,6 +68,7 @@ for name, lo, hi in jobs:
     sc.render.resolution_percentage = SCALE
     sc.eevee.taa_render_samples = SAMPLES
     sc.frame_start, sc.frame_end = lo, hi
+    sc.frame_step = STEP
     sc.render.filepath = os.path.join(OUT, "f_####")
     sc.render.use_overwrite = False
     sc.render.use_placeholder = True
