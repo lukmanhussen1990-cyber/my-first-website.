@@ -1,0 +1,31 @@
+{
+  "name": "animated-shorts-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vertical cartoon story shorts: 2D characters in a colourful 3D world, rendered with three.js inside Remotion.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "still": "node scripts/bridge-stills.mjs",
+    "render": "node scripts/render.mjs"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.1.2",
+    "@react-three/postprocessing": "3.0.4",
+    "@remotion/bundler": "4.0.290",
+    "@remotion/cli": "4.0.290",
+    "@remotion/renderer": "4.0.290",
+    "@remotion/three": "4.0.290",
+    "postprocessing": "6.37.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.290",
+    "three": "0.175.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.2",
+    "@types/three": "0.175.0",
+    "typescript": "5.8.3"
+  }
+}
