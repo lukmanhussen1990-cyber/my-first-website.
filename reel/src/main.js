@@ -12,7 +12,7 @@ import { buildRoom, buildYard } from './sets.js';
 import { createDirector } from './director.js';
 import * as OV from './overlay.js';
 
-let W = 1080, H = 1920, SC = 1;
+let W = 1080, H = 1920, SC = 1, OW = 1080, OH = 1920;
 
 const GradeShader = {
   uniforms: { tDiffuse: { value: null }, time: { value: 0 }, vignette: { value: 0.32 }, warmth: { value: 0.0 } },
@@ -44,7 +44,8 @@ async function loadFonts() {
 
 window.setup = async (timeline, opts = {}) => {
   await loadFonts();
-  SC = opts.scale || 1; W = Math.round(1080 * SC); H = Math.round(1920 * SC);
+  SC = opts.scale || 1; OW = Math.round(1080 * SC); OH = Math.round(1920 * SC);
+  const RS = opts.renderScale || 1; W = Math.round(OW * RS); H = Math.round(OH * RS);
   const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(1);
   renderer.setSize(W, H);
@@ -73,7 +74,7 @@ window.setup = async (timeline, opts = {}) => {
   const grade = new ShaderPass(GradeShader);
   composer.addPass(renderPass); composer.addPass(gtao); composer.addPass(bokeh); composer.addPass(bloom); composer.addPass(output); composer.addPass(grade);
 
-  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  const out = document.createElement('canvas'); out.width = OW; out.height = OH;
   const g = out.getContext('2d');
   const chunks = OV.buildChunks(timeline.words, g);
   S = { renderer, camera, room, yard, director, composer, renderPass, gtao, bokeh, bloom, grade, out, g, chunks, timeline };
@@ -115,7 +116,8 @@ window.renderFrame = (t, opts = {}) => {
     configure(ctx, t);
     composer.render();
     g.globalAlpha = 1 / (s + 1);
-    g.drawImage(S.renderer.domElement, 0, 0);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(S.renderer.domElement, 0, 0, OW, OH);
   }
   g.globalAlpha = 1;
   if (n > 1) ctx = director.apply(t);

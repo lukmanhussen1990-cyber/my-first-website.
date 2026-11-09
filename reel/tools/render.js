@@ -30,8 +30,8 @@ function serve() {
   await page.goto(`http://localhost:${port}/index.html`);
   await page.waitForFunction(() => window.__ready === true, null, { timeout: 60000 });
   const timeline = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/timeline.json'), 'utf8'));
-  const SCALE = parseFloat(process.env.SCALE || '1'), NOBLUR = !!process.env.NOBLUR;
-  const info = await page.evaluate(([tl, sc]) => window.setup(tl, { scale: sc }), [timeline, SCALE]);
+  const SCALE = parseFloat(process.env.SCALE || '1'), NOBLUR = !!process.env.NOBLUR, RSCALE = parseFloat(process.env.RSCALE || '1');
+  const info = await page.evaluate(([tl, sc, rs]) => window.setup(tl, { scale: sc, renderScale: rs }), [timeline, SCALE, RSCALE]);
   if (mode === 'info') {
     fs.writeFileSync(path.join(ROOT, 'build/cues.json'), JSON.stringify(info, null, 1));
     console.log(JSON.stringify(info.shots.map((s) => [s.id, +s.t0.toFixed(2), +s.t1.toFixed(2)])), 'duration', info.duration.toFixed(2));
