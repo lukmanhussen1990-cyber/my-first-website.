@@ -300,10 +300,10 @@ def make(ctx):
     ctx["key_obj_visible"](diaper, F(s[1]), False)
     dpos = world(You, "wrist.L", 32.0)
     cam_p = Vector((cp_[0] + 0.2, cp_[1] - 1.85, 0.5))
-    mid = (Vector((cp_[0], cp_[1], 1.45)) + dpos) / 2  # frame his face and the diaper held up high
-    cam.shot(F(s[0]), F(s[1]), cam_p, mid, lens=24, push=0.12, tgt1=mid + Vector((0, 0, 0.05)))
+    mid = Vector((cp_[0], cp_[1], 1.5)) * 0.35 + dpos * 0.65  # his face + the diaper held up high
+    cam.shot(F(s[0]), F(s[1]), cam_p, mid, lens=22, push=0.1, tgt1=mid + Vector((0, 0, 0.04)))
     v = dpos - cam_p
-    ctx["pop_glyphs"](ctx["sparks"], F(EVENTS["ding"]) - 2, dpos + Vector((0, -0.12, 0.05)), 0.24,
+    ctx["pop_glyphs"](ctx["sparks"], F(EVENTS["ding"]) - 2, dpos + Vector((0, -0.12, 0.08)), (0.22, 0.26),
                       math.atan2(-v.x, v.y), stagger=1, life=24, rise=0.05, spin=True)
 
     # ---- 17 how? nobody knows -------------------------------------------------------------------------------

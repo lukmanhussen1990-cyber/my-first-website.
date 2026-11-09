@@ -751,7 +751,7 @@ def build():
     sign, nums = build_sign()
     diaper = build_diaper()
     hearts = build_glyphs("Heart", "♥", 9, (0.85, 0.02, 0.22), 0.17, emit=0.45)
-    sparks = build_glyphs("Spark", "✦", 10, (1.0, 0.95, 0.6), 0.07, emit=6.0)
+    sparks = build_glyphs("Spark", "✦", 10, (1.0, 0.95, 0.6), 0.15, emit=6.0)
     log("characters")
     C = {}
     for n in ("You", "Mom", "Baby", "Cop1", "Cop2"):
