@@ -1,6 +1,7 @@
 // The slippery short's three.js world: the three sets, one key light (camera-relative, frozen per shot), fog /
 // background per look, the two-tone + card uniforms, and the cards from stage.ts as lit billboards or effect sprites.
 import * as THREE from "three";
+import { getInputProps } from "remotion";
 import { Pen } from "./toon";
 import { TONE, CHAR, untone } from "./shade";
 import { NOINK } from "./ink";
@@ -75,7 +76,8 @@ export class World {
     this.root.add(this.store, this.room.root, this.reef);
     this.hemi = new THREE.HemisphereLight("#ffffff", "#888888", 0.4);
     this.sun = new THREE.DirectionalLight("#ffffff", 2.5);
-    this.sun.castShadow = true; this.sun.shadow.mapSize.set(2048, 2048);
+    const sh = (getInputProps() as { post?: { shadow?: number } }).post?.shadow ?? 2048;
+    this.sun.castShadow = true; this.sun.shadow.mapSize.set(sh, sh);
     this.root.add(this.hemi, this.sun, this.sun.target);
   }
 

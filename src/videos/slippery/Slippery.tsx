@@ -40,7 +40,7 @@ const Inner: React.FC<{ id: number }> = ({ id }) => {
     grade: new GradeEffect(GRADES.day, GRADE_STRENGTH.day),
   }), [camera, scene]);
   const post = useMemo(() => (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={quality().msaa}>
       {[fx.ink, fx.lens.pre, fx.lens.main, fx.bloom, fx.tone, fx.grade].map((o, i) => <primitive key={i} object={o} dispose={null} />)}
     </EffectComposer>
   ), [fx]);
@@ -54,6 +54,8 @@ const Inner: React.FC<{ id: number }> = ({ id }) => {
 };
 
 const dprOverride = () => (getInputProps() as { post?: { dpr?: number } }).post?.dpr;
+/** render-speed knobs (inputProps { post: { msaa, shadow } }); defaults = full quality */
+const quality = () => ({ msaa: 4, ...((getInputProps() as { post?: { msaa?: number } }).post ?? {}) });
 const ShotView: React.FC<{ id: number; alpha: number }> = ({ id, alpha }) => (
   <AbsoluteFill style={{ opacity: alpha }}>
     <ThreeCanvas width={1080} height={1920} {...(dprOverride() ? { dpr: dprOverride() } : {})} shadows

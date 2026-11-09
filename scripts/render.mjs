@@ -19,19 +19,20 @@ const scale = Number(opt("scale", "1"));
 const concurrency = Number(opt("concurrency", "2"));
 const crf = Number(opt("crf", "16"));
 const fr = opt("frames", null);
+const inputProps = opt("props", null) ? JSON.parse(opt("props", "{}")) : {};
 const frameRange = fr ? (fr.includes("-") ? fr.split("-").map(Number) : Number(fr)) : null;
 
 fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
 const t0 = Date.now();
 const serveUrl = await bundle({ entryPoint: path.resolve(process.env.BRIDGE_ENTRY || "src/index.ts"), publicDir: path.resolve("public") });
-const composition = await selectComposition({ serveUrl, id, browserExecutable, chromiumOptions });
+const composition = await selectComposition({ serveUrl, id, browserExecutable, chromiumOptions, inputProps });
 let last = 0;
 await renderMedia({
-  composition, serveUrl, codec: "h264", crf, scale, concurrency, frameRange, outputLocation: out,
+  composition, serveUrl, codec: "h264", crf, scale, concurrency, frameRange, outputLocation: out, inputProps,
   browserExecutable, chromiumOptions, timeoutInMilliseconds: 600000,
   onProgress: ({ renderedFrames, encodedFrames }) => {
     const now = Date.now();
-    if (now - last > 15000) { last = now; console.log(`rendered ${renderedFrames}, encoded ${encodedFrames}, ${((now - t0) / 1000).toFixed(0)} s`); }
+    if (now - last > 5000) { last = now; console.log(`rendered ${renderedFrames}, encoded ${encodedFrames}, ${((now - t0) / 1000).toFixed(0)} s`); }
   },
 });
 const n = Array.isArray(frameRange) ? frameRange[1] - frameRange[0] + 1 : frameRange != null ? 1 : composition.durationInFrames;
