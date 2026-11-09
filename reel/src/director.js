@@ -955,7 +955,8 @@ export function createDirector({ renderer, camera, room, yard, timeline: T }) {
     const lt = t - s.t0;
     const ctx = { world: s.world, shot: s.id, mb: 1, dof: null, speedLines: 0, hearts: [], sparkles2d: [], flash: 0, bloom: 0.32, exposure: 1.0, warmth: 0.08 };
     const scene = s.world === 'yard' ? yard.scene : room.scene;
-    for (const h of cast) { h.reset(); scene.add(h.root); h.root.visible = true; hideExceptPlate(h === dad ? dad : h, false); }
+    hideExceptPlate(dad, false);
+    for (const h of cast) { h.reset(); scene.add(h.root); h.root.visible = true; }
     hangPivot.rotation.set(0, 0, 0);
     if (dad.lensMat) dad.lensMat.opacity = 0.16;
     dad.j.chest.position.y = 0.22;
