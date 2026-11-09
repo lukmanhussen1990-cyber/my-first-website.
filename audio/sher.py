@@ -2,7 +2,7 @@
 # score (plucked melody over a bouncy bass, brushes; a thinking pad + clock tick for the question; a slow sad bit for
 # "seven trips"; a hit on the bridge) ducked under the voice + synthesized SFX (pops, lion growl, goat bleat, chomp,
 # river, birds, paddles, slide whistle, cheer). Master -14 LUFS, peak <= -1 dBTP, 48 kHz stereo, exactly 82.5 s.
-# Usage: python -I audio/sher.py   (writes out/sher/mix.wav)
+# Usage: python -I audio/sher.py [--no-music]   (writes out/sher/mix.wav)
 import json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -180,6 +180,8 @@ for i, m in enumerate((50, 49, 48)):
 ev(G.whoosh(0.9, r, peak=0.5), at("कि", 3) - 0.2, -12)
 ev(G.push_thump(r), T_PUL, -8)
 
+if "--no-music" in sys.argv:  # user asked for no background music (voice + SFX only)
+    music *= 0.0
 mix = voice + music + sfx
 g = dbg(-14.0 - integrated(mix))
 mix *= g
