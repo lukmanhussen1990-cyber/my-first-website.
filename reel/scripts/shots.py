@@ -157,9 +157,9 @@ def make(ctx):
                                  d={"neck01": (12, 0, 0), "head": (10, 0, 0)})),
                      (s[0] + 0.12, dict(pose={"base": "stand", "upper": "shock"}, face=shock_face, d={})),
                      (s[1] - 0.6, dict(face=dict(shock_face, jawOpen=0.55)))])
-    head = Vector((MOM_SPOT[0], MOM_SPOT[1], 1.45))
-    cpos = head + fwd(rz_mom, 1.05) + Vector((0, 0, -0.3))
-    cam.shot(F(s[0]), F(s[1]), cpos, head + Vector((0, 0, -0.05)), lens=38, push=0.3)
+    head = Vector((MOM_SPOT[0], MOM_SPOT[1], 1.5))
+    cpos = head + fwd(rz_mom, 1.25) + Vector((0, 0, -0.12))
+    cam.shot(F(s[0]), F(s[1]), cpos, head + Vector((0, 0, -0.1)), lens=36, push=0.2)
 
     # ---- 5 mom stares at you (over your shoulder) -------------------------------
     s = shot["mom_stare"]
@@ -258,7 +258,7 @@ def make(ctx):
     rz = fa(mp, (0.6, -0.9))
     perform(Mom, s, [(None, dict(x=mp[0], y=mp[1], rz=rz, pose="clasp", face=dict(smile, browInnerUp=0.8),
                                  d={"head": (0, 0, -12)}))])
-    mh_ = Vector((mp[0], mp[1], 1.46))
+    mh_ = Vector((mp[0], mp[1], 1.5))
     cpos = mh_ + fwd(rz, 1.0) + Vector((0, 0, -0.08))
     cam.shot(F(s[0]), F(s[1]), cpos, mh_ + Vector((0, 0, -0.05)), lens=36, push=0.15)
     v = mh_ - cpos
