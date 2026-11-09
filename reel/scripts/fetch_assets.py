@@ -25,7 +25,6 @@ PH_MODELS = [
     "modern_wooden_cabinet", "potted_plant_01", "potted_plant_02",
     "hanging_picture_frame_01", "hanging_picture_frame_02", "throw_pillows_01",
     "rubber_duck_toy", "side_table_01", "wall_clock", "wooden_bookshelf_worn",
-    "decorative_book_set_01",
 ]
 PH_TEXTURES = ["wood_floor", "painted_plaster_wall", "rough_pine_door", "dirty_carpet"]
 PH_HDRIS = ["kloofendal_48d_partly_cloudy_puresky"]

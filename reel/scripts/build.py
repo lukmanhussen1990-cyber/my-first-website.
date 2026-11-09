@@ -72,6 +72,9 @@ def _fc(id_data, path, index):
     fc = act.fcurves.find(path, index=index)
     if fc is None:
         fc = act.fcurves.new(path, index=index)
+    # Blender 4.4+ "slotted actions": the action only animates the ID once a slot is assigned
+    if hasattr(ad, "action_slot") and ad.action_slot is None and len(act.slots):
+        ad.action_slot = act.slots[0]
     return fc
 
 
@@ -110,6 +113,7 @@ def reset_scene():
     sc.render.resolution_percentage = SCALE
     sc.eevee.taa_render_samples = SAMPLES or 12
     sc.eevee.use_shadows = True
+    sc.eevee.shadow_pool_size = "256"
     sc.eevee.shadow_ray_count = 1
     sc.eevee.shadow_step_count = 4
     sc.eevee.use_raytracing = False
@@ -222,22 +226,30 @@ def build_room():
     floor_m = pbr_material("Floor", os.path.join(PH, "textures", "wood_floor"), uv_scale=0.5)
     wall_m = pbr_material("Wall", os.path.join(PH, "textures", "painted_plaster_wall"),
                           tint=(0.80, 0.90, 1.0), uv_scale=0.35)
+    # walls face inward and are culled from behind, so a camera outside a wall sees into the room
+    wall_m.use_backface_culling = True
     R = ROOM
     W, L, H = R["x1"] - R["x0"], R["y1"] - R["y0"], R["h"]
     cx, cy = (R["x0"] + R["x1"]) / 2, (R["y0"] + R["y1"]) / 2
     plane("Floor", W + 0.2, L + 0.2, (cx, cy, 0), (0, 0, 0), floor_m)
-    plane("WallBack", W, H, (cx, R["y1"], H / 2), (D(90), 0, D(180)), wall_m)
-    plane("WallFront", W, H, (cx, R["y0"], H / 2), (D(90), 0, 0), wall_m)
-    plane("WallLeft", L, H, (R["x0"], cy, H / 2), (D(90), 0, D(-90)), wall_m)
+    plane("WallBack", W, H, (cx, R["y1"], H / 2), (D(90), 0, 0), wall_m)
+    plane("WallFront", W, H, (cx, R["y0"], H / 2), (D(90), 0, D(180)), wall_m)
+    plane("WallLeft", L, H, (R["x0"], cy, H / 2), (D(90), 0, D(90)), wall_m)
     # right wall with a door opening (three pieces)
     yA, yB, dh = DOOR["y0"], DOOR["y1"], DOOR["h"]
-    plane("WallRightA", yA - R["y0"], H, (R["x1"], (R["y0"] + yA) / 2, H / 2), (D(90), 0, D(90)), wall_m)
-    plane("WallRightB", R["y1"] - yB, H, (R["x1"], (yB + R["y1"]) / 2, H / 2), (D(90), 0, D(90)), wall_m)
-    plane("WallRightTop", yB - yA, H - dh, (R["x1"], (yA + yB) / 2, dh + (H - dh) / 2), (D(90), 0, D(90)), wall_m)
+    plane("WallRightA", yA - R["y0"], H, (R["x1"], (R["y0"] + yA) / 2, H / 2), (D(90), 0, D(-90)), wall_m)
+    plane("WallRightB", R["y1"] - yB, H, (R["x1"], (yB + R["y1"]) / 2, H / 2), (D(90), 0, D(-90)), wall_m)
+    plane("WallRightTop", yB - yA, H - dh, (R["x1"], (yA + yB) / 2, dh + (H - dh) / 2), (D(90), 0, D(-90)), wall_m)
+    # ceiling (camera-only: casts no shadow, so the sky still lights the room)
+    ceil_m = flat_material("Ceiling", (0.85, 0.86, 0.88), rough=0.9)
+    ceil_m.use_backface_culling = True
+    ceil = plane("Ceiling", W + 0.2, L + 0.2, (cx, cy, H), (D(180), 0, 0), ceil_m)
+    ceil.visible_shadow = False
     # skirting boards (simple white strips) and door frame
     trim = flat_material("Trim", (0.92, 0.92, 0.9), rough=0.4)
-    for nm, sx, loc, rz in [("SkirtBack", W, (cx, R["y1"] - 0.006, 0.05), 180), ("SkirtLeft", L, (R["x0"] + 0.006, cy, 0.05), -90),
-                            ("SkirtFront", W, (cx, R["y0"] + 0.006, 0.05), 0)]:
+    trim.use_backface_culling = True
+    for nm, sx, loc, rz in [("SkirtBack", W, (cx, R["y1"] - 0.006, 0.05), 0), ("SkirtLeft", L, (R["x0"] + 0.006, cy, 0.05), 90),
+                            ("SkirtFront", W, (cx, R["y0"] + 0.006, 0.05), 180)]:
         plane(nm, sx, 0.1, loc, (D(90), 0, D(rz)), trim)
     # outdoor ground + porch seen through the door
     porch = flat_material("Porch", (0.55, 0.62, 0.38), rough=0.9)
@@ -281,10 +293,22 @@ def append_ph(model, loc, rz=0.0, scale=1.0, name=None):
         dst.objects = list(src.objects)
     root = bpy.data.objects.new(name or model, None)
     bpy.context.scene.collection.objects.link(root)
-    for o in dst.objects:
-        if o is None:
-            continue
+    objs = [o for o in dst.objects if o is not None]
+    for o in objs:
         bpy.context.scene.collection.objects.link(o)
+    # bake constraint-driven parts (e.g. sliding cabinet doors on paths) into plain transforms
+    bpy.context.view_layer.update()
+    baked = {o: o.matrix_world.copy() for o in objs}
+    for o in objs:
+        if o.constraints or (o.animation_data and o.animation_data.action):
+            for c in list(o.constraints):
+                o.constraints.remove(c)
+            o.animation_data_clear()
+            o.matrix_world = baked[o]
+    for o in objs:
+        if o.type == "CURVE" and not o.data.materials:  # helper paths
+            bpy.data.objects.remove(o, do_unlink=True)
+            continue
         if o.parent is None:
             o.parent = root
     root.location = loc
@@ -298,7 +322,6 @@ def build_furniture():
     append_ph("sofa_02", (0.3, R["y1"] - 0.52, 0))
     append_ph("throw_pillows_01", (-0.25, R["y1"] - 0.42, 0.62), rz=8)
     append_ph("modern_coffee_table_01", (0.3, 1.45, 0))
-    append_ph("decorative_book_set_01", (0.6, 1.45, 0.39), rz=90)
     append_ph("hanging_picture_frame_01", (0.3, R["y1"] - 0.005, 1.62), rz=0)
     append_ph("hanging_picture_frame_02", (1.6, R["y1"] - 0.005, 1.55), rz=0)
     append_ph("modern_wooden_cabinet", (R["x0"] + 0.36, 0.35, 0), rz=90)
@@ -311,6 +334,10 @@ def build_furniture():
     append_ph("ArmChair_01", (-2.25, -2.05, 0), rz=135)
     append_ph("potted_plant_01", (2.75, -2.55, 0), name="plant_front")
     append_ph("rubber_duck_toy", BABY_SPOT + Vector((0.45, -0.35, 0)), rz=-30, scale=0.6)
+    # pebbles / soil inside the plant pots: ~170k triangles nobody can see -> big render-time saving
+    for o in list(bpy.data.objects):
+        if o.type == "MESH" and ("pebbles" in o.name or o.name.endswith("_dirt")):
+            bpy.data.objects.remove(o, do_unlink=True)
 
 
 def build_lights():
@@ -335,6 +362,7 @@ def build_lights():
     fill.energy = 900
     fill.size = 5
     fill.color = (0.92, 0.96, 1.0)
+    fill.use_shadow = False  # soft fill only; saves a whole shadow pass per sample
     fo = bpy.data.objects.new("Fill", fill)
     sc.collection.objects.link(fo)
     fo.location = (0.0, -2.6, 2.75)
@@ -387,11 +415,11 @@ def build_sign():
     root = bpy.data.objects.new("Sign", None)
     bpy.context.scene.collection.objects.link(root)
     root.location = SIGN_POS
-    root.rotation_euler = (D(90), 0, D(180))  # face -Y (into the room)
-    white = flat_material("SignWhite", (0.95, 0.95, 0.93), rough=0.6)
-    border = flat_material("SignBorder", (0.75, 0.05, 0.05), rough=0.5)
-    ink = flat_material("SignInk", (0.05, 0.05, 0.06), rough=0.6)
-    red = flat_material("SignRed", (0.8, 0.04, 0.04), rough=0.5)
+    root.rotation_euler = (D(90), 0, 0)  # face -Y (into the room)
+    white = flat_material("SignWhite", (0.8, 0.8, 0.78), rough=0.7, spec=0.2)
+    border = flat_material("SignBorder", (0.32, 0.0, 0.0), rough=0.6, spec=0.2)
+    ink = flat_material("SignInk", (0.004, 0.004, 0.006), rough=0.7, spec=0.2)
+    red = flat_material("SignRed", (0.38, 0.0, 0.0), rough=0.6, spec=0.2)
     b = plane("SignBorder", 0.86, 0.62, (0, 0, -0.004), (0, 0, 0), border)
     b.parent = root
     p = plane("SignBoard", 0.8, 0.56, (0, 0, 0), (0, 0, 0), white)
@@ -470,7 +498,7 @@ CHAR_SPECS = {
                 hair="short02.mhclo", clothes=["male_casualsuit06.mhclo", "shoes02.mhclo"]),
     "Mom": dict(gender=0.0, age=52, weight=0.68, muscle=0.4, height=0.42, skin="middleage_caucasian_female.mhmat",
                 hair="ponytail01.mhclo", eyebrows="eyebrow009.mhclo",
-                clothes=["female_casualsuit01.mhclo", "elvs_ladies_apron.mhclo", "shoes01.mhclo"]),
+                clothes=["female_casualsuit02.mhclo", "shoes01.mhclo"]),  # modern tee + denim shorts
     "Baby": dict(gender=1.0, age=1, weight=0.85, skin="young_caucasian_male.mhmat", hair="",
                  eyebrows="eyebrow010.mhclo", clothes=["elvs_crude_bootyshorts.mhclo"]),
     "Cop1": dict(gender=1.0, age=31, weight=0.6, muscle=0.7, height=0.55, race=("african",),
@@ -516,7 +544,7 @@ LOWER = ("root", "pelvis", "upperleg", "lowerleg", "foot", "toe")
 class Character:
     def __init__(self, name):
         self.name = name
-        self.rig, self.body = mh.make_human(name, **CHAR_SPECS[name])
+        self.rig, self.body = mh.make_human(name, subdiv=0, **CHAR_SPECS[name])  # no subdivision: 2x less memory
         self.objs = mh.children(self.rig)
         self.poses = {}
         self.ground = {}
@@ -545,9 +573,15 @@ class Character:
             # how far the lowest point of the mesh is from the floor in this pose
             bpy.context.view_layer.update()
             dg = bpy.context.evaluated_depsgraph_get()
-            ev = self.body.evaluated_get(dg)
-            mw = ev.matrix_world
-            zmin = min((mw @ v.co).z for v in ev.data.vertices)
+            zmin = 1e9
+            # body + clothes + shoes (MPFB hides the body under clothes, so the body alone is not enough)
+            for o in [self.body] + self.objs:
+                if o.type != "MESH":
+                    continue
+                ev = o.evaluated_get(dg)
+                mw = ev.matrix_world
+                if len(ev.data.vertices):
+                    zmin = min(zmin, min((mw @ v.co).z for v in ev.data.vertices))
             self.ground[p] = zmin - self.rig.location.z
         for b in self.rig.pose.bones:
             b.rotation_euler = self.poses[CHAR_POSES[self.name][0]][b.name]
@@ -614,7 +648,6 @@ class Character:
     def key_visible(self, frame, visible):
         for o in [self.rig] + self.objs:
             key(o, "hide_render", 0, frame, 0.0 if visible else 1.0, "CONSTANT")
-            key(o, "hide_viewport", 0, frame, 0.0 if visible else 1.0, "CONSTANT")
 
 
 def face_angle(src, dst):
@@ -675,7 +708,6 @@ def pop_glyphs(objs, f_start, center, radius, theta, stagger=3, life=40, rise=0.
         rot0 = (D(90), 0, theta)
         key(o, "hide_render", 0, 1, 1.0, "CONSTANT")
         key(o, "hide_render", 0, fs, 0.0, "CONSTANT")
-        key(o, "hide_viewport", 0, fs, 0.0, "CONSTANT")
         sz = size * rnd.uniform(0.8, 1.25)
         key_vec(o, "scale", fs, (0, 0, 0))
         key_vec(o, "scale", fs + 4, (1.4 * sz,) * 3)
@@ -689,14 +721,12 @@ def pop_glyphs(objs, f_start, center, radius, theta, stagger=3, life=40, rise=0.
         key_vec(o, "scale", end - 5, (sz,) * 3)
         key_vec(o, "scale", end, (0, 0, 0))
         key(o, "hide_render", 0, end + 1, 1.0, "CONSTANT")
-        key(o, "hide_viewport", 0, end + 1, 1.0, "CONSTANT")
 
 
 def key_obj_visible(o, frame, visible):
     objs = [o] + list(o.children_recursive)
     for x in objs:
         key(x, "hide_render", 0, frame, 0.0 if visible else 1.0, "CONSTANT")
-        key(x, "hide_viewport", 0, frame, 0.0 if visible else 1.0, "CONSTANT")
 
 
 # ---------------------------------------------------------------------------
@@ -720,10 +750,13 @@ def build():
         log("  made", n)
     cam = Cam(sc)
     import shots
-    shots.make(dict(sc=sc, C=C, cam=cam, door=door, poop=poop, sign=sign, nums=nums, diaper=diaper,
+    ctx = dict(sc=sc, C=C, cam=cam, door=door, poop=poop, sign=sign, nums=nums, diaper=diaper,
                     hearts=hearts, sparks=sparks, F=F, key=key, key_vec=key_vec, face_angle=face_angle,
                     pop_glyphs=pop_glyphs, key_obj_visible=key_obj_visible, POOP=POOP,
-                    BABY_SPOT=BABY_SPOT, SIGN_POS=SIGN_POS, DOOR=DOOR, ROOM=ROOM, D=D))
+                    BABY_SPOT=BABY_SPOT, SIGN_POS=SIGN_POS, DOOR=DOOR, ROOM=ROOM, D=D)
+    shots.make(ctx)
+    import json
+    sc["cast_json"] = json.dumps(ctx["cast_map"])
     finalize_fcurves()
     log("built; frames", sc.frame_start, "-", sc.frame_end)
     return sc
@@ -745,13 +778,12 @@ if __name__ == "__main__":
             log("preview", i + 1, name, "frame", f)
     elif MODE == "render":
         lo, hi = FRAMES or (sc.frame_start, sc.frame_end)
-        sc.render.filepath = os.path.join(OUT, "frames", "f_")
-        for f in range(lo, hi + 1):
-            p = os.path.join(OUT, "frames", f"f_{f:04d}.png")
-            if os.path.exists(p) and os.path.getsize(p) > 0:
-                continue
-            sc.frame_set(f)
-            sc.render.filepath = p
-            t = time.time()
-            bpy.ops.render.render(write_still=True)
-            log("frame", f, f"{time.time() - t:.1f}s")
+        sc.frame_start, sc.frame_end = lo, hi
+        sc.render.filepath = os.path.join(OUT, "frames", "f_####")
+        sc.render.use_overwrite = False     # skip frames that already exist -> resumable
+        sc.render.use_placeholder = True    # lets several Blender processes share one range
+
+        def _done(scene, *_):
+            log("frame", scene.frame_current)
+        bpy.app.handlers.render_post.append(_done)
+        bpy.ops.render.render(animation=True)

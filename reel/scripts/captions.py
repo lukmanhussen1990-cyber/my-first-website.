@@ -9,7 +9,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT = "Poppins ExtraBold"
-SIZE = 78
+SIZE = 96
 Y = 1130  # a little below the exact centre, like the reference
 
 

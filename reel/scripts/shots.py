@@ -65,8 +65,11 @@ def make(ctx):
     shot = {n: (a, b) for n, a, b in SHOTS}
     everyone = [You, Mom, Baby, Cop1, Cop2]
 
+    ctx["cast_map"] = {}
+
     def cast(name, *present):
         f0 = F(shot[name][0])
+        ctx["cast_map"][name] = [ch.name for ch in present]
         for ch in everyone:
             ch.key_visible(f0, ch in present)
 
@@ -78,7 +81,6 @@ def make(ctx):
     key_vec(door, "rotation_euler", 1, (0, 0, 0), "CONSTANT")
     for o in ctx["hearts"] + ctx["sparks"]:
         key(o, "hide_render", 0, 1, 1.0, "CONSTANT")
-        key(o, "hide_viewport", 0, 1, 1.0, "CONSTANT")
     n3, n0 = nums["3"], nums["0"]
     fl = F(EVENTS["sign_flip"])
     key_vec(n3, "scale", 1, (1, 1, 1), "LINEAR")
@@ -275,9 +277,9 @@ def make(ctx):
     ctx["key_obj_visible"](diaper, F(s[0]), True)
     ctx["key_obj_visible"](diaper, F(s[1]), False)
     dpos = world(You, "wrist.L", 32.0)
-    cam_p = Vector((cp_[0] + 0.35, cp_[1] - 1.45, 0.45))
-    cam.shot(F(s[0]), F(s[1]), cam_p, Vector((cp_[0] + 0.05, cp_[1], 1.55)), lens=26, push=0.15,
-             tgt1=Vector((cp_[0] + 0.05, cp_[1], 1.62)))
+    cam_p = Vector((cp_[0] + 0.2, cp_[1] - 1.85, 0.5))
+    mid = (Vector((cp_[0], cp_[1], 1.45)) + dpos) / 2  # frame his face and the diaper held up high
+    cam.shot(F(s[0]), F(s[1]), cam_p, mid, lens=24, push=0.12, tgt1=mid + Vector((0, 0, 0.05)))
     v = dpos - cam_p
     ctx["pop_glyphs"](ctx["sparks"], F(EVENTS["ding"]) - 2, dpos + Vector((0, -0.12, 0.05)), 0.24,
                       math.atan2(-v.x, v.y), stagger=1, life=24, rise=0.05, spin=True)
@@ -290,7 +292,7 @@ def make(ctx):
                                             mouthSmileRight=0.35, browInnerUp=0.7))),
                       (34.5, dict(d=dict(baby_up, neck01=(-35, 0, 0), head=(-20, 0, -12))))])
     bh = world(Baby, "head", 33.5)
-    cam.shot(F(s[0]), F(s[1]), bh + Vector((0.1, -0.45, 0.5)), bh, lens=36, push=0.2)
+    cam.shot(F(s[0]), F(s[1]), bh + Vector((0.12, -0.6, 0.12)), bh, lens=38, push=0.2)
 
     # ---- 18 the smartest thing ----------------------------------------------------------------------------------
     s = shot["smart"]
@@ -315,7 +317,7 @@ def make(ctx):
         i += 1
     beats.append((41.25, dict(face=dict(smile))))
     perform(You, s, beats)
-    sidev = fwd(-20 + 90, 1.0)  # character's left side
+    sidev = fwd(-20 - 90, 1.0)  # character's right side (phone hand)
     cam.shot(F(s[0]), F(s[1]), h18 + sidev * 0.75 + fwd(-20, 0.35) + Vector((0, 0, 0.02)), h18 + Vector((0, 0, 0.02)),
              lens=38, push=0.3)
 

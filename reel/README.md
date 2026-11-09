@@ -52,8 +52,7 @@ MPFB2/MakeHuman BVH poses plus simple keyframes, which gives the stiff look of t
 **Characters: MPFB2 / MakeHuman** (https://github.com/makehumancommunity/mpfb2, GPL add-on; assets
 from https://static.makehumancommunity.org/assets/assetpacks/)
 * `makehuman_system_assets` (CC0): skins, eyes, eyebrows, hair (`short02`, `short04`, `ponytail01`),
-  clothes `male_casualsuit06` (white tee + jeans), `female_casualsuit01`, shoes
-* `dress02` (CC-BY, Elvaerwyn): `elvs_ladies_apron` (Mom's apron)
+  clothes `male_casualsuit06` (white tee + jeans), `female_casualsuit02` (Mom: tee + denim shorts), shoes
 * `hats03` (CC-BY, Mindfront): `mindfront_patrol_cap` (police cap)
 * `shirts02` (CC-BY, Elvaerwyn): `elvs_male_shirt_tie_tucked1` (police shirt, recolored navy)
 * `pants02` (CC-BY, Elvaerwyn): `elvs_male_trouser` (police trousers)
@@ -65,7 +64,7 @@ from https://static.makehumancommunity.org/assets/assetpacks/)
 **Room, furniture, textures, sky: Poly Haven** (CC0, https://polyhaven.com)
 sofa_02, ArmChair_01, modern_coffee_table_01, television_02, modern_wooden_cabinet, potted_plant_01/02,
 hanging_picture_frame_01/02, throw_pillows_01, rubber_duck_toy, side_table_01, wall_clock,
-wooden_bookshelf_worn, decorative_book_set_01; textures wood_floor, painted_plaster_wall,
+wooden_bookshelf_worn; textures wood_floor, painted_plaster_wall,
 rough_pine_door; HDRI kloofendal_48d_partly_cloudy_puresky.
 
 **Sound: Kenney** (CC0, https://kenney.nl): Impact Sounds, Interface Sounds, RPG Audio, Music Jingles

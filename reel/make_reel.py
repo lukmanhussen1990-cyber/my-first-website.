@@ -7,8 +7,9 @@
     python3 make_reel.py finish     # audio mix + captions + encode -> final_reel.mp4
     python3 make_reel.py all        # render + finish
 
-Options:  --scale 67   (render size in %, upscaled to 1080x1920 at the end; default 100)
-          --samples 12 (EEVEE samples)    --jobs 2  (parallel Blender processes for `render`)
+Options:  --scale 67   (render size in %; 67 = 720x1280, upscaled to 1080x1920 at the end)
+          --samples 3  (EEVEE samples)    --jobs 2  (parallel Blender workers for `render`)
+          --frames 1-150 (render only part)  --no-build (reuse the existing reel.blend)
 
 Inputs you can change:
     audio/voiceover.mp3            the narration (captions are re-timed from it by `setup`/`transcribe`)
@@ -111,24 +112,40 @@ def preview():
     print("previews ->", os.path.join(ROOT, "render", "previews.jpg"))
 
 
+def build_blend():
+    """(re)build reel.blend from the scripts"""
+    p = blender(["--mode", "blend"], log=os.path.join(ROOT, "render", "build.log"))
+    p.wait()
+
+
 def render():
-    scale = opt("--scale", "100")
-    samples = opt("--samples", "12")
-    jobs = int(opt("--jobs", "1"))
-    first, last = 1, int(round(54.10 * FPS)) + 1
-    if "--frames" in sys.argv:
-        first, last = map(int, opt("--frames", "").split("-"))
-    os.makedirs(os.path.join(ROOT, "render", "frames"), exist_ok=True)
-    # interleaved chunks so every process gets a fair share of heavy shots
-    span = last - first + 1
+    """render every frame with N parallel Blender workers (each shot keeps only the characters it needs)"""
+    scale = opt("--scale", "67")       # 720x1280 (the reference's own size), upscaled to 1080x1920 in finish
+    samples = opt("--samples", "3")
+    jobs = int(opt("--jobs", "2"))     # 2 fits in 16 GB RAM
+    frames = opt("--frames", "1-99999")
+    os.makedirs(os.path.join(ROOT, "render"), exist_ok=True)
+    if "--no-build" not in sys.argv or not os.path.exists(os.path.join(ROOT, "reel.blend")):
+        build_blend()
+    fdir = os.path.join(ROOT, "render", "frames")
+    os.makedirs(fdir, exist_ok=True)
+    for f in os.listdir(fdir):  # empty placeholders left by an interrupted run
+        if os.path.getsize(os.path.join(fdir, f)) == 0:
+            os.remove(os.path.join(fdir, f))
+    env = dict(os.environ, BLENDER_USER_RESOURCES=USER_RES)
     procs = []
     for j in range(jobs):
-        lo = first + span * j // jobs
-        hi = first + span * (j + 1) // jobs - 1
-        procs.append(blender(["--mode", "render", "--frames", f"{lo}-{hi}", "--scale", scale, "--samples", samples],
-                             log=os.path.join(ROOT, "render", f"render_{j}.log")))
+        cmd = [BLENDER, "-b", os.path.join(ROOT, "reel.blend"), "-P", os.path.join(ROOT, "scripts", "render_shots.py"),
+               "--", "--out", fdir, "--scale", scale, "--samples", samples, "--frames", frames,
+               "--worker", str(j), "--workers", str(jobs)]
+        if shutil.which("xvfb-run") and not os.environ.get("DISPLAY"):
+            cmd = ["xvfb-run", "-a", "-s", "-screen 0 1280x1024x24"] + cmd
+        log = open(os.path.join(ROOT, "render", f"render_w{j}.log"), "w")
+        procs.append(subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT))
     for p in procs:
         p.wait()
+    n = len([f for f in os.listdir(fdir) if os.path.getsize(os.path.join(fdir, f)) > 0])
+    print(f"rendered frames: {n}")
 
 
 def finish():
