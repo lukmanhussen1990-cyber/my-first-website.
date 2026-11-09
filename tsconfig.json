@@ -9,7 +9,13 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "lib": ["DOM", "ES2021"]
+    "lib": [
+      "DOM",
+      "ES2021"
+    ],
+    "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
