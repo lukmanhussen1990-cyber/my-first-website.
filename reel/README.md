@@ -51,7 +51,7 @@ MPFB2/MakeHuman BVH poses plus simple keyframes, which gives the stiff look of t
 
 **Characters: MPFB2 / MakeHuman** (https://github.com/makehumancommunity/mpfb2, GPL add-on; assets
 from https://static.makehumancommunity.org/assets/assetpacks/)
-* `makehuman_system_assets` (CC0): skins, eyes, eyebrows, hair (`short02`, `short04`, `ponytail01`),
+* `makehuman_system_assets` (CC0): skins, eyes, eyebrows, hair (`short02`, `short04`, `long01` tinted black for Mom),
   clothes `male_casualsuit06` (white tee + jeans), `female_casualsuit02` (Mom: tee + denim shorts), shoes
 * `hats03` (CC-BY, Mindfront): `mindfront_patrol_cap` (police cap)
 * `shirts02` (CC-BY, Elvaerwyn): `elvs_male_shirt_tie_tucked1` (police shirt, recolored navy)

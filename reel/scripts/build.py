@@ -497,7 +497,7 @@ CHAR_SPECS = {
     "You": dict(gender=1.0, age=25, weight=0.64, muscle=0.45, height=0.52, skin="young_caucasian_male.mhmat",
                 hair="short02.mhclo", clothes=["male_casualsuit06.mhclo", "shoes02.mhclo"]),
     "Mom": dict(gender=0.0, age=52, weight=0.68, muscle=0.4, height=0.42, skin="middleage_caucasian_female.mhmat",
-                hair="ponytail01.mhclo", eyebrows="eyebrow009.mhclo",
+                hair="long01.mhclo", eyebrows="eyebrow009.mhclo",  # long hair, tinted black below
                 clothes=["female_casualsuit02.mhclo", "shoes01.mhclo"]),  # modern tee + denim shorts
     "Baby": dict(gender=1.0, age=1, weight=0.85, skin="young_caucasian_male.mhmat", hair="",
                  eyebrows="eyebrow010.mhclo", clothes=["elvs_crude_bootyshorts.mhclo"]),
@@ -563,6 +563,8 @@ class Character:
                     mh.tint(o, (0.012, 0.016, 0.035), keep_detail=0.45)
                 elif "cap" in n:
                     mh.tint(o, (0.015, 0.025, 0.07), keep_detail=0.3)
+            if self.name == "Mom" and "long01" in n:
+                mh.tint(o, (0.022, 0.018, 0.016), keep_detail=0.55, rough=0.45)  # black hair
             if self.name == "Baby" and "short" in n:
                 mh.tint(o, (0.97, 0.97, 0.97), keep_detail=0.12, rough=0.75)
 
