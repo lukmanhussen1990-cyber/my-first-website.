@@ -491,13 +491,17 @@ def build_glyphs(prefix, glyph, n, rgb, size, emit=2.0):
 FACE_UNITS = ["mouthSmileLeft", "mouthSmileRight", "eyeBlinkLeft", "eyeBlinkRight", "jawOpen", "eyeWideLeft",
               "eyeWideRight", "browInnerUp", "browDownLeft", "browDownRight", "mouthFrownLeft", "mouthFrownRight",
               "cheekSquintLeft", "cheekSquintRight", "eyeSquintLeft", "eyeSquintRight", "mouthFunnel",
-              "eyeLookUpLeft", "eyeLookUpRight", "mouthPucker", "browOuterUpLeft", "browOuterUpRight"]
+              "eyeLookUpLeft", "eyeLookUpRight", "mouthPucker", "browOuterUpLeft", "browOuterUpRight", "tongueOut"]
 
 CHAR_SPECS = {
     "You": dict(gender=1.0, age=25, weight=0.64, muscle=0.45, height=0.52, skin="young_caucasian_male.mhmat",
                 hair="short02.mhclo", clothes=["male_casualsuit06.mhclo", "shoes02.mhclo"]),
-    "Mom": dict(gender=0.0, age=52, weight=0.68, muscle=0.4, height=0.42, skin="middleage_caucasian_female.mhmat",
-                hair="long01.mhclo", eyebrows="eyebrow009.mhclo",  # long hair, tinted black below
+    "Mom": dict(gender=0.0, age=44, weight=0.55, muscle=0.4, height=0.45, proportions=0.9,
+                skin="toigo_light_skin_with_natural_makeup.mhmat",           # pretty: natural make-up skin
+                hair="elvs_island_princess_hair.mhclo",                      # long black hair with a pink bow
+                eyebrows="eyebrow010.mhclo", eyelashes="eyelashes03.mhclo",
+                targets={"l-eye-scale-incr": 0.35, "r-eye-scale-incr": 0.35, "mouth-upperlip-volume-incr": 0.4,
+                         "mouth-lowerlip-volume-incr": 0.35, "nose-scale-horiz-decr": 0.3, "nose-scale-vert-decr": 0.15},
                 clothes=["female_casualsuit02.mhclo", "shoes01.mhclo"]),  # modern tee + denim shorts
     "Baby": dict(gender=1.0, age=1, weight=0.85, skin="young_caucasian_male.mhmat", hair="",
                  eyebrows="eyebrow010.mhclo", clothes=["elvs_crude_bootyshorts.mhclo"]),
@@ -563,8 +567,10 @@ class Character:
                     mh.tint(o, (0.012, 0.016, 0.035), keep_detail=0.45)
                 elif "cap" in n:
                     mh.tint(o, (0.015, 0.025, 0.07), keep_detail=0.3)
-            if self.name == "Mom" and "long01" in n:
-                mh.tint(o, (0.022, 0.018, 0.016), keep_detail=0.55, rough=0.45)  # black hair
+            if self.name == "Mom" and "island_princess" in n:
+                mh.darken_grey_keep_colour(o)  # black hair, pink bow stays pink
+            if self.name == "You" and "tongue" in n:
+                mh.tint(o, (0.45, 0.04, 0.08), keep_detail=0.25, rough=0.35)  # pink tongue for the tongue-out gag
             if self.name == "Baby" and "short" in n:
                 mh.tint(o, (0.97, 0.97, 0.97), keep_detail=0.12, rough=0.75)
 
@@ -704,8 +710,9 @@ def pop_glyphs(objs, f_start, center, radius, theta, stagger=3, life=40, rise=0.
     up = Vector((0, 0, 1))
     for i, o in enumerate(objs):
         a = (i / len(objs)) * math.tau + rnd.uniform(-0.35, 0.35)
-        rr = radius * rnd.uniform(0.75, 1.15)
-        p0 = Vector(center) + right * math.cos(a) * rr + up * math.sin(a) * rr * 0.85
+        rx, rz = radius if isinstance(radius, (tuple, list)) else (radius, radius * 0.85)
+        k = rnd.uniform(0.8, 1.1)
+        p0 = Vector(center) + right * math.cos(a) * rx * k + up * math.sin(a) * rz * k
         fs = f_start + i * stagger
         rot0 = (D(90), 0, theta)
         key(o, "hide_render", 0, 1, 1.0, "CONSTANT")
@@ -743,7 +750,7 @@ def build():
     poop = build_poop()
     sign, nums = build_sign()
     diaper = build_diaper()
-    hearts = build_glyphs("Heart", "♥", 9, (1.0, 0.25, 0.55), 0.09, emit=1.5)
+    hearts = build_glyphs("Heart", "♥", 9, (0.85, 0.02, 0.22), 0.17, emit=0.45)
     sparks = build_glyphs("Spark", "✦", 10, (1.0, 0.95, 0.6), 0.07, emit=6.0)
     log("characters")
     C = {}

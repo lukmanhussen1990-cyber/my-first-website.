@@ -101,14 +101,36 @@ def make(ctx):
     baby_up = {"neck01": (-25, 0, 0), "head": (-20, 0, 0)}
     cop_serious = dict(browDownLeft=0.7, browDownRight=0.7, mouthFrownLeft=0.3, mouthFrownRight=0.3)
 
-    # ---- 1 intro ----------------------------------------------------------
+    # ---- 1 intro: he looks into the camera, love-struck (heart eyes + tongue out) ------------
     s = shot["intro"]
-    cast("intro", You, Mom)
-    perform(You, s, [(None, dict(x=0.45, y=-0.15, rz=-8, pose="stand", face=smile)),
-                     (1.5, dict(d={"head": (0, 18, 0)})), (1.7, {})])
-    perform(Mom, s, [(None, dict(x=-0.25, y=-0.2, rz=8, pose="stand2", face=smile, d={})),
-                     (0.5, dict(d={"head": (0, 22, 0), "neck01": (0, 8, 0)})), (0.7, {})])
-    cam.shot(F(s[0]), F(s[1]), (0.15, -3.2, 1.45), (0.1, -0.15, 1.2), lens=30, push=0.18)
+    cast("intro", You)
+    lovestruck = dict(tongueOut=1.0, jawOpen=0.6, mouthSmileLeft=0.25, mouthSmileRight=0.25, browInnerUp=0.7,
+                      browOuterUpLeft=0.5, browOuterUpRight=0.5)
+    tilt = {"head": (6, 0, 16), "neck01": (0, 0, 6), "tongue01": (12, 0, 0)}  # tongue out between the lips
+    you0 = (0.45, -0.15)
+    perform(You, s, [(None, dict(x=you0[0], y=you0[1], rz=0, pose="stand", face=lovestruck, d=tilt)),
+                     (0.7, dict(d={"head": (6, 0, 22), "neck01": (0, 0, 8), "tongue01": (12, 0, 0)}))])
+    hy0 = Vector((you0[0], you0[1], 1.58))
+    cam.shot(F(s[0]), F(s[1]), hy0 + Vector((0.05, -0.75, 0.03)), hy0, lens=40, push=0.18)
+    tb = 'pose.bones["tongue01"].scale'
+    key_vec(You.rig, tb, 1, (1.3, 2.4, 1.3), "CONSTANT")      # long tongue only in the opening
+    key_vec(You.rig, tb, F(2.9), (1.0, 1.0, 1.0), "CONSTANT")
+    heart_eyes(ctx, You, F(0.0))
+
+    # ---- 1b he stares at Mom; Mom smiles back ----------------------------------------------------
+    s = shot["intro2"]
+    cast("intro2", You, Mom)
+    mom0 = (-0.4, -0.2)
+    perform(You, s, [(None, dict(x=you0[0], y=you0[1], rz=fa(you0, mom0), pose="stand", face=lovestruck, d=tilt))])
+    perform(Mom, s, [(None, dict(x=mom0[0], y=mom0[1], rz=fa(mom0, you0), pose="stand2", face=smile, d={})),
+                     (2.0, dict(d={"head": (0, 0, -8)}))])
+    # over Mom's shoulder: he stares at her with heart eyes, tongue out
+    dmy = (Vector(you0) - Vector(mom0)).normalized()
+    rgt = Vector((dmy.y, -dmy.x))
+    cpos = Vector(mom0) - dmy * 0.55 + rgt * 0.3
+    cam.shot(F(s[0]), F(s[1]), (cpos.x, cpos.y, 1.6), (you0[0], you0[1], 1.6), lens=40, push=0.15)
+    ctx["key_obj_visible"](ctx["heart_eyes"][0], F(2.9), False)
+    ctx["key_obj_visible"](ctx["heart_eyes"][1], F(2.9), False)
 
     # ---- 2 mom walks in ------------------------------------------------------
     s = shot["mom_walks"]
@@ -241,7 +263,7 @@ def make(ctx):
     cam.shot(F(s[0]), F(s[1]), cpos, mh_ + Vector((0, 0, -0.05)), lens=36, push=0.15)
     v = mh_ - cpos
     theta = math.atan2(-v.x, v.y)
-    ctx["pop_glyphs"](ctx["hearts"], F(EVENTS["pop_hearts"]), mh_ + fwd(rz, 0.15), 0.3, theta,
+    ctx["pop_glyphs"](ctx["hearts"], F(EVENTS["pop_hearts"]), mh_ + fwd(rz, 0.15) + Vector((0, 0, 0.06)), (0.15, 0.24), theta,
                       stagger=2, life=30, rise=0.18)
 
     # ---- 14 you're screwed ---------------------------------------------------------------------------------
@@ -446,3 +468,53 @@ def hold_baby(ctx, Mom, Baby, s, mspot, rz, perform, fwd, mom_face, baby_face, w
                          face=baby_face))]
     beats += baby_extra or []
     perform(Baby, s, beats)
+
+
+def heart_eyes(ctx, ch, frame):
+    """two big red hearts over his eyes (like the reference), attached to the head so they follow it"""
+    import os
+    from mathutils import Matrix
+    sc = ctx["sc"]
+    for act in bpy.data.actions:
+        for fc in act.fcurves:
+            fc.update()
+    sc.frame_set(frame)
+    rig = ch.rig
+    mat = bpy.data.materials.new("HeartEyeRed")
+    mat.use_nodes = True
+    bs = mat.node_tree.nodes["Principled BSDF"]
+    bs.inputs["Base Color"].default_value = (0.42, 0.0, 0.005, 1)   # deep glossy red like the reference
+    bs.inputs["Roughness"].default_value = 0.18
+    bs.inputs["Coat Weight"].default_value = 0.8
+    font = bpy.data.fonts.load(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets",
+                                            "fonts", "DejaVuSans-Bold.ttf"), check_existing=True)
+    hb = rig.pose.bones["head"]
+    up = ((rig.matrix_world @ hb.tail) - (rig.matrix_world @ hb.head)).normalized()
+    objs = []
+    for side in ("L", "R"):
+        eb = rig.pose.bones[f"eye.{side}"]
+        e0, e1 = rig.matrix_world @ eb.head, rig.matrix_world @ eb.tail
+        fwd = (e1 - e0).normalized()
+        upo = (up - fwd * up.dot(fwd)).normalized()
+        x = upo.cross(fwd)
+        cu = bpy.data.curves.new(f"HeartEye{side}", "FONT")
+        cu.body = "\u2665"
+        cu.font = font
+        cu.size = 0.085
+        cu.align_x, cu.align_y = "CENTER", "CENTER"
+        cu.extrude = 0.008
+        cu.bevel_depth = 0.004
+        cu.bevel_resolution = 3
+        o = bpy.data.objects.new(f"HeartEye{side}", cu)
+        sc.collection.objects.link(o)
+        o.data.materials.append(mat)
+        o.parent = rig
+        o.parent_type = "BONE"
+        o.parent_bone = "head"
+        bpy.context.view_layer.update()
+        m = Matrix((x, upo, fwd)).transposed().to_4x4()
+        m.translation = e0 + fwd * 0.03 + upo * 0.004
+        o.matrix_world = m
+        objs.append(o)
+        ctx["key_obj_visible"](o, 1, True)
+    ctx["heart_eyes"] = objs

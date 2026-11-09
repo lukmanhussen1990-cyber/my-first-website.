@@ -44,6 +44,8 @@ MH_PACKS = {
     "poses03": "https://files.makehumancommunity.org/asset_packs/poses03/poses03_cc0.zip",
     "poses04": "https://files.makehumancommunity.org/asset_packs/poses04/poses04_cc0.zip",
     "poses05": "https://files.makehumancommunity.org/asset_packs/poses05/poses05_cc0.zip",
+    "hair02": "https://files.makehumancommunity.org/asset_packs/hair02/hair02_ccby.zip",          # elvs_island_princess_hair (Mom)
+    "skins01": "https://files.makehumancommunity.org/asset_packs/skins01/skins01_cc0.zip",        # natural make-up skin (Mom)
     "faceunits01": "https://files.makehumancommunity.org/functional/faceunits01.zip",  # face expressions (smile, wink, gasp)
 }
 

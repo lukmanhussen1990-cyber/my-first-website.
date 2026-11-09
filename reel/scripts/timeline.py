@@ -1,7 +1,8 @@
 """Shot timing and sound-effect cue times (seconds in audio/voiceover.mp3). No Blender imports."""
 
 SHOTS = [
-    ("intro", 0.00, 2.90),        # You love your mom. Your mom loves you.
+    ("intro", 0.00, 1.45),        # You love your mom.   (close-up: heart eyes + tongue out, looking at camera)
+    ("intro2", 1.45, 2.90),       # Your mom loves you.  (he stares at Mom with heart eyes)
     ("mom_walks", 2.90, 5.20),    # But one morning, she finds a big fat
     ("poop_close", 5.20, 7.40),   # poop in the middle of the living room floor.
     ("mom_gasp", 7.40, 9.70),     # (gasp) And she doesn't even ask questions.

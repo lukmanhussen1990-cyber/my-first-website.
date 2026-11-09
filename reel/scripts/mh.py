@@ -31,7 +31,7 @@ def age_value(years):
 
 def make_human(name, *, gender, age, weight=0.5, muscle=0.5, height=0.5, proportions=0.5,
                race=("caucasian",), skin, hair="", eyebrows="eyebrow001.mhclo",
-               clothes=(), subdiv=1, cupsize=0.5):
+               clothes=(), subdiv=1, cupsize=0.5, targets=None, eyelashes="eyelashes01.mhclo"):
     S = svc()
     HS = S["HumanService"]
     info = HS._create_default_human_info_dict() if hasattr(HS, "_create_default_human_info_dict") else {}
@@ -45,11 +45,12 @@ def make_human(name, *, gender, age, weight=0.5, muscle=0.5, height=0.5, proport
     info["rig"] = "default"
     info["eyes"] = "high-poly.mhclo"
     info["eyebrows"] = eyebrows
-    info["eyelashes"] = "eyelashes01.mhclo"
+    info["eyelashes"] = eyelashes
     info["teeth"] = "teeth_base.mhclo"
     info["tongue"] = "tongue01.mhclo"
     info["hair"] = hair
     info["clothes"] = list(clothes)
+    info["targets"] = [{"target": k, "value": v} for k, v in (targets or {}).items()]
     info["skin_mhmat"] = skin
     info["skin_material_type"] = "ENHANCED_SSS"
     info["eyes_material_type"] = "PROCEDURAL_EYES"
@@ -125,3 +126,65 @@ def tint(obj, rgb, keep_detail=0.35, rough=None):
             for l in list(ri.links):
                 nt.links.remove(l)
             ri.default_value = rough
+
+
+def tint_hair_keep_accessory(obj, rgb, keep_detail=0.5, hue_max=0.22, sat_min=0.18):
+    """Recolor yellow/brown hair to `rgb` but leave other colours (e.g. a blue ribbon, white dots) untouched."""
+    for slot in obj.material_slots:
+        m = slot.material
+        if not m or not m.use_nodes:
+            continue
+        nt = m.node_tree
+        bsdf = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None)
+        if bsdf is None or not bsdf.inputs["Base Color"].links:
+            continue
+        inp = bsdf.inputs["Base Color"]
+        src = inp.links[0].from_socket
+        sep = nt.nodes.new("ShaderNodeSeparateColor"); sep.mode = "HSV"; nt.links.new(src, sep.inputs[0])
+        lt = nt.nodes.new("ShaderNodeMath"); lt.operation = "LESS_THAN"; lt.inputs[1].default_value = hue_max
+        nt.links.new(sep.outputs[0], lt.inputs[0])
+        gt = nt.nodes.new("ShaderNodeMath"); gt.operation = "GREATER_THAN"; gt.inputs[1].default_value = sat_min
+        nt.links.new(sep.outputs[1], gt.inputs[0])
+        mask = nt.nodes.new("ShaderNodeMath"); mask.operation = "MULTIPLY"
+        nt.links.new(lt.outputs[0], mask.inputs[0]); nt.links.new(gt.outputs[0], mask.inputs[1])
+        mr = nt.nodes.new("ShaderNodeMapRange")
+        mr.inputs["To Min"].default_value = 1 - keep_detail; mr.inputs["To Max"].default_value = 1 + keep_detail
+        nt.links.new(sep.outputs[2], mr.inputs[0])
+        col = nt.nodes.new("ShaderNodeVectorMath"); col.operation = "SCALE"
+        col.inputs[0].default_value = rgb
+        nt.links.new(mr.outputs[0], col.inputs["Scale"])
+        mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"
+        nt.links.new(mask.outputs[0], mix.inputs[0])
+        nt.links.new(src, mix.inputs[6]); nt.links.new(col.outputs[0], mix.inputs[7])
+        nt.links.new(mix.outputs[2], inp)
+
+
+def darken_grey_keep_colour(obj, rgb=(0.012, 0.010, 0.010), sat_max=0.28, keep_detail=0.5):
+    """Make grey/black hair truly black but leave saturated parts (e.g. a pink bow) as they are."""
+    for slot in obj.material_slots:
+        m = slot.material
+        if not m or not m.use_nodes:
+            continue
+        nt = m.node_tree
+        bsdf = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None)
+        if bsdf is None or not bsdf.inputs["Base Color"].links:
+            continue
+        inp = bsdf.inputs["Base Color"]
+        src = inp.links[0].from_socket
+        sep = nt.nodes.new("ShaderNodeSeparateColor"); sep.mode = "HSV"; nt.links.new(src, sep.inputs[0])
+        lt = nt.nodes.new("ShaderNodeMath"); lt.operation = "LESS_THAN"; lt.inputs[1].default_value = sat_max
+        nt.links.new(sep.outputs[1], lt.inputs[0])
+        mr = nt.nodes.new("ShaderNodeMapRange")
+        mr.inputs["To Min"].default_value = 1 - keep_detail; mr.inputs["To Max"].default_value = 1 + keep_detail
+        nt.links.new(sep.outputs[2], mr.inputs[0])
+        col = nt.nodes.new("ShaderNodeVectorMath"); col.operation = "SCALE"; col.inputs[0].default_value = rgb
+        nt.links.new(mr.outputs[0], col.inputs["Scale"])
+        mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"
+        nt.links.new(lt.outputs[0], mix.inputs[0]); nt.links.new(src, mix.inputs[6]); nt.links.new(col.outputs[0], mix.inputs[7])
+        nt.links.new(mix.outputs[2], inp)
+        # matte-ish so the bright room doesn't reflect in it as grey
+        for nm, val in (("Roughness", 0.62), ("Specular IOR Level", 0.18), ("Coat Weight", 0.0), ("Sheen Weight", 0.0)):
+            if nm in bsdf.inputs:
+                for l in list(bsdf.inputs[nm].links):
+                    nt.links.remove(l)
+                bsdf.inputs[nm].default_value = val
