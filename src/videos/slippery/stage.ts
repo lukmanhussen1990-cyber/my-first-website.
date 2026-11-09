@@ -113,7 +113,7 @@ export const PLANS: Record<string, Plan> = {
   },
   // ---- I told the guy at the pet store, I want the slippery dick, and now I'm in
   counter: {
-    cam: camPath([{ t: 0, pos: S(2.7, 1.65, 3.3), look: S(-0.15, 1.1, -0.9), fov: 42 }], 0.04),
+    cam: camPath([{ t: 0, pos: S(-2.2, 1.6, 3.2), look: S(-0.4, 1.05, -0.8), fov: 42 }], 0.04),
     dof: { cInf: () => 7, focus: () => S(-1.15, 1.2, 0.35) },
     cards: (t) => [
       ...person("guy", GUY, 3, S(-1.15, 0, 0.35), t, { mode: "stand", facing: 1, expr: t >= tWant - 0.08 ? "grin" : "smile", ...(t >= tWant - 0.08 && t < tSlip2 + 1.0 ? { wave: 1 } : {}) }),
@@ -176,8 +176,9 @@ export const PLANS: Record<string, Plan> = {
   },
   // ---- It won't eat just anything. It wants crabs, worms and sea urchins.
   food: {
-    cam: camPath([{ t: 0, pos: R(0.5, 1.45, 0.55), look: R(1.7, 1.3, -2.4), fov: 40 }], 0.04),
+    cam: camPath([{ t: 0, pos: R(0.2, 1.45, 0.9), look: R(1.25, 1.3, -2.0), fov: 40 }], 0.04),
     dof: { cInf: () => 8, focus: () => R(0.85, 1.3, -1.5) },
+    room: () => ({ ...ROOM_BASE }),
     cards: (t) => {
       const hold = t < tCrabs ? H_FLAKES : t < tWorms ? H_CRAB : t < tSea ? H_WORM : H_URCHIN;
       const away = t >= tWont + 0.25 && t < tSea + 0.1;
@@ -194,6 +195,7 @@ export const PLANS: Record<string, Plan> = {
   smug: {
     cam: camPath([{ t: 0, pos: R(1.62, 1.5, -1.5), look: R(1.95, 1.48, -2.5), fov: 36 }], 0.07),
     dof: { cInf: () => 14, focus: () => R(1.95, 1.48, -2.5) },
+    room: () => ({ ...ROOM_BASE }),
     cards: (t) => {
       const out: Card[] = [fish("f", R(1.95, 1.48 + 0.015 * Math.sin(t * 3), -2.5), { expr: t < tLittle ? "chew" : "smug", w: 0.5, t, blink: t > tLittle + 0.75 && t < tLittle + 0.9 ? 1 : 0 })];
       if (t < tLittle) out.push({ key: "urchinBit", cw: 260, ch: 260, draw: drawUrchin, pos: R(1.95 - 0.235, 1.46, -2.48), w: 0.1, ay: 0.5 });
@@ -205,6 +207,7 @@ export const PLANS: Record<string, Plan> = {
   stress: {
     cam: camPath([{ t: 0, pos: R(1.15, 1.25, 0.3), look: R(2.25, 1.0, -2.5), fov: 40 }], 0.05, [[tDie, 1.0]]),
     dof: { cInf: () => 8, focus: () => R(2.3, 1.0, -2.5) },
+    room: () => ({ ...ROOM_BASE }),
     cards: (t) => {
       const shake = 0.004 + 0.018 * smooth((t - tStress) / 0.5), dead = t >= tDie;
       const flip = dead ? Math.PI * smooth((t - tDie) / 0.25) : 0;
@@ -231,7 +234,7 @@ export const PLANS: Record<string, Plan> = {
   },
   // ---- Why the fuck is this fish so high maintenance?
   couch: {
-    cam: camPath([{ t: 0, pos: R(-3.1, 1.05, 0.5), look: R(-0.7, 0.95, -2.3), fov: 40 }], 0.06, [[tFuck1, 0.8]]),
+    cam: camPath([{ t: 0, pos: R(-3.1, 1.05, 0.5), look: R(-1.65, 0.85, -2.0), fov: 40 }], 0.06, [[tFuck1, 0.8]]),
     dof: { cInf: () => 8, focus: () => R(-1.9, 0.9, -1.8) },
     room: () => ({ ...ROOM_BASE, sand: "bed", bags: ALL_BAGS }),
     cards: (t) => [
@@ -250,7 +253,7 @@ export const PLANS: Record<string, Plan> = {
       const out: Card[] = [];
       for (let i = 0; i < 6; i++) {
         const x = -6.2 + (i % 3) * 0.9 + Math.floor(i / 3) * 0.5 + 1.6 * T, y = 0.55 + 0.35 * ((i * 7) % 3) / 2 + 0.06 * Math.sin(t * 2 + i), z = -0.9 - (i % 3) * 1.1 - Math.floor(i / 3) * 0.4;
-        out.push(fish("s" + i, F(x, y, z), { expr: i === 1 ? "happy" : "neutral", w: 0.45, t: t + i, mirror: true, blink: 0 }));
+        out.push(fish("s" + i, F(x, y, z), { expr: i === 1 ? "happy" : "neutral", w: 0.58, t: t + i, mirror: true, blink: 0 }));
       }
       for (const [x, z] of [[-4, -3], [-0.5, -4.5], [3, -3.5], [6, -5]]) out.push(fx("ray", 200, 1000, fxRay, F(x, 3.2, z), 1.4, "add", 0.5, 0.25));
       out.push(fx(`bub|${Math.round((t % 2) * 15)}`, 200, 400, (p) => fxBubbles(p, Math.round((t % 2) * 15) / 30, 2), F(-1 + 1.6 * T * 0.6, 1.2, -1.0), 0.5, "soft"));
@@ -288,7 +291,7 @@ export const PLANS: Record<string, Plan> = {
   nighttank: {
     cam: camPath([
       { t: 0, pos: R(0.9, 1.55, 1.4), look: R(2.6, 1.55, -2.5), fov: 40 },
-      { t: tMountain - 0.25, d: 0.8, pos: R(0.25, 1.7, 2.5), look: R(3.0, 1.35, -1.5) },
+      { t: tMountain - 0.25, d: 0.8, pos: R(0.55, 1.6, 2.1), look: R(2.75, 1.45, -2.4) },
       { t: tFish2 - 0.3, d: 0.8, pos: R(-0.3, 1.5, 1.7), look: R(1.9, 1.25, -1.9) },
     ], 0.03),
     dof: { cInf: () => 6, focus: (t) => (t < tFish2 ? R(2.6, 1.5, -2.4) : R(1.3, 1.3, -1.4)) },
@@ -324,13 +327,13 @@ export const PLANS: Record<string, Plan> = {
   },
   // ---- Who the fuck named this fucking fish?
   yell: {
-    cam: camPath([{ t: 0, pos: R(1.85, 0.68, 0.8), look: R(1.7, 1.72, -1.45), fov: 46, roll: 0.07 }], 0.05, [[tFuck2, 1.2], [tFish3, 0.8]]),
+    cam: camPath([{ t: 0, pos: R(1.65, 0.7, 0.85), look: R(1.75, 1.75, -1.45), fov: 46, roll: 0.07 }], 0.05, [[tFuck2, 1.2], [tFish3, 0.8]]),
     dof: { cInf: () => 7, focus: () => R(1.6, 1.4, -1.45) },
     room: () => ({ ...ROOM_BASE, sand: "mound", bags: ALL_BAGS }),
     cards: (t) => {
       const out: Card[] = [...person("guypj", GUY_PJ, 3, R(1.6, 0, -1.45), t, { mode: "stand", facing: 0, expr: "shock", armsUp: true })];
       const u = t - (tFish3 - 0.15);
-      if (u > 0) out.push(fish("pop", R(2.9, 2.0 + 0.16 * easeOut(u / 0.3), -2.55), { expr: "smug", w: 0.45, t, roll: -Math.PI / 2 }));
+      if (u > 0) out.push(fish("pop", R(2.05, 1.86 + 0.18 * easeOut(u / 0.3), -2.55), { expr: "smug", w: 0.45, t, roll: -Math.PI / 2 }));
       return out;
     },
   },
