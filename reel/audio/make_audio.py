@@ -141,9 +141,9 @@ RF = 2.6; per = 1 / RF
 k = 0; t = 0.0
 while t < 5.75:
     amp = 1.0 if t < 4.3 else max(0.0, 1 - (t - 4.3) / 1.45) * 0.8
-    place(creak(True, 0.17), t + 0.02, 0.26 * amp, -0.15); place(creak(False, 0.15), t + per * 0.52, 0.2 * amp, 0.15)
-    place(thump(70, 0.16, 0.5), t + 0.03, 0.12 * amp)
-    place(breath(False, per * 0.55), t + 0.0, 0.3 * amp, 0.05); place(breath(True, per * 0.42), t + per * 0.56, 0.2 * amp, -0.05)
+    place(creak(True, 0.17), t + 0.02, 0.17 * amp, -0.15); place(creak(False, 0.15), t + per * 0.52, 0.13 * amp, 0.15)
+    place(thump(70, 0.16, 0.5), t + 0.03, 0.07 * amp)
+    place(breath(False, per * 0.55), t + 0.0, 0.2 * amp, 0.05); place(breath(True, per * 0.42), t + per * 0.56, 0.14 * amp, -0.05)
     t += per; k += 1
 # reveal whoosh (camera pull-up + swing)
 place(whoosh(0.9, 180, 3500, True), T['S2'] - 0.05, 0.3, 0.0)
@@ -152,12 +152,12 @@ for i, kt in enumerate(key_times()): place(tick(1900 + rng.uniform(-250, 350)), 
 # 3) send whoosh + whip + FAMILY zoom + heartbeats
 place(tick(2500, 0.04), T['SEND'] - 0.03, 0.5); place(whoosh(0.4, 500, 7500, True), T['SEND'], 0.55, 0.0); place(pop(700, 1500, 0.1), T['SEND'] + 0.28, 0.25)
 place(whoosh(0.42, 250, 4500, True), T['WHIP'] - 0.02, 0.5, 0.0)
-place(impact(0.8), T['FAMILY'] + 0.1, 0.5)
-for b, g in [(T['BEAT1'], 0.85), (T['BEAT2'], 0.9), (T['BEAT3'], 0.9)]: place(thump(56, 0.4, 0.3), b, g)
-place(thump(50, 0.4, 0.2), T['BEAT1'] + 0.19, 0.6); place(heartbeat(), 11.25, 0.5)
+place(impact(0.8), T['FAMILY'] + 0.1, 0.3)
+for b, g in [(T['BEAT1'], 0.45), (T['BEAT2'], 0.5), (T['BEAT3'], 0.5)]: place(thump(56, 0.4, 0.3), b, g)
+place(thump(50, 0.4, 0.2), T['BEAT1'] + 0.19, 0.32); place(heartbeat(), 11.25, 0.28)
 # 4) punch-in cuts: riser into hit
 for i, c in enumerate([T['S5'], T['P2'], T['P3'], T['P4']]):
-    place(whoosh(0.22, 300, 3000 + i * 800, True), c - 0.2, 0.22 + 0.05 * i); place(impact(0.6), c, 0.42 + 0.1 * i); place(heartbeat(), c + 0.42, 0.28)
+    place(whoosh(0.22, 300, 3000 + i * 800, True), c - 0.2, 0.22 + 0.05 * i); place(impact(0.6), c, 0.22 + 0.05 * i); place(heartbeat(), c + 0.42, 0.16)
 # 5) delete attempt: frantic vibrating tapping + missed taps
 t = T['S6'] + 0.05
 while t < T['DOG']:
@@ -178,11 +178,11 @@ place(glass(0.5), T['SEEN_GRANDMA'] + 0.24, 0.45, 0.3); place(tick(3200, 0.03), 
 for tm, base in [(T['MOM_TYPING'], 420), (T['DAD_TYPING'], 250)]:
     place(bloop(base, base * 1.9), tm - 0.02, 0.6)
     for j in range(6): place(bloop(base * 2.2, base * 2.6, 0.07), tm + 0.22 + j * 0.14, 0.11 * (0.85 ** j))
-place(impact(0.7), T['DAD_TYPING'], 0.4); place(reverb(np.concatenate([thunder(2.2), np.zeros(SR // 2)]), 0.2), T['THUNDER'] - 0.02, 0.6)
+place(impact(0.7), T['DAD_TYPING'], 0.22); place(reverb(np.concatenate([thunder(2.2), np.zeros(SR // 2)]), 0.2), T['THUNDER'] - 0.02, 0.36)
 # 8) grandma leaves: swipe, huffy footsteps, door slam, sign clatter
 place(whoosh(0.25, 500, 6000, False), T['LEFT'], 0.3, -0.2); place(bloop(520, 300, 0.2), T['LEFT'] + 0.2, 0.35)
 for j in range(4): place(thump(160, 0.08, 0.8), T['S10B'] + 0.03 + j * 0.105, 0.22, -0.3 + j * 0.1)
-place(whoosh(0.14, 300, 2500, True), T['SLAM'] - 0.14, 0.35); place(reverb(np.concatenate([slam(1.0), np.zeros(SR // 3)]), 0.3), T['SLAM'], 0.95)
+place(whoosh(0.14, 300, 2500, True), T['SLAM'] - 0.14, 0.35); place(reverb(np.concatenate([slam(1.0), np.zeros(SR // 3)]), 0.3), T['SLAM'], 0.55)
 place(creak(False, 0.2), T['SLAM'] + 0.2, 0.2, -0.2); place(tick(900, 0.05), T['SLAM'] + 0.42, 0.3, -0.2)
 # 9) mom replies: message ding + soft romantic sparkle, then awkward silence
 place(bell(1568, 0.5), T['MOM_REPLY'], 0.3); place(bell(2093, 0.7), T['MOM_REPLY'] + 0.09, 0.3)
@@ -191,13 +191,13 @@ for j, f in enumerate([2093, 2637, 3136, 3951, 4186, 5274, 6272, 4186, 5274]):
 for j, f in enumerate([2637, 3136, 3951, 5274]): place(bell(f, 0.8, 0.4), T['S11B'] + 0.1 + j * 0.16, 0.06, rng.uniform(-0.5, 0.5))
 place(bloop(700, 420, 0.12), 31.5, 0.12); place(bloop(420, 620, 0.12), 31.95, 0.12)        # blink... blink
 # 10) dad types again: horror drone + heartbeat, cut hard by the record scratch
-dr = drone(T['SCRATCH'] - T['S12'] + 0.04); place(reverb(dr, 0.15), T['S12'] - 0.02, 0.5)
-place(bloop(190, 120, 0.3), T['DAD_AGAIN'] - 0.02, 0.6); place(impact(0.8), T['S12'], 0.5)
+dr = drone(T['SCRATCH'] - T['S12'] + 0.04); place(reverb(dr, 0.15), T['S12'] - 0.02, 0.17)
+place(bloop(190, 120, 0.3), T['DAD_AGAIN'] - 0.02, 0.4); place(impact(0.8), T['S12'], 0.26)
 t = T['DAD_AGAIN'] + 0.05
-while t < T['SCRATCH'] - 0.3: place(heartbeat(), t, 0.7); t += 0.62
+while t < T['SCRATCH'] - 0.3: place(heartbeat(), t, 0.3); t += 0.62
 place(whoosh(0.5, 200, 2500, True), T['SCRATCH'] - 0.5, 0.25)
 # 11) record scratch -> "Genius." happy chime + phone buzz
-place(scratch(0.3), T['SCRATCH'], 0.75)
+place(scratch(0.3), T['SCRATCH'], 0.5)
 for j, f in enumerate([1046.5, 1318.5, 1568.0, 2093.0]): place(bell(f, 0.75, 0.8), T['GENIUS'] - 0.02 + j * 0.065, 0.3, -0.3 + 0.2 * j)
 place(bell(2637, 0.6, 0.5), T['GENIUS'] + 0.3, 0.16, 0.3)
 place(buzz(0.26), T['S13'] + 0.08, 0.13, -0.4); place(buzz(0.26), T['S13'] + 0.47, 0.11, -0.4); place(buzz(0.2), T['S13'] + 0.84, 0.09, -0.4)
@@ -215,7 +215,7 @@ hop = 240; e = np.sqrt(np.convolve(vo ** 2, np.ones(hop * 4) / (hop * 4), mode='
 g = np.clip(e * 1.6, 0, 1); sm = np.zeros(N); v = 0.0
 ge = g[::hop]; out = np.zeros(len(ge))
 for i, x in enumerate(ge): v = x if x > v else v * 0.93 + x * 0.07; out[i] = v
-duck = 1 - 0.62 * np.interp(np.arange(N), np.arange(len(out)) * hop, out)
+duck = 1 - 0.68 * np.interp(np.arange(N), np.arange(len(out)) * hop, out)
 mix = bus * duck[:, None] * 0.9 + bus_nd
 mix[:, 0] += vo; mix[:, 1] += vo
 mix = np.tanh(mix * 1.05) / np.tanh(1.05) * 0.97       # gentle soft clip / limiter

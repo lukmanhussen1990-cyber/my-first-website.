@@ -104,7 +104,7 @@ let _keys = null;
 function wrapText(c, text, maxW) { const out = []; for (const para of text.split('\n')) { let line = ''; for (const w of para.split(' ')) { const tt = line ? line + ' ' + w : w; if (c.measureText(tt).width > maxW && line) { out.push(line); line = w; } else line = tt; } out.push(line); } return out; }
 
 export function createUI() {
-  const canvas = document.createElement('canvas'); canvas.width = UI.CW; canvas.height = UI.CH; const c = canvas.getContext('2d');
+  const canvas = document.createElement('canvas'); canvas.width = UI.CW; canvas.height = UI.CH; const c = canvas.getContext('2d', { alpha: false });
   const R = {};   // layout rects (dp) exported for camera/thumb targeting
   const wallpaper = document.createElement('canvas'); wallpaper.width = 360; wallpaper.height = 774;
   { const w = wallpaper.getContext('2d'); w.fillStyle = '#e9e4da'; w.fillRect(0, 0, 360, 774); const rnd = mulberry32(9); w.globalAlpha = 0.5; for (let i = 0; i < 90; i++) { const x = rnd() * 360, y = rnd() * 774, k = Math.floor(rnd() * 4); w.strokeStyle = '#d6cfc1'; w.fillStyle = '#d9d2c5'; w.lineWidth = 1.4; w.beginPath(); if (k === 0) w.arc(x, y, 5 + rnd() * 4, 0, TAU); else if (k === 1) { w.moveTo(x - 6, y); w.lineTo(x + 6, y); w.moveTo(x, y - 6); w.lineTo(x, y + 6); } else if (k === 2) { w.moveTo(x - 6, y + 5); w.lineTo(x, y - 6); w.lineTo(x + 6, y + 5); w.closePath(); } else { w.rect(x - 4, y - 4, 8, 8); } w.stroke(); } }

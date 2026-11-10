@@ -33,7 +33,7 @@ async function init() {
   const room = buildRoom(); scene.add(room.group); const L = room.L;
   if (DEBUG.includes('fewlights')) { for (const k of ['lampGlow', 'moon', 'fill', 'bounce', 'key']) room.group.remove(L[k]); }
   const ui = createUI();
-  const uiTex = new THREE.CanvasTexture(ui.canvas); uiTex.colorSpace = THREE.SRGBColorSpace; uiTex.anisotropy = 4; uiTex.generateMipmaps = true; uiTex.minFilter = THREE.LinearMipmapLinearFilter;
+  const uiTex = new THREE.CanvasTexture(ui.canvas); uiTex.colorSpace = THREE.SRGBColorSpace; uiTex.anisotropy = 4; uiTex.generateMipmaps = true; uiTex.minFilter = THREE.LinearMipmapLinearFilter; uiTex.flipY = false;
   const ch = buildCharacter(uiTex); ch.root.position.copy(SEAT); scene.add(ch.root);
   // free left fist (used when one hand lets go of the phone)
   const fist = new THREE.Mesh(ch.hands[0].palm.geometry, ch.hands[0].palm.material); fist.castShadow = true; ch.root.add(fist); fist.visible = false;
@@ -356,7 +356,7 @@ async function init() {
     const mode = s.phone ? 1 : 2; const need = s.phone || mode !== uiMode || f % 6 === 0;
     if (need) {
       ui.draw(t, roi); uiTex.generateMipmaps = !s.phone; uiTex.minFilter = s.phone ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter;
-      uiTex.repeat.set(UI.W / roi.w, UI.H / roi.h); uiTex.offset.set(-roi.x / roi.w, -(1 - (roi.y + roi.h) / UI.H) * (UI.H / roi.h)); uiTex.needsUpdate = true; uiMode = mode;
+      uiTex.repeat.set(UI.W / roi.w, -UI.H / roi.h); uiTex.offset.set(-roi.x / roi.w, (UI.H - roi.y) / roi.h); uiTex.needsUpdate = true; uiMode = mode;
     }
     const P2 = performance.now();
     const fx = { ...s.fx, seed: f % 997, grain: 0.03 };

@@ -75,16 +75,14 @@ else if (args.stills) {
   const out = args.out || path.join(ROOT, 'out', 'video_noaudio.mp4');
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${ow}x${oh}`, '-r', String(FPS), '-i', '-',
-    '-c:v', 'libx264', '-preset', 'veryfast', '-qp', '0', '-pix_fmt', 'yuv444p', out], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-qp', '0', '-pix_fmt', 'yuv444p', out], { stdio: ['pipe', 'inherit', 'inherit'] });
   const buf = new Map(); let nextF = f0;
   sink = async (b, params) => { buf.set(Number(params.get('f')), b); while (buf.has(nextF)) { const x = buf.get(nextF); buf.delete(nextF); nextF++; if (!ff.stdin.write(x)) await new Promise((r) => ff.stdin.once('drain', r)); } };
-  const t0 = Date.now();
+  let t0 = Date.now(), t1 = 0;
   for (let f = f0; f < f1; f++) {
     await page.evaluate((f) => window.renderFrame(f), f);
-    if ((f - f0) % 20 === 0) {
-      const el = (Date.now() - t0) / 1000, done = f - f0 + 1;
-      console.log(`frame ${f}/${f1}  ${(el / done).toFixed(2)}s/frame  eta ${((f1 - f0 - done) * el / done / 60).toFixed(1)}min`);
-    }
+    if (f === f0) t1 = Date.now();
+    else if ((f - f0) % 5 === 0) { const per = (Date.now() - t1) / 1000 / (f - f0); console.log(`frame ${f}/${f1}  ${per.toFixed(2)}s/frame  eta ${((f1 - f - 1) * per / 60).toFixed(1)}min`); }
   }
   await page.evaluate(() => window.flush());
   if (nextF !== f1) { console.error('frame order error', nextF, f1); process.exit(2); }

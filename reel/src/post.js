@@ -121,7 +121,7 @@ export class Pipeline {
         float c0 = coc(vUv); float r0 = abs(c0) * uMaxBlur;
         vec3 sum = texture2D(t, vUv).rgb; float wsum = 1.0;
         if (uMaxBlur > 0.01) {
-          const int N = 8;
+          const int N = 13;
           for (int i = 0; i < N; i++) {
             float fi = (float(i) + 0.5) / float(N);
             float a = float(i) * 2.399963 + uPhase;
@@ -251,9 +251,8 @@ export class Pipeline {
     let cur = this.rtFull;
     if ((fx.dof ?? 0) > 0.01) {
       const u = this.mDof.uniforms; u.uFocus.value = fx.focus; u.uRange.value = fx.dofRange ?? 0.5; u.uMaxBlur.value = fx.dof;
-      u.t.value = cur.texture; u.uPhase.value = 0; this._draw(this.mDof, this.rtDof);
-      u.t.value = this.rtDof.texture; u.uPhase.value = 1.2; u.uMaxBlur.value = fx.dof * 0.5; this._draw(this.mDof, this.rtDof2);
-      cur = this.rtDof2; this._sync('dof');
+      u.t.value = cur.texture; u.uPhase.value = (fx.seed || 0) * 2.4; this._draw(this.mDof, this.rtDof);
+      cur = this.rtDof; this._sync('dof');
     }
     // bloom
     this.mBright.uniforms.t.value = cur.texture; this.mBright.uniforms.uThresh.value = fx.bloomThresh ?? 1.05;
