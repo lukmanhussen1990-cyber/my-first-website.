@@ -1,0 +1,11 @@
+{
+  "name": "family-groupchat-reel",
+  "private": true,
+  "type": "module",
+  "scripts": { "render": "node render.mjs", "preview": "node render.mjs --stills" },
+  "dependencies": {
+    "three": "^0.170.0",
+    "@fontsource/luckiest-guy": "^5.0.0",
+    "@fontsource/nunito": "^5.0.0"
+  }
+}
