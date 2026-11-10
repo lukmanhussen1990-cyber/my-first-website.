@@ -126,7 +126,7 @@ export function applyTimeline(t, S) {
     case 0: { // 1. "If you see a ghost" – close-up, shock
       mp = tremble(seqPose(lt, [[0, M.sitIdle], [0.16, M.sitScared, 'back']]), 1.6);
       mf = mixFace({ eye: 1 }, face.shock, ramp(lt, 0.02, 0.14, 'out'));
-      cam(S, [[0.1, 1.42, 0.25], [-0.15, 1.36, -1.25], 34], [[0.02, 1.4, -0.12], [-0.15, 1.38, -1.25], 34], ease.out(u), 1.6, t);
+      cam(S, [[0.1, 1.42, 0.25], [-0.15, 1.3, -1.25], 44], [[0.02, 1.4, -0.12], [-0.15, 1.32, -1.25], 44], ease.out(u), 1.6, t);
       break;
     }
     case 1: { // 2. "while you're trying to sleep" – over the shoulder, ghost waves teddy at the foot of the bed
@@ -226,7 +226,7 @@ export function applyTimeline(t, S) {
       gat = [0.85, 1.2 + bob, -0.55]; gr = R.front; gp = tweak(G.hopeful, { Spine: [0, 0, osc(t, 0.9) * 5] }); gf = face.gHappy;
       teddy = { pos: [-0.04, -0.06, 0.1], rot: [0, 30, 100] };
       bl = { top: -0.55 };
-      cam(S, [[-0.16, 1.4, 2.5], [-0.28, 1.34, 0.95], 31], [[-0.2, 1.4, 2.15], [-0.28, 1.36, 0.95], 31], ease.io(u), 1, t);
+      cam(S, [[-0.16, 1.4, 2.5], [-0.28, 1.3, 0.95], 38], [[-0.2, 1.4, 2.15], [-0.28, 1.32, 0.95], 38], ease.io(u), 1, t);
       break;
     }
     case 10: { // 9a. "scoot over and" – man scoots over in bed and pats the empty spot

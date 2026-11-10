@@ -1,0 +1,88 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Poppins ExtraBold,92,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,9,3,5,60,60,0,1
+Style: WM,Poppins ExtraBold,34,&H80FFFFFF,&H80FFFFFF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,3,30,36,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:21.00,WM,,0,0,0,,[YOUR WATERMARK]
+Dialogue: 1,0:00:00.00,0:00:00.16,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}If{\fscx100\fscy100} {\alpha&HFF&}you{\alpha&H00&} {\alpha&HFF&}see{\alpha&H00&}
+Dialogue: 1,0:00:00.16,0:00:00.30,Cap,,0,0,0,,{\an5\pos(540,960)}If {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you{\fscx100\fscy100} {\alpha&HFF&}see{\alpha&H00&}
+Dialogue: 1,0:00:00.30,0:00:00.44,Cap,,0,0,0,,{\an5\pos(540,960)}If you {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}see{\fscx100\fscy100}
+Dialogue: 1,0:00:00.44,0:00:00.68,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}a{\fscx100\fscy100} {\alpha&HFF&}ghost{\alpha&H00&} {\alpha&HFF&}while{\alpha&H00&}
+Dialogue: 1,0:00:00.68,0:00:00.86,Cap,,0,0,0,,{\an5\pos(540,960)}a {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}ghost{\fscx100\fscy100} {\alpha&HFF&}while{\alpha&H00&}
+Dialogue: 1,0:00:00.86,0:00:01.10,Cap,,0,0,0,,{\an5\pos(540,960)}a ghost {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}while{\fscx100\fscy100}
+Dialogue: 1,0:00:01.10,0:00:01.22,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you're{\fscx100\fscy100} {\alpha&HFF&}trying{\alpha&H00&} {\alpha&HFF&}to{\alpha&H00&}
+Dialogue: 1,0:00:01.22,0:00:01.42,Cap,,0,0,0,,{\an5\pos(540,960)}you're {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}trying{\fscx100\fscy100} {\alpha&HFF&}to{\alpha&H00&}
+Dialogue: 1,0:00:01.42,0:00:01.54,Cap,,0,0,0,,{\an5\pos(540,960)}you're trying {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}to{\fscx100\fscy100}
+Dialogue: 1,0:00:01.54,0:00:02.34,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}sleep{\fscx100\fscy100}
+Dialogue: 1,0:00:02.34,0:00:02.48,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}what{\fscx100\fscy100} {\alpha&HFF&}should{\alpha&H00&} {\alpha&HFF&}you{\alpha&H00&}
+Dialogue: 1,0:00:02.48,0:00:02.66,Cap,,0,0,0,,{\an5\pos(540,960)}what {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}should{\fscx100\fscy100} {\alpha&HFF&}you{\alpha&H00&}
+Dialogue: 1,0:00:02.66,0:00:02.80,Cap,,0,0,0,,{\an5\pos(540,960)}what should {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you{\fscx100\fscy100}
+Dialogue: 1,0:00:02.80,0:00:03.52,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}do?{\fscx100\fscy100}
+Dialogue: 1,0:00:03.68,0:00:03.80,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}If{\fscx100\fscy100} {\alpha&HFF&}you{\alpha&H00&} {\alpha&HFF&}pull{\alpha&H00&}
+Dialogue: 1,0:00:03.80,0:00:03.92,Cap,,0,0,0,,{\an5\pos(540,960)}If {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you{\fscx100\fscy100} {\alpha&HFF&}pull{\alpha&H00&}
+Dialogue: 1,0:00:03.92,0:00:04.10,Cap,,0,0,0,,{\an5\pos(540,960)}If you {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}pull{\fscx100\fscy100}
+Dialogue: 1,0:00:04.10,0:00:04.26,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}your{\fscx100\fscy100} {\alpha&HFF&}blanket{\alpha&H00&} {\alpha&HFF&}over{\alpha&H00&}
+Dialogue: 1,0:00:04.26,0:00:04.50,Cap,,0,0,0,,{\an5\pos(540,960)}your {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}blanket{\fscx100\fscy100} {\alpha&HFF&}over{\alpha&H00&}
+Dialogue: 1,0:00:04.50,0:00:04.70,Cap,,0,0,0,,{\an5\pos(540,960)}your blanket {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}over{\fscx100\fscy100}
+Dialogue: 1,0:00:04.70,0:00:04.90,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}your{\fscx100\fscy100} {\alpha&HFF&}head{\alpha&H00&}
+Dialogue: 1,0:00:04.90,0:00:05.50,Cap,,0,0,0,,{\an5\pos(540,960)}your {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}head{\fscx100\fscy100}
+Dialogue: 1,0:00:05.50,0:00:05.66,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}he'll{\fscx100\fscy100} {\alpha&HFF&}float{\alpha&H00&} {\alpha&HFF&}closer{\alpha&H00&}
+Dialogue: 1,0:00:05.66,0:00:05.86,Cap,,0,0,0,,{\an5\pos(540,960)}he'll {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}float{\fscx100\fscy100} {\alpha&HFF&}closer{\alpha&H00&}
+Dialogue: 1,0:00:05.86,0:00:06.34,Cap,,0,0,0,,{\an5\pos(540,960)}he'll float {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}closer{\fscx100\fscy100}
+Dialogue: 1,0:00:06.34,0:00:06.60,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}and{\fscx100\fscy100} {\alpha&HFF&}rip{\alpha&H00&} {\alpha&HFF&}it{\alpha&H00&}
+Dialogue: 1,0:00:06.60,0:00:06.86,Cap,,0,0,0,,{\an5\pos(540,960)}and {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}rip{\fscx100\fscy100} {\alpha&HFF&}it{\alpha&H00&}
+Dialogue: 1,0:00:06.86,0:00:07.02,Cap,,0,0,0,,{\an5\pos(540,960)}and rip {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}it{\fscx100\fscy100}
+Dialogue: 1,0:00:07.02,0:00:07.74,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}off{\fscx100\fscy100}
+Dialogue: 1,0:00:07.88,0:00:08.00,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}But{\fscx100\fscy100} {\alpha&HFF&}if{\alpha&H00&} {\alpha&HFF&}you{\alpha&H00&}
+Dialogue: 1,0:00:08.00,0:00:08.10,Cap,,0,0,0,,{\an5\pos(540,960)}But {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}if{\fscx100\fscy100} {\alpha&HFF&}you{\alpha&H00&}
+Dialogue: 1,0:00:08.10,0:00:08.22,Cap,,0,0,0,,{\an5\pos(540,960)}But if {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you{\fscx100\fscy100}
+Dialogue: 1,0:00:08.22,0:00:08.42,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}run{\fscx100\fscy100} {\alpha&HFF&}and{\alpha&H00&} {\alpha&HFF&}lock{\alpha&H00&}
+Dialogue: 1,0:00:08.42,0:00:08.54,Cap,,0,0,0,,{\an5\pos(540,960)}run {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}and{\fscx100\fscy100} {\alpha&HFF&}lock{\alpha&H00&}
+Dialogue: 1,0:00:08.54,0:00:08.68,Cap,,0,0,0,,{\an5\pos(540,960)}run and {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}lock{\fscx100\fscy100}
+Dialogue: 1,0:00:08.68,0:00:08.86,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}your{\fscx100\fscy100} {\alpha&HFF&}door{\alpha&H00&}
+Dialogue: 1,0:00:08.86,0:00:09.50,Cap,,0,0,0,,{\an5\pos(540,960)}your {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}door{\fscx100\fscy100}
+Dialogue: 1,0:00:09.50,0:00:09.68,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}he'll{\fscx100\fscy100} {\alpha&HFF&}just{\alpha&H00&} {\alpha&HFF&}float{\alpha&H00&}
+Dialogue: 1,0:00:09.68,0:00:09.80,Cap,,0,0,0,,{\an5\pos(540,960)}he'll {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}just{\fscx100\fscy100} {\alpha&HFF&}float{\alpha&H00&}
+Dialogue: 1,0:00:09.80,0:00:10.08,Cap,,0,0,0,,{\an5\pos(540,960)}he'll just {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}float{\fscx100\fscy100}
+Dialogue: 1,0:00:10.08,0:00:10.24,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}in{\fscx100\fscy100} {\alpha&HFF&}through{\alpha&H00&} {\alpha&HFF&}the{\alpha&H00&}
+Dialogue: 1,0:00:10.24,0:00:10.40,Cap,,0,0,0,,{\an5\pos(540,960)}in {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}through{\fscx100\fscy100} {\alpha&HFF&}the{\alpha&H00&}
+Dialogue: 1,0:00:10.40,0:00:10.52,Cap,,0,0,0,,{\an5\pos(540,960)}in through {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}the{\fscx100\fscy100}
+Dialogue: 1,0:00:10.52,0:00:11.26,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}window{\fscx100\fscy100}
+Dialogue: 1,0:00:11.56,0:00:11.80,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}So{\fscx100\fscy100} {\alpha&HFF&}instead{\alpha&H00&} {\alpha&HFF&}of{\alpha&H00&}
+Dialogue: 1,0:00:11.80,0:00:12.22,Cap,,0,0,0,,{\an5\pos(540,960)}So {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}instead{\fscx100\fscy100} {\alpha&HFF&}of{\alpha&H00&}
+Dialogue: 1,0:00:12.22,0:00:12.36,Cap,,0,0,0,,{\an5\pos(540,960)}So instead {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}of{\fscx100\fscy100}
+Dialogue: 1,0:00:12.36,0:00:12.54,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}being{\fscx100\fscy100} {\alpha&HFF&}scared{\alpha&H00&}
+Dialogue: 1,0:00:12.54,0:00:13.48,Cap,,0,0,0,,{\an5\pos(540,960)}being {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}scared{\fscx100\fscy100}
+Dialogue: 1,0:00:13.56,0:00:13.70,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}scoot{\fscx100\fscy100} {\alpha&HFF&}over{\alpha&H00&} {\alpha&HFF&}and{\alpha&H00&}
+Dialogue: 1,0:00:13.70,0:00:13.98,Cap,,0,0,0,,{\an5\pos(540,960)}scoot {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}over{\fscx100\fscy100} {\alpha&HFF&}and{\alpha&H00&}
+Dialogue: 1,0:00:13.98,0:00:14.24,Cap,,0,0,0,,{\an5\pos(540,960)}scoot over {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}and{\fscx100\fscy100}
+Dialogue: 1,0:00:14.24,0:00:14.50,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}invite{\fscx100\fscy100} {\alpha&HFF&}him{\alpha&H00&} {\alpha&HFF&}into{\alpha&H00&}
+Dialogue: 1,0:00:14.50,0:00:14.62,Cap,,0,0,0,,{\an5\pos(540,960)}invite {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}him{\fscx100\fscy100} {\alpha&HFF&}into{\alpha&H00&}
+Dialogue: 1,0:00:14.62,0:00:14.82,Cap,,0,0,0,,{\an5\pos(540,960)}invite him {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}into{\fscx100\fscy100}
+Dialogue: 1,0:00:14.82,0:00:14.94,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}your{\fscx100\fscy100} {\alpha&HFF&}bed{\alpha&H00&}
+Dialogue: 1,0:00:14.94,0:00:15.66,Cap,,0,0,0,,{\an5\pos(540,960)}your {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}bed{\fscx100\fscy100}
+Dialogue: 1,0:00:15.74,0:00:15.88,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}He'll{\fscx100\fscy100} {\alpha&HFF&}climb{\alpha&H00&} {\alpha&HFF&}in{\alpha&H00&}
+Dialogue: 1,0:00:15.88,0:00:16.08,Cap,,0,0,0,,{\an5\pos(540,960)}He'll {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}climb{\fscx100\fscy100} {\alpha&HFF&}in{\alpha&H00&}
+Dialogue: 1,0:00:16.08,0:00:16.22,Cap,,0,0,0,,{\an5\pos(540,960)}He'll climb {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}in{\fscx100\fscy100}
+Dialogue: 1,0:00:16.22,0:00:16.40,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}next{\fscx100\fscy100} {\alpha&HFF&}to{\alpha&H00&} {\alpha&HFF&}you{\alpha&H00&}
+Dialogue: 1,0:00:16.40,0:00:16.60,Cap,,0,0,0,,{\an5\pos(540,960)}next {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}to{\fscx100\fscy100} {\alpha&HFF&}you{\alpha&H00&}
+Dialogue: 1,0:00:16.60,0:00:17.00,Cap,,0,0,0,,{\an5\pos(540,960)}next to {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you{\fscx100\fscy100}
+Dialogue: 1,0:00:17.00,0:00:17.24,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}tuck{\fscx100\fscy100} {\alpha&HFF&}the{\alpha&H00&} {\alpha&HFF&}blanket{\alpha&H00&}
+Dialogue: 1,0:00:17.24,0:00:17.38,Cap,,0,0,0,,{\an5\pos(540,960)}tuck {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}the{\fscx100\fscy100} {\alpha&HFF&}blanket{\alpha&H00&}
+Dialogue: 1,0:00:17.38,0:00:17.64,Cap,,0,0,0,,{\an5\pos(540,960)}tuck the {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}blanket{\fscx100\fscy100}
+Dialogue: 1,0:00:17.64,0:00:17.84,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}around{\fscx100\fscy100} {\alpha&HFF&}you{\alpha&H00&} {\alpha&HFF&}both{\alpha&H00&}
+Dialogue: 1,0:00:17.84,0:00:18.04,Cap,,0,0,0,,{\an5\pos(540,960)}around {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you{\fscx100\fscy100} {\alpha&HFF&}both{\alpha&H00&}
+Dialogue: 1,0:00:18.04,0:00:18.66,Cap,,0,0,0,,{\an5\pos(540,960)}around you {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}both{\fscx100\fscy100}
+Dialogue: 1,0:00:18.66,0:00:18.80,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}and{\fscx100\fscy100} {\alpha&HFF&}you'll{\alpha&H00&} {\alpha&HFF&}fall{\alpha&H00&}
+Dialogue: 1,0:00:18.80,0:00:18.98,Cap,,0,0,0,,{\an5\pos(540,960)}and {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}you'll{\fscx100\fscy100} {\alpha&HFF&}fall{\alpha&H00&}
+Dialogue: 1,0:00:18.98,0:00:19.14,Cap,,0,0,0,,{\an5\pos(540,960)}and you'll {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}fall{\fscx100\fscy100}
+Dialogue: 1,0:00:19.14,0:00:19.48,Cap,,0,0,0,,{\an5\pos(540,960)}{\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}asleep{\fscx100\fscy100} {\alpha&HFF&}cuddling{\alpha&H00&}
+Dialogue: 1,0:00:19.48,0:00:20.26,Cap,,0,0,0,,{\an5\pos(540,960)}asleep {\fscx70\fscy70\t(0,70,\fscx116\fscy116)\t(70,150,\fscx100\fscy100)}cuddling{\fscx100\fscy100}
