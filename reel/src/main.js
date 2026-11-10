@@ -124,7 +124,7 @@ async function init() {
     } else if (t < T.S6) {   // S5 punch-ins
       const lvl = t < T.P2 ? 0 : t < T.P3 ? 1 : t < T.P4 ? 2 : 3; const t0 = [T.S5, T.P2, T.P3, T.P4][lvl]; const hit = impulse(t, t0, 0.02, 0.18);
       const tk = [0.3, 0.55, 0.85, 1.2][lvl];
-      p = { ...base, pitch: 0.05 + 0.003 * tr * tk, headPitch: -0.03 - 0.05 * hit + 0.006 * tr2 * tk, headRoll: 0.008 * tr * tk, eyeOpen: 1.12, eyeSize: [1.1, 1.25, 1.4, 1.55][lvl] * (1 + 0.1 * hit), browAngle: 0.42, browY: 0.012 + lvl * 0.003, lookY: 0, lookX: 0.15 * tr2 * (lvl === 3 ? 1 : 0.3),
+      p = { ...base, pitch: 0.05 + 0.003 * tr * tk, headPitch: -0.03 - 0.05 * hit + 0.006 * tr2 * tk, headRoll: 0.008 * tr * tk, eyeOpen: 1.12, eyeSize: [1.1, 1.22, 1.34, 1.45][lvl] * (1 + 0.1 * hit), browAngle: 0.42, browY: 0.012 + lvl * 0.003, lookY: 0, lookX: 0.15 * tr2 * (lvl === 3 ? 1 : 0.3),
         mouth: { w: 0.034 - lvl * 0.002, open: 0.006 + 0.022 * ld + 0.003 * Math.abs(tr), curve: -0.6, teeth: 0, teethBot: 0, sq: 0.6, skew: 0.3 * tr2 }, flush: 0.35, phonePos: V(0.0008 * tr, 0.25 + 0.0008 * tr2, 0.38), glow: 1.3,
         hairSway: 0.03 * tr2 * tk - 0.1 * hit, earWob: 0.05 * tr * tk, earFlap: 0.05 * hit, headSquash: -0.03 * hit };
     } else if (t < T.S8) {   // S6 delete attempt, S7 seen-by (phone shots)
@@ -206,7 +206,7 @@ async function init() {
       s.shake = 0.6 * beats + 0.5 * impulse(t, T.SEND + 0.02, 0.02, 0.12); s.drift = lerp(1, 0.25, e);
     } else if (t < T.S6) {
       const lvl = t < T.P2 ? 0 : t < T.P3 ? 1 : t < T.P4 ? 2 : 3; const t0 = [T.S5, T.P2, T.P3, T.P4][lvl];
-      const dist = [1.95, 1.36, 0.98, 0.6][lvl] * (1 + 0.13 * (1 - spring(t - t0, 4.5, 11))) * (1 - 0.03 * prog(t, t0, t0 + 1.2));
+      const dist = [1.95, 1.36, 1.02, 0.8][lvl] * (1 + 0.13 * (1 - spring(t - t0, 4.5, 11))) * (1 - 0.03 * prog(t, t0, t0 + 1.2));
       const eyeP = head.clone().add(V(0, 0.03, 0.12)); const pt = lvl === 3 ? eyeP : head; const f = [0.585, 0.6, 0.665, 0.6][lvl];
       s.cam = framed(pt, f, dist, 30, [-7, 5, -4, 3][lvl], [-3, -2, -1, 0][lvl]); s.focusPoint = eyeP; s.fx.dof = [5, 6, 7, 8][lvl]; s.fx.dofRange = 0.35;
       s.shake = impulse(t, t0, 0.01, 0.16) * (0.7 + lvl * 0.25); s.mb = t - t0 < 0.15 ? 2 : 1; s.fx.vigColAmt = 0.08 * lvl * impulse(t, t0, 0.02, 0.5); s.fx.vigCol = 0xff1028;
