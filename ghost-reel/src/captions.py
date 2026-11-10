@@ -11,7 +11,7 @@ out=['[Script Info]','ScriptType: v4.00+','PlayResX: 1080','PlayResY: 1920','Wra
 'Style: Cap,Poppins ExtraBold,92,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,9,3,5,60,60,0,1',
 'Style: WM,Poppins ExtraBold,34,&H80FFFFFF,&H80FFFFFF,&H80000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,3,30,36,40,1','',
 '[Events]','Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
-'Dialogue: 0,0:00:00.00,0:00:21.00,WM,,0,0,0,,[YOUR WATERMARK]']
+'Dialogue: 0,0:00:00.00,0:00:21.00,WM,,0,0,0,,@garden_reels']
 for ci,ch in enumerate(chunks):
     end_chunk = chunks[ci+1][0]['s'] if ci+1<len(chunks) else ch[-1]['e']+0.4
     for i,w in enumerate(ch):
