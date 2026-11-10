@@ -1,0 +1,13 @@
+import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);
+const { chromium } = require('playwright');
+import { serve } from './serve.mjs';
+const { srv, port } = await serve(process.cwd());
+const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl'] });
+const p = await b.newPage(); p.on('console', m => console.log('[page]', m.text())); p.on('pageerror', e => console.log('[err]', e.message));
+await p.goto(`http://127.0.0.1:${port}/src/inspect.html`);
+await p.waitForFunction('window.OUT', null, { timeout: 60000 });
+const o = await p.evaluate('window.OUT');
+console.log(JSON.stringify(o.anims)); console.log(o.gl); console.log(JSON.stringify(o.meshes)); console.log(JSON.stringify(o.sceneScale), JSON.stringify(o.box));
+for (const x of o.bones) console.log(x.join(' | '));
+console.log(JSON.stringify(o.furn, null, 0));
+await b.close(); srv.close();

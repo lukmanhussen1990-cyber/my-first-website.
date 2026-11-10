@@ -1,0 +1,25 @@
+<!doctype html><html><body><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const L = new GLTFLoader(); const out = {};
+const g = await L.loadAsync('/assets/models/Xbot.glb');
+out.anims = g.animations.map(a => [a.name, +a.duration.toFixed(2), a.tracks.length]);
+const bones = []; const meshes = [];
+g.scene.updateMatrixWorld(true);
+g.scene.traverse(o => { const p = new THREE.Vector3(); o.getWorldPosition(p);
+  if (o.isBone) bones.push([o.name, o.parent.name, p.toArray().map(v => +v.toFixed(3)), o.rotation.toArray().slice(0,3).map(v=>+(v*57.3).toFixed(0))]);
+  if (o.isMesh) meshes.push([o.name, o.material.name, o.geometry.attributes.position.count, o.material.color.getHexString(), Object.keys(o.geometry.attributes)]); });
+out.bones = bones; out.meshes = meshes;
+out.sceneScale = g.scene.children.map(c => [c.name, c.scale.toArray(), c.rotation.toArray()]);
+const box = new THREE.Box3().setFromObject(g.scene); out.box = [box.min.toArray(), box.max.toArray()];
+out.furn = {};
+for (const n of ['bed_double_A','bed_double_B','pillow_A','pillow_B','lamp_table','cabinet_small','rug_oval_A','pictureframe_medium']) {
+  const f = await L.loadAsync('/assets/furniture/' + n + '.gltf'); const b = new THREE.Box3().setFromObject(f.scene);
+  const ms = []; f.scene.traverse(o => { if (o.isMesh) { const bb = new THREE.Box3().setFromObject(o); ms.push([o.name, o.material.name, bb.min.toArray().map(v=>+v.toFixed(2)), bb.max.toArray().map(v=>+v.toFixed(2))]); } });
+  out.furn[n] = { box: [b.min.toArray().map(v=>+v.toFixed(2)), b.max.toArray().map(v=>+v.toFixed(2))], ms };
+}
+const c = document.createElement('canvas'); const gl = c.getContext('webgl2');
+out.gl = gl ? gl.getParameter(gl.VERSION) + ' | ' + (gl.getExtension('WEBGL_debug_renderer_info') ? gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL) : '') : 'none';
+window.OUT = out;
+</script></body></html>
