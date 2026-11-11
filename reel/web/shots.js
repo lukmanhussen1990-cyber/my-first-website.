@@ -486,7 +486,8 @@ export function buildShots(ctx) {
     U.uCA.value = 0.012 * (1 - seg(t, 8.7, 9.2));
     // swirl out
     const sw = smooth(seg(t, 9.28, 9.45));
-    U.uSwirl.value = 9 * sw * sw; U.uFlash.value = Math.max(U.uFlash.value, 0.55 * sw); U.uFlashCol.value.set('#f3dcff');
+    U.uSwirl.value = 9 * sw * sw; U.uFlash.value = Math.max(U.uFlash.value, 0.55 * sw);
+    if (t < 9.0) U.uFlashCol.value.set('#fffdf2'); else U.uFlashCol.value.set('#f3dcff');
     const sp = proj(SOCK.clone());
     if (t < 9.25) ov.bolts(t, sp[0], sp[1], 7, 560, 11, 1 - seg(t, 9.0, 9.25));
     if (t > 8.75 && t < 9.3) { const hp = proj(yh.clone().add(V(0, 0.25, 0))); ov.bolts(t, hp[0], hp[1], 4, 230, 21, 1 - seg(t, 9.1, 9.3)); }
@@ -650,8 +651,9 @@ export function buildShots(ctx) {
     C.pt1.color.set('#ffcf5a'); C.pt1.intensity = 2.2 * smooth(seg(t, 20.9, 21.1)); C.pt1.distance = 1.6; C.pt1.position.copy(kp).add(V(0, 0.05, -0.15));
     C.pt2.color.set('#ffd2a8'); C.pt2.intensity = 1.2; C.pt2.distance = 1.4; C.pt2.position.set(mid.x, mid.y + 0.2, mid.z - 0.5);
     const push = eIn(seg(t, 21.3, 21.7), 2);
-    const camP = V(mid.x + 0.02, mid.y + 0.02, mid.z - 1.0).lerp(kp.clone().add(V(0, 0, -0.18)), push * 0.85);
-    cam(t, [camP.x, camP.y, camP.z], [lerp(mid.x, kp.x, 0.6), lerp(mid.y - 0.03, kp.y, 0.7), mid.z], lerp(36, 30, push), { hand: 0.8 });
+    const camP = V(mid.x + 0.02, mid.y + 0.0, mid.z - 1.95).lerp(kp.clone().add(V(0, 0, -0.45)), push * 0.85);
+    const ly = lerp(mid.y - 0.06, kp.y, 0.55 * clamp(lift) + 0.4 * push);
+    cam(t, [camP.x, camP.y, camP.z], [lerp(mid.x, kp.x, 0.5 * clamp(lift)), ly, mid.z], lerp(34, 30, push), { hand: 0.8 });
     U.uZoomBlur.value = push * 1.6; U.uExp.value = 1.15; U.uVig.value = 0.4;
     const k2 = proj(kp), g = smooth(seg(t, 20.9, 21.15));
     ov.rays(k2[0], k2[1], 1400, 16, t * 0.6, 'rgba(255,214,90,A)', 0.3 * g, 0.35);

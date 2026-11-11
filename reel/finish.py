@@ -15,8 +15,8 @@ ln = (f"loudnorm=I=-14:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['
       f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true")
 cmd = ['ffmpeg', '-y', '-hide_banner', '-v', 'error', '-framerate', '60', '-i', os.path.join(FR, 'f%04d.jpg'), '-i', os.path.join(SP, 'mix_raw.wav'), '-loop', '1', '-framerate', '60', '-i', WM,
        '-filter_complex', f'[0:v][2:v]overlay=0:0:shortest=1[v];[1:a]{ln},aresample=48000,apad,atrim=0:{DUR:.6f}[a]',
-       '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '15', '-profile:v', 'high', '-level', '4.2',
-       '-pix_fmt', 'yuv420p', '-r', '60', '-g', '120', '-maxrate', '30M', '-bufsize', '60M', '-x264-params', 'aq-mode=3',
+       '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-profile:v', 'high', '-level', '4.2',
+       '-pix_fmt', 'yuv420p', '-r', '60', '-g', '120', '-maxrate', '16M', '-bufsize', '32M', '-x264-params', 'aq-mode=3',
        '-c:a', 'aac', '-b:a', '320k', '-ar', '48000', '-movflags', '+faststart', '-t', f'{DUR:.6f}', OUT]
 subprocess.run(cmd, check=True)
 # QA
