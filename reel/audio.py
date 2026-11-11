@@ -255,35 +255,36 @@ def reverb(x, rt=1.4, wet=0.35, seed=5):
 # ------------------------------------------------------------------ cue sheet
 def cues():
     # S1/S2 misdirect: steady creak-thump rhythm + panting (it's only the charger)
-    beats = [0.08 + k / 2.6 for k in range(8)]
+    beats = [0.08 + k / 2.6 for k in range(9)]
     for k, bt in enumerate(beats):
-        fd = 1.0 if bt < 1.6 else max(0.22, 1 - (bt - 1.6) / 1.3)
+        fd = 1.0 if bt < 2.3 else max(0.2, 1 - (bt - 2.3) / 1.0)
         put(creak(0.24, 470 + 70 * (k % 2), k), bt - 0.04, 0.34 * fd, -0.15 + 0.3 * (k % 2))
         put(S(knock(140, 0.12, 0.7), thump(85, 48, 0.16) * 0.8), bt, 0.42 * fd, 0.0)
-        if bt < 1.6:
-            put(pant(0.24, 150 if k % 2 else 122, k), bt + 0.03, 0.2, -0.3 + 0.6 * (k % 2))
-    put(grunt(0.34, 100), 0.12, 0.2, -0.2); put(grunt(0.3, 88), 0.5, 0.18, 0.25)
+        if bt < 1.95:
+            put(pant(0.24, 150 if k % 2 else 122, k), bt + 0.03, 0.2 * (1.25 if 0.95 < bt < 1.6 else 1.0), -0.3 + 0.6 * (k % 2))
+    put(grunt(0.34, 100), 0.12, 0.2, -0.2); put(grunt(0.3, 88), 0.55, 0.18, 0.25); put(grunt(0.32, 96), 1.12, 0.2, -0.15)
+    put(whoosh(0.2, 2500, 600, 0.6, 0.3), 0.88, 0.12, 0.0)
     # shoe pops off, lands
-    put(S(bloop(260, 900, 0.09), click(0.02, 1800)), 0.95, 0.32, 0.2); put(whoosh(0.28, 600, 3500, 0.6, 0.4), 0.95, 0.16, 0.3)
-    put(knock(240, 0.1, 1.0), 1.44, 0.28, 0.35)
+    put(S(bloop(260, 900, 0.09), click(0.02, 1800)), 1.68, 0.32, 0.2); put(whoosh(0.28, 600, 3500, 0.6, 0.4), 1.68, 0.16, 0.3)
+    put(knock(240, 0.1, 1.0), 2.24, 0.24, 0.35)
     # mug + pens (S2b)
-    for k in range(7): put(clink(2200 + 400 * rng.random()), 1.22 + k * 0.055 + 0.02 * rng.random(), 0.15, 0.3)
-    put(bp(noise(0.5), 800, 5000) * np.exp(-tt(0.5) * 5), 1.25, 0.12, 0.3)
-    for k in range(6): put(click(0.02, 2500 + 500 * rng.random()), 1.2 + k * 0.035, 0.08, 0.4)
-    put(S(knock(900, 0.12, 2), clink(3100, 0.2)), 1.88, 0.16, 0.5); put(S(knock(1000, 0.1, 2), clink(2800, 0.2)), 1.96, 0.13, 0.55)
-    put(whoosh(0.22, 400, 3500), 0.78, 0.22, -0.3); put(whoosh(0.2, 500, 3200), 1.13, 0.2, 0.3); put(whoosh(0.25, 300, 3000), 1.5, 0.22, 0.3)
+    for k in range(6): put(clink(2200 + 400 * rng.random()), 1.97 + k * 0.05 + 0.02 * rng.random(), 0.15, 0.3)
+    put(bp(noise(0.5), 800, 5000) * np.exp(-tt(0.5) * 5), 2.0, 0.12, 0.3)
+    for k in range(6): put(click(0.02, 2500 + 500 * rng.random()), 1.95 + k * 0.035, 0.08, 0.4)
+    put(S(knock(900, 0.12, 2), clink(3100, 0.2)), 2.63, 0.15, 0.5); put(S(knock(1000, 0.1, 2), clink(2800, 0.2)), 2.71, 0.12, 0.55)
+    put(whoosh(0.22, 400, 3500), 1.53, 0.22, -0.3); put(whoosh(0.2, 500, 3200), 1.88, 0.2, 0.3); put(whoosh(0.25, 300, 3000), 2.23, 0.22, 0.3)
     # S3: footsteps, turn swish, gasp, papers, spit
-    for k in range(5): put(S(thump(140, 70, 0.12) * 0.8, 0.2 * click(0.02, 1500)), 1.6 + k * 0.085 + (0.04 if k % 2 else 0), 0.22, -0.3 + 0.15 * k)
-    put(whoosh(0.18, 600, 3000), 2.0, 0.18, -0.2); put(whoosh(0.18, 500, 2800), 2.06, 0.16, 0.2)
-    put(breath(0.22, True, (900, 3500)), 2.13, 0.35, -0.1); put(breath(0.2, True, (800, 3000)), 2.16, 0.3, 0.2)
-    put(paper(0.7, 3), 2.25, 0.45, -0.25); put(knock(500, 0.1, 2) * 0.6, 2.62, 0.2, -0.3)
+    for k in range(3): put(S(thump(140, 70, 0.12) * 0.8, 0.2 * click(0.02, 1500)), 2.3 + k * 0.085 + (0.04 if k % 2 else 0), 0.22, -0.3 + 0.15 * k)
+    put(whoosh(0.16, 600, 3000), 2.58, 0.18, -0.2); put(whoosh(0.16, 500, 2800), 2.63, 0.16, 0.2)
+    put(breath(0.22, True, (900, 3500)), 2.7, 0.35, -0.1); put(breath(0.2, True, (800, 3000)), 2.73, 0.3, 0.2)
+    put(paper(0.6, 3), 2.82, 0.45, -0.25); put(knock(500, 0.1, 2) * 0.6, 3.2, 0.2, -0.3)
     sp = bp(noise(0.35), 700, 5000) * env_ad(int(0.35 * SR), 0.01, 0.25, 4)
-    put(sp, 2.42, 0.45, 0.25)
-    for k in range(10): put(click(0.015, 1800 + 800 * rng.random()), 2.55 + 0.03 * k, 0.07, 0.3)
+    put(sp, 2.97, 0.45, 0.25)
+    for k in range(8): put(click(0.015, 1800 + 800 * rng.random()), 3.08 + 0.03 * k, 0.07, 0.3)
     # S4: shimmer + dreamy pad
-    for k in range(10): put(bell(2800 + 1800 * rng.random(), 0.5, 0.5) * 0.4, 2.95 + k * 0.17, 0.055, rng.uniform(-0.7, 0.7), SPEC)
-    put(tone_pad([261.6, 329.6, 392.0, 493.9], 1.9, 0.35, 0.5), 2.95, 0.03, 0.0, SPEC)
-    put(bloop(700, 1400, 0.1), 3.2, 0.05, 0.3, SPEC)
+    for k in range(8): put(bell(2800 + 1800 * rng.random(), 0.5, 0.5) * 0.4, 3.35 + k * 0.17, 0.055, rng.uniform(-0.7, 0.7), SPEC)
+    put(tone_pad([261.6, 329.6, 392.0, 493.9], 1.5, 0.3, 0.45), 3.35, 0.03, 0.0, SPEC)
+    put(bloop(700, 1400, 0.1), 3.6, 0.05, 0.3, SPEC)
     # S5: reveal whoosh, flashlight click, plastic scraping
     put(whoosh(0.9, 2500, 250, 0.7, 0.3), 4.72, 0.3, 0.0)
     put(S(click(0.025, 2200), click(0.02, 1400)), 4.86, 0.25, 0.3)

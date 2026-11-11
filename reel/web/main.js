@@ -121,7 +121,7 @@ window.renderFrame = (f) => {
   post.u.uTime.value = t;
   let shot = shots[0];
   for (const s of shots) if (t >= s.t0) shot = s;
-  if (t > 1.6 && ctx.pensFallen) ctx.pensFallen();
+  if (t > 2.75 && ctx.pensFallen) ctx.pensFallen();
   shot.run(t, t - shot.t0, ctx);
   renderer.setRenderTarget(post.rt); renderer.render(scene, camera);
   renderer.setRenderTarget(null); renderer.render(post.scene, post.cam);
