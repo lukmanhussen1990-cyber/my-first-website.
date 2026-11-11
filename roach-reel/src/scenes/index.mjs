@@ -1,0 +1,11 @@
+import { s01 } from './s01_hook.mjs';
+import { s02 } from './s02_3am.mjs';
+import { s03 } from './s03_salmon.mjs';
+import { s04 } from './s04_face.mjs';
+import { s05, s07a } from './s05_burrow.mjs';
+import { s07b } from './s07_bed.mjs';
+import { s08, s09a, s09b, s09c } from './s08_surf.mjs';
+import { s10 } from './s10_parade.mjs';
+import { s11 } from './s11_hotel.mjs';
+import { s12 } from './s12_genius.mjs';
+export const SCENES = [s01, s02, s03, s04, s05, s07a, s07b, s08, s09a, s09b, s09c, s10, s11, s12];

@@ -1,0 +1,17 @@
+{
+  "name": "grace-roach-hotel-reel",
+  "version": "1.0.0",
+  "description": "2D low-poly animated reel rendered frame-by-frame with Skia canvas + ffmpeg",
+  "scripts": {
+    "render": "node src/render.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/luckiest-guy": "^5.3.0",
+    "@napi-rs/canvas": "^1.1.0"
+  },
+  "type": "module"
+}
