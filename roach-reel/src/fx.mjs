@@ -67,9 +67,9 @@ export function drawWatermark(ctx) {
   ctx.font = '600 34px "Fredoka"';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
-  ctx.fillText('@Grace In Motion', W / 2 + 2, 1478 + 2);
+  ctx.fillText('@garden_reels', W / 2 + 2, 1478 + 2);
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillText('@Grace In Motion', W / 2, 1478);
+  ctx.fillText('@garden_reels', W / 2, 1478);
   ctx.restore();
 }
 
