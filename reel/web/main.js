@@ -123,7 +123,6 @@ window.renderFrame = (f) => {
   renderer.setRenderTarget(null); renderer.render(post.scene, post.cam);
   if (shot.after) shot.after(t, t - shot.t0, ctx);
   ov.caption(t);
-  ov.watermark();
   return shot.name;
 };
 window.__ctx = ctx; window.ready = true;

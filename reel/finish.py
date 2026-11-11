@@ -3,6 +3,7 @@ import subprocess, json, sys, os, re, glob
 HERE = os.path.dirname(os.path.abspath(__file__))
 SP = os.path.join(HERE, 'build')
 FR = os.path.join(SP, 'frames')
+WM = os.path.join(HERE, 'watermark.png')
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'grace_boss_charger_1080p.mp4')
 NF = 1712; DUR = NF / 60.0
 n = len(glob.glob(os.path.join(FR, 'f*.jpg')))
@@ -12,9 +13,9 @@ r = subprocess.run(['ffmpeg', '-hide_banner', '-i', os.path.join(SP, 'mix_raw.wa
 m = json.loads(r[r.rindex('{'):r.rindex('}') + 1])
 ln = (f"loudnorm=I=-14:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}"
       f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true")
-cmd = ['ffmpeg', '-y', '-hide_banner', '-v', 'error', '-framerate', '60', '-i', os.path.join(FR, 'f%04d.jpg'), '-i', os.path.join(SP, 'mix_raw.wav'),
-       '-filter_complex', f'[1:a]{ln},aresample=48000,apad,atrim=0:{DUR:.6f}[a]',
-       '-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '15', '-profile:v', 'high', '-level', '4.2',
+cmd = ['ffmpeg', '-y', '-hide_banner', '-v', 'error', '-framerate', '60', '-i', os.path.join(FR, 'f%04d.jpg'), '-i', os.path.join(SP, 'mix_raw.wav'), '-loop', '1', '-framerate', '60', '-i', WM,
+       '-filter_complex', f'[0:v][2:v]overlay=0:0:shortest=1[v];[1:a]{ln},aresample=48000,apad,atrim=0:{DUR:.6f}[a]',
+       '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '15', '-profile:v', 'high', '-level', '4.2',
        '-pix_fmt', 'yuv420p', '-r', '60', '-g', '120', '-maxrate', '30M', '-bufsize', '60M', '-x264-params', 'aq-mode=3',
        '-c:a', 'aac', '-b:a', '320k', '-ar', '48000', '-movflags', '+faststart', '-t', f'{DUR:.6f}', OUT]
 subprocess.run(cmd, check=True)

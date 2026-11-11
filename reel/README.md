@@ -1,8 +1,8 @@
-# Grace In Motion — "Boss Charger" reel
+# @garden_reels — "Boss Charger" reel
 
 Instagram reel (1080x1920, 60fps, H.264 + AAC) built 100% in code:
 low-poly flat-shaded 3D (three.js) rendered frame-by-frame in headless Chromium,
-2D overlay for captions / comic words / watermark, procedural SFX in numpy, ffmpeg encode.
+2D overlay for captions / comic words, `watermark.png` (@garden_reels) composited at encode time, procedural SFX in numpy, ffmpeg encode.
 
 - `web/` — the scene: `rig.js` (characters, FK/IK, face rig, shock hair, x-ray), `sets.js` (office, desk,
   corner office + skyline, flashback), `shots.js` (timeline: every frame is a pure function of t),

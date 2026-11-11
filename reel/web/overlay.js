@@ -63,8 +63,8 @@ export class Overlay {
   watermark() {
     const x = this.x;
     x.save(); x.font = '600 34px FR'; x.textAlign = 'center';
-    x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillText('@Grace In Motion', W / 2 + 2, 1372);
-    x.fillStyle = 'rgba(255,255,255,0.62)'; x.fillText('@Grace In Motion', W / 2, 1370);
+    x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillText('@garden_reels', W / 2 + 2, 1372);
+    x.fillStyle = 'rgba(255,255,255,0.62)'; x.fillText('@garden_reels', W / 2, 1370);
     x.restore();
   }
 
