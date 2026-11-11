@@ -886,7 +886,6 @@ const SFXTXT = [
   { a: 12.95, b: 13.35, txt: 'SCRRRTCH', x: 540, y: 700, rot: -0.08, fill: '#ff3b2f', size: 120 },
   { a: 13.5, b: 14.0, txt: '✨', x: 760, y: 520, rot: 0.2, fill: '#ffffff', size: 120 },
   { a: 15.05, b: 15.6, txt: '👀', x: 540, y: 560, rot: 0, fill: '#ffffff', size: 150 },
-  { a: 26.4, b: 28.6, txt: 'wah wah wahhh…', x: 540, y: 960, rot: -0.04, fill: '#ffffff', size: 90 },
 ];
 function outlinedText(txt, x, y, size, fill, stroke = '#000', lw = 0.16, weight = 900) {
   ctx.font = `${weight} ${size}px Inter, "Noto Color Emoji", sans-serif`;
