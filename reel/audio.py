@@ -227,6 +227,21 @@ def scratch(d=0.3):
     x = src[i0] * (1 - fr) + src[i0 + 1] * fr
     return hp(x, 200) * np.sin(np.pi * tl / d) ** 0.4
 
+def creak(d=0.24, f0=480, seed=0):
+    # wooden/spring creak: stick-slip pulse train with wobbling pitch through resonances
+    r = np.random.default_rng(seed + 50); t = tt(d)
+    f = f0 * (1 + 0.18 * np.sin(np.pi * t / d) + 0.05 * np.sin(2 * np.pi * 9 * t)) * r.uniform(0.95, 1.05)
+    ph = np.cumsum(f / SR); pulse = (np.diff(np.floor(ph), prepend=0) > 0).astype(float)
+    pulse *= 0.6 + 0.4 * r.uniform(0, 1, len(pulse))
+    x = formant(pulse, [(f0 * 1.9, 220, 1.0), (1700, 300, 0.7), (3100, 500, 0.35)])
+    return x * np.sin(np.pi * np.clip(t / d, 0, 1)) ** 0.8 * 3.0
+
+def pant(d=0.24, f0=130, seed=0):
+    t = tt(d)
+    g = glottal(f0 * (1 - 0.15 * t / d), d)
+    v = 0.35 * formant(g, [(750, 150, 1.0), (1250, 200, 0.6)]) + bp(noise(d), 600, 3200)
+    return v * env_ad(len(t), 0.03, d * 0.8, 3)
+
 def reverb(x, rt=1.4, wet=0.35, seed=5):
     r = np.random.default_rng(seed)
     L = int(rt * SR); t = np.arange(L) / SR
@@ -239,17 +254,24 @@ def reverb(x, rt=1.4, wet=0.35, seed=5):
 
 # ------------------------------------------------------------------ cue sheet
 def cues():
-    # S1/S2 struggle: breathing, grunts, rattle
-    for k, (t0, ins) in enumerate([(0.0, True), (0.3, False), (0.62, True), (0.95, False), (1.3, True)]):
-        put(breath(0.38, ins, (500, 2300) if k % 2 else (420, 1900)), t0, 0.32, -0.25 + 0.5 * (k % 2))
-    put(grunt(0.34, 100), 0.12, 0.22, -0.2); put(grunt(0.3, 88), 0.5, 0.2, 0.25)
-    put(rattle(0.85, 16, 1), 0.0, 0.22, 0.0)
-    put(rattle(0.75, 26, 2, (180, 320)), 0.85, 0.5, 0.15)
-    for k in range(9): put(clink(2200 + 400 * rng.random()), 0.9 + k * 0.075 + 0.02 * rng.random(), 0.16, 0.3)
-    put(bp(noise(0.5), 800, 5000) * np.exp(-tt(0.5) * 5), 1.0, 0.12, 0.3)          # splash
-    for k in range(8): put(click(0.02, 2500 + 500 * rng.random()), 0.9 + k * 0.04, 0.08, 0.4)  # pens rolling
-    put(S(knock(900, 0.12, 2), clink(3100, 0.2)), 1.68, 0.18, 0.5); put(S(knock(1000, 0.1, 2), clink(2800, 0.2)), 1.8, 0.15, 0.55)
-    put(whoosh(0.22, 400, 3500), 0.78, 0.25, -0.3); put(whoosh(0.25, 300, 3000), 1.5, 0.25, 0.3)
+    # S1/S2 misdirect: steady creak-thump rhythm + panting (it's only the charger)
+    beats = [0.08 + k / 2.6 for k in range(8)]
+    for k, bt in enumerate(beats):
+        fd = 1.0 if bt < 1.6 else max(0.22, 1 - (bt - 1.6) / 1.3)
+        put(creak(0.24, 470 + 70 * (k % 2), k), bt - 0.04, 0.34 * fd, -0.15 + 0.3 * (k % 2))
+        put(S(knock(140, 0.12, 0.7), thump(85, 48, 0.16) * 0.8), bt, 0.42 * fd, 0.0)
+        if bt < 1.6:
+            put(pant(0.24, 150 if k % 2 else 122, k), bt + 0.03, 0.2, -0.3 + 0.6 * (k % 2))
+    put(grunt(0.34, 100), 0.12, 0.2, -0.2); put(grunt(0.3, 88), 0.5, 0.18, 0.25)
+    # shoe pops off, lands
+    put(S(bloop(260, 900, 0.09), click(0.02, 1800)), 0.95, 0.32, 0.2); put(whoosh(0.28, 600, 3500, 0.6, 0.4), 0.95, 0.16, 0.3)
+    put(knock(240, 0.1, 1.0), 1.44, 0.28, 0.35)
+    # mug + pens (S2b)
+    for k in range(7): put(clink(2200 + 400 * rng.random()), 1.22 + k * 0.055 + 0.02 * rng.random(), 0.15, 0.3)
+    put(bp(noise(0.5), 800, 5000) * np.exp(-tt(0.5) * 5), 1.25, 0.12, 0.3)
+    for k in range(6): put(click(0.02, 2500 + 500 * rng.random()), 1.2 + k * 0.035, 0.08, 0.4)
+    put(S(knock(900, 0.12, 2), clink(3100, 0.2)), 1.88, 0.16, 0.5); put(S(knock(1000, 0.1, 2), clink(2800, 0.2)), 1.96, 0.13, 0.55)
+    put(whoosh(0.22, 400, 3500), 0.78, 0.22, -0.3); put(whoosh(0.2, 500, 3200), 1.13, 0.2, 0.3); put(whoosh(0.25, 300, 3000), 1.5, 0.22, 0.3)
     # S3: footsteps, turn swish, gasp, papers, spit
     for k in range(5): put(S(thump(140, 70, 0.12) * 0.8, 0.2 * click(0.02, 1500)), 1.6 + k * 0.085 + (0.04 if k % 2 else 0), 0.22, -0.3 + 0.15 * k)
     put(whoosh(0.18, 600, 3000), 2.0, 0.18, -0.2); put(whoosh(0.18, 500, 2800), 2.06, 0.16, 0.2)

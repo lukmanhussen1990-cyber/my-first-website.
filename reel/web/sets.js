@@ -136,7 +136,8 @@ export function buildOffice() {
   const wood = '#b97f4b';
   desk.add(at(box(1.72, 0.045, 0.78, wood, { jit: 0.04 }), 0, DH - 0.023, -1.12));
   desk.add(at(box(1.72, 0.012, 0.79, '#c98d57'), 0, DH + 0.001, -1.12));
-  for (const [lx, lz] of [[-0.82, -1.47], [0.82, -1.47], [-0.82, -0.77], [0.82, -0.77]]) desk.add(at(box(0.055, DH - 0.045, 0.055, '#a36d3e'), lx, (DH - 0.045) / 2, lz));
+  refs.deskLegs = [];
+  for (const [lx, lz] of [[-0.82, -1.47], [0.82, -1.47], [-0.82, -0.77], [0.82, -0.77]]) { const lg = at(box(0.055, DH - 0.045, 0.055, '#a36d3e'), lx, (DH - 0.045) / 2, lz); desk.add(lg); refs.deskLegs.push(lg); }
   desk.add(at(box(1.6, 0.06, 0.03, '#a36d3e'), 0, DH - 0.08, -1.46));
   // monitor
   const mon = new THREE.Group(); mon.position.set(0.0, DH + 0.007, -1.33); desk.add(mon);

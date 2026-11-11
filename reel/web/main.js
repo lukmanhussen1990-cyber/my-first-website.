@@ -45,6 +45,7 @@ const plug = makePlug(); plug.rotation.x = -Math.PI / 2; plug.position.set(0, -0
 const torch = makeFlashlight(); chars.boss.head.add(torch);
 torch.position.copy(chars.boss.mouthG.position); torch.position.z += 0.06; torch.quaternion.copy(chars.boss.mouthG.quaternion);
 const torchFloor = makeFlashlight(); scene.add(torchFloor);
+const shoeFly = new THREE.Group(); shoeFly.add(box(0.105, 0.075, 0.25, '#2a2930', { rough: 0.5 })); { const so = box(0.108, 0.018, 0.255, '#d9d4cc'); so.position.y = -0.04; shoeFly.add(so); } scene.add(shoeFly);
 const keysProp = makeKeys(); keysProp.position.set(0, -0.11, 0.03); chars.boss.wr.L.add(keysProp);
 const keyGlow = glowSprite('#ffd36b', 0.5, 0.9); keysProp.add(keyGlow);
 const cup = makeCup(); cup.position.set(0, -0.09, 0.03); cup.rotation.x = -Math.PI / 2; chars.cw2.wr.L.add(cup);
@@ -80,7 +81,7 @@ const bg = {
   dark: new THREE.Color('#050508'),
 };
 
-const ctx = { THREE, renderer, scene, camera, hemi, key, fill, pt1, pt2, pt3, spot, office, corner, flash, chars, plug, torch, torchFloor,
+const ctx = { shoeFly, THREE, renderer, scene, camera, hemi, key, fill, pt1, pt2, pt3, spot, office, corner, flash, chars, plug, torch, torchFloor,
   keysProp, keyGlow, cup, papers, beam, wallPool, smoke, drops, sheets, hearts3, confetti, post, ov, bg, data, DH };
 makePhotos(ctx);
 const shots = buildShots(ctx);
@@ -96,10 +97,13 @@ function reset() {
   spot.intensity = 0;
   torch.visible = false; torchFloor.visible = false; keysProp.visible = false; cup.visible = false; papers.visible = false; plug.visible = false;
   beam.visible = false; wallPool.visible = false;
-  smoke.forEach(m => m.visible = false); drops.forEach(m => m.visible = false); sheets.forEach(m => m.visible = false);
+  smoke.forEach(m => { m.visible = false; m.material.color.set('#b9b5bd'); }); shoeFly.visible = false;
+  chars.you.ankle.L.children.forEach(c => { if (!c.userData.bone) c.visible = true; });
+  drops.forEach(m => m.visible = false); sheets.forEach(m => m.visible = false);
   hearts3.forEach(m => m.visible = false); confetti.visible = false;
   office.refs.wallStuff.forEach(o => o.visible = true); office.refs.cables.forEach(o => o.visible = true); office.refs.charger.visible = true;
   office.refs.desk.position.set(0, 0, 0); office.refs.desk.rotation.set(0, 0, 0);
+  office.refs.deskLegs.forEach(l => l.visible = true);
   const mug = office.refs.mug; mug.position.set(0.52, DH + 0.001, -0.9); mug.rotation.set(0, 0, 0);
   office.refs.pens.forEach(pen => { pen.position.set(...pen.userData.home); pen.rotation.set(0, 0, 0); });
   corner.refs.sign.rotation.set(0, 0, 0);
