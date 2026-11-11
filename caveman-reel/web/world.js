@@ -108,23 +108,23 @@ function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
 export const MAT = {};
 export function makeMaterials() {
   const t = (tex, rx, ry) => { const c = tex.clone(); c.repeat.set(rx, ry); c.needsUpdate = true; return c; };
-  MAT.grass = new THREE.MeshStandardMaterial({ map: t(TEX.grass, 220, 220), roughness: 1 });
-  MAT.sand = new THREE.MeshStandardMaterial({ map: t(TEX.sand, 7, 7), roughness: 1 });
-  MAT.rock = new THREE.MeshStandardMaterial({ map: t(TEX.rock, 2, 2), roughness: 0.95 });
-  MAT.rockWarm = new THREE.MeshStandardMaterial({ map: t(TEX.rockWarm, 2, 2), roughness: 0.95 });
-  MAT.pebble = new THREE.MeshStandardMaterial({ map: t(TEX.rock, 1, 1), roughness: 0.95 });
-  MAT.thatch = new THREE.MeshStandardMaterial({ map: t(TEX.thatch, 5, 1), roughness: 1 });
-  MAT.mud = new THREE.MeshStandardMaterial({ map: t(TEX.mud, 4, 1), roughness: 1 });
-  MAT.bark = new THREE.MeshStandardMaterial({ map: t(TEX.bark, 2, 2), roughness: 1 });
-  MAT.leaf = new THREE.MeshStandardMaterial({ map: t(TEX.leaf, 2, 2), roughness: 1 });
-  MAT.pine = new THREE.MeshStandardMaterial({ color: 0x2f7350, roughness: 1, flatShading: true });
-  MAT.wood = new THREE.MeshStandardMaterial({ map: TEX.wood, roughness: 0.85 });
-  MAT.woodDark = new THREE.MeshStandardMaterial({ color: 0x4d321a, roughness: 0.9 });
-  MAT.stone = new THREE.MeshStandardMaterial({ map: TEX.stone, roughness: 0.95 });
-  MAT.stoneFlat = new THREE.MeshStandardMaterial({ map: t(TEX.rock, 1, 1), color: 0xcfc8bd, roughness: 0.95 });
-  MAT.soil = new THREE.MeshStandardMaterial({ map: TEX.soil, roughness: 1 });
-  MAT.dark = new THREE.MeshStandardMaterial({ color: 0x1b130c, roughness: 1 });
-  MAT.fur = new THREE.MeshStandardMaterial({ map: TEX.fur, roughness: 1 });
+  MAT.grass = new THREE.MeshLambertMaterial({ map: t(TEX.grass, 220, 220) });
+  MAT.sand = new THREE.MeshLambertMaterial({ map: t(TEX.sand, 7, 7) });
+  MAT.rock = new THREE.MeshLambertMaterial({ map: t(TEX.rock, 2, 2) });
+  MAT.rockWarm = new THREE.MeshLambertMaterial({ map: t(TEX.rockWarm, 2, 2) });
+  MAT.pebble = new THREE.MeshLambertMaterial({ map: t(TEX.rock, 1, 1) });
+  MAT.thatch = new THREE.MeshLambertMaterial({ map: t(TEX.thatch, 5, 1) });
+  MAT.mud = new THREE.MeshLambertMaterial({ map: t(TEX.mud, 4, 1) });
+  MAT.bark = new THREE.MeshLambertMaterial({ map: t(TEX.bark, 2, 2) });
+  MAT.leaf = new THREE.MeshLambertMaterial({ map: t(TEX.leaf, 2, 2) });
+  MAT.pine = new THREE.MeshLambertMaterial({ color: 0x2f7350, flatShading: true });
+  MAT.wood = new THREE.MeshLambertMaterial({ map: TEX.wood });
+  MAT.woodDark = new THREE.MeshLambertMaterial({ color: 0x4d321a });
+  MAT.stone = new THREE.MeshLambertMaterial({ map: TEX.stone });
+  MAT.stoneFlat = new THREE.MeshLambertMaterial({ map: t(TEX.rock, 1, 1), color: 0xcfc8bd });
+  MAT.soil = new THREE.MeshLambertMaterial({ map: TEX.soil });
+  MAT.dark = new THREE.MeshLambertMaterial({ color: 0x1b130c });
+  MAT.fur = new THREE.MeshLambertMaterial({ map: TEX.fur });
   MAT.bamboo = new THREE.MeshStandardMaterial({ map: TEX.bamboo, roughness: 0.55 });
 }
 
@@ -144,7 +144,7 @@ export function buildBackdrop() {
   sky.renderOrder = -10; g.add(sky);
 
   // puffy cumulus: clusters of soft white spheres with flat-ish bottoms
-  const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, emissive: 0xdfe9f7, emissiveIntensity: 0.62, fog: false });
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xdfe9f7, emissiveIntensity: 0.62, fog: false });
   const sph = new THREE.SphereGeometry(1, 20, 14);
   const R = rng(77); const clouds = new THREE.Group(); clouds.name = 'clouds';
   const N = 26;
@@ -173,14 +173,14 @@ export function buildBackdrop() {
     { az: 265, d: 520, r: 170, h: 185, s: 7 }, { az: 60, d: 500, r: 160, h: 165, s: 8 }, { az: 300, d: 520, r: 175, h: 190, s: 9 },
     { az: 25, d: 470, r: 160, h: 175, s: 10 }, { az: 335, d: 500, r: 170, h: 185, s: 11 }, { az: 0, d: 560, r: 190, h: 205, s: 12 },
   ];
-  const mtMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 });
+  const mtMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   for (const m of mts) {
     const a = m.az * Math.PI / 180;
     const mm = new THREE.Mesh(mountainGeo(m.r, m.h, m.s), mtMat); mm.position.set(Math.sin(a) * m.d, -6, Math.cos(a) * m.d); mm.rotation.y = m.s * 1.3; g.add(mm);
   }
   // rolling green foothills with cone pines
-  const hillMat = new THREE.MeshStandardMaterial({ color: 0x5f9f52, roughness: 1 });
-  const hillMat2 = new THREE.MeshStandardMaterial({ color: 0x6fb058, roughness: 1 });
+  const hillMat = new THREE.MeshLambertMaterial({ color: 0x5f9f52 });
+  const hillMat2 = new THREE.MeshLambertMaterial({ color: 0x6fb058 });
   const pineGeo = new THREE.ConeGeometry(1, 2.6, 6); pineGeo.translate(0, 1.3, 0);
   const RH = rng(5);
   for (let i = 0; i < 30; i++) {
@@ -313,13 +313,13 @@ export function buildMainSet() {
   const huts = [[-13, -5.5, 0.6], [-17.5, -0.5, 1.1], [-14, 5.5, 1.5], [-20, -9, 0.4], [-8.5, -13.5, 0.2], [15.5, -9.5, -0.5], [19, -3, -1.0], [-22, 4.5, 1.3], [16, 8, -2.2]];
   huts.forEach(([x, z, ry], i) => { const h = makeHut(i + 1, 1.25); h.position.set(x, 0, z); h.rotation.y = ry; g.add(h); });
   // trees
-  const trees = [[-10.5, -11, 1.5], [12.5, -11.5, 1.6], [-16, -13, 1.7], [9.5, -13, 1.3], [-18, 8.5, 1.5], [21, -9.5, 1.6], [-24, -3, 1.4], [-6, 14, 1.4], [8, 15, 1.5], [18, 13, 1.6], [-13, 16, 1.5], [1, 19, 1.4], [24, 4, 1.5], [-2, -14.5, 1.6], [14, 18.5, 1.3], [-20, 15, 1.6]];
+  const trees = [[-10.5, -11, 1.5], [12.5, -11.5, 1.6], [-16, -13, 1.7], [9.5, -13, 1.3], [-18, 8.5, 1.5], [21, -9.5, 1.6], [-24, -3, 1.4], [-6, 14, 1.4], [2.5, 16.5, 1.5], [18, 13, 1.6], [-13, 16, 1.5], [1, 19, 1.4], [24, 4, 1.5], [-2, -14.5, 1.6], [14, 18.5, 1.3], [-20, 15, 1.6]];
   trees.forEach(([x, z, s], i) => { const t = makeTree(i + 3, s); t.position.set(x, 0, z); t.rotation.y = i * 2.1; g.add(t); });
   const RP = rng(9);
   for (let i = 0; i < 26; i++) { const a = RP() * TAU, d = 26 + RP() * 38; const p = makePine(i, 1.6 + RP() * 1.6); p.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); g.add(p); }
   // grass tufts on the border of the clearing
   const tuftGeo = new THREE.ConeGeometry(0.035, 0.34, 4); tuftGeo.translate(0, 0.17, 0);
-  const tuftMat = new THREE.MeshStandardMaterial({ color: 0x4f9e30, roughness: 1 });
+  const tuftMat = new THREE.MeshLambertMaterial({ color: 0x4f9e30 });
   const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, 1500); const dm = new THREE.Object3D(); let ti = 0;
   const RT = rng(8);
   for (let i = 0; i < 300; i++) {

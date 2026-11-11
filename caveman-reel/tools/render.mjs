@@ -34,8 +34,11 @@ await page.goto(`http://127.0.0.1:${port}/web/index.html?w=${W}&h=${H}${q ? '&' 
 await page.waitForFunction('window.READY === true', null, { timeout: 180000 });
 const t0 = Date.now(); let n = 0;
 for (const f of frames) {
-  await page.evaluate((f) => window.renderFrame(f), f);
-  await page.screenshot({ path: name(f), type: ext === 'jpg' ? 'jpeg' : 'png', ...(ext === 'jpg' ? { quality: 93 } : {}) });
+  const ta = Date.now();
+  await page.evaluate((f) => { window.renderFrame(f); const gl = document.getElementById('gl').getContext('webgl2'); const px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); }, f);
+  const tb = Date.now();
+  await page.screenshot({ path: name(f), type: ext === 'jpg' ? 'jpeg' : 'png', ...(ext === 'jpg' ? { quality: 95 } : {}) });
+  if (has('timing')) console.log(`f${f} render ${tb - ta} ms, shot ${Date.now() - tb} ms`);
   n++;
   if (n % 25 === 0 || n === frames.length) console.log(`rendered ${n}/${frames.length}  (${((Date.now() - t0) / n / 1000).toFixed(2)} s/frame)`);
 }
