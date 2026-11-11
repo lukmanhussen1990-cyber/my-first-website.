@@ -63,15 +63,30 @@ def main():
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 4)
     ap.add_argument("--chunks", type=int, default=24)
     ap.add_argument("--audio", default=str(ROOT / "out" / "mix.wav"))
+    ap.add_argument("--resume", action="store_true", help="keep finished chunks from an interrupted run")
     a = ap.parse_args()
     f0 = int(round(a.start * FPS))
     f1 = min(N_FRAMES, int(round(a.end * FPS)))
     tmp = ROOT / "out" / "chunks"
     tmp.mkdir(parents=True, exist_ok=True)
-    for old in tmp.glob("*.mkv"):
-        old.unlink()
     edges = np.linspace(f0, f1, a.chunks + 1).astype(int)
-    jobs = [(int(edges[i]), int(edges[i + 1]), str(tmp / f"c{i:03d}.mkv")) for i in range(a.chunks) if edges[i + 1] > edges[i]]
+    all_jobs = [(int(edges[i]), int(edges[i + 1]), str(tmp / f"c{i:03d}.mkv")) for i in range(a.chunks)
+                if edges[i + 1] > edges[i]]
+
+    def finished(j):
+        if not os.path.exists(j[2]):
+            return False
+        r = subprocess.run(["ffprobe", "-v", "error", "-count_packets", "-select_streams", "v:0", "-show_entries",
+                            "stream=nb_read_packets", "-of", "csv=p=0", j[2]], capture_output=True, text=True)
+        return r.stdout.strip() == str(j[1] - j[0])
+
+    if a.resume:
+        jobs = [j for j in all_jobs if not finished(j)]
+        print(f"resume: {len(all_jobs) - len(jobs)} chunks already done", flush=True)
+    else:
+        for old in tmp.glob("*.mkv"):
+            old.unlink()
+        jobs = all_jobs
     t0 = time.time()
     done = 0
     with Pool(a.workers) as pool:
@@ -80,7 +95,7 @@ def main():
             print(f"  {os.path.basename(path)}: {n} frames in {dt:.0f}s  ({done}/{f1 - f0}, {time.time() - t0:.0f}s)",
                   flush=True)
     lst = tmp / "list.txt"
-    lst.write_text("".join(f"file '{j[2]}'\n" for j in jobs))
+    lst.write_text("".join(f"file '{j[2]}'\n" for j in all_jobs))
     dur = (f1 - f0) / FPS
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
            "-ss", f"{f0 / FPS:.4f}", "-t", f"{dur:.4f}", "-i", a.audio,
