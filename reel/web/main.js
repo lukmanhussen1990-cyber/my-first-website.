@@ -79,14 +79,18 @@ const bg = {
   dusk: gradTex([[0, '#1e2a5a'], [0.35, '#6a4a8c'], [0.62, '#e2787a'], [0.8, '#f7b066'], [1, '#ffd89a']]),
   dream: gradTex([[0, '#7f6bff'], [0.5, '#ff8fc8'], [1, '#ffbf94']]),
   dark: new THREE.Color('#050508'),
+  sil: gradTex([[0, '#2b0b3f'], [0.3, '#a8165a'], [0.55, '#ff4f7e'], [0.75, '#ff8c6b'], [1, '#ffc98a']]),
 };
 
-const ctx = { shoeFly, THREE, renderer, scene, camera, hemi, key, fill, pt1, pt2, pt3, spot, office, corner, flash, chars, plug, torch, torchFloor,
+const silMeshes = [];
+const ctx = { silMeshes, shoeFly, THREE, renderer, scene, camera, hemi, key, fill, pt1, pt2, pt3, spot, office, corner, flash, chars, plug, torch, torchFloor,
   keysProp, keyGlow, cup, papers, beam, wallPool, smoke, drops, sheets, hearts3, confetti, post, ov, bg, data, DH };
 makePhotos(ctx);
 const shots = buildShots(ctx);
 
 function reset() {
+  for (const m of silMeshes) { if (m.userData.silOrig) { m.material = m.userData.silOrig; } } silMeshes.length = 0;
+  office.G.children.forEach(ch => ch.visible = true);
   for (const k in chars) { chars[k].root.visible = false; chars[k].setXray(false); }
   office.G.visible = corner.G.visible = flash.G.visible = false;
   scene.background = bg.office; scene.fog = null;
@@ -121,7 +125,7 @@ window.renderFrame = (f) => {
   post.u.uTime.value = t;
   let shot = shots[0];
   for (const s of shots) if (t >= s.t0) shot = s;
-  if (t > 2.75 && ctx.pensFallen) ctx.pensFallen();
+  if (t > 2.9 && ctx.pensFallen) ctx.pensFallen();
   shot.run(t, t - shot.t0, ctx);
   renderer.setRenderTarget(post.rt); renderer.render(scene, camera);
   renderer.setRenderTarget(null); renderer.render(post.scene, post.cam);

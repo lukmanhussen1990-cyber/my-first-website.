@@ -74,7 +74,7 @@ export function gradTex(stops, w = 4, h = 512) {
 }
 
 // ------------------------------------------------------------------ OFFICE + DESK
-export const DH = 1.12;
+export const DH = 1.32;
 export function buildOffice() {
   const G = new THREE.Group(); G.name = 'office';
   const refs = {}; let refs0;
@@ -102,7 +102,7 @@ export function buildOffice() {
   G.add(at(box(0.01, 0.09, 0.005, '#111'), 0.15, 2.38, -1.462, 0, 0, 0.6)); G.add(at(box(0.008, 0.06, 0.005, '#111'), 0.15, 2.37, -1.461, 0, 0, -1.2));
   refs.wallStuff = [refs0];
   // socket
-  const sock = new THREE.Group(); sock.position.set(-0.42, 0.32, -1.495); G.add(sock); refs.socket = sock;
+  const sock = new THREE.Group(); sock.position.set(-0.25, 0.72, -1.495); G.add(sock); refs.socket = sock;
   sock.add(at(box(0.078, 0.118, 0.01, '#f3efe5', { jit: 0.02 }), 0, 0, 0));
   for (const oy of [0.026, -0.026]) {
     sock.add(at(box(0.052, 0.044, 0.008, '#e7e1d3', { jit: 0.02 }), 0, oy, 0.006));
@@ -110,7 +110,7 @@ export function buildOffice() {
     sock.add(at(cyl(0.0035, 0.0035, 0.004, 6, '#141414'), 0, oy - 0.012, 0.0103, Math.PI / 2));
   }
   sock.add(at(cyl(0.004, 0.004, 0.004, 8, '#c9c4b8'), 0, 0, 0.007, Math.PI / 2));
-  const lowPlug = box(0.044, 0.038, 0.042, '#1d1d22'); lowPlug.position.set(-0.42, 0.294, -1.465); G.add(lowPlug); refs.wallStuff.push(sock, lowPlug);
+  const lowPlug = box(0.044, 0.038, 0.042, '#1d1d22'); lowPlug.position.set(-0.25, 0.694, -1.465); G.add(lowPlug); refs.wallStuff.push(sock, lowPlug);
   // power strip, PC tower, bin
   G.add(at(box(0.36, 0.04, 0.066, '#f2f2f0'), -0.1, 0.022, -1.33));
   G.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.03), basic('#ff8a2a', { toneMapped: false })), -0.27, 0.046, -1.33));
@@ -119,7 +119,7 @@ export function buildOffice() {
   pc.position.set(0.55, 0.235, -1.2); G.add(pc);
   // static cable tangle
   const C = [
-    [[[-0.42, 0.294, -1.44], [-0.4, 0.12, -1.38], [-0.32, 0.025, -1.3], [-0.2, 0.06, -1.33]], '#18181c'],
+    [[[-0.25, 0.694, -1.44], [-0.27, 0.4, -1.42], [-0.24, 0.1, -1.36], [-0.2, 0.06, -1.33]], '#18181c'],
     [[[-0.18, 0.06, -1.33], [-0.05, 0.02, -1.15], [0.25, 0.02, -1.0], [0.45, 0.1, -1.0], [0.46, 0.3, -1.0]], '#2a2a30'],
     [[[-0.02, 0.06, -1.33], [0.15, 0.02, -1.25], [0.44, 0.03, -1.2]], '#d9d9d9'],
     [[[-0.3, DH - 0.05, -1.25], [-0.32, 0.55, -1.3], [-0.5, 0.18, -1.32], [-0.36, 0.05, -1.2], [-0.2, 0.15, -1.25], [-0.28, 0.5, -1.3], [-0.24, DH - 0.05, -1.2]], '#1d1d22'],

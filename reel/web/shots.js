@@ -120,15 +120,15 @@ function flashMode() {
   C.fill.intensity = 0.6; C.fill.position.set(-2, -1, FZ + 4); C.fill.target.position.set(0, 0, FZ);
 }
 
-// standard under-desk placement (pre-zap): boss lies low in FRONT (nearest the socket, flashlight),
-// YOU kneels BEHIND him, leaning over his back to reach the socket with the charger.
-const YP = { x: -0.3, z: -0.3, ry: PI + 0.08 }, BP = { x: 0.05, z: -0.46, ry: PI - 0.12 };
-const SOCK = V(-0.42, 0.346, -1.48);
+// standard under-desk placement (pre-zap): BOSS on all fours in FRONT (flashlight, nearest the socket),
+// YOU kneels BEHIND (diagonally, so nobody actually touches) and leans over him to reach the socket.
+// From the side it lines up like *that*; from the front it's obviously just a phone charger.
+const BP = { x: 0.12, z: -0.62, ry: PI - 0.05 }, YP = { x: -0.25, z: -0.3, ry: PI + 0.05 };
+const SOCK = V(-0.25, 0.746, -1.48);
 function bossCrawl(t, o = {}) {
   const ch = C.chars.boss;
-  const p = prone(ch, BP.x, BP.z + (o.dz ?? 0), BP.ry, { neckY: 0.32, headY: 0.18, headZ: -0.05, headX: o.headX ?? 0, face: o.face });
-  p.ankleL = [1.1 + (o.ankle ?? 0), 0, 0]; p.ankleR = [1.1 + (o.ankle2 ?? o.ankle ?? 0), 0, 0];
-  p.breathe = 1.6; p.bper = 1.4;
+  const p = crawl(ch, BP.x, BP.z + (o.dz ?? 0), BP.ry, { ankle: o.ankle, ankle2: o.ankle2,
+    neckY: 0.3, headY: 0.14, headZ: -0.05, headX: (o.headX ?? 0) + 0.1, spineY: 0.04, face: o.face, breathe: 2.0, bper: 1.4 });
   ch.apply(p, t);
   return ch;
 }
@@ -136,15 +136,22 @@ function youCrawl(t, o = {}) {
   const ch = C.chars.you;
   const reach = o.reach ?? SOCK.clone().add(V(0.0, 0.0, 0.1));
   const zz = YP.z + (o.dz ?? 0);
-  const p = crawl(ch, YP.x, zz, YP.ry, { ankle: o.ankle, ankle2: o.ankle2, pitch: 1.3,
-    neckY: 0.1, headY: 0.05, headZ: -0.04, neckZ: 0, spineY: 0.06, headX: o.headX ?? 0,
-    armR: { ik: [reach.x, reach.y, reach.z], pole: [reach.x - 0.35, 0.95, reach.z + 0.25], hand: 'fist', wr: [0.2, 0, 0] },
-    face: o.face });
-  // left hand rests on the boss's back (computed from the boss pose, order-independent)
-  const back = toW(BP.x, BP.z + (o.bdz ?? 0), BP.ry, 0.08, 0.5, 0.42);
-  p.armL = { ik: back, pole: [back[0] - 0.5, 1.0, back[2] + 0.3], hand: 'mitten', wr: [1.2, 0, 0] };
+  const pitch = 1.02;
+  const p = { x: YP.x, z: zz, ry: YP.ry, hipY: 0.6, hipR: [pitch, 0, 0],
+    legL: [-pitch, 0, -0.12, 1.57], legR: [-pitch, 0, 0.12, 1.57],
+    ankleL: [0.5 + (o.ankle ?? 0), 0, 0], ankleR: [0.5 + (o.ankle2 ?? o.ankle ?? 0), 0, 0],
+    spine: [0.16, 0.06, 0], neck: [-0.55, 0.12, 0], head: [-0.5 + (o.headX ?? 0), 0.14, 0],
+    armR: { ik: [reach.x, reach.y, reach.z], pole: [reach.x - 0.35, reach.y + 0.45, reach.z + 0.35], hand: 'fist', wr: [0.2, 0, 0] },
+    tieHang: true, face: o.face ?? {}, breathe: 2.0, bper: 1.4 };
+  // left hand steadies on the boss's upper back (computed from the boss pose: order-independent)
+  const back = toW(BP.x, BP.z + (o.bdz ?? 0), BP.ry, 0.0, 0.83, 0.5);
+  p.armL = { ik: back, pole: [back[0] + 0.4, back[1] + 0.35, back[2] + 0.45], hand: 'mitten', wr: [1.0, 0, 0] };
   ch.apply(p, t); C.plug.visible = o.plug ?? true;
   return ch;
+}
+const SIL = new THREE.MeshBasicMaterial({ color: '#07050b' }), SIL2 = new THREE.MeshBasicMaterial({ color: '#2a1236' });
+function silhouette(objs, matl = SIL) {
+  for (const ob of objs) ob.traverse(m => { if (m.isMesh && m.visible) { if (!m.userData.silOrig) m.userData.silOrig = m.material; m.material = matl; C.silMeshes.push(m); } });
 }
 function updateCharger() {
   const pp = wp(C.plug);
@@ -284,90 +291,67 @@ export function buildShots(ctx) {
   const S = [];
   const add = (name, t0, run) => S.push({ name, t0, run });
 
-  // S1 — misdirect: two sweaty, flushed faces in the dark, rocking in rhythm (it's just the charger)
+  // OPENING MISDIRECT (0 - 3.2s). Everyone fully clothed; it only *looks* like something else.
   const BEAT = 2.6;
   const pumpAt = (t) => Math.pow(Math.abs(Math.sin(PI * (t - 0.08) * BEAT)), 1.6);
-  const S1body = (t, lt) => {
+  const pair = (t, faceY, faceB, extra = {}) => {
+    const pump = pumpAt(t);
+    const b = bossCrawl(t, { dz: -0.015 * pump, headX: 0.05 * pump, face: faceB, ...(extra.b || {}) });
+    const y = youCrawl(t, { plug: false, dz: -0.05 * pump, bdz: -0.015 * pump, headX: 0.06 * pump, face: faceY, ...(extra.y || {}) });
+    C.plug.visible = false; office.refs.charger.visible = false;
+    return { y, b, pump };
+  };
+  const pantY = (pump) => ({ lid: 0.75 + 0.2 * pump, brow: 0.75, browA: -0.38, mouth: 0.25 + 0.4 * pump, blush: 0.95, sweat: 1, look: [0.2, 0.2] });
+  const pantB = (pump) => ({ lid: 0.7 + 0.25 * pump, brow: 0.7, browA: -0.34, mouth: 0.2 + 0.4 * pump, blush: 0.8, sweat: 1, look: [-0.2, 0.2] });
+  function silhouetteSet(t) {
+    officeMode('day');
+    office.G.children.forEach(ch => { if (ch !== office.refs.desk && ch !== office.G.children[0]) ch.visible = false; });
+    office.refs.deskLegs.forEach(l => l.visible = false);
+    C.scene.background = C.bg.sil;
+  }
+  // O1 — side silhouette: boss on all fours in front, the guy right behind him, rocking in rhythm
+  add('O1 silhouette', 0.0, (t, lt) => {
+    silhouetteSet(t);
+    const pump = pumpAt(t);
+    const desk = office.refs.desk;
+    desk.position.set(0, pump * 0.008, -pump * 0.012); desk.rotation.x = -pump * 0.01;
+    office.refs.mug.rotation.z = Math.sin(t * 19) * 0.1 * pump;
+    const { y, b } = pair(t, pantY(pump), pantB(pump));
+    silhouette([office.refs.desk, office.G.children[0], y.root]); silhouette([b.root], SIL2);
+    const k = smooth(lt / 1.3);
+    cam(t, [lerp(-4.7, -4.35, k), 0.52, -0.93], [-0.04, 0.62, -0.93], 28, { shake: 0.04 + 0.12 * pump, roll: 0.012 * Math.sin(PI * (t - 0.08) * BEAT) });
+    U.uVig.value = 0.5; U.uGrain.value = 0.04; U.uSat.value = 1.15;
+    ov.comic(t, 0.12, 1.28, 'HNNNGH!', 720, 330, 96, 0.1, { shake: 4, top: '#ffffff', fill: '#ffd0e6', inner: '#ff3fa4' });
+    ov.comic(t, 0.55, 1.28, 'creak... creak...', 300, 560, 58, -0.1, { shake: 2, top: '#ffffff', fill: '#ffe1ee', inner: '#d6286f' });
+  });
+  // O2 — closer: the two flushed, panting faces (boss in front, the guy right behind him)
+  add('O2 faces', 1.3, (t, lt) => {
     officeMode('dark'); hideWall();
     const pump = pumpAt(t);
-    const desk = office.refs.desk;
-    desk.position.set(noise(t * 33, 1) * 0.003, pump * 0.007, -pump * 0.01); desk.rotation.x = -pump * 0.008;
-    const y = youCrawl(t, { plug: false, dz: -0.035 * pump, bdz: -0.012 * pump, headX: 0.07 * pump,
-      face: { lid: 0.72 + 0.2 * pump, brow: 0.75, browA: -0.38, mouth: 0.22 + 0.4 * pump, blush: 0.9, sweat: 1, look: [0.4, 0.25] } });
-    const b = bossCrawl(t, { dz: -0.012 * pump, headX: 0.06 * pump,
-      face: { lid: 0.6 + 0.3 * pump, brow: 0.65, browA: -0.32, mouth: 0.18 + 0.35 * pump, blush: 0.75, sweat: 1, look: [-0.4, 0.25] } });
-    C.plug.visible = false; office.refs.charger.visible = false;
-    office.refs.deskLegs[0].visible = false; office.refs.deskLegs[2].visible = false;
+    const desk = office.refs.desk; desk.position.set(0, pump * 0.008, -pump * 0.012);
+    const { y, b } = pair(t, pantY(pump), pantB(pump));
     const yh = wp(y.head), bh = wp(b.head);
-    const mid = yh.clone().lerp(bh, 0.5);
-    C.hemi.intensity = 0.04;
-    C.pt1.color.set('#ff2f7a'); C.pt1.intensity = 5.0; C.pt1.distance = 3.2; C.pt1.position.set(0.9, 0.6, -0.55);
-    C.pt2.color.set('#8c5bff'); C.pt2.intensity = 2.4; C.pt2.distance = 2.0; C.pt2.position.set(-0.1, 1.0, -1.42);
-    C.pt3.color.set('#ff9a6a'); C.pt3.intensity = 0.35; C.pt3.distance = 3.0; C.pt3.position.set(-1.4, 0.7, -0.5);
-    C.smoke.forEach(m => m.material.color.set('#ffe3ef'));
-    wisps(t, [[mid.x, mid.y - 0.1, mid.z + 0.1, 1.2, 8, 71], [-0.2, 0.45, -0.5, 1.1, 7, 72]]);
-    U.uVig.value = 0.62; U.uExp.value = 1.12; U.uSat.value = 1.2; U.uDream.value = 0.1;
-    return { y, b, yh, bh, mid, pump };
-  };
-  add('S1 silhouette', 0.0, (t, lt) => {
-    const { pump } = S1body(t, lt);
-    const k = smooth(lt / 0.95);
-    cam(t, [lerp(-2.6, -2.3, k), 0.66, -0.66], [-0.15, 0.55, -0.7], 42, { shake: 0.05 + 0.16 * pump, roll: 0.02 * Math.sin(PI * (t - 0.08) * BEAT) });
-    ov.comic(t, 0.12, 0.92, 'HNNNGH!', 700, 360, 92, 0.1, { shake: 4, top: '#ffffff', fill: '#ffd0e6', inner: '#ff3fa4' });
+    const fc = yh.clone().lerp(bh, 0.5);
+    C.pt1.color.set('#ff2f7a'); C.pt1.intensity = 2.0; C.pt1.distance = 1.6; C.pt1.position.set(fc.x, fc.y - 0.25, bh.z - 0.45);
+    C.pt2.color.set('#8c5bff'); C.pt2.intensity = 1.8; C.pt2.distance = 1.6; C.pt2.position.set(fc.x + 0.45, fc.y + 0.3, fc.z - 0.2);
+    C.pt3.color.set('#ffb08a'); C.pt3.intensity = 0.9; C.pt3.distance = 1.8; C.pt3.position.set(fc.x - 0.3, fc.y + 0.1, bh.z - 0.7);
+    const k = smooth(lt / 0.7);
+    cam(t, [fc.x + 0.02, fc.y + 0.05, bh.z - lerp(1.45, 1.25, k)], [fc.x, fc.y - 0.01, fc.z], 36, { shake: 0.05 + 0.18 * pump, roll: 0.02 * Math.sin(PI * (t - 0.08) * BEAT) });
+    U.uVig.value = 0.62; U.uExp.value = 1.12; U.uSat.value = 1.2; U.uDream.value = 0.12;
+    ov.comic(t, 1.32, 1.99, 'PANT PANT', 330, 400, 76, -0.12, { shake: 3, top: '#ffffff', fill: '#ffe1ee', inner: '#d6286f' });
   });
-  // S1b — closer: two sweaty, flushed, panting profiles in the dark (still just reaching for a socket)
-  add('S1 close', 0.95, (t, lt) => {
-    const { yh, bh, pump } = S1body(t, lt);
-    office.refs.deskLegs.forEach(l => l.visible = false);
-    C.smoke.forEach(m => m.visible = false);
-    const fc = yh.clone().lerp(bh, 0.45);
-    const k = smooth(lt / 0.65);
-    C.pt1.position.set(fc.x + 0.1, fc.y - 0.15, fc.z - 0.45); C.pt1.intensity = 2.2; C.pt1.distance = 1.4;
-    C.pt2.position.set(fc.x - 0.45, fc.y + 0.3, fc.z - 0.2); C.pt2.intensity = 2.0;
-    C.pt3.position.set(fc.x + 0.3, fc.y + 0.1, fc.z - 0.7); C.pt3.intensity = 0.8; C.pt3.distance = 1.6;
-    cam(t, [fc.x + 0.02, fc.y + 0.03, fc.z - lerp(1.7, 1.5, k)], [fc.x, fc.y - 0.01, fc.z], 34, { shake: 0.06 + 0.2 * pump, roll: 0.02 * Math.sin(PI * (t - 0.08) * BEAT) });
-    U.uDream.value = 0.16;
-    ov.comic(t, 0.97, 1.58, 'PANT PANT', 330, 430, 76, -0.12, { shake: 3, top: '#ffffff', fill: '#ffe1ee', inner: '#d6286f' });
-  });
-
-  // S2a — two pairs of legs sticking out from under the desk, feet twitching in rhythm, a shoe pops off
-  const SHOE0 = V(-0.3, 0.12, 0.2);
-  add('S2 feet', 1.6, (t, lt) => {
-    officeMode('under');
-    const pump = pumpAt(t);
-    const desk = office.refs.desk;
-    desk.position.set(noise(t * 33, 1) * 0.004, pump * 0.008, -pump * 0.012); desk.rotation.x = -pump * 0.01;
-    const you = youCrawl(t, { plug: false, dz: -0.035 * pump, bdz: -0.012 * pump, ankle: 0.75 * pump, ankle2: 0.6 * pumpAt(t + 0.06), face: { mouth: 0.4, blush: 0.9 } });
-    bossCrawl(t, { dz: -0.012 * pump, ankle: 0.65 * pumpAt(t + 0.03), ankle2: 0.7 * pump, face: { mouth: 0.4, blush: 0.7 } });
-    C.plug.visible = false; office.refs.charger.visible = false;
-    cam(t, [lerp(1.75, 1.65, smooth(lt / 0.35)), 0.55, 2.25], [-0.02, 0.4, -0.3], 44, { shake: 0.1 + 0.3 * pump });
-    if (t > 1.68) {
-      const base = wp(you.ankle.L).add(V(0, 0, 0.035 * pump));
-      you.ankle.L.children[0].visible = false; you.ankle.L.children[1].visible = false;
-      const right = V(0, 0, 0).setFromMatrixColumn(C.camera.matrixWorld, 0); right.y = 0; right.normalize();
-      const d = t - 1.68, sh = C.shoeFly; sh.visible = true;
-      const dd = Math.min(d, 0.6);
-      sh.position.set(base.x + right.x * 1.1 * dd, Math.max(0.04, base.y - 0.02 + 2.8 * dd - 4.9 * dd * dd), base.z + right.z * 1.1 * dd);
-      sh.rotation.set(dd * 16, dd * 5, dd * 8);
-    }
-    U.uSat.value = 1.22;
-    ov.comic(t, 1.61, 1.95, 'CREAK!', 330, 500, 104, -0.12, { shake: 6 });
-    if (t > 1.68) { const sp = proj(C.shoeFly.position.clone().add(V(0, 0.14, 0))); ov.comic(t, 1.68, 1.95, 'POP!', sp[0], sp[1], 76, 0.15, { shake: 2 }); }
-  });
-
-  // S2b — desk top: mug hops and spills, pens roll off the edge
-  add('S2 mug', 1.95, (t, lt) => {
+  // O3 — desk top shaking: mug hops and spills, pens roll off
+  add('O3 mug', 2.0, (t, lt) => {
     officeMode('under');
     const pump = pumpAt(t);
     const desk = office.refs.desk;
     desk.position.set(noise(t * 40, 1) * 0.006, pump * 0.012, -pump * 0.012); desk.rotation.z = noise(t * 37, 3) * 0.006; desk.rotation.x = -pump * 0.01;
-    youCrawl(t, { plug: false, dz: -0.035 * pump, bdz: -0.012 * pump }); bossCrawl(t, { dz: -0.012 * pump });
-    C.plug.visible = false; office.refs.charger.visible = false;
+    pair(t, {}, {});
     const mug = office.refs.mug;
     mug.position.y = DH + 0.001 + pump * 0.016; mug.rotation.z = Math.sin(t * 21) * 0.12 * (0.4 + pump); mug.rotation.x = Math.sin(t * 17) * 0.08;
     mug.position.x = 0.52 + lt * 0.08;
     C.drops.forEach((d, i) => {
-      const t0 = 1.97 + hash(i, 1) * 0.28, dd = t - t0; if (dd < 0 || dd > 0.6) return;
+      const t0 = 2.02 + hash(i, 1) * 0.35, dd = t - t0; if (dd < 0 || dd > 0.6) return;
       d.visible = true; const vx = (hash(i, 2) - 0.3) * 0.5, vz = 0.2 + hash(i, 3) * 0.6, vy = 0.6 + hash(i, 4) * 0.9;
       d.position.set(mug.position.x + vx * dd, DH + 0.1 + vy * dd - 4.9 * dd * dd, -0.9 + vz * dd);
       if (d.position.y < DH + 0.005 && d.position.z < -0.74) d.position.y = DH + 0.005;
@@ -375,14 +359,36 @@ export function buildShots(ctx) {
     });
     office.refs.pens.forEach((pen, i) => {
       const [hx, hy, hz] = pen.userData.home;
-      const t0 = 1.95 + i * 0.08, roll = eIn(seg(t, t0, t0 + 0.2), 1.6), fallT = t - (t0 + 0.2);
+      const t0 = 2.0 + i * 0.1, roll = eIn(seg(t, t0, t0 + 0.22), 1.6), fallT = t - (t0 + 0.22);
       let z = lerp(hz, -0.73, roll), y = hy, rx = (z - hz) / 0.0065, rz = 0;
       if (fallT > 0) { z = -0.73 + fallT * 0.5; y = Math.max(0.007, hy - 4.9 * fallT * fallT); rz = fallT * 9 * (i ? -1 : 1); rx += fallT * 20; }
       pen.position.set(hx, y, z); pen.rotation.set(rx, 0, rz);
     });
-    const tt = smooth(lt / 0.35);
-    cam(t, [lerp(1.02, 0.96, tt), lerp(1.24, 1.2, tt), lerp(-0.22, -0.3, tt)], [0.55, DH - 0.12, -0.84], 52, { shake: 0.2 + 0.35 * pump });
-    ov.comic(t, 1.96, 2.3, 'CREAK!', 700, 640, 104, 0.1, { shake: 8 });
+    const tt = smooth(lt / 0.55);
+    cam(t, [lerp(1.02, 0.96, tt), lerp(1.44, 1.4, tt), lerp(-0.22, -0.3, tt)], [0.55, DH - 0.12, -0.84], 52, { shake: 0.2 + 0.35 * pump });
+    ov.comic(t, 2.01, 2.55, 'CREAK!', 330, 520, 104, -0.12, { shake: 8 });
+    ov.comic(t, 2.2, 2.55, 'CREAK!', 720, 700, 96, 0.1, { shake: 8 });
+  });
+  // O4 — their legs under the desk, feet twitching in rhythm, a shoe pops off
+  add('O4 feet', 2.55, (t, lt) => {
+    officeMode('under');
+    const pump = pumpAt(t);
+    const desk = office.refs.desk;
+    desk.position.set(noise(t * 33, 1) * 0.004, pump * 0.008, -pump * 0.012); desk.rotation.x = -pump * 0.01;
+    const { y: you } = pair(t, { mouth: 0.4, blush: 0.9 }, { mouth: 0.4, blush: 0.7 }, { y: { ankle: 0.75 * pump, ankle2: 0.6 * pumpAt(t + 0.06) }, b: { ankle: 0.65 * pumpAt(t + 0.03), ankle2: 0.7 * pump } });
+    cam(t, [lerp(1.75, 1.65, smooth(lt / 0.65)), 0.6, 2.25], [-0.06, 0.45, -0.35], 46, { shake: 0.1 + 0.3 * pump });
+    if (t > 2.66) {
+      const base = wp(you.ankle.L).add(V(0, 0, 0.05 * pump));
+      you.ankle.L.children[0].visible = false; you.ankle.L.children[1].visible = false;
+      const right = V(0, 0, 0).setFromMatrixColumn(C.camera.matrixWorld, 0); right.y = 0; right.normalize();
+      const d = t - 2.66, sh = C.shoeFly; sh.visible = true;
+      const dd = Math.min(d, 0.6);
+      sh.position.set(base.x + right.x * 1.1 * dd, Math.max(0.04, base.y - 0.02 + 2.8 * dd - 4.9 * dd * dd), base.z + right.z * 1.1 * dd);
+      sh.rotation.set(dd * 16, dd * 5, dd * 8);
+    }
+    U.uSat.value = 1.22;
+    ov.comic(t, 2.56, 3.2, 'CREAK!', 330, 500, 104, -0.12, { shake: 6 });
+    if (t > 2.66) { const sp = proj(C.shoeFly.position.clone().add(V(0, 0.14, 0))); ov.comic(t, 2.66, 3.18, 'POP!', sp[0], sp[1], 76, 0.15, { shake: 2 }); }
   });
 
   function pensFallen() {
@@ -390,7 +396,7 @@ export function buildShots(ctx) {
   }
   C.pensFallen = pensFallen;
   // S3 — coworkers walk past, stop, turn, drop papers, spit coffee
-  add('S3 coworkers', 2.3, (t, lt) => {
+  add('S3 coworkers', 3.2, (t, lt) => {
     officeMode('day');
     const desk = office.refs.desk;
     desk.position.set(noise(t * 40, 1) * 0.01, Math.abs(noise(t * 36, 2)) * 0.008, 0); desk.rotation.z = noise(t * 37, 3) * 0.008;
@@ -398,36 +404,36 @@ export function buildShots(ctx) {
     const y = youCrawl(t, { plug: false, face: { grit: 1 } }); const b = bossCrawl(t, { face: { grit: 1 } });
     y.hips.rotation.z += wig1 * 0.06; b.hips.rotation.z -= wig1 * 0.06;
     C.plug.visible = false; office.refs.charger.visible = false;
-    const stopT = 2.55;
-    for (const [ch, x0, x1, z, seed] of [[chars.cw1, -1.9, -0.75, 2.2, 1], [chars.cw2, -1.6, 0.3, 2.65, 2]]) {
-      const u = eOut(seg(t, 2.3, stopT), 1.6);
+    const stopT = 3.42;
+    for (const [ch, x0, x1, z, seed] of [[chars.cw1, -1.6, -0.75, 2.2, 1], [chars.cw2, -1.3, 0.3, 2.65, 2]]) {
+      const u = eOut(seg(t, 3.2, stopT), 1.6);
       const x = lerp(x0, x1, u) + wig(t, stopT, 0.04, 2, 7);
       const ph = (x - x0) / 0.32 * PI;
       const wk = walk(ph, 0.45 * (1 - smooth(seg(t, stopT - 0.08, stopT + 0.05))));
       const turn = smoother(seg(t, stopT + 0.03, stopT + 0.25));
       const headTurn = smoother(seg(t, stopT + 0.0, stopT + 0.18));
-      const shock = seg(t, 2.72, 2.8);
+      const shock = seg(t, 3.55, 3.62);
       const ry = lerp(PI / 2, PI - 0.25 + (seed === 2 ? 0.3 : 0), turn);
       const face = { eyeS: 1 + 0.4 * backOut(shock), brow: 1.0 * shock, mouth: 0.6 * shock, blink: blink(t, seed) * (1 - shock), look: [0, 0] };
       const p = stand(ch, x, z, ry, { hipY: ch.S.hipH + wk.bob, legL: wk.legL, legR: wk.legR, neck: [0, (1 - turn) * headTurn * 0.9, 0], head: [-0.1 * shock, 0, 0], face, spine: [-0.08 * shock, 0, 0] });
       if (seed === 1) {
-        const drop = seg(t, 2.82, 2.87);
+        const drop = seg(t, 3.62, 3.67);
         p.armL = { sh: [-0.9 + drop * 0.7, 0, -0.25 - 0.4 * drop], el: -1.2 + drop * 0.8, hand: 'mitten' };
         p.armR = { sh: [-0.9 + drop * 0.7, 0, 0.25 + 0.4 * drop], el: -1.2 + drop * 0.8, hand: 'mitten' };
-        C.papers.visible = t < 2.82;
+        C.papers.visible = t < 3.62;
       } else {
-        const sip = smooth(seg(t, stopT + 0.02, stopT + 0.18)) * (1 - smooth(seg(t, 2.97, 3.07)));
+        const sip = smooth(seg(t, stopT + 0.02, stopT + 0.18)) * (1 - smooth(seg(t, 3.75, 3.85)));
         p.armL = { sh: [lerp(-0.2, -1.55, sip), 0, -0.2 + 0.2 * sip], el: lerp(-0.5, -1.9, sip), hand: 'fist', wr: [0, 0, 0] };
         p.armR = { sh: [wk.armRsh[0], 0, 0.12], el: -0.3 };
         C.cup.visible = true;
-        if (t > 2.97) { face.mouth = 0.8; face.eyeS = 1.45; }
+        if (t > 3.75) { face.mouth = 0.8; face.eyeS = 1.45; }
       }
       if (seed === 1) { p.armL.sh = p.armL.sh; }
       ch.apply(p, t);
     }
     // flying papers
     C.sheets.forEach((s, i) => {
-      const d = t - 2.82 - hash(i, 1) * 0.05; if (d < 0) return;
+      const d = t - 3.62 - hash(i, 1) * 0.05; if (d < 0) return;
       s.visible = true; const hp = wp(chars.cw1.wr.R);
       const fall = Math.min(d, 0.9);
       s.position.set(hp.x + (hash(i, 2) - 0.5) * 0.9 * fall + Math.sin(d * 7 + i) * 0.05, Math.max(0.01, hp.y + 0.3 * fall - 2.2 * fall * fall), hp.z - 0.1 - hash(i, 3) * 0.5 * fall);
@@ -437,27 +443,27 @@ export function buildShots(ctx) {
     // coffee spit
     const mp = wp(chars.cw2.head).add(V(0, -0.06, -0.12));
     C.drops.forEach((d, i) => {
-      const dd = t - 2.97 - hash(i, 9) * 0.06; if (dd < 0 || dd > 0.55) return;
+      const dd = t - 3.75 - hash(i, 9) * 0.06; if (dd < 0 || dd > 0.55) return;
       d.visible = true; d.scale.setScalar(1 + hash(i, 5) * 1.5);
       d.position.set(mp.x + (hash(i, 6) - 0.5) * 1.2 * dd, mp.y + (0.5 + hash(i, 7)) * dd - 4.9 * dd * dd, mp.z - (1.2 + hash(i, 8) * 1.5) * dd);
     });
-    const tt = smooth(lt / 1.05);
-    cam(t, [lerp(-0.12, -0.2, tt), lerp(1.08, 1.12, tt), lerp(-0.5, -0.38, tt)], [lerp(-0.4, -0.22, tt), 1.4, 2.4], 54, { shake: 0.08 + shake(t, [[2.82, 0.25, 6]]) });
-    if (t > 2.72) { const hp = proj(wp(chars.cw1.head).add(V(0, 0.32, 0))); ov.comic(t, 2.72, 3.35, 'GASP!', hp[0], hp[1], 100, -0.1, { shake: 3 }); }
-    if (t > 2.97) { const hp = proj(wp(chars.cw2.head).add(V(-0.1, 0.3, 0))); ov.comic(t, 2.97, 3.35, 'PFFFT!', hp[0] + 40, hp[1], 84, 0.12, { top: '#fff2d9', fill: '#d7a26a', inner: '#7a4a1e' }); }
+    const tt = smooth(lt / 0.85);
+    cam(t, [lerp(-0.12, -0.2, tt), lerp(1.08, 1.12, tt), lerp(-0.5, -0.38, tt)], [lerp(-0.4, -0.22, tt), 1.4, 2.4], 54, { shake: 0.08 + shake(t, [[3.62, 0.25, 6]]) });
+    if (t > 3.55) { const hp = proj(wp(chars.cw1.head).add(V(0, 0.32, 0))); ov.comic(t, 3.55, 4.05, 'GASP!', hp[0], hp[1], 100, -0.1, { shake: 3 }); }
+    if (t > 3.75) { const hp = proj(wp(chars.cw2.head).add(V(-0.1, 0.3, 0))); ov.comic(t, 3.75, 4.05, 'PFFFT!', hp[0] + 40, hp[1], 84, 0.12, { top: '#fff2d9', fill: '#d7a26a', inner: '#7a4a1e' }); }
   });
 
   // S4 — YOU's face, blush, sparkles
-  add('S4 blush', 3.35, (t, lt) => {
+  add('S4 blush', 4.05, (t, lt) => {
     officeMode('pink'); hideWall();
-    const bl = smooth(seg(t, 3.37, 3.8));
+    const bl = smooth(seg(t, 4.06, 4.35));
     const y = youCrawl(t, { plug: false, neckY: 0.38, headY: 0.32, headZ: -0.22, face: { dreamy: 1, lid: 0.32, blush: bl, smile: 0.65, brow: 0.45, browA: -0.22, look: [0.5, 0.1], blink: blink(t, 7, 2.2) } });
     bossCrawl(t, { face: { lid: 0.85, blush: 0.6, mouth: 0.25, sweat: 1 } });
     C.plug.visible = false; office.refs.charger.visible = false;
     const h = wp(y.head);
     C.pt1.color.set('#ff8cc2'); C.pt1.intensity = 0.9; C.pt1.distance = 1.4; C.pt1.position.set(h.x + 0.15, h.y + 0.05, h.z - 0.45);
     C.pt2.color.set('#ffe2c4'); C.pt2.intensity = 1.6; C.pt2.distance = 1.6; C.pt2.position.set(h.x - 0.3, h.y + 0.2, h.z - 0.6);
-    const z = lerp(1.95, 1.75, smooth(lt / 1.4));
+    const z = lerp(1.95, 1.75, smooth(lt / 0.7));
     cam(t, [h.x + 0.04, h.y + 0.03, h.z - z], [h.x + 0.03, h.y - 0.03, h.z], 28, { roll: 0.06 });
     U.uDream.value = 0.35; U.uVig.value = 0.5; U.uSat.value = 1.1; U.uExp.value = 1.3;
     const hp = proj(h);
@@ -469,7 +475,7 @@ export function buildShots(ctx) {
   // S5 — the reveal: pull back + rotate. Plug + flashlight.
   add('S5 reveal', 4.75, (t, lt) => {
     officeMode('under');
-    const lit = smooth(seg(t, 4.75, 5.4));
+    const lit = smooth(seg(t, 4.95, 5.25));
     C.hemi.intensity = lerp(0.25, 0.75, lit); C.key.intensity = lerp(0.25, 1.7, lit); C.fill.intensity = lerp(0.1, 0.55, lit);
     if (lit < 1) C.scene.background = new THREE.Color().lerpColors(new THREE.Color('#050508'), new THREE.Color('#dfe6ea'), lit);
     const wiggle = V(0.012 * Math.sin(t * 7.3), 0.03 + 0.012 * Math.cos(t * 9.1), 0.07 + 0.01 * Math.sin(t * 5));
@@ -479,15 +485,15 @@ export function buildShots(ctx) {
     torchOn(3.2 * lit, SOCK.clone());
     updateCharger();
     // camera swings from the side silhouette (S1 angle) round to the front: the innocent truth
-    const P = V(-0.12, 0.55, -0.62);
-    const u = eIO(seg(t, 4.78, 6.2), 2.4);
-    const az = lerp(PI * 1.5, PI * 1.06, u);
-    const r = lerp(3.0, 1.95, u) - 0.12 * smooth(seg(t, 6.3, 7.63));
-    const pz = lerp(-0.62, -1.08, u);
-    const pos = [P.x + Math.sin(az) * r, P.y + lerp(0.0, 0.12, u), pz + Math.cos(az) * r];
+    const u = eIO(seg(t, 4.97, 6.3), 2.4);
+    const az = lerp(PI * 1.5, PI * 1.05, u);
+    const r = lerp(4.55, 2.0, u) - 0.12 * smooth(seg(t, 6.3, 7.63));
+    const pz = lerp(-0.93, -1.1, u);
+    const pos = [-0.02 + Math.sin(az) * r, lerp(0.52, 1.02, u), pz + Math.cos(az) * r];
     if (pos[2] < -1.49) office.refs.cables.forEach(o => o.visible = false);
     if (u < 0.5) { office.refs.deskLegs[0].visible = false; office.refs.deskLegs[2].visible = false; }
-    cam(t, pos, [lerp(-0.12, -0.1, u), lerp(0.46, 0.6, u), pz], lerp(42, 42, u), { roll: 0 });
+    cam(t, pos, [lerp(-0.04, -0.06, u), lerp(0.62, 0.84, u), pz], lerp(28, 42, u), { roll: 0 });
+    if (t < 4.95) { silhouetteSet(t); silhouette([office.refs.desk, office.G.children[0], y.root]); silhouette([b.root], SIL2); C.beam.visible = false; C.wallPool.visible = false; C.office.refs.charger.visible = false; }
     U.uVig.value = lerp(0.5, 0.3, lit);
   });
 
@@ -504,8 +510,9 @@ export function buildShots(ctx) {
     updateCharger();
     const k = smooth(lt / 1.07);
     C.office.refs.cables.forEach(o => o.visible = false);
-    const pos = V(-0.86, 0.43, -1.2).lerp(V(-0.78, 0.415, -1.25), k);
-    cam(t, [pos.x, pos.y, pos.z], [-0.4, 0.365, -1.43], 36, { hand: 0.5 });
+    const pos = SOCK.clone().add(V(-0.44, 0.06, 0.26)).lerp(SOCK.clone().add(V(-0.36, 0.05, 0.21)), k);
+    const lk = SOCK.clone().add(V(0.02, 0.0, 0.05));
+    cam(t, [pos.x, pos.y, pos.z], [lk.x, lk.y, lk.z], 36, { hand: 0.5 });
     U.uSat.value = 0.9; U.uVig.value = 0.55 + 0.1 * Math.max(0, Math.sin(t * 2 * PI * 1.3)); U.uContrast.value = 1.1;
     if (t > 8.6) { const sp = proj(SOCK.clone().add(V(0, 0.03, 0.04))); ov.bolts(t, sp[0], sp[1], 3, 160, 9, seg(t, 8.6, 8.7)); }
   });
