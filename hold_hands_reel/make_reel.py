@@ -8,6 +8,7 @@ Options
   --scale 0.667         size of the 3D render relative to 1080x1920 (text is always full size)
   --jobs 4              how many CPU cores to use
   --range 0 30          only render this part (seconds)
+  --audio-only          keep the finished picture and only rebuild the sound (fast)
 """
 import argparse
 import os
@@ -102,6 +103,18 @@ def main():
     f0, f1 = 0, tl.NFRAMES
     if args.range:
         f0, f1 = int(args.range[0] * tl.FPS), int(args.range[1] * tl.FPS)
+    if args.audio_only:
+        # keep the picture that is already rendered, only replace the sound
+        tmp = os.path.splitext(args.out)[0] + "_tmp.mp4"
+        subprocess.check_call([
+            "ffmpeg", "-y", "-loglevel", "error", "-i", args.out, "-i", wav, "-map", "0:v", "-map", "1:a",
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-shortest", "-movflags", "+faststart", tmp,
+        ])
+        os.replace(tmp, args.out)
+        os.remove(wav)
+        print("done (new sound, same picture):", args.out)
+        return
+
     import multiprocessing as mp
 
     parts_dir = os.path.splitext(args.out)[0] + "_parts"
