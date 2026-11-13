@@ -1,0 +1,31 @@
+{
+  "name": "aura-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "45s vertical 3D short: What if your aura doubled every minute on the way to school?",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render AuraVideo out/aura.mp4",
+    "still": "remotion still AuraVideo"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/lora": "^5.2.8",
+    "@fontsource/poppins": "^5.2.7",
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.2",
+    "@react-three/postprocessing": "3.2.2",
+    "@remotion/cli": "4.0.539",
+    "@remotion/three": "4.0.539",
+    "postprocessing": "6.39.5",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.539",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.7",
+    "@types/three": "0.186.0",
+    "typescript": "5.9.3"
+  }
+}
