@@ -87,10 +87,10 @@ export const SWITCH_FLASH = B[67]; // white flash, then inverted SWITCH! frame
 export const SWITCH_INVERT_FROM = B[67] + 5;
 
 /** Audio cues (frame the clip should START at, so the spoken word lands on the beat). */
-export const SFX = [
-  {src: 'sfx/late_again.mp3', at: B[8] - 7, vol: 1.0},
-  {src: 'sfx/whos_that.mp3', at: B[24] - 6, vol: 1.0},
-  {src: 'sfx/accelerate.mp3', at: B[48] - 5, vol: 1.0},
+export const SFX: {src: string; at: number; vol: number; voiceEnd?: number}[] = [
+  {src: 'sfx/late_again.mp3', at: B[8] - 7, vol: 1.0, voiceEnd: 68},
+  {src: 'sfx/whos_that.mp3', at: B[24] - 6, vol: 1.0, voiceEnd: 40},
+  {src: 'sfx/accelerate.mp3', at: B[48] - 5, vol: 1.0, voiceEnd: 36},
   {src: 'sfx/bell.mp3', at: B[56] + 3, vol: 0.55},
   {src: 'sfx/boom.mp3', at: MIN_START[5], vol: 0.8},
   {src: 'sfx/boom.mp3', at: MIN_START[7], vol: 0.9},
@@ -158,4 +158,21 @@ export const SHOTS: {id: ShotId; from: number; to: number}[] = [
 export const shotAt = (f: number) => {
   for (const s of SHOTS) if (f >= s.from && f < s.to) return s;
   return SHOTS[SHOTS.length - 1];
+};
+
+/** Music volume: lowered under the voice lines so they come through clearly. */
+export const MUSIC_BASE = 0.55;
+export const MUSIC_DUCK = 0.16;
+export const musicVolume = (f: number) => {
+  let v = MUSIC_BASE;
+  for (const x of SFX) {
+    if (!x.voiceEnd) continue;
+    const a = x.at + 2;
+    const b = x.at + x.voiceEnd;
+    const k = f < a - 4 || f > b + 6 ? 0 : f < a ? (f - (a - 4)) / 4 : f > b ? 1 - (f - b) / 6 : 1;
+    v = Math.min(v, MUSIC_BASE + (MUSIC_DUCK - MUSIC_BASE) * k);
+  }
+  const fadeIn = Math.min(1, f / 4);
+  const fadeOut = Math.min(1, Math.max(0, (DURATION - f) / 40));
+  return v * fadeIn * fadeOut;
 };

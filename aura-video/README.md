@@ -16,3 +16,9 @@ node stills.mjs out/stills 30 87 145      # still frames
 npx remotion render AuraVideo out/aura.mp4
 npx remotion render AuraVideo out/preview.mp4 --props='{"preview":true}' --scale=0.1333333   # fast 144p
 ```
+
+## Credits
+
+- Characters (boy, bully, passers-by, news anchor), Shiba Inu dog and fox: Quaternius — *Ultimate Animated Character Pack* and *Ultimate Animated Animals*, CC0 1.0 (public domain). Files in `public/models/`.
+- The trickster (Loki) is an original design for this video: hooded dark-blue cloak, silver Elder-Futhark runes, silver fox mask, violet fire. It is not based on any film or comic version.
+- School bell, finger snap and impact boom are synthesized with ffmpeg (`public/sfx/bell.mp3`, `snap.mp3`, `boom.mp3`).

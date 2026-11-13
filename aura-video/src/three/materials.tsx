@@ -60,7 +60,7 @@ export const makeRimMaterial = (o: RimOpts) => {
     uRimPower: {value: o.rimPower ?? 2.6},
     uCrack: {value: o.crack ?? 0},
     uCrackColor: {value: new THREE.Color(o.crackColor ?? '#b06bff')},
-    uCrackScale: {value: o.crackScale ?? 9},
+    uCrackScale: {value: o.crackScale ?? 26},
   };
   m.userData.uniforms = uniforms;
   m.onBeforeCompile = (shader) => {
@@ -87,9 +87,9 @@ ${CRACK_GLSL}`
   totalEmissiveRadiance += uRimColor * fr * uRimStrength;
   if (uCrack > 0.001) {
     float e = crackEdge(vObjPos * uCrackScale);
-    float w = 0.05 + 0.06 * uCrack;
+    float w = 0.025 + 0.03 * uCrack;
     float c = 1.0 - smoothstep(0.0, w, e);
-    totalEmissiveRadiance += uCrackColor * c * uCrack * 6.0;
+    totalEmissiveRadiance += uCrackColor * c * uCrack * 3.2;
   }
 }`
       );
@@ -150,7 +150,7 @@ export const particleMaterial = () =>
       void main(){
         vec2 c = gl_PointCoord - 0.5;
         float d = length(c);
-        float a = smoothstep(0.5, 0.0, d);
+        float a = 1.0 - smoothstep(0.0, 0.5, d);
         a = a*a;
         gl_FragColor = vec4(vColor * a * vAlpha * uOpacity, a * vAlpha * uOpacity);
       }`,
@@ -174,7 +174,7 @@ export const beamMaterial = (color: THREE.ColorRepresentation) =>
       uniform vec3 uColor; uniform float uIntensity; uniform float uTime;
       void main(){
         float edge = pow(abs(dot(vN, vV)), 1.6);
-        float fade = smoothstep(1.0, 0.25, vUv.y) * smoothstep(0.0, 0.03, vUv.y);
+        float fade = (1.0 - smoothstep(0.25, 1.0, vUv.y)) * smoothstep(0.0, 0.03, vUv.y);
         float flick = 0.85 + 0.15*sin(vUv.y*40.0 - uTime*0.6);
         float a = edge * fade * flick * uIntensity;
         gl_FragColor = vec4(uColor * a, a);

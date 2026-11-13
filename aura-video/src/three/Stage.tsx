@@ -10,7 +10,8 @@ import {Q} from '../quality';
 import {Town, GateSign, Bell} from './Town';
 import {Sky} from './Sky';
 import {Person, LooseCap, LOOKS} from './Person';
-import {Dog, Bike, Bus, Ball} from './Actors';
+import {Bike, Bus, Ball} from './Actors';
+import {HeroModel, NpcModel, BullyModel, LooseCapModel, DogModel, FoxModel} from './ModelActors';
 import {Loki, Fox, Crow, SnapHand} from './Loki';
 import {Particles, Leaves} from './Particles';
 import {GroundCracks, Debris, NewsStudio, Planet, Glow, silhouetteMaterial} from './Effects3D';
@@ -150,14 +151,17 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
       <GateSign flip={s.sign.flip} glow={s.sign.glow} />
       <Bell swing={s.bell.swing} ring={s.bell.ring} />
       {s.hero && (
-        <Person
-          look={LOOKS.hero}
+        <HeroModel
+          pos={s.hero.pos}
+          rotY={s.hero.rotY}
           pose={s.hero.pose}
-          position={s.hero.pos}
-          rotationY={s.hero.rotY}
+          f={s.f}
           rim={s.hero.rim ?? e.rim}
           rimStrength={s.hero.rimStrength ?? e.rimStrength}
-          rightHandChildren={s.ballInHand ? <group position={[0, -0.1, 0.03]}><Ball position={[0, 0, 0]} spin={0.3} /></group> : null}
+          ballInHand={s.ballInHand}
+          catchPose={s.hero.catchPose ?? 0}
+          clipOverride={s.hero.clip}
+          extraBones={s.hero.bones}
         />
       )}
       {s.heroGlow ? (
@@ -165,10 +169,10 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
       ) : null}
       {s.heroShadow && (
         <group position={s.heroShadow.pos} scale={[s.heroShadow.scale, s.heroShadow.scale, 0.02]}>
-          <Person look={LOOKS.hero} pose={s.heroShadow.pose} rotationY={s.heroShadow.rotY} override={silMat} castShadow={false} />
+          <HeroModel pos={[0, 0, 0]} rotY={s.heroShadow.rotY} pose={s.heroShadow.pose} f={s.f} rim="#000" rimStrength={0} override={silMat} />
           {s.heroShadow.eyes > 0 &&
             [-1, 1].map((sd) => (
-              <Glow key={sd} position={[0.075 * sd, 1.47, 2]} size={0.16} color="#b26bff" opacity={s.heroShadow.eyes} />
+              <Glow key={sd} position={[0.07 * sd, 1.28, 2]} size={0.16} color="#b26bff" opacity={s.heroShadow.eyes} />
             ))}
         </group>
       )}
@@ -176,24 +180,24 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
         [-1, 1].map((sd) => (
           <Glow
             key={'e' + sd}
-            position={[s.heroShadow.pos[0] + 0.075 * sd * s.heroShadow.scale, 1.47 * s.heroShadow.scale, s.heroShadow.pos[2] + 0.2]}
+            position={[s.heroShadow.pos[0] + 0.07 * sd * s.heroShadow.scale, 1.28 * s.heroShadow.scale, s.heroShadow.pos[2] + 0.2]}
             size={1.6}
             color="#c084fc"
             opacity={s.heroShadow.eyes}
           />
         ))}
       {s.dog && (
-        <Dog position={s.dog.pos} rotationY={s.dog.rotY} phase={s.dog.phase} trot={s.dog.trot} sunglasses={s.dog.sunglasses} headYaw={s.dog.headYaw} rim={e.rim} rimStrength={e.rimStrength * 0.8} t={tGame} />
+        <DogModel pos={s.dog.pos} rotY={s.dog.rotY} phase={s.dog.phase} trot={s.dog.trot} sunglasses={s.dog.sunglasses} headYaw={s.dog.headYaw} rim={e.rim} rimStrength={e.rimStrength * 0.8} f={tGame} />
       )}
       {s.bully && (
         <group position={s.bully.pos} rotation={[0, s.bully.rotY, 0]}>
           <Bike roll={s.bully.roll} pedal={s.bully.pedal} />
-          <Person look={LOOKS.bully} pose={s.bully.pose} position={[0, 0.06, -0.12]} rim={e.rim} rimStrength={e.rimStrength} />
+          <BullyModel pose={s.bully.pose} f={s.f} rim={e.rim} rimStrength={e.rimStrength} />
         </group>
       )}
-      {s.cap && <LooseCap position={s.cap.pos} rotation={s.cap.rot} color="#d22b2b" />}
+      {s.cap && <LooseCapModel position={s.cap.pos} rotation={s.cap.rot} />}
       {s.npcs.map((n, i) => (
-        <Person key={i} look={LOOKS[n.look]} pose={n.pose} position={n.pos} rotationY={n.rotY} rim={e.rim} rimStrength={e.rimStrength * 0.7} />
+        <NpcModel key={i} look={n.look} pose={n.pose} pos={n.pos} rotY={n.rotY} f={s.f} rim={e.rim} rimStrength={e.rimStrength * 0.7} />
       ))}
       {s.bus && <Bus position={s.bus.pos} rotationY={s.bus.rotY} door={s.bus.door} wheelRoll={s.bus.roll} />}
       {s.ball && <Ball position={s.ball.pos} spin={s.ball.spin} />}
@@ -209,13 +213,13 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
           scale={s.loki.scale}
         />
       )}
-      {s.fox && <Fox position={s.fox.pos} rotationY={s.fox.rotY} t={tGame} scale={s.fox.scale} />}
+      {s.fox && <FoxModel pos={s.fox.pos} rotY={s.fox.rotY} scale={s.fox.scale} f={tGame} />}
       {s.crow && <Crow position={s.crow.pos} rotationY={s.crow.rotY} t={tGame} scale={s.crow.scale} />}
       {s.snapHand && <SnapHand position={s.snapHand.pos} rotation={s.snapHand.rot} snap={s.snapHand.snap} />}
       {s.bursts.map((b, i) => (
         <group key={i}>
-          <Particles kind="burst" t={s.f} start={b.start} count={140} radius={b.radius} height={0.8} size={0.22} color={b.color} color2={b.color2} center={b.center} seed={i + 3} />
-          <pointLight position={b.center} color="#b26bff" intensity={Math.max(0, 40 * (1 - (s.f - b.start) / 16))} distance={8} />
+          <Particles kind="burst" t={s.f} start={b.start} count={90} radius={b.radius} height={0.8} size={0.12} color={b.color} color2={b.color2} center={b.center} seed={i + 3} opacity={0.7} />
+          <pointLight position={b.center} color="#b26bff" intensity={Math.max(0, 18 * (1 - (s.f - b.start) / 14))} distance={8} />
         </group>
       ))}
       {e.night > 0.5 && (s.loki || s.fox || s.crow || s.snapHand || s.hero) && (
@@ -250,7 +254,7 @@ export const Stage: React.FC<{s: State; noPost?: boolean; fx?: string}> = ({s, n
       {s.set === 'studio' && (
         <>
           <hemisphereLight args={[e.hemiSky, e.hemiGround, e.hemiInt]} />
-          <directionalLight position={[2, 6, 5]} intensity={1.6} color="#ffffff" />
+          <directionalLight position={[2, 6, 5]} intensity={0.9} color="#ffffff" />
           <NewsStudio t={s.f} />
         </>
       )}

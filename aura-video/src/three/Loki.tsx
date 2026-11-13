@@ -82,7 +82,7 @@ export const Loki: React.FC<{
       robe: new THREE.MeshStandardMaterial({color: '#0b1029', roughness: 0.6, flatShading: true}),
       hood: new THREE.MeshStandardMaterial({color: '#1b2a5c', roughness: 0.55, flatShading: true, side: THREE.DoubleSide}),
       void: new THREE.MeshBasicMaterial({color: '#030208'}),
-      silver: new THREE.MeshStandardMaterial({color: '#d4dbe6', metalness: 1, roughness: 0.22, flatShading: true, emissive: '#3b3f5a', emissiveIntensity: 0.25}),
+      silver: new THREE.MeshStandardMaterial({color: '#e2e8f2', metalness: 0.85, roughness: 0.25, flatShading: true, emissive: '#5a5f80', emissiveIntensity: 0.35}),
       rune: new THREE.MeshStandardMaterial({color: '#e8eeff', emissive: '#cfd8ff', emissiveIntensity: 1.6, metalness: 0.6, roughness: 0.3}),
       glove: new THREE.MeshStandardMaterial({color: '#1d1f2b', roughness: 0.5, metalness: 0.3, flatShading: true}),
       eye: new THREE.MeshStandardMaterial({color: '#e9d5ff', emissive: '#b26bff', emissiveIntensity: 6}),
@@ -97,7 +97,7 @@ export const Loki: React.FC<{
     const lining = new THREE.CylinderGeometry(0.29, 0.7, 1.93, 11, 1, true, 0.35, Math.PI * 2 - 0.7);
     const robe = new THREE.CylinderGeometry(0.17, 0.32, 1.9, 8);
     const mantle = new THREE.CylinderGeometry(0.2, 0.52, 0.42, 11, 1, true);
-    const hood = new THREE.SphereGeometry(0.31, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.68).scale(1, 1.18, 1.12);
+    const hood = new THREE.SphereGeometry(0.31, 12, 8, Math.PI / 2 + 0.85, Math.PI * 2 - 1.7, 0, Math.PI * 0.72).scale(1, 1.18, 1.12);
     const hoodTip = new THREE.ConeGeometry(0.16, 0.42, 6);
     const hemBand = buildRuneBand((y) => 0.72 - ((y + 0.975) / 1.95) * 0.42, -0.94, 0.17, 26, 0, 1.0, 3);
     const robeRunes = (() => {
@@ -177,7 +177,7 @@ export const Loki: React.FC<{
         <group position={[0, 2.02, 0.02]} rotation={[headPitch, 0, 0]}>
           <mesh geometry={geo.hood} material={M.hood} position={[0, -0.06, -0.03]} castShadow />
           <mesh geometry={geo.hoodTip} material={M.hood} position={[0, 0.16, -0.32]} rotation={[-1.9, 0, 0]} />
-          <mesh material={M.void} position={[0, -0.05, 0.04]} scale={[0.85, 1, 0.7]}>
+          <mesh material={M.void} position={[0, -0.05, -0.04]} scale={[0.8, 0.95, 0.6]}>
             <sphereGeometry args={[0.26, 8, 6]} />
           </mesh>
           <FoxMask M={M} />
@@ -328,7 +328,7 @@ export const Crow: React.FC<{position: [number, number, number]; rotationY?: num
 
 /** Close-up gloved hand that snaps. snap: 0 = ready, 1 = snapped. */
 export const SnapHand: React.FC<{snap: number; position: [number, number, number]; rotation?: [number, number, number]}> = ({snap, position, rotation = [0, 0, 0]}) => {
-  const m = useMemo(() => new THREE.MeshStandardMaterial({color: '#23263a', roughness: 0.45, metalness: 0.35, flatShading: true}), []);
+  const m = useMemo(() => new THREE.MeshStandardMaterial({color: '#3a3f5c', roughness: 0.4, metalness: 0.5, flatShading: true, emissive: '#1a1030', emissiveIntensity: 0.5}), []);
   const trim = useMemo(() => new THREE.MeshStandardMaterial({color: '#e8eeff', emissive: '#cfd8ff', emissiveIntensity: 1.4}), []);
   const s = Math.min(1, Math.max(0, snap));
   const finger = (x: number, len: number, curl: number) => (

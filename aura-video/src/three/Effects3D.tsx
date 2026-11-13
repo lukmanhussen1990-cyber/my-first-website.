@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {mulberry, clamp} from '../lib/math';
 import {beamMaterial, makeRimMaterial} from './materials';
 import {makeGlowTexture} from './textures';
-import {Person, LOOKS} from './Person';
+import {NpcModel} from './ModelActors';
 import {makeNewsWallTexture} from './textures';
 
 /** Glowing violet ground cracks radiating from a centre. grow: 0..1 */
@@ -167,26 +167,10 @@ export const NewsStudio: React.FC<{t: number}> = ({t}) => {
       <mesh material={m.deskTrim} position={[0, 0.9, 1.62]}>
         <boxGeometry args={[2.6, 0.06, 0.04]} />
       </mesh>
-      <Person
-        look={LOOKS.anchor}
-        position={[0, 0.0, -0.45]}
-        pose={{
-          headYaw: Math.sin(t * 0.05) * 0.08,
-          headPitch: -0.05,
-          brow: 0.6,
-          smile: 0.2,
-          yawn: Math.max(0, Math.sin(t * 0.55)) * 0.35,
-          armL: [-0.9, -0.15, -0.6],
-          armR: [-0.9, 0.15, -0.6],
-          legL: [-1.4, 1.4],
-          legR: [-1.4, 1.4],
-        }}
-        rim="#7fb2ff"
-        rimStrength={1.1}
-      />
-      <pointLight position={[0, 3, 3]} intensity={30} distance={14} color="#dfe9ff" />
-      <pointLight position={[-4, 3, -3]} intensity={25} distance={12} color="#3a7bff" />
-      <pointLight position={[4, 3, -3]} intensity={25} distance={12} color="#ff5b8a" />
+      <NpcModel look="anchor" pos={[0, 0, -0.55]} rotY={0} f={t} pose={{time: t, headYaw: Math.sin(t * 0.05) * 0.08}} rim="#7fb2ff" rimStrength={1.1} />
+      <pointLight position={[0, 3, 3]} intensity={9} distance={14} color="#dfe9ff" />
+      <pointLight position={[-4, 3, -3]} intensity={14} distance={12} color="#3a7bff" />
+      <pointLight position={[4, 3, -3]} intensity={14} distance={12} color="#ff5b8a" />
     </group>
   );
 };
@@ -208,7 +192,7 @@ export const Planet: React.FC<{t: number; beamGrow: number}> = ({t, beamGrow}) =
       const cy = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
       const cz = (pos.getZ(i) + pos.getZ(i + 1) + pos.getZ(i + 2)) / 3;
       const isLand = land(cx, cy, cz) > 0.25;
-      c.set(isLand ? (r() > 0.5 ? '#1e3320' : '#2a3a24') : '#0a1a3a');
+      c.set(isLand ? (r() > 0.5 ? '#3d6a3a' : '#5a6b40') : '#1d4a8c');
       for (let k = 0; k < 3; k++) colors.set([c.r, c.g, c.b], (i + k) * 3);
       if (isLand && r() > 0.55) lp.push(cx * 1.002, cy * 1.002, cz * 1.002);
     }
@@ -227,11 +211,11 @@ export const Planet: React.FC<{t: number; beamGrow: number}> = ({t, beamGrow}) =
         side: THREE.BackSide,
         depthWrite: false,
         vertexShader: `varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix*normal); vec4 mv = modelViewMatrix*vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
-        fragmentShader: `varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 3.0); gl_FragColor = vec4(vec3(0.35,0.6,1.0)*f*1.8, f); }`,
+        fragmentShader: `varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 3.0); gl_FragColor = vec4(vec3(0.35,0.6,1.0)*f*3.0, f); }`,
       }),
     []
   );
-  const lightMat = useMemo(() => new THREE.PointsMaterial({color: '#ffcf7a', size: 0.35, sizeAttenuation: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false}), []);
+  const lightMat = useMemo(() => new THREE.PointsMaterial({color: '#ffcf7a', size: 0.9, sizeAttenuation: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false}), []);
   // beam origin on the surface facing the camera
   const dir = useMemo(() => new THREE.Vector3(0.18, 1, 0.32).normalize(), []);
   const q = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir), [dir]);
@@ -243,7 +227,16 @@ export const Planet: React.FC<{t: number; beamGrow: number}> = ({t, beamGrow}) =
       <mesh material={atmo} scale={1.06}>
         <sphereGeometry args={[R, 48, 32]} />
       </mesh>
-      <Beam position={[base.x, base.y, base.z]} quaternion={q} height={120 * beamGrow} radius={0.9} t={t} intensity={1.2} />
+      <group position={[base.x, base.y, base.z]} quaternion={q}>
+        <mesh position={[0, 60 * beamGrow, 0]} scale={[1, Math.max(0.001, beamGrow), 1]}>
+          <cylinderGeometry args={[2.4, 3.2, 120, 16, 1, true]} />
+          <meshBasicMaterial color="#ffb347" transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+        </mesh>
+        <mesh position={[0, 60 * beamGrow, 0]} scale={[1, Math.max(0.001, beamGrow), 1]}>
+          <cylinderGeometry args={[0.7, 1.0, 120, 12, 1, true]} />
+          <meshBasicMaterial color="#fff6d8" transparent opacity={0.95} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+        </mesh>
+      </group>
       <Glow position={[base.x, base.y + 0.5, base.z]} size={14 * (0.5 + beamGrow)} color="#ffd27a" opacity={0.9} />
     </group>
   );

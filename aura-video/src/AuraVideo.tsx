@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig, delayRender, continueRender, interpolate} from 'remotion';
+import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig, delayRender, continueRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
 import * as THREE from 'three';
 import '@fontsource/lora/400.css';
@@ -12,7 +12,7 @@ import '@fontsource/poppins/800.css';
 import {Stage} from './three/Stage';
 import {stateAt} from './shots';
 import {Overlay, TopFlash, isInverted} from './overlay/Overlay';
-import {DURATION, FPS, MUSIC_START_SEC, SFX} from './timeline';
+import {FPS, MUSIC_START_SEC, SFX, musicVolume} from './timeline';
 import {Q} from './quality';
 
 const FONTS = ['400 64px Lora', 'italic 400 64px Lora', '700 64px Lora', '600 32px Inter', '700 32px Inter', '800 32px Inter', '800 64px Poppins'];
@@ -64,7 +64,7 @@ export const AuraVideo: React.FC<{noPost?: boolean; fx?: string; preview?: boole
       <Audio
         src={staticFile('music.mp3')}
         trimBefore={Math.round(MUSIC_START_SEC * FPS)}
-        volume={(fr) => interpolate(fr, [0, 4, DURATION - 40, DURATION], [0.0, 0.9, 0.9, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})}
+        volume={(fr) => musicVolume(fr)}
       />
       {SFX.map((x, i) => (
         <Sequence key={i} from={x.at} durationInFrames={90} layout="none">

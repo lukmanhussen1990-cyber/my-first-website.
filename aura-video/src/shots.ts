@@ -157,7 +157,7 @@ export type State = {
   cam: Cam;
   dof: {target: V3; range: number; bokeh: number};
   chroma: number;
-  hero?: Actor<{pose: PersonPose; rim?: string; rimStrength?: number}>;
+  hero?: Actor<{pose: PersonPose; rim?: string; rimStrength?: number; catchPose?: number; clip?: {clip: string; time: number}; bones?: Record<string, [number, number, number]>}>;
   heroShadow?: Actor<{pose: PersonPose; scale: number; eyes: number}>;
   dog?: Actor<{phase: number; trot: number; sunglasses: boolean; headYaw: number}>;
   bully?: Actor<{pose: PersonPose; roll: number; pedal: number}>;
@@ -297,7 +297,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     };
     const p = easeInOut(l / len);
     const hz = w.pos[2];
-    s.cam = {pos: [lerp(4.75, 4.85, p), lerp(1.15, 1.2, p), hz - lerp(1.9, 1.65, p)], target: [5.38, 1.28, hz], fov: 38, roll: 0.02};
+    s.cam = {pos: [lerp(4.7, 4.8, p), lerp(1.05, 1.1, p), hz - lerp(2.6, 2.3, p)], target: [5.4, 1.05, hz], fov: 40, roll: 0.02};
     s.dof = {target: heroLook(w.pos, 1.4), range: 1.4, bokeh: 4};
     s.dust = {center: [5, 0.6, hz], color: '#ffe3b0', opacity: 0.8, speed: 1};
     return s;
@@ -324,7 +324,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     const catchUp = easeOut(l / len);
     s.dog = {pos: [5.85, 0.16, hz + lerp(2.6, 0.7, catchUp)], rotY: Math.PI + 0.08, phase: l * 0.42, trot: 1, sunglasses: false, headYaw: Math.sin(l * 0.1) * 0.15};
     const p = easeInOut(l / len);
-    s.cam = {pos: [lerp(4.05, 4.2, p), 0.42, hz - lerp(1.6, 1.3, p)], target: [5.75, 0.62, hz + 0.7], fov: 50, roll: 0.03};
+    s.cam = {pos: [lerp(3.55, 3.7, p), 0.55, hz - lerp(2.7, 2.4, p)], target: [5.8, 0.55, hz + 1.0], fov: 44, roll: 0.03};
     s.dof = {target: [5.85, 0.6, hz + lerp(2.6, 0.7, catchUp)], range: 2.5, bokeh: 2.6};
     s.dust = {center: [5, 0.2, hz], color: '#ffe3b0', opacity: 0.6, speed: 1};
     return s;
@@ -335,47 +335,47 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     const hz = w.pos[2];
     s.hero = {pos: w.pos, rotY: Math.PI, pose: {walkPhase: w.ph, walk: 1, time: s.f, smile: 0.35, brow: 0.1}};
     s.dog = {pos: [5.9, 0.16, hz + 0.75], rotY: Math.PI, phase: l * 0.42, trot: 1, sunglasses: false, headYaw: 0};
-    const bz = hz - 5.6 + l * 0.15;
+    const bz = 5.5 - 4.0 + l * 0.077;
     const gust = B[22] - B[20] + 4;
     const looked = smooth(prog(l, gust + 6, gust + 18));
     s.bully = {
-      pos: [3.15, 0.0, bz],
+      pos: [2.4, 0.0, bz],
       rotY: 0,
-      roll: l * 0.5,
+      roll: l * 0.26,
       pedal: l * 0.32,
       pose: {seated: 1, pedal: l * 0.32, capOn: l < gust, headYaw: looked * 1.5, brow: lerp(-0.6, 1, looked), yawn: looked * 0.5, armL: [-1.1, -0.25, -0.35], armR: [-1.1, 0.25, -0.35], lean: 0.25, time: s.f},
     };
     if (l >= gust) {
       const k = l - gust;
       s.cap = {
-        pos: [3.15 + k * 0.03, 1.95 + k * 0.075 - k * k * 0.0016, bz - 0.15 * (k > 0 ? 1 : 0) - k * 0.15 + (0.15 * k) * 0.0],
+        pos: [2.4 + k * 0.03, 1.95 + k * 0.075 - k * k * 0.0016, bz - 0.15 * (k > 0 ? 1 : 0) - k * 0.15 + (0.15 * k) * 0.0],
         rot: [k * 0.35, k * 0.21, k * 0.12],
       };
       s.cap.pos[2] = bz - k * 0.17 - 0.0;
     }
-    s.leaves = {center: [3.4, 0.0, bz + 0.2]};
+    s.leaves = {center: [2.6, 0.0, bz + 0.2]};
     const p = easeInOut(l / s.len);
-    s.cam = {pos: [lerp(3.45, 3.3, p), lerp(1.0, 1.1, p), hz - 6.2], target: [4.0, 1.2, hz + 0.5], fov: 44, roll: 0.02};
+    s.cam = {pos: [lerp(4.2, 4.0, p), lerp(1.0, 1.1, p), hz - 6.6], target: [3.55, 1.2, hz + 0.5], fov: 48, roll: 0.02};
     s.dof = {target: [4.3, 1.3, hz], range: 6, bokeh: 1.6};
     s.dust = {center: [4, 0.2, hz], color: '#ffe3b0', opacity: 0.5, speed: 1};
     return s;
   },
   m2b: (s) => {
     const {local: l} = s;
-    const bz = 5.5 - (B[24] - B[20]) * SPEED - 5.6 + (B[24] - B[20]) * 0.15 + l * 0.15;
+    const bz = 5.5 - 4.0 + (B[24] - B[20] + l) * 0.077;
     s.bully = {
-      pos: [3.15, 0, bz],
+      pos: [2.4, 0, bz],
       rotY: 0,
-      roll: (l + 59) * 0.5,
+      roll: (l + 59) * 0.26,
       pedal: (l + 59) * 0.32,
       pose: {seated: 1, pedal: (l + 59) * 0.32, capOn: false, headYaw: 1.75 + Math.sin(l * 0.2) * 0.05, headPitch: -0.05, brow: 1, yawn: 0.55 + Math.sin(l * 0.5) * 0.15, armL: [-1.1, -0.25, -0.35], armR: [-1.1, 0.25, -0.35], lean: 0.2, time: s.f},
     };
     const hz = 5.5 - (B[24] - B[20] + l) * SPEED;
     s.hero = {pos: [5.2, 0.16, hz], rotY: Math.PI, pose: {walkPhase: (B[24] - B[20] + l) * STEP, walk: 1, time: s.f}};
     s.dog = {pos: [5.9, 0.16, hz + 0.75], rotY: Math.PI, phase: l * 0.42, trot: 1, sunglasses: false, headYaw: 0};
-    s.cam = {pos: [4.35, 1.62, bz - 0.25], target: [3.55, 1.38, bz + 0.15], fov: 42, roll: -0.05};
-    s.dof = {target: [3.15, 1.62, bz], range: 1.2, bokeh: 3.2};
-    s.dust = {center: [3, 0.4, bz], color: '#ffe3b0', opacity: 0.5, speed: 1};
+    s.cam = {pos: [3.75, 1.75, bz - 0.6], target: [2.65, 1.45, bz + 0.1], fov: 44, roll: -0.05};
+    s.dof = {target: [2.4, 1.75, bz], range: 1.4, bokeh: 3};
+    s.dust = {center: [2.4, 0.4, bz], color: '#ffe3b0', opacity: 0.5, speed: 1};
     return s;
   },
   m3a: (s) => {
@@ -391,6 +391,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
       pose: {walkPhase: w.ph, walk: 1, time: s.f, smile: 0.6, brow: 0.35, headYaw: 0, armR: [lerp(-0.2, -2.75, raise), lerp(0.08, 0.5, raise), lerp(-0.3, -1.1, raise)]},
       rim: '#ffe0a8',
       rimStrength: 1.4,
+      catchPose: raise,
     };
     s.ballInHand = hold;
     if (!hold) {
@@ -402,7 +403,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
       if (l >= 6) s.ball = {pos: p, spin: l * 0.4};
     }
     s.npcs = [
-      {look: 'npc1', pos: [6.4, 0.16, hz + 5.5], rotY: Math.PI + 0.5, pose: {time: s.f, yawn: hold ? 0.6 : 0, brow: hold ? 1 : 0, armL: [-0.2, -0.1, -0.4]}},
+      {look: 'npc1', pos: [6.7, 0.16, hz + 3.2], rotY: Math.PI + 0.9, pose: {time: s.f, yawn: hold ? 0.6 : 0, brow: hold ? 1 : 0, armL: [-0.2, -0.1, -0.4]}},
       {look: 'npc2', pos: [-5.0, 0.16, hz + 7.5], rotY: 1.9, pose: {time: s.f, yawn: hold ? 0.5 : 0, brow: hold ? 1 : 0}},
     ];
     s.dog = {pos: [5.95, 0.16, hz + 0.8], rotY: Math.PI, phase: l * 0.42, trot: 1, sunglasses: true, headYaw: 0};
@@ -475,7 +476,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     s.env = {...NIGHT, fogNear: 500, fogFar: 1000, bloom: 1.6, bloomThreshold: 0.5, sunInt: 2.2, sunDir: sunV(-1, 0.4, 0.2), sunColor: '#bcd4ff', hemiInt: 0.15, vignette: 0.7};
     s.planetBeam = easeOut(prog(l, 0, 14));
     const p = easeInOut(l / len);
-    s.cam = {pos: [lerp(34, 28, p), lerp(14, 18, p), lerp(70, 62, p)], target: [lerp(11, 10, p), lerp(12, 16, p), 18], fov: 50, roll: lerp(0.06, 0.02, p)};
+    s.cam = {pos: [lerp(30, 26, p), lerp(-2, 2, p), lerp(78, 70, p)], target: [lerp(22, 22.5, p), lerp(20, 24, p), 26], fov: 56, roll: lerp(0.05, 0.02, p)};
     s.dof = {target: [10, 0, 18], range: 200, bokeh: 0};
     return s;
   },
@@ -499,7 +500,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     s.hero = {pos, rotY: Math.PI, pose: {time: s.f, headPitch: -0.15, armL: [0.05, -0.18, -0.2], armR: [0.05, 0.18, -0.2]}, rim: '#c4a6ff', rimStrength: 1.6};
     const grow = easeOut(prog(l, 0, 30));
     s.heroShadow = {
-      pos: [0.3, 0, -99.85],
+      pos: [0.3, 0, -99.2],
       rotY: Math.PI,
       scale: lerp(4, 11, grow),
       eyes: smooth(prog(l, 18, 30)),
@@ -563,7 +564,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     s.debris = {center: [0.3, 0, -84.2], lift: 0.4 + 0.6 * k};
     s.embers = {center: [0.3, 0, -84.2], color: '#e8d4ff', color2: '#7c3aed', radius: 2, height: 3.5};
     const p = easeInOut(l / len);
-    s.cam = {pos: [lerp(0.55, 0.45, p), lerp(1.35, 1.38, p), lerp(-82.6, -83.0, p)], target: [0.3, 1.32, -84.2], fov: lerp(38, 32, p), roll: lerp(0.03, -0.05, p)};
+    s.cam = {pos: [lerp(0.62, 0.5, p), lerp(1.3, 1.34, p), lerp(-82.2, -82.6, p)], target: [0.3, 1.28, -84.2], fov: lerp(44, 38, p), roll: lerp(0.03, -0.05, p)};
     s.dof = {target: [0.3, 1.5, -84.05], range: 0.9, bokeh: 4};
     s.chroma = 0.002 + k * 0.006;
     s.heroGlow = 1;
@@ -630,7 +631,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     s.bursts = [{center: [0.3, 1.8, -84.3], start: s.f - l, color: '#e9d5ff', color2: '#6d28d9', radius: 1.8}];
     s.embers = {center: [0.3, 0, -84.2], color: '#e8d4ff', color2: '#7c3aed', radius: 3, height: 4};
     const p = easeInOut(l / len);
-    s.cam = {pos: [lerp(0.5, 0.42, p), lerp(1.92, 1.95, p), lerp(-82.9, -83.2, p)], target: [0.3, 1.86, -84.3], fov: 34, roll: 0.02};
+    s.cam = {pos: [lerp(0.55, 0.45, p), lerp(1.85, 1.9, p), lerp(-82.2, -82.5, p)], target: [0.3, 1.82, -84.3], fov: 38, roll: 0.02};
     s.dof = {target: [0.3, 1.98, -84.2], range: 0.8, bokeh: 3.5};
     s.chroma = 0.003;
     return s;
@@ -641,11 +642,11 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     const snapL = B[79] - B[78];
     const snap = smooth(prog(l, snapL - 2, snapL + 1));
     s.loki = {pos: [0.3, 0, -84.4], rotY: 0, fire: 0.6, armsUp: 0.3, headPitch: 0, eyeGlow: 1.6, scale: 1};
-    s.snapHand = {pos: [0.62, 1.68, -83.25], rot: [0.15, -0.35, -0.2], snap};
-    if (l >= snapL) s.bursts = [{center: [0.6, 1.98, -83.2], start: s.f - (l - snapL), color: '#ffffff', color2: '#a855f7', radius: 0.9}];
+    s.snapHand = {pos: [0.55, 1.72, -83.6], rot: [0.1, -0.5, -0.15], snap};
+    if (l >= snapL) s.bursts = [{center: [0.52, 2.02, -83.55], start: s.f - (l - snapL), color: '#ffffff', color2: '#a855f7', radius: 0.9}];
     const p = easeInOut(l / len);
-    s.cam = {pos: [lerp(1.05, 0.98, p), lerp(1.85, 1.88, p), lerp(-82.05, -82.25, p)], target: [0.6, 1.88, -83.3], fov: 38, roll: -0.05};
-    s.dof = {target: [0.62, 1.88, -83.25], range: 0.5, bokeh: 4};
+    s.cam = {pos: [lerp(1.0, 0.92, p), lerp(1.9, 1.92, p), lerp(-82.2, -82.4, p)], target: [0.4, 1.86, -84.0], fov: 42, roll: -0.05};
+    s.dof = {target: [0.55, 1.85, -83.6], range: 0.9, bokeh: 2.5};
     s.chroma = 0.003;
     return s;
   },
@@ -660,7 +661,7 @@ const SHOT_FNS: Record<ShotId, Builder> = {
     s.cracks = {center: [0.3, 0.01, -84.2], grow: 1};
     s.embers = {center: [0.3, 0, -84.2], color: '#e8d4ff', color2: '#7c3aed', radius: 4, height: 6};
     const pull = easeInOut(prog(l, flipL + 10, len));
-    s.cam = {pos: lerp3([0.05, 4.9, -85.6], [1.25, 1.1, -76.0], pull), target: lerp3([0, 5.9, -89.6], [0.2, 3.4, -88], pull), fov: lerp(42, 50, pull), roll: lerp(0.0, -0.03, pull)};
+    s.cam = {pos: lerp3([0.0, 4.3, -80.8], [1.25, 1.1, -76.0], pull), target: lerp3([0, 5.8, -89.6], [0.2, 3.4, -88], pull), fov: lerp(48, 50, pull), roll: lerp(0.0, -0.03, pull)};
     s.dof = {target: lerp3([0, 5.9, -89.6], [0.3, 2.0, -84.4], pull), range: lerp(3, 8, pull), bokeh: 2};
     s.chroma = 0.002;
     return s;
