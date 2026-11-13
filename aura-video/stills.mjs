@@ -10,7 +10,7 @@ const serveUrl = await bundle({entryPoint: path.resolve('src/index.ts'), onProgr
 const chromiumOptions = {gl: 'swangle'};
 const browser = await openBrowser('chrome', {browserExecutable: '/opt/pw-browsers/chromium', chromiumOptions});
 const inputProps = {...(process.env.NOPOST ? {noPost: true} : {}), ...(process.env.FX ? {fx: process.env.FX} : {})};
-const composition = await selectComposition({serveUrl, id: 'AuraVideo', inputProps, puppeteerInstance: browser, browserExecutable: '/opt/pw-browsers/chromium', chromiumOptions});
+const composition = await selectComposition({serveUrl, id: process.env.COMP ?? 'AuraVideo', inputProps, puppeteerInstance: browser, browserExecutable: '/opt/pw-browsers/chromium', chromiumOptions});
 for (const fr of frames.map(Number)) {
   const t0 = Date.now();
   await renderStill({

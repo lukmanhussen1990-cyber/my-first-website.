@@ -77,7 +77,7 @@ const G = {
   collarL: new THREE.ConeGeometry(0.05, 0.09, 3).rotateZ(Math.PI).scale(1, 1, 0.3),
   upper: new THREE.CylinderGeometry(0.066, 0.056, 0.28, 8).translate(0, -0.13, 0),
   fore: new THREE.CylinderGeometry(0.045, 0.037, 0.26, 8).translate(0, -0.12, 0),
-  hand: new THREE.IcosahedronGeometry(0.055, 0).scale(0.9, 1.15, 0.7),
+  hand: new THREE.IcosahedronGeometry(0.058, 1).scale(0.95, 1.1, 0.78),
   neck: new THREE.CylinderGeometry(0.058, 0.064, 0.14, 6),
   head: new THREE.LatheGeometry(
     [
@@ -90,12 +90,17 @@ const G = {
   ear: new THREE.IcosahedronGeometry(0.045, 0).scale(0.5, 1, 0.8),
   nose: new THREE.ConeGeometry(0.026, 0.07, 4).rotateX(Math.PI / 2 + 0.35).rotateZ(Math.PI / 4).scale(0.8, 1, 0.8),
   eyeW: new THREE.SphereGeometry(0.024, 10, 6).scale(1.45, 0.82, 0.35),
-  iris: new THREE.SphereGeometry(0.0155, 10, 6).scale(1, 1.05, 0.4),
+  iris: new THREE.SphereGeometry(0.03, 14, 10).scale(0.7, 1.12, 0.3),
+  glintBig: new THREE.SphereGeometry(0.0095, 8, 6).scale(1, 1, 0.5),
+  fringe: new THREE.IcosahedronGeometry(0.075, 1).scale(1.3, 0.62, 0.8),
+  hairTop: new THREE.IcosahedronGeometry(0.2, 2).scale(1.06, 0.62, 1.08),
+  cowlick: new THREE.ConeGeometry(0.045, 0.16, 5).scale(1, 1, 0.55),
+  thumb: new THREE.ConeGeometry(0.022, 0.07, 5),
   lash: new THREE.BoxGeometry(0.07, 0.009, 0.012),
   glint: new THREE.SphereGeometry(0.0045, 6, 4),
-  brow: new THREE.BoxGeometry(0.068, 0.013, 0.018),
+  brow: new THREE.BoxGeometry(0.078, 0.021, 0.02),
   mouth: new THREE.SphereGeometry(0.034, 10, 6).scale(1, 1, 0.3),
-  hairCap: new THREE.SphereGeometry(0.212, 12, 7, 0, Math.PI * 2, 0, Math.PI * 0.52),
+  hairCap: new THREE.SphereGeometry(0.222, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
   hairBack: new THREE.SphereGeometry(0.205, 10, 6, Math.PI * 0.25, Math.PI * 1.5, Math.PI * 0.3, Math.PI * 0.42),
   clump: new THREE.IcosahedronGeometry(0.075, 0),
   spike: new THREE.ConeGeometry(0.045, 0.13, 4),
@@ -162,35 +167,30 @@ export const Person: React.FC<Props> = ({
 
   const spikes = useMemo(() => {
     const r = mulberry(look.seed ?? 7);
-    const out: {p: [number, number, number]; rot: [number, number, number]; s: number; clump?: boolean}[] = [];
+    const out: {p: [number, number, number]; rot: [number, number, number]; s: number; kind: 'fringe' | 'cowlick'}[] = [];
     if (look.hairStyle === 'messy' || look.hairStyle === 'short') {
       const messy = look.hairStyle === 'messy';
-      // clumps forming the hair mass
-      const nC = messy ? 14 : 9;
-      for (let i = 0; i < nC; i++) {
-        const a = (i / nC) * Math.PI * 2 + r() * 0.4;
-        const el = 0.25 + r() * 0.55;
-        const R = 0.17;
+      // chunky swept fringe across the forehead
+      const xs = [-0.12, -0.06, 0.0, 0.06, 0.115];
+      xs.forEach((x, i) => {
         out.push({
-          p: [Math.cos(a) * Math.sin(el) * R, Math.cos(el) * R + 0.07, Math.sin(a) * Math.sin(el) * R - 0.035],
-          rot: [r() * 3, r() * 3, r() * 3],
-          s: (messy ? 0.95 : 0.8) + r() * 0.35,
-          clump: true,
+          p: [x, 0.165 - x * x * 2.2 - x * 0.12, 0.135 - x * x * 2.0],
+          rot: [0.55 + (r() - 0.5) * 0.15, x * 1.4, -0.38 + (r() - 0.5) * 0.12],
+          s: 0.95 + r() * 0.2,
+          kind: 'fringe',
         });
-      }
-      // fringe over the forehead
-      for (let i = 0; i < 4; i++) {
-        out.push({p: [-0.09 + i * 0.06, 0.15 + r() * 0.02, 0.12 + r() * 0.02], rot: [1.1 + r() * 0.4, r(), (r() - 0.5) * 0.6], s: 0.75 + r() * 0.3});
-      }
-      // stray tufts (bed head)
-      const nT = messy ? 9 : 3;
+      });
+      // side pieces over the ears
+      for (const sd of [-1, 1]) out.push({p: [0.172 * sd, 0.07, 0.0], rot: [0.1, 0, 1.35 * sd], s: 0.85, kind: 'fringe'});
+      // bed-head cowlicks at the crown
+      const nT = messy ? 4 : 0;
       for (let i = 0; i < nT; i++) {
-        const a = r() * Math.PI * 2;
-        const el = 0.2 + r() * 0.6;
+        const a = -Math.PI / 2 + (i - 1.5) * 0.55 + (r() - 0.5) * 0.2;
         out.push({
-          p: [Math.cos(a) * Math.sin(el) * 0.2, Math.cos(el) * 0.2 + 0.08, Math.sin(a) * Math.sin(el) * 0.2 - 0.04],
-          rot: [Math.sin(a) * (0.7 + r() * 0.6), r() * 3, -Math.cos(a) * (0.7 + r() * 0.6)],
-          s: 0.8 + r() * 0.6,
+          p: [Math.cos(a) * 0.07, 0.235, Math.sin(a) * 0.07 - 0.04],
+          rot: [-0.7 - r() * 0.5, r() * 3, (i - 1.5) * 0.35],
+          s: 0.9 + r() * 0.45,
+          kind: 'cowlick',
         });
       }
     }
@@ -253,6 +253,7 @@ export const Person: React.FC<Props> = ({
         <mesh geometry={G.fore} material={look.blazer ? M.blazer : M.skin} castShadow={sh} />
         <group position={[0, -0.27, 0]}>
           <mesh geometry={G.hand} material={M.skin} castShadow={sh} />
+          <mesh geometry={G.thumb} material={M.skin} position={[-0.035 * side, -0.005, 0.03]} rotation={[0.4, 0, 0.5 * side]} />
           {hand}
         </group>
       </group>
@@ -312,23 +313,21 @@ export const Person: React.FC<Props> = ({
           <group
             position={[0, 0.66 + Math.sin(ph * 2 + 0.6) * 0.012 * w, 0.01]}
             rotation={[pose.headPitch ?? 0, pose.headYaw ?? 0, pose.headRoll ?? 0]}
+            scale={1.12}
           >
             <mesh geometry={G.head} material={M.skin} castShadow={sh} />
-            <mesh geometry={G.jaw} material={M.skin} position={[0, -0.135, 0.06]} />
-            <mesh geometry={G.cheek} material={M.skin} position={[-0.105, -0.045, 0.125]} />
-            <mesh geometry={G.cheek} material={M.skin} position={[0.105, -0.045, 0.125]} />
             <mesh geometry={G.ear} material={M.skin} position={[-0.185, 0, -0.01]} />
             <mesh geometry={G.ear} material={M.skin} position={[0.185, 0, -0.01]} />
-            <mesh geometry={G.nose} material={M.skin} position={[0, -0.025, 0.19]} />
+            <mesh geometry={G.nose} material={M.skin} position={[0, -0.035, 0.188]} scale={0.7} />
             {/* eyes */}
             {[-1, 1].map((sd) => (
-              <group key={sd} position={[0.07 * sd, 0.03, 0.172]} rotation={[0, 0.32 * sd, 0]}>
+              <group key={sd} position={[0.071 * sd, 0.03 - lid * 0.008, 0.176]} rotation={[0, 0.3 * sd, 0]}>
                 <group scale={[1, eyeScaleY, 1]}>
-                  <mesh geometry={G.eyeW} material={glow > 0 ? M.glint : M.eyeW} />
-                  <mesh geometry={G.iris} material={glow > 0 ? M.glint : M.iris} position={[0, -0.001, 0.006]} />
-                  <mesh geometry={G.glint} material={M.glint} position={[0.006, 0.006, 0.012]} />
+                  <mesh geometry={G.iris} material={glow > 0 ? M.glint : M.iris} />
+                  <mesh geometry={G.glintBig} material={M.glint} position={[0.008, 0.013, 0.008]} />
+                  <mesh geometry={G.glint} material={M.glint} position={[-0.007, -0.011, 0.008]} />
                 </group>
-                <mesh geometry={G.lash} material={M.hair} position={[0, 0.02 * eyeScaleY + 0.002, 0.004]} rotation={[0, 0, 0.12 * sd]} scale={[0.62, 1, 1]} />
+                {lid > 0.25 && <mesh geometry={G.lash} material={M.hair} position={[0, 0.03 * eyeScaleY, 0.006]} scale={[0.55, 1, 1]} />}
               </group>
             ))}
             {/* brows */}
@@ -337,7 +336,7 @@ export const Person: React.FC<Props> = ({
                 key={sd}
                 geometry={G.brow}
                 material={M.hair}
-                position={[0.072 * sd, 0.082 + brow * 0.018 - lid * 0.012, 0.176]}
+                position={[0.072 * sd, 0.092 + brow * 0.018 - lid * 0.01, 0.174]}
                 rotation={[0, 0.3 * sd, (brow < 0 ? -0.35 * brow : -brow * 0.12) * sd + lid * 0.12 * sd]}
               />
             ))}
@@ -352,8 +351,9 @@ export const Person: React.FC<Props> = ({
             {/* hair */}
             {(look.hairStyle === 'messy' || look.hairStyle === 'short') && (
               <>
-                <mesh geometry={G.hairCap} material={M.hair} position={[0, 0.045, -0.018]} rotation={[-0.32, 0, 0]} castShadow={sh} />
+                <mesh geometry={G.hairCap} material={M.hair} position={[0, 0.05, -0.012]} rotation={[-0.14, 0, 0]} castShadow={sh} />
                 <mesh geometry={G.hairBack} material={M.hair} position={[0, 0.02, -0.02]} castShadow={sh} />
+                <mesh geometry={G.hairTop} material={M.hair} position={[0, 0.17, -0.01]} rotation={[-0.1, 0, 0.06]} castShadow={sh} />
               </>
             )}
             {look.hairStyle === 'buzz' && <mesh geometry={G.hairCap} material={M.hair} position={[0, 0.03, -0.01]} scale={0.99} rotation={[-0.35, 0, 0]} />}
@@ -372,11 +372,12 @@ export const Person: React.FC<Props> = ({
             {spikes.map((sp, i) => (
               <mesh
                 key={i}
-                geometry={sp.clump ? G.clump : G.spike}
+                geometry={sp.kind === 'cowlick' ? G.cowlick : G.fringe}
                 material={M.hair}
                 position={sp.p}
-                rotation={[sp.rot[0] + wind * flutter(i) * 0.3, sp.rot[1], sp.rot[2] + wind * flutter(i + 3) * 0.22]}
-                scale={sp.clump ? [sp.s, sp.s * 0.75, sp.s] : [sp.s, sp.s * (1 + wind * 0.25), sp.s]}
+                rotation={[sp.rot[0] + wind * flutter(i) * 0.25, sp.rot[1], sp.rot[2] + wind * flutter(i + 3) * 0.2]}
+                scale={[sp.s, sp.s * (1 + wind * 0.15), sp.s]}
+                castShadow={sh}
               />
             ))}
             {look.cap && pose.capOn !== false && (

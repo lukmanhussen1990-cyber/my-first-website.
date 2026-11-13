@@ -10,8 +10,7 @@ import {Q} from '../quality';
 import {Town, GateSign, Bell} from './Town';
 import {Sky} from './Sky';
 import {Person, LooseCap, LOOKS} from './Person';
-import {Bike, Bus, Ball} from './Actors';
-import {HeroModel, NpcModel, BullyModel, LooseCapModel, DogModel, FoxModel} from './ModelActors';
+import {Bike, Bus, Ball, Dog} from './Actors';
 import {Loki, Fox, Crow, SnapHand} from './Loki';
 import {Particles, Leaves} from './Particles';
 import {GroundCracks, Debris, NewsStudio, Planet, Glow, silhouetteMaterial} from './Effects3D';
@@ -123,7 +122,7 @@ const PostFX: React.FC<{s: State; fx?: string}> = ({s, fx = 'dof,bloom,ca,tm,bc,
 };
 
 /** Re-render once more after effects/composer are set up (first frame of each tab would otherwise be black). */
-const Kick: React.FC = () => {
+export const Kick: React.FC = () => {
   const advance = useThree((st) => st.advance);
   const frame = useCurrentFrame();
   const mounted = useRef(0);
@@ -151,17 +150,14 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
       <GateSign flip={s.sign.flip} glow={s.sign.glow} />
       <Bell swing={s.bell.swing} ring={s.bell.ring} />
       {s.hero && (
-        <HeroModel
-          pos={s.hero.pos}
-          rotY={s.hero.rotY}
+        <Person
+          look={LOOKS.hero}
           pose={s.hero.pose}
-          f={s.f}
+          position={s.hero.pos}
+          rotationY={s.hero.rotY}
           rim={s.hero.rim ?? e.rim}
           rimStrength={s.hero.rimStrength ?? e.rimStrength}
-          ballInHand={s.ballInHand}
-          catchPose={s.hero.catchPose ?? 0}
-          clipOverride={s.hero.clip}
-          extraBones={s.hero.bones}
+          rightHandChildren={s.ballInHand ? <group position={[0, -0.1, 0.03]}><Ball position={[0, 0, 0]} spin={0.3} /></group> : null}
         />
       )}
       {s.heroGlow ? (
@@ -169,7 +165,7 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
       ) : null}
       {s.heroShadow && (
         <group position={s.heroShadow.pos} scale={[s.heroShadow.scale, s.heroShadow.scale, 0.02]}>
-          <HeroModel pos={[0, 0, 0]} rotY={s.heroShadow.rotY} pose={s.heroShadow.pose} f={s.f} rim="#000" rimStrength={0} override={silMat} />
+          <Person look={LOOKS.hero} pose={s.heroShadow.pose} rotationY={s.heroShadow.rotY} override={silMat} castShadow={false} />
           {s.heroShadow.eyes > 0 &&
             [-1, 1].map((sd) => (
               <Glow key={sd} position={[0.07 * sd, 1.28, 2]} size={0.16} color="#b26bff" opacity={s.heroShadow.eyes} />
@@ -187,17 +183,17 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
           />
         ))}
       {s.dog && (
-        <DogModel pos={s.dog.pos} rotY={s.dog.rotY} phase={s.dog.phase} trot={s.dog.trot} sunglasses={s.dog.sunglasses} headYaw={s.dog.headYaw} rim={e.rim} rimStrength={e.rimStrength * 0.8} f={tGame} />
+        <Dog position={s.dog.pos} rotationY={s.dog.rotY} phase={s.dog.phase} trot={s.dog.trot} sunglasses={s.dog.sunglasses} headYaw={s.dog.headYaw} rim={e.rim} rimStrength={e.rimStrength * 0.8} t={tGame} />
       )}
       {s.bully && (
         <group position={s.bully.pos} rotation={[0, s.bully.rotY, 0]}>
           <Bike roll={s.bully.roll} pedal={s.bully.pedal} />
-          <BullyModel pose={s.bully.pose} f={s.f} rim={e.rim} rimStrength={e.rimStrength} />
+          <Person look={LOOKS.bully} pose={s.bully.pose} position={[0, 0.06, -0.12]} rim={e.rim} rimStrength={e.rimStrength} />
         </group>
       )}
-      {s.cap && <LooseCapModel position={s.cap.pos} rotation={s.cap.rot} />}
+      {s.cap && <LooseCap position={s.cap.pos} rotation={s.cap.rot} color="#d22b2b" />}
       {s.npcs.map((n, i) => (
-        <NpcModel key={i} look={n.look} pose={n.pose} pos={n.pos} rotY={n.rotY} f={s.f} rim={e.rim} rimStrength={e.rimStrength * 0.7} />
+        <Person key={i} look={LOOKS[n.look]} pose={n.pose} position={n.pos} rotationY={n.rotY} rim={e.rim} rimStrength={e.rimStrength * 0.7} />
       ))}
       {s.bus && <Bus position={s.bus.pos} rotationY={s.bus.rotY} door={s.bus.door} wheelRoll={s.bus.roll} />}
       {s.ball && <Ball position={s.ball.pos} spin={s.ball.spin} />}
@@ -213,7 +209,7 @@ const TownScene: React.FC<{s: State}> = ({s}) => {
           scale={s.loki.scale}
         />
       )}
-      {s.fox && <FoxModel pos={s.fox.pos} rotY={s.fox.rotY} scale={s.fox.scale} f={tGame} />}
+      {s.fox && <Fox position={s.fox.pos} rotationY={s.fox.rotY} t={tGame} scale={s.fox.scale} />}
       {s.crow && <Crow position={s.crow.pos} rotationY={s.crow.rotY} t={tGame} scale={s.crow.scale} />}
       {s.snapHand && <SnapHand position={s.snapHand.pos} rotation={s.snapHand.rot} snap={s.snapHand.snap} />}
       {s.bursts.map((b, i) => (

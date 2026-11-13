@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {mulberry, clamp} from '../lib/math';
 import {beamMaterial, makeRimMaterial} from './materials';
 import {makeGlowTexture} from './textures';
-import {NpcModel} from './ModelActors';
+import {Person, LOOKS} from './Person';
 import {makeNewsWallTexture} from './textures';
 
 /** Glowing violet ground cracks radiating from a centre. grow: 0..1 */
@@ -167,7 +167,23 @@ export const NewsStudio: React.FC<{t: number}> = ({t}) => {
       <mesh material={m.deskTrim} position={[0, 0.9, 1.62]}>
         <boxGeometry args={[2.6, 0.06, 0.04]} />
       </mesh>
-      <NpcModel look="anchor" pos={[0, 0, -0.55]} rotY={0} f={t} pose={{time: t, headYaw: Math.sin(t * 0.05) * 0.08}} rim="#7fb2ff" rimStrength={1.1} />
+      <Person
+        look={LOOKS.anchor}
+        position={[0, 0.0, -0.45]}
+        pose={{
+          headYaw: Math.sin(t * 0.05) * 0.08,
+          headPitch: -0.05,
+          brow: 0.6,
+          smile: 0.2,
+          yawn: Math.max(0, Math.sin(t * 0.55)) * 0.35,
+          armL: [-0.9, -0.15, -0.6],
+          armR: [-0.9, 0.15, -0.6],
+          legL: [-1.4, 1.4],
+          legR: [-1.4, 1.4],
+        }}
+        rim="#7fb2ff"
+        rimStrength={1.1}
+      />
       <pointLight position={[0, 3, 3]} intensity={9} distance={14} color="#dfe9ff" />
       <pointLight position={[-4, 3, -3]} intensity={14} distance={12} color="#3a7bff" />
       <pointLight position={[4, 3, -3]} intensity={14} distance={12} color="#ff5b8a" />

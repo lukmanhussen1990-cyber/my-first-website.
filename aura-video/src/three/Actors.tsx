@@ -31,15 +31,15 @@ export const Dog: React.FC<{
   const s = Math.sin(phase);
   const bob = Math.abs(Math.cos(phase)) * 0.025 * trot;
   const leg = (x: number, z: number, ph: number, front: boolean) => (
-    <group position={[x, 0.3, z]} rotation={[Math.sin(ph) * 0.5 * trot, 0, 0]}>
-      <mesh material={M.fur} position={[0, -0.04, 0]} scale={[1, 1.2, 1.1]}>
-        <icosahedronGeometry args={[0.055, 0]} />
+    <group position={[x, 0.27, z]} rotation={[Math.sin(ph) * 0.5 * trot, 0, 0]}>
+      <mesh material={M.fur} position={[0, -0.03, 0]} scale={[1.1, 1.25, 1.2]}>
+        <icosahedronGeometry args={[0.06, 1]} />
       </mesh>
-      <mesh material={M.fur} position={[0, -0.14, 0]} castShadow>
-        <cylinderGeometry args={[0.032, 0.026, 0.24, 6]} />
+      <mesh material={M.fur} position={[0, -0.12, 0]} castShadow>
+        <cylinderGeometry args={[0.036, 0.03, 0.2, 7]} />
       </mesh>
-      <mesh material={front ? M.belly : M.fur} position={[0, -0.27, 0.02]} scale={[1, 0.6, 1.3]}>
-        <icosahedronGeometry args={[0.035, 0]} />
+      <mesh material={M.belly} position={[0, -0.235, 0.02]} scale={[1, 0.6, 1.3]}>
+        <icosahedronGeometry args={[0.04, 1]} />
       </mesh>
     </group>
   );
@@ -51,7 +51,7 @@ export const Dog: React.FC<{
         {leg(-0.08, -0.17, phase + Math.PI, false)}
         {leg(0.08, -0.17, phase, false)}
         {/* body */}
-        <mesh material={M.fur} position={[0, 0.38, 0]} rotation={[0.04 + s * 0.03 * trot, 0, 0]} scale={[0.72, 0.68, 1.45]} castShadow>
+        <mesh material={M.fur} position={[0, 0.36, 0]} rotation={[0.04 + s * 0.03 * trot, 0, 0]} scale={[0.8, 0.74, 1.35]} castShadow>
           <icosahedronGeometry args={[0.2, 1]} />
         </mesh>
         <mesh material={M.belly} position={[0, 0.34, 0.15]} scale={[0.62, 0.62, 0.7]} castShadow>
@@ -71,9 +71,15 @@ export const Dog: React.FC<{
           </mesh>
         </group>
         {/* head */}
-        <group position={[0, 0.6, 0.3]} rotation={[-0.05 + Math.sin(phase * 2) * 0.04 * trot, headYaw, 0]}>
-          <mesh material={M.fur} scale={[1, 0.92, 1]} castShadow>
-            <icosahedronGeometry args={[0.12, 1]} />
+        <group position={[0, 0.58, 0.3]} rotation={[-0.05 + Math.sin(phase * 2) * 0.04 * trot, headYaw, 0]}>
+          <mesh material={M.fur} scale={[1.05, 0.95, 1]} castShadow>
+            <icosahedronGeometry args={[0.135, 1]} />
+          </mesh>
+          <mesh material={M.belly} position={[-0.075, -0.06, 0.05]} scale={[0.9, 0.75, 0.8]}>
+            <icosahedronGeometry args={[0.065, 1]} />
+          </mesh>
+          <mesh material={M.belly} position={[0.075, -0.06, 0.05]} scale={[0.9, 0.75, 0.8]}>
+            <icosahedronGeometry args={[0.065, 1]} />
           </mesh>
           <mesh material={M.belly} position={[0, -0.035, 0.1]} scale={[0.8, 0.62, 1.15]}>
             <icosahedronGeometry args={[0.075, 1]} />
@@ -86,23 +92,23 @@ export const Dog: React.FC<{
           </mesh>
           {[-1, 1].map((sd) => (
             <group key={sd}>
-              <mesh material={M.dark} position={[0.075 * sd, 0.115, -0.02]} rotation={[-0.15, 0, -0.32 * sd]} scale={[1, 1, 0.45]}>
-                <coneGeometry args={[0.05, 0.13, 4]} />
+              <mesh material={M.dark} position={[0.08 * sd, 0.13, -0.02]} rotation={[-0.15, 0, -0.3 * sd]} scale={[1, 1, 0.45]}>
+                <coneGeometry args={[0.058, 0.15, 5]} />
               </mesh>
               {!sunglasses && (
-                <group position={[0.05 * sd, 0.03, 0.1]}>
-                  <mesh material={M.eye}>
-                    <sphereGeometry args={[0.017, 8, 6]} />
+                <group position={[0.055 * sd, 0.035, 0.115]} rotation={[0, 0.35 * sd, 0]}>
+                  <mesh material={M.eye} scale={[0.85, 1.1, 0.45]}>
+                    <sphereGeometry args={[0.021, 10, 8]} />
                   </mesh>
-                  <mesh material={M.glint} position={[0.005, 0.006, 0.014]}>
-                    <sphereGeometry args={[0.004, 6, 4]} />
+                  <mesh material={M.glint} position={[0.006, 0.008, 0.009]}>
+                    <sphereGeometry args={[0.0055, 6, 4]} />
                   </mesh>
                 </group>
               )}
             </group>
           ))}
           {sunglasses && (
-            <group position={[0, 0.035, 0.108]}>
+            <group position={[0, 0.04, 0.122]}>
               <mesh material={M.lens} position={[-0.05, 0, 0]}>
                 <boxGeometry args={[0.075, 0.042, 0.016]} />
               </mesh>
