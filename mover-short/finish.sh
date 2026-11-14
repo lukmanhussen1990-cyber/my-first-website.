@@ -3,8 +3,13 @@ set -e
 cd "$(dirname "$0")"
 NAME=${1:-Couch-Crushers}
 mkdir -p out
-n=$(ls seg/s*.mp4 | grep -v part | wc -l); [ "$n" = 30 ] || { echo "only $n/30 segments"; exit 1; }
-ls seg/s*.mp4 | grep -v part | sort | sed "s/^/file '/; s/$/'/" | sed "s#file 'seg/#file '#" > seg/list.txt
+rm -f seg/list.txt
+for a in $(seq 0 60 1740); do n=$(printf %04d $a)
+  if [ -f seg/fix_s$n.mp4 ]; then echo "file 'fix_s$n.mp4'" >> seg/list.txt
+  elif [ -f seg/s$n.mp4 ]; then echo "file 's$n.mp4'" >> seg/list.txt
+  else echo "missing segment $n"; exit 1; fi
+done
+echo "fixed segments used: $(grep -c fix_ seg/list.txt)"
 ffmpeg -y -v error -f concat -safe 0 -i seg/list.txt -c copy out/video_only.mp4
 # two-pass loudnorm to -14 LUFS
 J=$(ffmpeg -hide_banner -nostats -i mix_raw.wav -af loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json -f null - 2>&1 | sed -n '/^{/,/^}/p')

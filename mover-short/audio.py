@@ -295,7 +295,10 @@ for k in [49.9, 49.98, 50.08, 50.15, 50.25, 50.31]: cues.append((k, keyclick(), 
 for k in np.arange(37.95, 38.95, 0.07): cues.append((k, keyclick(), 0.25))
 for k in [32.18, 32.28, 38.58, 38.67]: cues.append((k, whoosh(0.15, 900, 4000), 0.18))
 for i, k in enumerate(np.arange(29.9, 31.3, 0.13)): cues.append((k, piano(NOTE(int(rng.integers(55, 84))), 0.6, 0.8), 0.22))
-for c in cues: place(sfx, c[1], c[0], c[2])
+for c in cues:
+    if c[0] in (54.03,) and c[2] == 0.55: continue  # fanfare (music sting)
+    if c[0] == 58.6: continue  # record scratch (only made sense with music)
+    place(sfx, c[1], c[0], c[2])
 
 # ---------------- voice + music + ducking ----------------
 raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', 'voice.mp3', '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'], capture_output=True).stdout
@@ -303,8 +306,8 @@ voice = np.frombuffer(raw, np.float32).astype(np.float64)
 voice = hp(voice, 70)
 v = np.zeros(N); v[:min(N, len(voice))] = voice[:N]
 v = norm(v, 0.9)
-mus = music(3.3, 58.62)
-mus = norm(mus, 1.0)
+MUSIC = False  # user asked for no background music
+mus = norm(music(3.3, 58.62), 1.0) if MUSIC else np.zeros(N)
 # voice envelope for ducking
 w = int(0.05 * SR); env = np.sqrt(np.convolve(v ** 2, np.ones(w) / w, 'same'))
 act = np.clip(env / (np.percentile(env[env > 1e-4], 60) + 1e-9), 0, 1)
