@@ -2,10 +2,10 @@
 
 Low-poly 3D animated reel (1080x1920, 30 fps, ~25 s) built with three.js, rendered frame-by-frame in headless Chromium.
 
-- `fake-faint-reel.mp4`: final video (voiceover sped up 1.3x, synthesized SFX + music bed)
+- `fake-faint-reel.mp4`: final video (voiceover sped up 1.3x + synthesized SFX, no music)
 - `src/scene.js`: the scene, characters, shots, captions and 2D effects
 - `src/render.js`: Playwright frame renderer
-- `src/sfx.py`: sound effects and music synthesis (numpy)
+- `src/sfx.py`: sound effects synthesis (numpy; the music bed it also writes is not used)
 - `src/words.json`: word timings of the original voiceover (for captions)
 
 Re-render:
