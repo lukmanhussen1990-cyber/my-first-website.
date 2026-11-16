@@ -509,45 +509,69 @@ def blanket(c, x, y, s=1.0, col=0xD9C27A, seed=0, t=0.0):
 
 
 # ---------------------------------------------------------------- phones & tech
+_PHONE = {}
+
+
+def _phone_asset():
+    if not _PHONE:
+        import json as _json
+        import os as _os
+        from engine import ASSETS
+        data = open(_os.path.join(ASSETS, 'phone_paper.png'), 'rb').read()
+        _PHONE['img'] = skia.Image.MakeFromEncoded(skia.Data.MakeWithCopy(data))
+        _PHONE['meta'] = _json.load(open(_os.path.join(ASSETS, 'phone_paper.json')))
+    return _PHONE['img'], _PHONE['meta']
+
+
 def smartphone(c, x, y, s=1.0, t=0.0, ring=0.0, screen='call', glow_a=0.0, rot=0.0, name='MABEL'):
-    """modern smartphone (paper style). ring: 0..1 vibrate amount"""
+    """modern smartphone: paper-cutout phone artwork + animated call screen. ring: 0..1 vibrate"""
+    img, m = _phone_asset()
     vib = ring * math.sin(t * 70) * 6
     with xf(c, x + vib, y, rot + ring * math.sin(t * 55) * 2.5, s):
-        def body():
-            paper(c, rrect(-150, -300, 300, 600, 46), 0x23262E, seed=801)
-        with_shadow(c, body, 8, 16, 14, 0.4)
-        paper(c, rrect(-136, -284, 272, 568, 36), 0x2C3E58, ol=0, seed=802)
+        k = 640.0 / m['h']
+        w, h = m['w'] * k, m['h'] * k
+        dst = skia.Rect.MakeXYWH(-w / 2, -h / 2, w, h)
+        samp = skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear)
+        if not SHADOW[0]:
+            c.save()
+            c.translate(8, 16)
+            c.drawImageRect(img, dst, samp, skia.Paint(
+                ColorFilter=skia.ColorFilters.Blend(0xFF000000, skia.BlendMode.kSrcIn),
+                ImageFilter=skia.ImageFilters.Blur(12, 12), Alphaf=0.42))
+            c.restore()
+        c.drawImageRect(img, dst, samp, skia.Paint())
+        sx0, sy0 = -w / 2 + m['sx0'] * k, -h / 2 + m['sy0'] * k
+        sx1, sy1 = -w / 2 + m['sx1'] * k, -h / 2 + m['sy1'] * k
+        scr = rrect(sx0, sy0, sx1 - sx0, sy1 - sy0, 18)
         c.save()
-        c.clipPath(rrect(-136, -284, 272, 568, 36), skia.ClipOp.kIntersect, True)
-        grad_rect(c, -136, -284, 272, 568, 0x3D5A80, 0x1F2D45)
-        if screen == 'call':
-            # caller avatar + name + buttons
-            pulse = 1 + 0.06 * math.sin(t * 6) * ring
-            flat(c, circle(0, -120, 64 * pulse), 0xF6EEDC, 0.15)
-            paper(c, circle(0, -120, 52), 0xE8D9BE, ol=3, seed=803)
-            # little silhouette in avatar
-            flat(c, circle(0, -134, 20), 0x6B4733)
-            flat(c, oval(0, -88, 30, 18), 0x8E9FD6)
-            f = font('Anton-Regular.ttf', 34)
-            draw_text(c, 'INCOMING CALL', 0, -30, font('BebasNeue-Regular.ttf', 28), 0xDDE6F0, align='center')
-            draw_text(c, name, 0, 14, f, 0xFFFFFF, align='center')
-            for sd, col in ((-1, 0xD0453A), (1, 0x3FAE5A)):
-                bx = sd * 70
-                by = 190 + (math.sin(t * 8) * 4 * ring if sd > 0 else 0)
-                paper(c, circle(bx, by, 34), col, ol=3, seed=805 + sd)
-                with xf(c, bx, by, 135 if sd < 0 else 0):
-                    p = svg("M -12 -10 Q -14 6 0 14 Q 6 16 12 10 L 6 4 Q 2 8 -2 4 Q -6 0 -4 -4 L -8 -14 Z")
-                    flat(c, p, 0xFFFFFF)
-        elif screen == 'talk':
-            f = font('BebasNeue-Regular.ttf', 30)
-            draw_text(c, '00:0' + str(int(t) % 10), 0, -40, f, 0xDDE6F0, align='center')
-            paper(c, circle(0, -130, 52), 0xE8D9BE, ol=3, seed=803)
-            flat(c, circle(0, -144, 20), 0x6B4733)
-            flat(c, oval(0, -98, 30, 18), 0x8E9FD6)
+        c.clipPath(scr, skia.ClipOp.kIntersect, True)
+        cy0 = (sy0 + sy1) / 2
+        with xf(c, (sx0 + sx1) / 2, cy0):
+            if screen == 'call':
+                pulse = 1 + 0.06 * math.sin(t * 6) * ring
+                flat(c, circle(0, -120, 64 * pulse), 0xF6EEDC, 0.15)
+                paper(c, circle(0, -120, 52), 0xE8D9BE, ol=3, seed=803)
+                flat(c, circle(0, -134, 20), 0x6B4733)
+                flat(c, oval(0, -88, 30, 18), 0x8E9FD6)
+                draw_text(c, 'INCOMING CALL', 0, -30, font('BebasNeue-Regular.ttf', 28), 0xDDE6F0, align='center')
+                draw_text(c, name, 0, 14, font('Anton-Regular.ttf', 34), 0xFFFFFF, align='center')
+                for sd, col in ((-1, 0xD0453A), (1, 0x3FAE5A)):
+                    bx = sd * 70
+                    by = 190 + (math.sin(t * 8) * 4 * ring if sd > 0 else 0)
+                    paper(c, circle(bx, by, 34), col, ol=3, seed=805 + sd)
+                    with xf(c, bx, by, 135 if sd < 0 else 0):
+                        p = svg("M -12 -10 Q -14 6 0 14 Q 6 16 12 10 L 6 4 Q 2 8 -2 4 Q -6 0 -4 -4 L -8 -14 Z")
+                        flat(c, p, 0xFFFFFF)
+            elif screen == 'talk':
+                draw_text(c, '00:0' + str(int(max(0, t)) % 10), 0, -40, font('BebasNeue-Regular.ttf', 30), 0xDDE6F0,
+                          align='center')
+                paper(c, circle(0, -130, 52), 0xE8D9BE, ol=3, seed=803)
+                flat(c, circle(0, -144, 20), 0x6B4733)
+                flat(c, oval(0, -98, 30, 18), 0x8E9FD6)
+                draw_text(c, name, 0, 50, font('Anton-Regular.ttf', 30), 0xFFFFFF, align='center')
         c.restore()
         if glow_a > 0:
             glow(c, 0, 0, 420, 0xBFD8FF, glow_a)
-        paper(c, rrect(-40, -276, 80, 18, 9), 0x111317, ol=0, tex=False)
 
 
 def candlestick_phone(c, x, y, s=1.0, seed=0, rot=0.0):

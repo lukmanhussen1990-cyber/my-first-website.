@@ -404,7 +404,7 @@ def video(out, workers=4, audio=None, fa=None, fb=None):
     subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', lst, '-c', 'copy', vid])
     if audio:
         subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-i', vid, '-i', audio, '-map', '0:v', '-map', '1:a',
-                               '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-ar', '48000',
+                               '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-ar', '44100',
                                '-t', f'{(f1 - f0) / FPS:.3f}', '-movflags', '+faststart', out])
     else:
         os.replace(vid, out)
