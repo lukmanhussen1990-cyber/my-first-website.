@@ -121,6 +121,22 @@ def init():
                 CAPS.overrides.append((s['t0'] - 0.3, s['t1'] - 0.3, s['cdy'], 0))
 
 
+WATERMARK = '@Akshita'
+
+
+def draw_watermark(c, text=WATERMARK):
+    """subtle paper-style handle, top-right (clear of captions and app UI)"""
+    f = E.font('Anton-Regular.ttf', 46)
+    x = W - 52 - f.measureText(text)
+    y = 232
+    p = E.text_path(text, f, x, y)
+    c.save()
+    c.translate(2.5, 3.5)
+    c.drawPath(p, skia.Paint(AntiAlias=True, Color=C(0x0D0A08, 0.45), MaskFilter=E._blur(3)))
+    c.restore()
+    c.drawPath(p, skia.Paint(AntiAlias=True, Color=C(0xF8F1E2, 0.82)))
+
+
 class Renderer:
     def __init__(self):
         init()
@@ -168,6 +184,7 @@ class Renderer:
             self.composite(oc, ia, ib, A, B, u, g, samp)
             vig = lerp(A['vig'], B['vig'], u)
         CAPS.draw(oc, g)
+        draw_watermark(oc)
         E.post_overlays(oc, vignette=clamp(vig * 0.85), grain=1.0, stain=0.9)
         # end fade (very subtle) after the hold
         return self.out
