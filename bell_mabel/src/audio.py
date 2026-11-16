@@ -14,6 +14,7 @@ import sys
 import numpy as np
 
 SR = 44100
+SONG_OFFSET = 12.15   # song time where the vocals start (after the instrumental intro)
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
@@ -209,6 +210,7 @@ def main():
     voice = np.pad(voice, (0, max(0, N - len(voice))))[:N]
 
     song = load(song_path, 2).astype(np.float64)
+    song = song[int(SONG_OFFSET * SR):]             # start where the singing begins
     song = np.pad(song, ((0, max(0, N - len(song))), (0, 0)))[:N]
 
     # ---- voice level reference (active speech RMS)
@@ -224,7 +226,7 @@ def main():
     s_avg_db = db(np.sqrt(np.mean(mono ** 2)))
     lev_db = (s_avg_db - s_env_db) * 0.7            # levelling: lift the quiet intro
     lev_db = np.clip(lev_db, -4, 10)
-    target_db = v_rms_db - 16.0                      # ~16 dB under the voice (user: a bit louder)
+    target_db = v_rms_db - 10.0                      # ~10 dB under the voice (user: louder)
     base_gain_db = target_db - s_avg_db + lev_db
 
     # ---- scene envelope (dB relative to base)
@@ -233,12 +235,12 @@ def main():
     sil0, sil1 = st('s14d_clock'), st('s15_empty')
     scene = [
         (0.0, 0.0), (1.2, 0.0),
-        (st('s13a_window') - 0.3, 0.0), (st('s13a_window') + 0.6, -4.0),
-        (st('s14a_funeral') - 0.2, -4.0), (st('s14a_funeral') + 0.4, -6.5),
-        (sil0 - 0.45, -6.5), (sil0 + 0.05, -120.0),
-        (sil1 - 0.05, -120.0), (sil1 + 1.3, -9.0),
-        (st('s16a_stage') - 0.2, -9.0), (st('s16a_stage') + 0.4, -6.0),
-        (st('s16b_reveal') - 0.15, -6.0), (st('s16b_reveal') + 0.25, 2.0),
+        (st('s13a_window') - 0.3, 0.0), (st('s13a_window') + 0.6, -2.5),
+        (st('s14a_funeral') - 0.2, -2.5), (st('s14a_funeral') + 0.4, -4.0),
+        (sil0 - 0.45, -4.0), (sil0 + 0.05, -120.0),
+        (sil1 - 0.05, -120.0), (sil1 + 1.3, -5.0),
+        (st('s16a_stage') - 0.2, -5.0), (st('s16a_stage') + 0.4, -3.0),
+        (st('s16b_reveal') - 0.15, -3.0), (st('s16b_reveal') + 0.25, 1.5),
         (st('s17a_city') + 0.2, 0.0),
         (WS[-1] + 0.25, 0.0), (WS[-1] + 0.7, 2.0), (END - 1.0, 2.0), (END, -60.0),
     ]
@@ -250,7 +252,7 @@ def main():
     a_up, a_dn = 1 - np.exp(-1 / (0.03 * SR)), 1 - np.exp(-1 / (0.35 * SR))
     # fast vectorised approximation of attack/release smoothing via two passes
     att = smooth(np.maximum(vad, smooth(vad, int(0.3 * SR))), int(0.12 * SR))
-    duck_db = -2.5 * np.clip(att, 0, 1)
+    duck_db = -2.0 * np.clip(att, 0, 1)
 
     gain = undb(base_gain_db + scene_db + duck_db)
     gain[scene_db < -100] = 0.0
@@ -302,7 +304,7 @@ def main():
     bed = music + sfx[:, None] * 0.9
     # soft safety limiter on the bed only (voice never touched)
     pk = np.abs(bed).max()
-    lim = undb(v_rms_db - 4)
+    lim = undb(v_rms_db + 4)
     if pk > lim:
         bed *= lim / pk
     mix = bed + voice[:, None]
