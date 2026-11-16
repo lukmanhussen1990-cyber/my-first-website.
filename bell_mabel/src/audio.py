@@ -222,9 +222,9 @@ def main():
     s_env = rms_env(mono, int(1.5 * SR))
     s_env_db = db(s_env)
     s_avg_db = db(np.sqrt(np.mean(mono ** 2)))
-    lev_db = (s_avg_db - s_env_db) * 0.5            # partial levelling
-    lev_db = np.clip(lev_db, -4, 7)
-    target_db = v_rms_db - 22.0                      # ~22 dB under the voice
+    lev_db = (s_avg_db - s_env_db) * 0.7            # levelling: lift the quiet intro
+    lev_db = np.clip(lev_db, -4, 10)
+    target_db = v_rms_db - 16.0                      # ~16 dB under the voice (user: a bit louder)
     base_gain_db = target_db - s_avg_db + lev_db
 
     # ---- scene envelope (dB relative to base)
@@ -232,7 +232,7 @@ def main():
         return shots[name]['t0']
     sil0, sil1 = st('s14d_clock'), st('s15_empty')
     scene = [
-        (0.0, -3.0), (1.2, 0.0),
+        (0.0, 0.0), (1.2, 0.0),
         (st('s13a_window') - 0.3, 0.0), (st('s13a_window') + 0.6, -4.0),
         (st('s14a_funeral') - 0.2, -4.0), (st('s14a_funeral') + 0.4, -6.5),
         (sil0 - 0.45, -6.5), (sil0 + 0.05, -120.0),
@@ -250,7 +250,7 @@ def main():
     a_up, a_dn = 1 - np.exp(-1 / (0.03 * SR)), 1 - np.exp(-1 / (0.35 * SR))
     # fast vectorised approximation of attack/release smoothing via two passes
     att = smooth(np.maximum(vad, smooth(vad, int(0.3 * SR))), int(0.12 * SR))
-    duck_db = -3.5 * np.clip(att, 0, 1)
+    duck_db = -2.5 * np.clip(att, 0, 1)
 
     gain = undb(base_gain_db + scene_db + duck_db)
     gain[scene_db < -100] = 0.0
