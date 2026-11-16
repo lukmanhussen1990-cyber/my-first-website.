@@ -75,17 +75,45 @@ def table_topdown(c, t, seed=0):
             flat(c, oval(x + 90 + (k * 37) % 50, yy + 260, 9, 5), 0x6E4422, 0.35)
 
 
+_CHAI = {}
+
+
 def coffee_cup_top(c, x, y, s=1.0, t=0.0):
-    def draw():
-        with xf(c, x, y, 0, s):
-            paper(c, circle(0, 0, 130), 0xF3ECDC, seed=31)
-            paper(c, rrect(70, -24, 80, 48, 22), 0xF6F1E6, seed=32)
-            paper(c, circle(0, 0, 92), 0xFBF7EE, seed=33)
-            flat(c, circle(0, 0, 74), 0x6B3E22)
-            flat(c, oval(-18, -20, 30, 16), 0xA9714A, 0.6)
-            p = svg("M 0 -40 C 20 -50 30 -30 16 -18 C 4 -8 -18 -14 -14 -30")
-            stroke(c, p, 0xD9B48A, 3, 0.7)
-    with_shadow(c, draw, 8 * s, 14 * s, 12 * s, 0.32)
+    """top-down cup of masala chai (paper-cutout artwork) with animated steam"""
+    if 'img' not in _CHAI:
+        import os as _os
+        from engine import ASSETS
+        data = open(_os.path.join(ASSETS, 'chai_paper.png'), 'rb').read()
+        _CHAI['img'] = skia.Image.MakeFromEncoded(skia.Data.MakeWithCopy(data))
+    img = _CHAI['img']
+    D = 340.0
+    k = D / max(img.width(), img.height())
+    w, h = img.width() * k, img.height() * k
+    samp = skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear)
+    with xf(c, x, y, 0, s):
+        dst = skia.Rect.MakeXYWH(-w / 2, -h / 2, w, h)
+        c.save()
+        c.translate(9, 15)
+        c.drawImageRect(img, dst, samp, skia.Paint(
+            ColorFilter=skia.ColorFilters.Blend(0xFF000000, skia.BlendMode.kSrcIn),
+            ImageFilter=skia.ImageFilters.Blur(11, 11), Alphaf=0.38))
+        c.restore()
+        c.drawImageRect(img, dst, samp, skia.Paint())
+        # steam rising from the chai (cup centre is up-left of the image centre)
+        cx, cy = -w * 0.04, -h * 0.12
+        for i in range(3):
+            ph = (t * 0.45 + i / 3.0) % 1.0
+            a = 0.30 * math.sin(math.pi * ph)
+            if a <= 0.01:
+                continue
+            p = skia.Path()
+            x0 = cx + (i - 1) * 34
+            y0 = cy - ph * 150
+            p.moveTo(x0, y0 + 60)
+            p.cubicTo(x0 + 26 * math.sin(t * 1.3 + i), y0 + 25, x0 - 26 * math.sin(t * 1.1 + i), y0 - 15,
+                      x0 + 12 * math.sin(t * 0.9 + i), y0 - 60)
+            c.drawPath(p, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=13,
+                                     StrokeCap=skia.Paint.kRound_Cap, Color=C(0xFFFFFF, a), MaskFilter=_blur(7)))
 
 
 def glasses_top(c, x, y, s=1.0, rot=0.0):
@@ -129,7 +157,7 @@ def s01a_phone(c, x):
         table_topdown(c, t)
     with layer(c, cam, 1.0):
         notebook_top(c, 210, 300, 1.0, -12)
-        coffee_cup_top(c, 880, 330, 1.05, t)
+        coffee_cup_top(c, 870, 450, 1.0, t)
         glasses_top(c, 860, 1560, 0.9, 18)
         leaves_top(c, 120, 1750, 1.1, 30)
         ring = 1.0 - sm(t, th - 0.12, th + 0.05)
@@ -155,7 +183,7 @@ def s01b_heart(c, x):
     with layer(c, cam, 0.92):
         table_topdown(c, t + 3)
     with layer(c, cam, 1.0):
-        coffee_cup_top(c, 880, 330, 1.05, t)
+        coffee_cup_top(c, 870, 450, 1.0, t)
         PR.smartphone(c, 540, 960, 1.18, t + 3, ring=0, screen='talk', rot=-6, glow_a=0.15)
         PR.sound_rings(c, 520, 600, t + 1.5, n=4, period=1.0, rmax=420, width=10,
                        alpha=1 - sm(t, tp - 0.1, tp + 0.4) * 0.7)
