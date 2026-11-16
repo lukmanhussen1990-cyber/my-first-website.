@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Repeater</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1d1f23;
+    --muted: #6b7280;
+    --border: #d9dce1;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --success: #16a34a;
+    --danger: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111316;
+      --card: #1b1e23;
+      --text: #e8eaed;
+      --muted: #9aa0a8;
+      --border: #333841;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --success: #22c55e;
+      --danger: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+  }
+  h1 { margin: 0 0 4px; font-size: 1.8rem; }
+  .subtitle { margin: 0 0 24px; color: var(--muted); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  textarea, input, select {
+    width: 100%;
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  textarea { min-height: 120px; resize: vertical; }
+  textarea:focus, input:focus, select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  @media (max-width: 520px) { .row { grid-template-columns: 1fr; } }
+  #customSepWrap { margin-top: 16px; display: none; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  button {
+    font: inherit;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+  }
+  button:hover { background: var(--accent-hover); }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.secondary:hover { background: var(--bg); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .output-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .output-head label { margin: 0; }
+  #output { min-height: 200px; }
+  .stats { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
+  .msg { font-size: 0.9rem; margin-top: 10px; min-height: 1.3em; }
+  .msg.ok { color: var(--success); }
+  .msg.err { color: var(--danger); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Text Repeater</h1>
+  <p class="subtitle">Paste your text, choose how many times to repeat it, then copy the result.</p>
+
+  <section class="card">
+    <label for="input">Your text</label>
+    <textarea id="input" placeholder="Paste or type your text here..."></textarea>
+
+    <div class="row">
+      <div>
+        <label for="count">Repeat how many times?</label>
+        <input id="count" type="number" min="1" max="100000" value="10">
+      </div>
+      <div>
+        <label for="separator">Put between each copy</label>
+        <select id="separator">
+          <option value="newline">New line</option>
+          <option value="space">Space</option>
+          <option value="none">Nothing</option>
+          <option value="comma">Comma + space</option>
+          <option value="blank">Blank line</option>
+          <option value="custom">Custom...</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="customSepWrap">
+      <label for="customSep">Custom separator</label>
+      <input id="customSep" type="text" placeholder="e.g.  | ">
+    </div>
+
+    <div class="buttons">
+      <button id="repeatBtn">Repeat</button>
+      <button id="clearBtn" class="secondary">Clear</button>
+    </div>
+    <div id="inputMsg" class="msg"></div>
+  </section>
+
+  <section class="card">
+    <div class="output-head">
+      <label for="output">Result</label>
+      <button id="copyBtn" disabled>Copy</button>
+    </div>
+    <textarea id="output" readonly placeholder="Your repeated text will appear here..."></textarea>
+    <div id="stats" class="stats"></div>
+    <div id="copyMsg" class="msg"></div>
+  </section>
+</main>
+
+<script>
+  const MAX_REPEATS = 100000;
+  const MAX_CHARS = 10000000; // 10 million characters
+
+  const input = document.getElementById("input");
+  const count = document.getElementById("count");
+  const separator = document.getElementById("separator");
+  const customSepWrap = document.getElementById("customSepWrap");
+  const customSep = document.getElementById("customSep");
+  const output = document.getElementById("output");
+  const repeatBtn = document.getElementById("repeatBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const copyBtn = document.getElementById("copyBtn");
+  const stats = document.getElementById("stats");
+  const inputMsg = document.getElementById("inputMsg");
+  const copyMsg = document.getElementById("copyMsg");
+
+  function setMsg(el, text, type) {
+    el.textContent = text;
+    el.className = "msg" + (type ? " " + type : "");
+  }
+
+  function getSeparator() {
+    switch (separator.value) {
+      case "newline": return "\n";
+      case "space": return " ";
+      case "none": return "";
+      case "comma": return ", ";
+      case "blank": return "\n\n";
+      case "custom": return customSep.value;
+    }
+    return "\n";
+  }
+
+  separator.addEventListener("change", () => {
+    customSepWrap.style.display = separator.value === "custom" ? "block" : "none";
+  });
+
+  function repeatText() {
+    setMsg(inputMsg, "");
+    setMsg(copyMsg, "");
+    const text = input.value;
+    const times = parseInt(count.value, 10);
+
+    if (!text) {
+      setMsg(inputMsg, "Please paste some text first.", "err");
+      return;
+    }
+    if (!Number.isFinite(times) || times < 1) {
+      setMsg(inputMsg, "Please enter a number of 1 or more.", "err");
+      return;
+    }
+    if (times > MAX_REPEATS) {
+      setMsg(inputMsg, "Maximum is " + MAX_REPEATS.toLocaleString() + " repeats.", "err");
+      return;
+    }
+
+    const sep = getSeparator();
+    const totalLength = text.length * times + sep.length * (times - 1);
+    if (totalLength > MAX_CHARS) {
+      setMsg(inputMsg, "That result would be too large (" + totalLength.toLocaleString() +
+        " characters). Try fewer repeats or shorter text.", "err");
+      return;
+    }
+
+    output.value = Array(times).fill(text).join(sep);
+    copyBtn.disabled = false;
+    stats.textContent = times.toLocaleString() + " copies · " +
+      output.value.length.toLocaleString() + " characters";
+  }
+
+  async function copyOutput() {
+    if (!output.value) return;
+    try {
+      await navigator.clipboard.writeText(output.value);
+    } catch (e) {
+      // Fallback for browsers without clipboard API permission
+      output.select();
+      document.execCommand("copy");
+      window.getSelection().removeAllRanges();
+    }
+    setMsg(copyMsg, "Copied to clipboard!", "ok");
+    copyBtn.textContent = "Copied!";
+    setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+  }
+
+  function clearAll() {
+    input.value = "";
+    output.value = "";
+    stats.textContent = "";
+    copyBtn.disabled = true;
+    setMsg(inputMsg, "");
+    setMsg(copyMsg, "");
+    input.focus();
+  }
+
+  repeatBtn.addEventListener("click", repeatText);
+  copyBtn.addEventListener("click", copyOutput);
+  clearBtn.addEventListener("click", clearAll);
+
+  // Ctrl/Cmd + Enter to repeat
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") repeatText();
+  });
+</script>
+</body>
+</html>
