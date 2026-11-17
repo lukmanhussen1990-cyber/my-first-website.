@@ -31,6 +31,9 @@ if MODE == "wb":
 elif MODE in ("preview", "still"):
     sc.render.resolution_x, sc.render.resolution_y = 540, 960
     sc.eevee.taa_render_samples = 6
+elif MODE == "pv":
+    sc.render.resolution_x, sc.render.resolution_y = 216, 384
+    sc.eevee.taa_render_samples = 4
 elif MODE == "final":
     sc.render.resolution_x, sc.render.resolution_y = 1080, 1920
     sc.eevee.taa_render_samples = 8

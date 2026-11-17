@@ -123,7 +123,7 @@ def bounce_seq(rig, f0, f1, loc, yaw, period=16, height=1.1, floor=FLOOR_Z, mat_
         land = f
         apply_pose(rig, P.C_BOUNCE_LAND)
         rig.key(land)
-        rig.place(land, loc=(loc.x, loc.y, floor))
+        rig.place(land, loc=(loc.x, loc.y, floor - 0.05))
         rigtools.set_interp(rig.obj, land, 'QUAD')
         if mat_ob is not None:
             squash(mat_ob, land, floor_base, amount=0.10)
@@ -139,7 +139,7 @@ def bounce_seq(rig, f0, f1, loc, yaw, period=16, height=1.1, floor=FLOOR_Z, mat_
         if fc.data_path == "location" and fc.array_index == 2:
             for kp in fc.keyframe_points:
                 if f0 <= kp.co.x <= f1 + period:
-                    is_land = abs(kp.co.y - floor) < 1e-3
+                    is_land = abs(kp.co.y - (floor - 0.05)) < 1e-3
                     kp.interpolation = 'BEZIER'
                     kp.handle_left_type = kp.handle_right_type = 'VECTOR' if is_land else 'AUTO_CLAMPED'
             fc.update()
@@ -251,10 +251,10 @@ def S03(sc, you, cr, n):
     build_hose(bpy.data.collections["PROPS"], "PumpHoseShot",
                [ploc + rotz((0, 0.1, 0.12), yaw), (ploc + valve) / 2 + Vector((0, 0, 0.05)), valve], 0.012, "#222222")
     cam = Cam(lens=26)
-    c = cl(0.95, -3.5, 1.15)
-    t = cl(1.2, -0.6, 0.55)
+    c = cl(0.75, -3.4, 1.75)
+    t = cl(1.15, -0.55, 0.45)
     cam.key(1, c, t)
-    cam.key(n, cl(1.0, -3.2, 1.12), t)
+    cam.key(n, cl(0.8, -3.15, 1.7), t)
 
 
 def S04a(sc, you, cr, n):
@@ -380,8 +380,8 @@ def S06(sc, you, cr, n):
     show(bl, True)
     bl.location = cl(2.85, -0.5)
     bl.rotation_euler = (0, 0, math.radians(CY + 180))
-    cam = Cam(lens=95)
-    t = cl(0.0, -0.18, FLOOR_Z + 0.55)
+    cam = Cam(lens=120)
+    t = cl(0.0, -0.18, FLOOR_Z + 0.78)
     cam.key(1, POV_EYE, t)
     cam.key(n, POV_EYE, t + Vector((0, 0, 0.03)))
     cam.handheld(1, n + 2, seed=6)
@@ -473,8 +473,8 @@ def S08a(sc, you, cr, n):
     key_scale(st, imp + 4, 0.45)
     key_scale(st, imp + 6, 0.001)
     cam = Cam(lens=24)
-    c = Vector((2.6, 2.6, 1.55))
-    t = Vector((0.2, 8.6, 1.9))
+    c = Vector((2.0, 4.9, 1.45))
+    t = Vector((0.3, 8.9, 1.45))
     cam.key(1, c, t + Vector((-0.4, 0, 1.0)))
     cam.key(imp, c, t)
     cam.key(n, c, t + Vector((0, 0, -0.3)))
@@ -599,11 +599,11 @@ def S12a(sc, you, cr, n):
     rigtools.set_interp(you.obj, 1, 'LINEAR')
     pose_keys(you, [(1, P.SNEAK_A), (5, P.SNEAK_B), (9, P.SNEAK_A), (13, P.SNEAK_B), (18, P.SNEAK_A),
                     (21, P.GRAB), (24, blend_pose(P.GRAB, P.SNEAK_B, 0.5)), (n + 2, blend_pose(P.GRAB, P.SNEAK_B, 0.6))])
-    cam = Cam(lens=30)
-    c = cl(0.55, -3.9, 1.55)
-    t = cl(0.35, 0.15, 1.0)
+    cam = Cam(lens=26)
+    c = cl(0.15, -2.35, 1.5)
+    t = cl(0.45, 0.15, 0.95)
     cam.key(1, c, t)
-    cam.key(n, cl(0.5, -3.6, 1.5), t)
+    cam.key(n, cl(0.15, -2.15, 1.48), t)
 
 
 def S12b(sc, you, cr, n):
@@ -634,11 +634,11 @@ def S12b(sc, you, cr, n):
     squash(m, 17, (1, 1, 1), amount=0.14)
     wobble_walls(17)
     bounce_seq(cr, 17, n + 4, land, CY, period=14, height=0.95, floor=FLOOR_Z, mat_ob=None)
-    cam = Cam(lens=25)
-    c = cl(1.0, -5.0, 1.85)
-    t = cl(0.0, -0.2, 1.05)
+    cam = Cam(lens=24)
+    c = cl(0.9, -4.3, 3.1)
+    t = cl(0.0, -0.25, 0.9)
     cam.key(1, c, t)
-    cam.key(n, cl(0.9, -4.7, 1.8), t)
+    cam.key(n, cl(0.85, -4.0, 3.0), t)
     cam.shake(17, dur=6, amp=0.015, rot_amp=0.6, seed=9)
 
 
