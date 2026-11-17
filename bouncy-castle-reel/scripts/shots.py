@@ -68,6 +68,36 @@ def mattress():
     return bpy.data.objects["Mattress"]
 
 
+def flat_mattress(f_show, f_hide=None, scale=1.0):
+    """crumpled, deflated vinyl sheet lying on the ground (replaces the popped mattress)"""
+    import bmesh
+    me = bpy.data.meshes.new("MattressFlat")
+    bm = bmesh.new()
+    bmesh.ops.create_grid(bm, x_segments=40, y_segments=24, size=0.5)
+    rnd = random.Random(7)
+    for v in bm.verts:
+        x, y = v.co.x * 2.05 * scale, v.co.y * 1.08 * scale
+        edge = max(abs(v.co.x) * 2, abs(v.co.y) * 2)
+        z = 0.012 + 0.018 * math.sin(x * 9.0 + 1.3) * math.cos(y * 7.0) + 0.012 * math.sin(x * 23 + y * 17)
+        z += rnd.uniform(-0.004, 0.004) - 0.01 * edge ** 4
+        v.co = (x, y, max(0.002, z))
+    bm.to_mesh(me)
+    for poly in me.polygons:
+        poly.use_smooth = True
+    me.materials.append(bpy.data.materials["MattressBlue"])
+    ob = bpy.data.objects.new("MattressFlat", me)
+    bpy.data.collections["PROPS"].objects.link(ob)
+    ob.location = cl(0.0, 0.0, 0.0)
+    ob.rotation_euler = (0, 0, math.radians(CY))
+    sol = ob.modifiers.new("thick", 'SOLIDIFY')
+    sol.thickness = 0.01
+    show(ob, False, 1)
+    show(ob, True, f_show)
+    if f_hide:
+        show(ob, False, f_hide)
+    return ob
+
+
 def show_mattress(scale=SMALL):
     show("MattressRoot", True)
     m = mattress()
@@ -258,24 +288,25 @@ def S03(sc, you, cr, n):
 
 
 def S04a(sc, you, cr, n):
-    """'Except it pops' - she sits down on the mattress, it squishes."""
+    """'Except it pops' - she steps onto the mattress and sits down on top of it, it squishes."""
     L.hide_char(you)
     m = show_mattress(SMALL)
     top = SMALL[2] * FLOOR_Z
-    stand = cl(0.0, -0.95)
-    seat = cl(0.0, -0.18)
-    cr.place(1, loc=tuple(stand), yaw=CY)
-    cr.place(5, loc=tuple(stand), yaw=CY)
-    cr.place(13, loc=(seat.x, seat.y, top + 0.06), yaw=CY)
+    seat = cl(0.0, 0.30)              # near the back so her legs lie on top of the mattress
+    cr.place(1, loc=(seat.x, seat.y, top), yaw=CY)
+    cr.place(5, loc=(seat.x, seat.y, top))
+    cr.place(13, loc=(seat.x, seat.y, top + 0.06))
     phone_in_hand(cr)
     pose_keys(cr, [(1, P.C_PHONE), (5, P.C_PHONE), (9, blend_pose(P.C_PHONE, P.C_SIT_PHONE, 0.6)),
                    (13, P.C_SIT_PHONE), (16, P.C_SIT_SQUISH), (n + 2, P.C_SIT_SQUISH)])
     squash(m, 13, SMALL, amount=0.18)
+    # feet stay on the mattress top while she sits down
+    L.ground_lock(cr, 1, 11, ground=top - 0.02)
     cam = Cam(lens=30)
-    c = cl(-1.4, -3.2, 1.0)
-    t = cl(0.0, -0.4, 0.55)
+    c = cl(-1.4, -3.2, 1.25)
+    t = cl(0.0, 0.0, 0.55)
     cam.key(1, c, t)
-    cam.key(n, cl(-1.3, -3.0, 0.95), t)
+    cam.key(n, cl(-1.3, -3.0, 1.2), t)
 
 
 def S04b(sc, you, cr, n):
@@ -283,7 +314,7 @@ def S04b(sc, you, cr, n):
     L.hide_char(you)
     m = show_mattress(SMALL)
     top = SMALL[2] * FLOOR_Z
-    seat = cl(0.0, -0.18)
+    seat = cl(0.0, 0.30)
     cr.place(1, loc=(seat.x, seat.y, top + 0.04), yaw=CY)
     cr.place(2, loc=(seat.x, seat.y, top + 0.04))
     cr.place(5, loc=(seat.x, seat.y, 0.06))
@@ -291,12 +322,13 @@ def S04b(sc, you, cr, n):
     phone_in_hand(cr)
     pose_keys(cr, [(1, P.C_SIT_SQUISH), (3, P.C_SIT_SQUISH), (6, P.C_SHOCK_GROUND), (n + 2, P.C_SHOCK_GROUND)])
     key_scale(m, 1, (SMALL[0], SMALL[1], SMALL[2] * 0.82))
-    key_scale(m, 2, (SMALL[0] * 1.08, SMALL[1] * 1.08, SMALL[2] * 0.7))
-    key_scale(m, 4, (SMALL[0] * 1.06, SMALL[1] * 1.04, 0.03))
-    key_scale(m, 7, (SMALL[0] * 1.04, SMALL[1] * 1.02, 0.02))
-    fx.burst(cl(0.0, -0.2, 0.15), 2, n=26, speed=(0.8, 2.0), up=(0.1, 0.5), spread=1.4, size=(0.05, 0.12),
-             life=(8, 14), seed=41, stretch=0.0)
-    fx.crown(cl(0.0, -0.2, 0.02), 2, radius=0.7, height=0.25, dur=10, seed=4)
+    key_scale(m, 2, (SMALL[0] * 1.08, SMALL[1] * 1.08, SMALL[2] * 0.6))
+    key_scale(m, 3, (SMALL[0] * 1.06, SMALL[1] * 1.04, 0.05))
+    show(m, True, 1)
+    show(m, False, 4)
+    flat_mattress(4)
+    fx.burst(cl(0.0, 0.3, 0.12), 2, n=14, speed=(1.0, 2.2), up=(0.2, 0.6), spread=1.4, size=(0.03, 0.07),
+             life=(5, 9), seed=41, stretch=0.0)
     st = bpy.data.objects["ImpactStar"]
     show(st, True)
     st.location = cl(0.2, -0.75, 0.35)
@@ -315,11 +347,14 @@ def S04b(sc, you, cr, n):
 
 def S05(sc, you, cr, n):
     """'So you add a big air pump.' - YOU drags in the blower, the mattress inflates HUGE."""
-    m = show_mattress((SMALL[0] * 1.04, SMALL[1] * 1.02, 0.02))
-    seat = cl(0.0, -0.18)
+    m = show_mattress((SMALL[0] * 1.04, SMALL[1] * 1.02, 0.05))
+    flat_mattress(1, f_hide=35)
+    show(m, False, 1)
+    show(m, True, 35)
+    seat = cl(0.0, 0.30)
     cr.place(1, loc=(seat.x, seat.y, 0.06), yaw=CY)
     phone_in_hand(cr)
-    key_scale(m, 33, (SMALL[0] * 1.04, SMALL[1] * 1.02, 0.02))
+    key_scale(m, 34, (SMALL[0] * 1.04, SMALL[1] * 1.02, 0.05))
     key_scale(m, 44, (0.75, 0.62, 0.55))
     key_scale(m, 52, (1.06, 1.05, 1.12))
     key_scale(m, 56, (0.98, 0.98, 0.95))
@@ -372,7 +407,7 @@ def S06(sc, you, cr, n):
     """'Clever!' - binocular POV of her on the big mattress."""
     L.hide_char(you)
     show_mattress((1, 1, 1))
-    seat = cl(0.0, -0.18)
+    seat = cl(0.0, 0.30)
     cr.place(1, loc=(seat.x, seat.y, FLOOR_Z + 0.06), yaw=CY)
     phone_in_hand(cr)
     phone_loop(cr, 1, n + 2, a=P.C_SIT_PHONE, b=blend_pose(P.C_SIT_PHONE, P.C_SIT_SQUISH, 0.3), period=12)
@@ -381,7 +416,7 @@ def S06(sc, you, cr, n):
     bl.location = cl(2.85, -0.5)
     bl.rotation_euler = (0, 0, math.radians(CY + 180))
     cam = Cam(lens=120)
-    t = cl(0.0, -0.18, FLOOR_Z + 0.78)
+    t = cl(0.0, 0.30, FLOOR_Z + 0.78)
     cam.key(1, POV_EYE, t)
     cam.key(n, POV_EYE, t + Vector((0, 0, 0.03)))
     cam.handheld(1, n + 2, seed=6)
@@ -391,7 +426,7 @@ def S07a(sc, you, cr, n):
     """'But now she bounces so high,' - two bounces then LAUNCH."""
     L.hide_char(you)
     m = show_mattress((1, 1, 1))
-    seat = cl(0.0, -0.18)
+    seat = cl(0.0, 0.30)
     z0 = FLOOR_Z + 0.06
     phone_in_hand(cr)
     cr.place(1, loc=(seat.x, seat.y, z0), yaw=CY)
@@ -692,7 +727,8 @@ GROUND = {"S01a": ("CRUSH",), "S01b": ("CRUSH",), "S02": ("CRUSH",), "S03": ("YO
 
 FLOOR_LOCK = {"S12a": ("YOU",), "S12b": ("YOU",)}
 # frames where the crush sits on the mattress / castle floor -> rest her on the surface
-SEAT_LOCK = {"S04a": (13, 23), "S05": (1, 64), "S06": (1, 21), "S11": (1, 60), "S12a": (1, 29), "S12b": (1, 8)}
+SEAT_LOCK = {"S04a": (13, 23), "S04b": (1, 1), "S05": (35, 64), "S06": (1, 21), "S11": (1, 60), "S12a": (1, 29),
+             "S12b": (1, 8)}
 
 
 def setup(shot):
@@ -709,5 +745,7 @@ def setup(shot):
     if shot in SEAT_LOCK and not cr.obj.hide_render:
         a, b = SEAT_LOCK[shot]
         L.seat_lock(cr, a, min(b, n), bpy.data.objects["Mattress"], sink=0.03)
+    if shot == "S05":
+        L.seat_lock(cr, 1, 34, bpy.data.objects["MattressFlat"], sink=0.0)
     sc.frame_set(1)
     return sc
