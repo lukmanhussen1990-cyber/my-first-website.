@@ -558,12 +558,15 @@ def S08a(sc, you, cr, n):
     key_scale(st, imp + 1, 0.6)
     key_scale(st, imp + 4, 0.45)
     key_scale(st, imp + 6, 0.001)
-    cam = Cam(lens=24)
-    c = Vector((2.0, 4.9, 1.45))
-    t = Vector((0.3, 8.9, 1.45))
-    cam.key(1, c, t + Vector((-0.4, 0, 1.0)))
-    cam.key(imp, c, t)
-    cam.key(n, c, t + Vector((0, 0, -0.3)))
+    cam = Cam(lens=22)
+    c = Vector((2.4, 3.4, 1.5))
+    # follow her flight in, end framed on the fence impact
+    for f in (1, 8, 16, 24, 30):
+        sc.frame_set(f)
+        p = cr.obj.matrix_world.translation + Vector((0, 0, 0.9))
+        cam.key(f, c, p.lerp(Vector((0.3, 8.9, 1.6)), 0.25))
+    cam.key(imp, c, Vector((0.3, 8.9, 1.35)))
+    cam.key(n, c, Vector((0.3, 8.9, 1.15)))
     cam.shake(imp, dur=12, amp=0.06, rot_amp=2.4, seed=8)
 
 
