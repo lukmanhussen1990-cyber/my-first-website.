@@ -19,6 +19,8 @@ for shot, frame in jobs:
     sc.render.resolution_x = RES
     sc.render.resolution_y = int(RES * 16 / 9)
     sc.eevee.taa_render_samples = SAMPLES
+    sc.render.use_motion_blur = True
+    sc.render.motion_blur_shutter = 0.5
     sc.frame_set(int(frame))
     sc.render.filepath = os.path.join(OUTDIR, f"{shot}_{int(frame):04d}.png")
     bpy.ops.render.render(write_still=True)

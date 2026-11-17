@@ -44,6 +44,14 @@ elif MODE == "stillhi":
 outdir = os.path.join(OUTROOT, MODE if MODE not in ("still", "stillhi") else "stills", SHOT)
 os.makedirs(outdir, exist_ok=True)
 sc.render.image_settings.file_format = 'PNG'
+# smoother motion: velocity-based motion blur (cheap in EEVEE Next with 1 step)
+if MODE in ("final", "pv", "stillhi", "still"):
+    sc.render.use_motion_blur = True
+    sc.render.motion_blur_shutter = 0.5
+    try:
+        sc.eevee.motion_blur_steps = 1
+    except Exception:
+        pass
 
 first = START or sc.frame_start
 last = END or sc.frame_end

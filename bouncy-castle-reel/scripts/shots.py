@@ -175,6 +175,56 @@ def bounce_seq(rig, f0, f1, loc, yaw, period=16, height=1.1, floor=FLOOR_Z, mat_
             fc.update()
 
 
+def zip_around(you, spots, clear=2.95):
+    """YOU zips smoothly between work spots along the outside of the castle (polar path, never through walls)."""
+    pts = []
+    for f, loc, yy, pose in spots:
+        lw = rotz(Vector(loc) - C, -CY)          # world -> castle local
+        pts.append((f, lw.x, lw.y, yy, pose))
+    prev_xy = None
+    for i, (f, x, y, yy, pose) in enumerate(pts):
+        if i > 0:
+            f0, x0, y0, yy0, pose0 = pts[i - 1]
+            a0, a1 = math.atan2(y0, x0), math.atan2(y, x)
+            da = (a1 - a0 + math.pi) % (2 * math.pi) - math.pi
+            r0, r1 = math.hypot(x0, y0), math.hypot(x, y)
+            last = None
+            for k in range(1, f - f0):
+                t = k / (f - f0)
+                te = t * t * (3 - 2 * t)
+                a = a0 + da * te
+                r_lin = r0 + (r1 - r0) * te
+                r = r_lin + max(0.0, clear - r_lin) * math.sin(math.pi * t)
+                px, py = r * math.cos(a), r * math.sin(a)
+                wloc = cl(px, py)
+                if last is not None:
+                    yaw = look_at_yaw(last, wloc)
+                else:
+                    nxt = cl((r + 0.01) * math.cos(a + 0.05 * math.copysign(1, da)),
+                             (r + 0.01) * math.sin(a + 0.05 * math.copysign(1, da)))
+                    yaw = look_at_yaw(wloc, nxt)
+                you.place(f0 + k, loc=tuple(wloc), yaw=yaw, interp='LINEAR')
+                apply_pose(you, P.WALK_A if (k % 2 == 0) else blend_pose(P.WALK_A, P.STAND, 0.6))
+                you.key(f0 + k)
+                last = wloc
+        you.place(f, loc=tuple(cl(x, y)), yaw=yy, interp='LINEAR')
+        apply_pose(you, pose)
+        you.key(f)
+    # unwrap yaw so rotations take the short way
+    fc = next((c for c in you.obj.animation_data.action.fcurves
+               if c.data_path == "rotation_euler" and c.array_index == 2), None)
+    if fc:
+        prev = None
+        for kp in fc.keyframe_points:
+            if prev is not None:
+                while kp.co.y - prev > math.pi:
+                    kp.co.y -= 2 * math.pi
+                while kp.co.y - prev < -math.pi:
+                    kp.co.y += 2 * math.pi
+            prev = kp.co.y
+        fc.update()
+
+
 def phone_loop(rig, f0, f1, a=P.C_PHONE, b=P.C_PHONE_B, period=14):
     f = f0
     i = 0
@@ -270,8 +320,8 @@ def S03(sc, you, cr, n):
     pump.rotation_euler = (0, 0, math.radians(yaw))
     bell = bpy.data.objects["PumpBellowsPivot"]
     # super fast pumping: one stroke every 2 frames
-    for f in range(1, n + 3, 2):
-        down = (f // 2) % 2 == 0
+    for i, f in enumerate(range(1, n + 4, 3)):
+        down = i % 2 == 0
         apply_pose(you, P.PUMP_DOWN if down else P.PUMP_UP)
         you.key(f)
         key_scale(bell, f, (1, 1, 0.55 if down else 1.0))
@@ -555,10 +605,7 @@ def S09(sc, you, cr, n):
              (38, W(-2.6, 2.35), CY + 135, P.STAND_REACH_UP), (42, W(2.6, 2.35), CY - 135, P.STAND_REACH_UP),
              (47, W(0.0, -2.3), CY, P.STAND_WORK), (54, W(-1.4, -3.1), CY - 20, P.PROUD), (n, W(-1.5, -3.2), CY - 20,
                                                                                              P.PROUD_B)]
-    for f, loc, yy, pose in spots:
-        you.place(f, loc=loc, yaw=yy, interp='CONSTANT')
-        apply_pose(you, pose)
-        you.key(f, interp='CONSTANT')
+    zip_around(you, spots, clear=3.65)
     cam = Cam(lens=22)
     c = cl(-3.4, -7.6, 2.3)
     t = cl(0.0, 0.0, 1.0)
@@ -669,6 +716,8 @@ def S12b(sc, you, cr, n):
     squash(m, 17, (1, 1, 1), amount=0.14)
     wobble_walls(17)
     bounce_seq(cr, 17, n + 4, land, CY, period=14, height=0.95, floor=FLOOR_Z, mat_ob=None)
+    key_rot(cr.obj, 18, (0, 0, CY))
+    key_rot(cr.obj, 30, (0, 0, CY + 180))
     cam = Cam(lens=24)
     c = cl(0.9, -4.3, 3.1)
     t = cl(0.0, -0.25, 0.9)
@@ -682,7 +731,8 @@ def S13a(sc, you, cr, n):
     m = show_mattress((1, 1, 1))
     show_castle()
     spot = cl(0.0, -0.2)
-    bounce_seq(cr, 1, n + 4, spot, CY, period=15, height=1.15, floor=FLOOR_Z, mat_ob=m, first_up=False)
+    away = look_at_yaw(spot, cl(-2.5, -3.9)) + 180.0
+    bounce_seq(cr, 1, n + 4, spot, away, period=15, height=1.15, floor=FLOOR_Z, mat_ob=m, first_up=False)
     for f in range(1, n + 4, 15):
         wobble_walls(f, amount=0.02)
     ph = bpy.data.objects["Phone"]
@@ -710,9 +760,10 @@ def S13b(sc, you, cr, n):
     m = show_mattress((1, 1, 1))
     show_castle()
     spot = cl(0.0, -0.2)
-    bounce_seq(cr, 1, n + 4, spot, CY, period=15, height=1.15, floor=FLOOR_Z, mat_ob=m, first_up=False)
-    phone_in_hand(cr)
     eye = cl(-2.2, -4.3, 1.75)
+    away = look_at_yaw(spot, eye) + 180.0
+    bounce_seq(cr, 1, n + 4, spot, away, period=15, height=1.15, floor=FLOOR_Z, mat_ob=m, first_up=False)
+    phone_in_hand(cr)
     cam = Cam(lens=55)
     t = cl(0.0, -0.2, 2.15)
     cam.key(1, eye, t)
