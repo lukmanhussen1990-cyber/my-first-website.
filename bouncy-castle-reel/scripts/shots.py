@@ -266,7 +266,7 @@ def S04a(sc, you, cr, n):
     seat = cl(0.0, -0.18)
     cr.place(1, loc=tuple(stand), yaw=CY)
     cr.place(5, loc=tuple(stand), yaw=CY)
-    cr.place(13, loc=(seat.x, seat.y, top - 0.04), yaw=CY)
+    cr.place(13, loc=(seat.x, seat.y, top + 0.06), yaw=CY)
     phone_in_hand(cr)
     pose_keys(cr, [(1, P.C_PHONE), (5, P.C_PHONE), (9, blend_pose(P.C_PHONE, P.C_SIT_PHONE, 0.6)),
                    (13, P.C_SIT_PHONE), (16, P.C_SIT_SQUISH), (n + 2, P.C_SIT_SQUISH)])
@@ -284,9 +284,9 @@ def S04b(sc, you, cr, n):
     m = show_mattress(SMALL)
     top = SMALL[2] * FLOOR_Z
     seat = cl(0.0, -0.18)
-    cr.place(1, loc=(seat.x, seat.y, top - 0.06), yaw=CY)
-    cr.place(2, loc=(seat.x, seat.y, top - 0.06))
-    cr.place(5, loc=(seat.x, seat.y, 0.0))
+    cr.place(1, loc=(seat.x, seat.y, top + 0.04), yaw=CY)
+    cr.place(2, loc=(seat.x, seat.y, top + 0.04))
+    cr.place(5, loc=(seat.x, seat.y, 0.06))
     rigtools.set_interp(cr.obj, 2, 'QUAD')
     phone_in_hand(cr)
     pose_keys(cr, [(1, P.C_SIT_SQUISH), (3, P.C_SIT_SQUISH), (6, P.C_SHOCK_GROUND), (n + 2, P.C_SHOCK_GROUND)])
@@ -317,7 +317,7 @@ def S05(sc, you, cr, n):
     """'So you add a big air pump.' - YOU drags in the blower, the mattress inflates HUGE."""
     m = show_mattress((SMALL[0] * 1.04, SMALL[1] * 1.02, 0.02))
     seat = cl(0.0, -0.18)
-    cr.place(1, loc=(seat.x, seat.y, 0.0), yaw=CY)
+    cr.place(1, loc=(seat.x, seat.y, 0.06), yaw=CY)
     phone_in_hand(cr)
     key_scale(m, 33, (SMALL[0] * 1.04, SMALL[1] * 1.02, 0.02))
     key_scale(m, 44, (0.75, 0.62, 0.55))
@@ -325,10 +325,10 @@ def S05(sc, you, cr, n):
     key_scale(m, 56, (0.98, 0.98, 0.95))
     key_scale(m, 60, (1, 1, 1))
     cr.place(33, loc=(seat.x, seat.y, 0.0))
-    cr.place(44, loc=(seat.x, seat.y, 0.55 * FLOOR_Z - 0.04))
-    cr.place(52, loc=(seat.x, seat.y, 1.12 * FLOOR_Z - 0.04))
-    cr.place(56, loc=(seat.x, seat.y, 0.95 * FLOOR_Z - 0.04))
-    cr.place(60, loc=(seat.x, seat.y, FLOOR_Z - 0.04))
+    cr.place(44, loc=(seat.x, seat.y, 0.55 * FLOOR_Z + 0.06))
+    cr.place(52, loc=(seat.x, seat.y, 1.12 * FLOOR_Z + 0.06))
+    cr.place(56, loc=(seat.x, seat.y, 0.95 * FLOOR_Z + 0.06))
+    cr.place(60, loc=(seat.x, seat.y, FLOOR_Z + 0.06))
     pose_keys(cr, [(1, P.C_SHOCK_GROUND), (34, P.C_SHOCK_GROUND), (42, P.C_RIDE_UP), (n + 2, P.C_RIDE_UP)])
     bl = bpy.data.objects["Blower"]
     show(bl, True)
@@ -373,7 +373,7 @@ def S06(sc, you, cr, n):
     L.hide_char(you)
     show_mattress((1, 1, 1))
     seat = cl(0.0, -0.18)
-    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z - 0.04), yaw=CY)
+    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z + 0.06), yaw=CY)
     phone_in_hand(cr)
     phone_loop(cr, 1, n + 2, a=P.C_SIT_PHONE, b=blend_pose(P.C_SIT_PHONE, P.C_SIT_SQUISH, 0.3), period=12)
     bl = bpy.data.objects["Blower"]
@@ -392,7 +392,7 @@ def S07a(sc, you, cr, n):
     L.hide_char(you)
     m = show_mattress((1, 1, 1))
     seat = cl(0.0, -0.18)
-    z0 = FLOOR_Z - 0.04
+    z0 = FLOOR_Z + 0.06
     phone_in_hand(cr)
     cr.place(1, loc=(seat.x, seat.y, z0), yaw=CY)
     keys = [(1, z0), (4, z0 + 0.35), (7, z0), (12, z0 + 0.8), (17, z0), (n, z0 + 4.5)]
@@ -441,7 +441,7 @@ def S08a(sc, you, cr, n):
     bl.location = cl(2.85, -0.5)
     bl.rotation_euler = (0, 0, math.radians(CY + 180))
     phone_in_hand(cr)
-    hit = Vector((0.35, 9.06, 0.32))
+    hit = Vector((0.35, 9.0, 0.32))
     start = cl(-0.6, 1.0, 6.5)
     imp = 35
     cr.place(1, loc=tuple(start), yaw=180)
@@ -456,9 +456,9 @@ def S08a(sc, you, cr, n):
     key_rot(cr.obj, imp, (0, 0, 180))
     # slide down the fence
     cr.place(imp + 3, loc=tuple(hit + Vector((0, -0.02, -0.08))))
-    cr.place(n, loc=(hit.x, hit.y - 0.12, 0.0))
+    cr.place(n, loc=(hit.x, hit.y - 0.04, 0.0))
     pose_keys(cr, [(1, P.C_FLY_A), (10, P.C_FLY_B), (20, P.C_FLY_A), (30, P.C_FLY_B), (imp - 1, P.C_FLY_A),
-                   (imp, P.C_SPLAT), (imp + 4, P.C_SPLAT), (n, P.C_SLUMP)])
+                   (imp, P.C_SPLAT), (imp + 4, P.C_SPLAT), (n, P.C_SLIDE)])
     fb = bpy.data.objects.get("FenceBack_boards")
     if fb:
         r0 = fb.rotation_euler.copy()
@@ -513,17 +513,17 @@ def S09(sc, you, cr, n):
     key_rot(fan, 1, (0, 0, 0))
     key_rot(fan, n, (360 * 12, 0, 0), 'LINEAR')
     W = lambda x, y: tuple(cl(x, y))
-    spots = [(1, W(-2.4, -2.6), CY - 140, P.STAND), (5, W(0.4, 2.1), CY + 180, P.STAND_WORK),
-             (11, W(-2.3, 0.3), CY + 90, P.STAND_WORK), (16, W(2.4, 0.4), CY - 90, P.STAND_WORK),
-             (21, W(-1.0, -2.1), CY, P.KNEEL_WORK_A), (25, W(1.0, -2.1), CY, P.KNEEL_WORK_B),
-             (30, W(-2.3, -2.1), CY + 45, P.STAND_REACH_UP), (34, W(2.3, -2.1), CY - 45, P.STAND_REACH_UP),
-             (38, W(-2.3, 2.0), CY + 135, P.STAND_REACH_UP), (42, W(2.3, 2.0), CY - 135, P.STAND_REACH_UP),
+    spots = [(1, W(-2.6, -2.8), CY - 140, P.STAND), (5, W(0.4, 2.55), CY + 180, P.STAND_WORK),
+             (11, W(-2.7, 0.3), CY + 90, P.STAND_WORK), (16, W(2.7, 0.4), CY - 90, P.STAND_WORK),
+             (21, W(-1.1, -2.35), CY, P.KNEEL_WORK_A), (25, W(1.1, -2.35), CY, P.KNEEL_WORK_B),
+             (30, W(-2.6, -2.4), CY + 45, P.STAND_REACH_UP), (34, W(2.6, -2.4), CY - 45, P.STAND_REACH_UP),
+             (38, W(-2.6, 2.35), CY + 135, P.STAND_REACH_UP), (42, W(2.6, 2.35), CY - 135, P.STAND_REACH_UP),
              (47, W(0.0, -2.3), CY, P.STAND_WORK), (54, W(-1.4, -3.1), CY - 20, P.PROUD), (n, W(-1.5, -3.2), CY - 20,
                                                                                              P.PROUD_B)]
     for f, loc, yy, pose in spots:
-        you.place(f, loc=loc, yaw=yy, interp='LINEAR')
+        you.place(f, loc=loc, yaw=yy, interp='CONSTANT')
         apply_pose(you, pose)
-        you.key(f)
+        you.key(f, interp='CONSTANT')
     cam = Cam(lens=22)
     c = cl(-3.4, -7.6, 2.3)
     t = cl(0.0, 0.0, 1.0)
@@ -552,7 +552,7 @@ def S11(sc, you, cr, n):
     show_mattress((1, 1, 1))
     show_castle()
     seat = cl(0.0, 0.25)
-    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z - 0.04), yaw=CY)
+    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z + 0.06), yaw=CY)
     phone_in_hand(cr)
     pose_keys(cr, [(1, P.C_SIT_ARMS), (16, P.C_SIT_ARMS), (24, P.C_SIT_CROSS), (40, P.C_SIT_CROSS),
                    (48, P.C_SIT_ARMS), (n + 2, P.C_SIT_ARMS)])
@@ -568,7 +568,7 @@ def S12a(sc, you, cr, n):
     show_mattress((1, 1, 1))
     show_castle()
     seat = cl(0.0, 0.25)
-    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z - 0.04), yaw=CY)
+    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z + 0.06), yaw=CY)
     pose_keys(cr, [(1, P.C_SIT_CROSS), (20, P.C_SIT_CROSS), (23, P.C_GRABBED), (n + 2, P.C_GRABBED)])
     con_c, off_c = phone_in_hand(cr, f_off=22)
     ph = bpy.data.objects["Phone"]
@@ -591,11 +591,11 @@ def S12a(sc, you, cr, n):
     ph.rotation_euler = off_c[1]
     ph.keyframe_insert("location", frame=1)
     ph.keyframe_insert("rotation_euler", frame=1)
-    p0 = cl(1.55, -0.35)
+    p0 = cl(0.22, -1.42)
     p1 = cl(0.62, 0.05)
     yaw = look_at_yaw(p1, seat) + 10
-    you.place(1, loc=(p0.x, p0.y, FLOOR_Z - 0.04), yaw=look_at_yaw(p0, seat))
-    you.place(18, loc=(p1.x, p1.y, FLOOR_Z - 0.04), yaw=yaw)
+    you.place(1, loc=(p0.x, p0.y, FLOOR_Z + 0.06), yaw=look_at_yaw(p0, seat))
+    you.place(18, loc=(p1.x, p1.y, FLOOR_Z + 0.06), yaw=yaw)
     rigtools.set_interp(you.obj, 1, 'LINEAR')
     pose_keys(you, [(1, P.SNEAK_A), (5, P.SNEAK_B), (9, P.SNEAK_A), (13, P.SNEAK_B), (18, P.SNEAK_A),
                     (21, P.GRAB), (24, blend_pose(P.GRAB, P.SNEAK_B, 0.5)), (n + 2, blend_pose(P.GRAB, P.SNEAK_B, 0.6))])
@@ -612,7 +612,7 @@ def S12b(sc, you, cr, n):
     show_castle()
     seat = cl(0.0, 0.25)
     p1 = cl(0.62, 0.05)
-    you.place(1, loc=(p1.x, p1.y, FLOOR_Z - 0.04), yaw=look_at_yaw(p1, seat) + 10)
+    you.place(1, loc=(p1.x, p1.y, FLOOR_Z + 0.06), yaw=look_at_yaw(p1, seat) + 10)
     pose_keys(you, [(1, blend_pose(P.GRAB, P.SNEAK_B, 0.6)), (3, P.SPRING_UP), (6, P.THROW_REL), (12, P.THROW_FOLLOW),
                     (n + 2, P.PROUD)])
     ph = bpy.data.objects["Phone"]
@@ -625,8 +625,8 @@ def S12b(sc, you, cr, n):
         key_loc(ph, f, mid + Vector((0, 0, z)))
     key_rot(ph, 25, (90, 0, CY))
     # she dives for it, lands, and starts bouncing
-    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z - 0.04), yaw=CY)
-    cr.place(8, loc=(seat.x, seat.y, FLOOR_Z - 0.04))
+    cr.place(1, loc=(seat.x, seat.y, FLOOR_Z + 0.06), yaw=CY)
+    cr.place(8, loc=(seat.x, seat.y, FLOOR_Z + 0.06))
     land = cl(0.0, -0.35)
     cr.place(13, loc=(land.x * 0.5 + seat.x * 0.5, land.y * 0.5 + seat.y * 0.5, FLOOR_Z + 0.55))
     cr.place(17, loc=(land.x, land.y, FLOOR_Z))
@@ -690,6 +690,11 @@ GROUND = {"S01a": ("CRUSH",), "S01b": ("CRUSH",), "S02": ("CRUSH",), "S03": ("YO
           "S09": ("YOU",), "S13a": ("YOU",)}
 
 
+FLOOR_LOCK = {"S12a": ("YOU",), "S12b": ("YOU",)}
+# frames where the crush sits on the mattress / castle floor -> rest her on the surface
+SEAT_LOCK = {"S04a": (13, 23), "S05": (1, 64), "S06": (1, 21), "S11": (1, 60), "S12a": (1, 29), "S12b": (1, 8)}
+
+
 def setup(shot):
     sc, you, cr = L.prep(shot)
     n = L.length(shot)
@@ -698,5 +703,11 @@ def setup(shot):
         rig = you if who == "YOU" else cr
         if not rig.obj.hide_render and rig.obj.location.z > -10:
             L.ground_lock(rig, 1, n)
+    for who in FLOOR_LOCK.get(shot, ()):
+        rig = you if who == "YOU" else cr
+        L.ground_lock(rig, 1, n, ground=FLOOR_Z - 0.03)
+    if shot in SEAT_LOCK and not cr.obj.hide_render:
+        a, b = SEAT_LOCK[shot]
+        L.seat_lock(cr, a, min(b, n), bpy.data.objects["Mattress"], sink=0.03)
     sc.frame_set(1)
     return sc

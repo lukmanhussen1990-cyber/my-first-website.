@@ -358,3 +358,32 @@ def ground_lock(rig, f0, f1, ground=0.0, only_down=False):
             dz = 0.0
         pb.location = pb.location + Binv @ Vector((0, 0, dz))
         pb.keyframe_insert("location", frame=f)
+
+
+def seat_lock(rig, f0, f1, surface_obj, sink=0.03):
+    """Keep the lowest point of the jeans/shoes resting on top of an inflatable surface (per frame)."""
+    import numpy as _np
+    sc = bpy.context.scene
+    parts = [c for c in rig.obj.children if c.type == 'MESH' and any(k in c.name for k in ("casualsuit", "shoes"))]
+    pb = rig.obj.pose.bones["root"]
+    Binv = pb.bone.matrix_local.to_3x3().inverted()
+    for f in range(f0, f1 + 1):
+        sc.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        sev = surface_obj.evaluated_get(dg)
+        top = max((sev.matrix_world @ Vector(c)).z for c in sev.bound_box)
+        zmin = 1e9
+        for p in parts:
+            ev = p.evaluated_get(dg)
+            me = ev.to_mesh()
+            n = len(me.vertices)
+            co = _np.empty(n * 3, dtype=_np.float32)
+            me.vertices.foreach_get("co", co)
+            ev.to_mesh_clear()
+            co = co.reshape(-1, 3)
+            M = _np.array(ev.matrix_world)
+            z = (co @ M[:3, :3].T + M[:3, 3])[:, 2]
+            zmin = min(zmin, float(z.min()))
+        dz = (top - sink) - zmin
+        pb.location = pb.location + Binv @ Vector((0, 0, dz))
+        pb.keyframe_insert("location", frame=f)

@@ -279,3 +279,9 @@ WATCH_BINOC = P(spine=dict(bend=-2), head=dict(nod=-4),
 WATCH_BINOC_B = P(spine=dict(bend=-4, twist=4), head=dict(nod=-6, turn=4),
                   armL=dict(side_deg=17, fwd=88, twist=42, elbow=126), armR=dict(side_deg=15, fwd=85, twist=42, elbow=129),
                   fingL=dict(curl=0.75, thumb=0.5), fingR=dict(curl=0.75, thumb=0.5), face=F_GRIN)
+
+C_SLIDE = P(root=dict(loc=(0, 0.05, -0.47), rot=(0, 0, 0)), spine=dict(bend=-4), head=dict(nod=4, turn=0, tilt=8),
+            armL=dict(side_deg=125, fwd=0, elbow=25), armR=dict(side_deg=118, fwd=0, elbow=30),
+            legL=dict(flex=-4, abd=10, knee=96, ankle=-20), legR=dict(flex=-4, abd=10, knee=96, ankle=-20),
+            fingL=dict(curl=0.1), fingR=dict(curl=0.1),
+            face=dict(eyeBlinkLeft=0.9, eyeBlinkRight=0.7, mouthPucker=0.6, browInnerUp=0.7))
