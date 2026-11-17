@@ -138,6 +138,12 @@ def wobble_walls(f, amount=0.03):
 
 def inflate_pop(ob, f, dur=7, overshoot=1.12):
     """inflatable rising out of the floor: flat -> overshoot -> wobble -> full"""
+    if ob.name == "CastleArch":          # sideways torus: pop uniformly instead of flattening z
+        key_scale(ob, f - 1, 0.001)
+        key_scale(ob, f + dur // 2, overshoot)
+        key_scale(ob, f + dur, 0.97)
+        key_scale(ob, f + dur + 3, 1.0)
+        return
     key_scale(ob, f - 1, (1, 1, 0.02))
     key_scale(ob, f + dur // 2, (0.96, 0.96, overshoot))
     key_scale(ob, f + dur, (1.03, 1.03, 0.95))
