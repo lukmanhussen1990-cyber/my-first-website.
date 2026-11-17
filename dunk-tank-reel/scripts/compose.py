@@ -90,6 +90,18 @@ def watermark_img():
     return im
 
 
+_x = np.arange(256, dtype=np.float32) / 255.0
+GRADE_LUT = np.clip(((_x ** 1.18) - 0.5) * 1.06 + 0.5, 0, 1)
+
+
+def grade(im, sat=0.95):
+    """mild grade to match the reference: darker mids, a touch more contrast, slightly calmer saturation"""
+    a = GRADE_LUT[np.asarray(im)]
+    l = (0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2])[..., None]
+    a = l + (a - l) * sat
+    return Image.fromarray((np.clip(a, 0, 1) * 255 + 0.5).astype(np.uint8))
+
+
 def frame_path(modes, shot, local):
     for mode in modes.split(","):
         r = _frame_path(mode, shot, local)
@@ -136,6 +148,7 @@ def main():
                 im = Image.open(fp).convert("RGB")
                 if im.size != (W, H):
                     im = im.resize((W, H), Image.LANCZOS)
+                im = grade(im)
             if shot in BINOC:
                 arr = np.asarray(im, dtype=np.float32) * mask
                 im = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))

@@ -4,6 +4,8 @@ Vertical 1080×1920, 30 fps, 29.5 s. Made entirely in **Blender 4.5 LTS**, rende
 The characters are **MakeHuman** models built with the **MPFB 2.0.18** add-on and posed on the MPFB default rig.
 The voiceover is the creator's own file (`suno_tank.mp3`).
 
+**Final video:** [`dunk_tank_reel.mp4`](dunk_tank_reel.mp4): 1080×1920, 30 fps, H.264 + AAC, −14 LUFS, with captions and the @theoddtilt2.0 watermark.
+
 ## Pipeline (scripts/)
 
 | Step | Script | What it does |

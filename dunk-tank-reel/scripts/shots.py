@@ -429,6 +429,9 @@ def S08(sc, you, fr, n):
     f = 4
     for name in TANK_PARTS_ORDER:
         ob = bpy.data.objects[name]
+        if name in ("TankWaterBody", "TankWaterSurface"):
+            show(ob, False, 1)
+            show(ob, True, 5)
         if name == "TankWaterBody":
             z1, h = ob.location.z, ob.dimensions.z
             key_scale(ob, f - 1, (1, 1, 0.001))
