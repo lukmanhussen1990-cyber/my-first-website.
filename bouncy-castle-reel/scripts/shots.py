@@ -600,6 +600,8 @@ def S09(sc, you, cr, n):
         ob = bpy.data.objects.get(name)
         if ob:
             inflate_pop(ob, f, dur=7)
+            show(ob, False, 1)          # hidden until it starts inflating (no flat discs floating in the air)
+            show(ob, True, f)
     bl = bpy.data.objects["Blower"]
     show(bl, True)
     bl.location = cl(2.85, -0.5)
