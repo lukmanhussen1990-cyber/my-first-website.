@@ -100,6 +100,7 @@ def flat_mattress(f_show, f_hide=None, scale=1.0):
 
 def show_mattress(scale=SMALL):
     show("MattressRoot", True)
+    show("MattressValve", False)       # tiny valve does not scale with the mattress -> hide it
     m = mattress()
     m.scale = scale
     return m
