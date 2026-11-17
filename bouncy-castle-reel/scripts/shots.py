@@ -683,8 +683,8 @@ def S12a(sc, you, cr, n):
     ph.rotation_euler = off_c[1]
     ph.keyframe_insert("location", frame=1)
     ph.keyframe_insert("rotation_euler", frame=1)
-    p0 = cl(0.22, -1.42)
-    p1 = cl(0.62, 0.05)
+    p0 = cl(0.88, -1.0)
+    p1 = cl(0.88, 0.14)
     yaw = look_at_yaw(p1, seat) + 10
     you.place(1, loc=(p0.x, p0.y, FLOOR_Z + 0.06), yaw=look_at_yaw(p0, seat))
     you.place(18, loc=(p1.x, p1.y, FLOOR_Z + 0.06), yaw=yaw)
@@ -703,7 +703,7 @@ def S12b(sc, you, cr, n):
     m = show_mattress((1, 1, 1))
     show_castle()
     seat = cl(0.0, 0.25)
-    p1 = cl(0.62, 0.05)
+    p1 = cl(0.88, 0.14)
     you.place(1, loc=(p1.x, p1.y, FLOOR_Z + 0.06), yaw=look_at_yaw(p1, seat) + 10)
     pose_keys(you, [(1, blend_pose(P.GRAB, P.SNEAK_B, 0.6)), (3, P.SPRING_UP), (6, P.THROW_REL), (12, P.THROW_FOLLOW),
                     (n + 2, P.PROUD)])
@@ -711,7 +711,7 @@ def S12b(sc, you, cr, n):
     show(ph, True)
     con, off = L.attach_rest(ph, you, "wrist.R", tuple(palm_rest(you, "R", out=0.045) + Vector((0.015, -0.03, 0.01))),
                              (-55, 0, -20), f_off=7)
-    mid = cl(-0.05, -0.55, FLOOR_Z + 0.01)
+    mid = cl(-0.42, -0.62, FLOOR_Z + 0.01)
     L.release(ph, off, 7, mid, 15, apex=0.9, spin=(720, 200, 0))
     for f, z in ((15, 0.0), (18, 0.12), (21, 0.0), (23, 0.04), (25, 0.0)):
         key_loc(ph, f, mid + Vector((0, 0, z)))
@@ -719,7 +719,7 @@ def S12b(sc, you, cr, n):
     # she dives for it, lands, and starts bouncing
     cr.place(1, loc=(seat.x, seat.y, FLOOR_Z + 0.06), yaw=CY)
     cr.place(8, loc=(seat.x, seat.y, FLOOR_Z + 0.06))
-    land = cl(0.0, -0.35)
+    land = cl(-0.42, -0.5)
     cr.place(13, loc=(land.x * 0.5 + seat.x * 0.5, land.y * 0.5 + seat.y * 0.5, FLOOR_Z + 0.55))
     cr.place(17, loc=(land.x, land.y, FLOOR_Z))
     pose_keys(cr, [(1, P.C_GRABBED), (8, P.C_GRABBED), (11, P.C_LEAP), (16, P.C_LEAP)])
@@ -808,5 +808,7 @@ def setup(shot):
         L.seat_lock(cr, a, min(b, n), bpy.data.objects["Mattress"], sink=0.03)
     if shot == "S05":
         L.seat_lock(cr, 1, 34, bpy.data.objects["MattressFlat"], sink=0.0)
+    if shot == "S12b":       # leap off the floor: never let her feet dip into the floor
+        L.seat_lock(cr, 9, 18, bpy.data.objects["Mattress"], sink=0.03, only_up=True)
     sc.frame_set(1)
     return sc

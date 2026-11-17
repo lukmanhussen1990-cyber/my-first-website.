@@ -195,8 +195,8 @@ PHONE_ARMS = dict(armR=dict(side_deg=12, fwd=42, twist=34, elbow=112, wrist=(0, 
                   fingR=dict(curl=0.55, thumb=0.2), fingL=dict(curl=0.5, thumb=0.3))
 SIT_FLOOR = dict(root=dict(loc=(0, 0.02, -0.80), rot=(0, 0, 0)),
                  legL=dict(flex=86, abd=8, twist=0, knee=8, ankle=-18), legR=dict(flex=86, abd=8, twist=0, knee=8, ankle=-18))
-SIT_CROSS = dict(root=dict(loc=(0, 0.02, -0.80), rot=(0, 0, 0)),
-                 legL=dict(flex=78, abd=42, twist=38, knee=128, ankle=10), legR=dict(flex=78, abd=42, twist=38, knee=128, ankle=10))
+SIT_CROSS = dict(root=dict(loc=(0, 0.02, -0.80), rot=(0, 0, 0)),     # lazy sit: legs out in front, a bit apart
+                 legL=dict(flex=92, abd=14, twist=0, knee=12, ankle=-12), legR=dict(flex=92, abd=14, twist=0, knee=12, ankle=-12))
 
 C_PHONE = P(head=dict(nod=24, turn=0, tilt=0), spine=dict(bend=6), face=F_BORED, **PHONE_ARMS)
 C_PHONE_B = P(head=dict(nod=27, turn=3, tilt=-2), spine=dict(bend=7),

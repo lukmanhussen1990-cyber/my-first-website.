@@ -360,7 +360,7 @@ def ground_lock(rig, f0, f1, ground=0.0, only_down=False):
         pb.keyframe_insert("location", frame=f)
 
 
-def seat_lock(rig, f0, f1, surface_obj, sink=0.03):
+def seat_lock(rig, f0, f1, surface_obj, sink=0.03, only_up=False):
     """Keep the lowest point of the jeans/shoes resting on top of an inflatable surface (per frame)."""
     import numpy as _np
     sc = bpy.context.scene
@@ -385,5 +385,7 @@ def seat_lock(rig, f0, f1, surface_obj, sink=0.03):
             z = (co @ M[:3, :3].T + M[:3, 3])[:, 2]
             zmin = min(zmin, float(z.min()))
         dz = (top - sink) - zmin
+        if only_up and dz < 0:
+            dz = 0.0
         pb.location = pb.location + Binv @ Vector((0, 0, dz))
         pb.keyframe_insert("location", frame=f)
