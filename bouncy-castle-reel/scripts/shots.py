@@ -737,19 +737,17 @@ def S12b(sc, you, cr, n):
 
 
 def S13a(sc, you, cr, n):
-    """'You've invented the bouncy castle!' - wide finale: she bounces happily, YOU proudly watches."""
+    """'You've invented the bouncy castle!' - wide finale: she bounces happily (back to us), YOU proudly watches."""
     m = show_mattress((1, 1, 1))
     show_castle()
-    spot = cl(0.0, -0.2)
-    away = look_at_yaw(spot, cl(-2.5, -3.9)) + 180.0
+    spot = END_SPOT
+    pos = END_YOU
+    away = look_at_yaw(spot, END_CAM) + 180.0
     bounce_seq(cr, 1, n + 4, spot, away, period=15, height=1.15, floor=FLOOR_Z, mat_ob=m, first_up=False)
     for f in range(1, n + 4, 15):
         wobble_walls(f, amount=0.02)
-    ph = bpy.data.objects["Phone"]
-    show(ph, True)
     phone_in_hand(cr)
-    pos = cl(-2.5, -3.9)
-    yaw = look_at_yaw(pos, cl(0, 0)) + 5
+    yaw = look_at_yaw(pos, spot) + 5
     you.place(1, loc=tuple(pos), yaw=yaw)
     breathing(you, 1, n + 2, P.WATCH_BINOC, P.WATCH_BINOC_B, period=20)
     binoculars_to_eyes(you)
@@ -758,27 +756,32 @@ def S13a(sc, you, cr, n):
     bl.location = cl(2.85, -0.5)
     bl.rotation_euler = (0, 0, math.radians(CY + 180))
     cam = Cam(lens=24)
-    c = local_to_world(pos, yaw, (-1.2, 2.6, 1.6))
-    t = cl(0.0, 0.0, 1.5)
-    cam.key(1, c, t)
-    cam.key(n, local_to_world(pos, yaw, (-1.1, 2.3, 1.6)), t)
+    t = cl(-0.45, -0.1, 1.3)
+    cam.key(1, END_CAM, t)
+    cam.key(n, END_CAM + (spot - END_CAM).normalized() * 0.3, t)
 
 
 def S13b(sc, you, cr, n):
-    """'castle!' - binocular POV of her bouncing happily (end)."""
+    """'castle!' - binocular POV of her bouncing happily, seen from behind (end)."""
     L.hide_char(you)
     m = show_mattress((1, 1, 1))
     show_castle()
-    spot = cl(0.0, -0.2)
-    eye = cl(-2.2, -4.3, 1.75)
+    spot = END_SPOT
+    eye = END_EYE
     away = look_at_yaw(spot, eye) + 180.0
     bounce_seq(cr, 1, n + 4, spot, away, period=15, height=1.15, floor=FLOOR_Z, mat_ob=m, first_up=False)
     phone_in_hand(cr)
-    cam = Cam(lens=55)
-    t = cl(0.0, -0.2, 2.15)
+    cam = Cam(lens=45)
+    t = Vector((spot.x, spot.y, 1.85))
     cam.key(1, eye, t)
     cam.key(n, eye, t + Vector((0, 0, 0.05)))
     cam.handheld(1, n + 2, seed=13)
+
+
+END_SPOT = cl(0.0, 0.45)            # she bounces further back so the front bumpers / arch don't hide her
+END_EYE = cl(-2.75, -4.1, 2.15)     # binocular line of sight passes over the low left bumper, clear of arch + tower
+END_CAM = cl(-3.48, -5.15, 2.2)     # wide finale camera on the same clear line
+END_YOU = cl(-2.74, -2.91)          # YOU stands just left of that line (foreground), not blocking her
 
 
 # =========================================================================== dispatcher
