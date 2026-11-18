@@ -127,6 +127,7 @@ strap.constraints["toHands"].influence = 1.0
 # roof rope: from piano top to hands
 rope_h = rope_y_mesh("RopeHands", 0.026); rope_h.parent = p_top
 stretch(rope_h, hmid, "toHands"); rope_h.constraints["toHands"].influence = 1.0
+stretch(rope_h, hand_l, "toHandL"); stretch(rope_h, hand_r, "toHandR")
 # wheel strands
 rope_l = rope_y_mesh("RopeLoad", 0.026); rope_l.location = (LOAD_X, RY, WHEEL.z)
 c1 = stretch(rope_l, p_top, "toPiano"); c2 = stretch(rope_l, cab_top, "toCabin")
@@ -289,6 +290,10 @@ for j, f in enumerate(range(g0, i0, 8)):
     key_obj(piano, f, loc=PIANO_WALL + Vector((0, 0, z)), rot=(0, 0, 3 * math.sin(j)))
     hi = j % 2
     A.hands(f, l=(0.1, -0.35, 1.45 if hi else 1.05), r=(-0.1, -0.35, 1.05 if hi else 1.45), el=(0.45, 0.2, 1.1), er=(-0.45, 0.2, 1.1))
+    # rope comes up from the piano through the lower hand INTO the upper hand (switch as the hands cross)
+    up_ = "toHandL" if hi else "toHandR"
+    ff_ = g0 if j == 0 else f - 4
+    infl(rope_h, "toHands", ff_, 0.0); infl(rope_h, up_, ff_, 1.0); infl(rope_h, "toHandR" if up_ == "toHandL" else "toHandL", ff_, 0.0)
     A.spine(f, 18 + 6 * hi)
 A.face(h0, "proud", 0.9)
 # 05b: rope burn close-up, piano drops (off screen)
@@ -303,7 +308,8 @@ for j, f in enumerate(range(i0 + 6, i1, 4)):
     A.hands(f, l=(0.13 + 0.01 * sg, -0.3, 1.34 + 0.015 * sg), r=(-0.13 - 0.01 * sg, -0.3, 1.34 - 0.015 * sg))
 key_obj(piano, i0, loc=PIANO_WALL + Vector((0, 0, rise_top)))
 key_obj(piano, i0 + 8, loc=PIANO_WALL + Vector((0, 0, 0)))
-infl(rope_h, "toHands", i0, 1.0)
+infl(rope_h, "toHands", i0, 1.0); infl(rope_h, "toHandL", i0, 0.0); infl(rope_h, "toHandR", i0, 0.0)
+infl(rope_h, "toHandL", 1, 0.0); infl(rope_h, "toHandR", 1, 0.0); infl(rope_h, "toHands", 1, 1.0)
 # burn marks on palms
 burn_m = lib.mat("M_Burn", "#A8222A", rough=0.55, emit="#D02A33", emit_strength=0.15)
 for side in ("l", "r"):

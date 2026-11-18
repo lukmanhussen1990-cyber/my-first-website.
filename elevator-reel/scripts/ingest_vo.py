@@ -21,8 +21,9 @@ script = open("/opt/work/elev/vo_script.txt").read().split()
 from faster_whisper import WhisperModel
 model = WhisperModel("medium.en", device="cpu", compute_type="int8", download_root="/opt/work/hf", cpu_threads=4)
 audio = np.fromfile("/opt/work/elev/vo16k.f32", dtype=np.float32)
+# no script prompt: Whisper treats a prompt as already-spoken text and skips it
 segments, info = model.transcribe(audio, language="en", word_timestamps=True, beam_size=5, vad_filter=False,
-                                  initial_prompt=" ".join(script[:40]))
+                                  condition_on_previous_text=False)
 vo = []
 for s in segments:
     for w in s.words:

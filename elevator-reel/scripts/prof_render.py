@@ -9,9 +9,8 @@ sc.render.use_persistent_data = True
 sc.world.use_sun_shadow = False
 sc.render.image_settings.file_format = 'JPEG'
 sc.frame_set(f)
-cfgs = [("base8", dict(s=8, sh=True, gi=True, mb=False)), ("s8_noGI", dict(s=8, sh=True, gi=False, mb=False)),
-        ("s4", dict(s=4, sh=True, gi=True, mb=False)), ("s8_noShadow", dict(s=8, sh=False, gi=True, mb=False)),
-        ("s8_mblur", dict(s=8, sh=True, gi=True, mb=True)), ("base8_again", dict(s=8, sh=True, gi=True, mb=False))]
+cfgs = [("s4", dict(s=4, sh=True, gi=True, mb=False)), ("s8", dict(s=8, sh=True, gi=True, mb=False)),
+        ("s6", dict(s=6, sh=True, gi=True, mb=False))]
 for name, c in cfgs:
     sc.eevee.taa_render_samples = c["s"]; sc.eevee.use_shadows = c["sh"]; sc.eevee.use_fast_gi = c["gi"]
     sc.render.use_motion_blur = c["mb"]
