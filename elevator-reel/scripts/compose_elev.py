@@ -97,7 +97,7 @@ else:
 cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(fps), "-i", "-"]
 if audio:
     cmd += ["-i", audio, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "192k" if not mode.startswith("quick") else "96k", "-shortest"]
-cmd += ["-c:v", "libx264", "-preset", "veryfast" if mode.startswith("quick") else "slow", "-crf", "28" if mode.startswith("quick") else "16",
+cmd += ["-c:v", "libx264", "-preset", os.environ.get("PRESET") or ("veryfast" if mode.startswith("quick") else "slow"), "-crf", "28" if mode.startswith("quick") else "16",
         "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]
 p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 vig = None
