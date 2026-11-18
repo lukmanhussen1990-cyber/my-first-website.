@@ -34,7 +34,7 @@ def ws(i):
 
 SHOTS = [("01a", 0.0), ("01b", ws(6) - 0.1), ("02", ws(9) - 0.05), ("03", ws(16) - 0.05), ("04a", ws(23) - 0.05),
          ("04b", ws(30) - 0.05), ("05a", ws(37) - 0.05), ("05b", ws(39) - 0.05), ("06", ws(46) - 0.05), ("07", ws(53) - 0.08),
-         ("08a", ws(54) - 0.05), ("08b", ws(61) - 0.05), ("09", ws(66) - 0.05), ("10", ws(76) - 0.05), ("11", ws(83) - 0.05),
+         ("08a", ws(54) - 0.05), ("08b", ws(61) - 0.05), ("09", ws(66) - 0.05), ("10", ws(76) - 0.05), ("11", ws(83) - 0.05), ("11b", ws(87) - 0.05),
          ("12", ws(92) - 0.05), ("13", ws(99) - 0.05), ("14", ws(107) - 0.05), ("15", ws(114) - 0.05), ("16", ws(119) - 0.05),
          ("17a", ws(125) - 0.05), ("17b", ws(131) - 0.05), ("18", ws(137) - 0.05), ("19", ws(143) - 0.05)]
 S = {}
@@ -171,21 +171,36 @@ while f < d0:
     pulls.append(f)
     f += jerk
 for i, f in enumerate(pulls):
-    # body: lean forward (grab) then back (yank)
-    A.spine(f, 24, 0, 0); A.head(f, 6, 0, 0)
+    # body: lean forward (grab) then back (yank); the mouth+chest opening keeps the head steadier (arms pump below frame)
+    op_ = f < c0_
+    A.spine(f, 12 if op_ else 24, 0, 0); A.head(f, -4 if op_ else 6, 0, 0)
     A.hands(f, l=(0.11, -0.42, 0.86), r=(-0.11, -0.42, 0.86), el=(0.4, 0.15, 1.0), er=(-0.4, 0.15, 1.0))
-    A.spine(f + 6, 8, 0, 0); A.head(f + 6, -10, 0, 0)
+    A.spine(f + 6, 5 if op_ else 8, 0, 0); A.head(f + 6, -6 if op_ else -10, 0, 0)
     A.hands(f + 6, l=(0.11, -0.22, 1.02), r=(-0.11, -0.22, 1.02))
     A.pelvis(f, (0, 0.04, -0.06)); A.pelvis(f + 6, (0, 0.08, -0.02))
-# feet: he climbs backwards one step every 3 pulls
-for i, f in enumerate(pulls):
-    kk = K0 + i // 3
-    p = step_pos(kk)
-    A.place(f, (p.x, p.y + 0.05, p.z), 0, constant=False)
+# feet: he climbs backwards one step every 3 pulls (real stepping with foot IK)
+A.place(1, step_pos(K0) + Vector((0, 0.05, 0)), 0, constant=False)
+REST_L, REST_R = Vector((0.201, -0.017, 0.075)), Vector((-0.201, -0.017, 0.075))
+kst = K0
+for ci in range(3, len(pulls), 3):
+    s_ = pulls[ci] - 7
+    if s_ + 8 >= d0:
+        break
+    p_old = step_pos(kst) + Vector((0, 0.05, 0)); p_new = step_pos(kst + 1) + Vector((0, 0.05, 0)); D_ = p_new - p_old
+    A.place(s_, p_old, 0, constant=False); A.place(s_ + 8, p_new, 0, constant=False)
+    for tt_ in (0, 2, 4, 6, 8):
+        P_ = D_ * (tt_ / 8)
+        sl = min(1.0, tt_ / 4); sr = max(0.0, (tt_ - 4) / 4)
+        Wl = D_ * sl + Vector((0, 0, 0.12 * math.sin(math.pi * sl)))
+        Wr = D_ * sr + Vector((0, 0, 0.12 * math.sin(math.pi * sr)))
+        A.ik(s_ + tt_, "IK_foot_l", tuple(REST_L + Wl - P_))
+        A.ik(s_ + tt_, "IK_foot_r", tuple(REST_R + Wr - P_))
+    kst += 1
+A.place(d0 - 1, step_pos(kst) + Vector((0, 0.05, 0)), 0, constant=False)
 # piano follows a bit behind (slides up the stairs with each yank) - slips back on "ton"
 TON = F(words[15]["start"])
 for i, f in enumerate(pulls):
-    kk = K0 + i // 3
+    kk = min(K0 + i // 3, kst)
     yb = step_pos(kk).y - 1.45 + (i % 3) * 0.06
     if f >= TON - 2:
         yb -= 0.56                                   # slips two steps back
@@ -356,8 +371,10 @@ for f in range(o0, o1 + 1, 3):
     wheel_turn(f, zp)
 # 11: swinging into the neighbour's windows (pivot = wheel load tangent point)
 PIV = Vector((LOAD_X, RY, WHEEL.z))
-hit1 = p0 + 10
-hit2 = p0 + int((p1 - p0) * 0.72)
+pb0, pb1 = S["11b"]
+hit1 = p0 + 8
+hit2 = p0 + int((pb0 - p0) * 0.78)
+near = pb0 + int((pb1 - pb0) * 0.6)
 shards_m = bpy.data.materials.get("M_Shard") or lib.mat("M_Shard", "#DDEFF7", rough=0.05, emit="#EAF7FF", emit_strength=0.5, spec=1.0)
 
 
@@ -370,7 +387,8 @@ def piano_swing(f, top_z, theta_deg):
 
 
 swing = [(p0, 2.55, 0), (hit1 - 4, 2.55, 6.5), (hit1, 2.55, 8.3), (hit1 + 3, 2.6, 4.0), (hit1 + 10, 3.4, -5.0),
-         (hit1 + 18, 4.6, 3.0), (hit2 - 4, 5.6, 9.0), (hit2, 5.85, 12.5), (hit2 + 4, 5.9, 6.0), (p1, 6.3, -4.0)]
+         (hit1 + 18, 4.6, 3.0), (hit2 - 4, 5.6, 9.0), (hit2, 5.85, 12.5), (hit2 + 4, 5.9, 6.0), (pb0, 6.0, -3.0),
+         (pb0 + 10, 6.0, 4.0), (near - 4, 6.0, 9.5), (near, 6.0, 11.8), (near + 5, 6.0, 4.0), (pb1, 6.2, -2.0)]
 for f, tz, th in swing:
     piano_swing(f, tz, th)
     wheel_turn(f, tz)
@@ -396,6 +414,15 @@ A.face(p0, "shocked", 1.0)
 A.hands(p0, l=(0.2, -0.3, 1.5), r=(-0.2, -0.3, 1.5), el=(0.5, 0.2, 1.2), er=(-0.5, 0.2, 1.2))
 A.fingers(p0, "l", 10); A.fingers(p0, "r", 10)
 A.face(hit2 + 2, "disgusted", 0.8, extra={"eyeWideLeft": 0.8, "eyeWideRight": 0.8})
+for s_ in range(14):
+    sh = lib.box(f"ShardNear_{s_}", (0.01, R.uniform(0.05, 0.12), R.uniform(0.06, 0.15)), (-4.98, RY, 5.25), C_fx)
+    lib.assign(sh, shards_m); sh.visible_shadow = False
+    p_start = Vector((-4.95, RY + R.uniform(-0.6, 0.6), 5.25 + R.uniform(-0.8, 0.8)))
+    v = Vector((R.uniform(0.3, 1.2), R.uniform(-1.2, 0.3), R.uniform(0.0, 1.4)))
+    for kk in range(0, 18, 2):
+        tt = kk / 30
+        key_obj(sh, near + kk, loc=p_start + v * tt + Vector((0, 0, -4.9 * tt * tt)), rot=(kk * 37, kk * 23, s_ * 41))
+    vis(sh, [(near, near + 20)])
 
 # ================================================================== SHOT 12-15: shaft, box, ride, dead arms
 q0, q1 = S["12"]; r0, r1 = S["13"]; s0, s1 = S["14"]; t0_, t1_ = S["15"]
@@ -566,6 +593,59 @@ for i in range(80):
         key_obj(co, f, loc=(x + 0.08 * math.sin(tt * 5 + i), y, max(0.02, z_ - 0.8 * tt)), rot=(tt * 400 + i * 20, tt * 260, i * 37))
     vis(co, [(fst, TOTAL + 10)])
 
+# ================================================================== GRANDMA + NEIGHBOUR
+G = Actor(O["Grandma"]); NB_ = Actor(O["Neighbour"])
+G.feet(1); NB_.feet(1)
+vis([O["Grandma"]], [(g0, i0), (y0, y1), (z0, TOTAL + 10)])
+vis([O["Neighbour"]], [(pb0, pb1)])
+# roof: impatient pointing down at the piano
+G.place(g0, (LOAD_X + 0.85, 0.8, ROOF_Z), -10)
+G.hands(g0, r=(-0.22, -0.6, 1.05), l=(0.2, 0.02, 1.0), er=(-0.45, 0.1, 1.2), el=(0.5, 0.1, 1.15))
+G.fingers(g0, "r", 80, thumb=40)
+for bn in ("index_01_r", "index_02_r", "index_03_r"):
+    G.rot(g0, bn, 0, 0, 0)
+G.fingers(g0, "l", 30)
+G.spine(g0, 12); G.head(g0, 26, 0, 0)
+G.face(g0, "serious", 1.0, extra={"browDownLeft": 0.9, "browDownRight": 0.9, "mouthPressLeft": 0.8, "mouthPressRight": 0.8})
+for j_, f in enumerate(range(g0, i0, 9)):
+    G.hands(f, r=(-0.22, -0.6, 1.05 + (0.08 if j_ % 2 else 0.0)))
+# top: clapping as the box arrives
+G.place(y0, (LOAD_X + 1.95, 0.15, ROOF_Z), 15)
+G.spine(y0, 22); G.head(y0, 26, 0, 0)
+G.face(y0, "grin", 1.0)
+for j_, f in enumerate(range(y0, y1, 5)):
+    w_ = 0.05 if j_ % 2 else 0.17
+    G.hands(f, l=(w_, -0.38, 1.22), r=(-w_, -0.38, 1.22), el=(0.4, 0.1, 1.0), er=(-0.4, 0.1, 1.0))
+G.fingers(y0, "l", 10); G.fingers(y0, "r", 10)
+# finale: inside the elevator cheering
+G.place(z0, (MOD.x - 0.25, MOD.y + 0.7, 0.06), 0)
+G.spine(z0, -4); G.head(z0, -10, 0, 0)
+G.face(z0 + 16, "grin", 1.0, extra={"jawOpen": 0.35})
+G.hands(z0, l=(0.27, -0.05, 0.86), r=(-0.27, -0.05, 0.86))
+G.hands(z0 + 20, l=(0.38, -0.12, 1.85), r=(-0.38, -0.12, 1.85), el=(0.55, 0.2, 1.4), er=(-0.55, 0.2, 1.4))
+for k6, f in enumerate(range(z0 + 28, TOTAL + 1, 8)):
+    sg = 1 if k6 % 2 == 0 else -1
+    G.hands(f, l=(0.38, -0.12, 1.85 - 0.05 * sg), r=(-0.38, -0.12, 1.85 + 0.05 * sg))
+# angry neighbour leaning out of the smashed window, shaking his fist
+NWZ = 3.3 + 1.815 - 0.875 - 0.95
+NB_.place(pb0, (-6.4, -2.12, NWZ), -12)
+NB_.spine(pb0, 54, 0, 0); NB_.head(pb0, -38, 24, 0)
+NB_.pelvis(pb0, (0, -0.06, 0), bend=8)
+NB_.hands(pb0, l=(0.26, -0.5, 0.98), el=(0.5, -0.2, 1.2), er=(-0.5, -0.3, 1.6))
+NB_.face(pb0, "disgusted", 1.0, extra={"jawOpen": 0.6, "mouthFunnel": 0.2})
+NB_.fingers(pb0, "r", 85, thumb=40)
+NB_.place(near - 3, (-6.4, -2.18, NWZ), -12, constant=False)
+NB_.place(near + 2, (-6.4, -1.5, NWZ - 0.2), -12, constant=False)
+NB_.spine(near - 3, 54, 0, 0); NB_.head(near - 3, -38, 24, 0)
+NB_.face(near - 1, "shocked", 1.0)
+NB_.spine(near + 2, -10)
+for j_, f in enumerate(range(pb0, near - 3, 4)):
+    up = j_ % 2
+    NB_.hands(f, r=(-0.22, -0.72, 1.5 + 0.12 * up))
+    NB_.face(f, "disgusted", 1.0, extra={"jawOpen": 0.35 + 0.3 * up, "browDownLeft": 1.0, "browDownRight": 1.0})
+polish.life_noise(O["Grandma"], k=0.8, seed=31)
+polish.life_noise(O["Neighbour"], k=0.8, seed=32)
+
 # ================================================================== CAMERAS
 def CAM(n, loc, tgt, lens, loc2=None, tgt2=None):
     f0c, f1c = S[n]
@@ -591,7 +671,7 @@ cams["03"] = CAM("03", (SX + 1.2, H3.y - 1.6, H3.z + 1.3), (SX, H3.y + 0.05, H3.
                  (SX + 1.1, H3.y - 1.45, H3.z + 1.3), (SX, H3.y + 0.05, H3.z + 1.1))
 cams["04a"] = CAM("04a", (LOAD_X + 1.6, -3.4, 1.3), (LOAD_X + 0.3, -0.7, 0.9), 30, (LOAD_X + 1.5, -3.2, 1.3), (LOAD_X + 0.3, -0.7, 0.9))
 cams["04b"] = CAM("04b", (LOAD_X + 2.2, -6.5, 1.2), (LOAD_X, -0.4, 6.0), 22, (LOAD_X + 2.0, -6.2, 1.2), (LOAD_X, -0.4, 6.4))
-cams["05a"] = CAM("05a", (LOAD_X + 1.4, -2.6, 11.4), (LOAD_X, 0.2, 10.6), 26, (LOAD_X + 1.3, -2.45, 11.35), (LOAD_X, 0.2, 10.6))
+cams["05a"] = CAM("05a", (LOAD_X + 1.8, -2.7, 11.5), (LOAD_X + 0.45, 0.4, 10.8), 26, (LOAD_X + 1.7, -2.55, 11.45), (LOAD_X + 0.45, 0.4, 10.8))
 cams["05b"] = CAM("05b", (LOAD_X + 0.1, -0.5, ROOF_Z + 1.45), (LOAD_X, 0.45, ROOF_Z + 1.3), 40,
                   (LOAD_X + 0.1, -0.42, ROOF_Z + 1.45), (LOAD_X, 0.45, ROOF_Z + 1.3))
 cams["06"] = CAM("06", (WHEEL.x + 1.3, -3.6, 8.9), (WHEEL.x, RY, WHEEL.z + 0.1), 30, (WHEEL.x + 1.2, -3.4, 8.95), (WHEEL.x, RY, WHEEL.z + 0.1))
@@ -600,6 +680,7 @@ cams["08a"] = CAM("08a", (CNT_X + 1.4, RY - 3.0, 1.4), (CNT_X - 0.6, RY, 1.3), 2
 cams["08b"] = CAM("08b", (CNT_X + 1.2, RY - 5.2, 0.9), (CNT_X - 0.7, RY, 2.2), 22, (CNT_X + 1.1, RY - 5.0, 0.95), (CNT_X - 0.7, RY, 2.4))
 cams["09"] = CAM("09", (CNT_X + 2.4, RY - 4.2, 1.2), (CNT_X + 0.3, RY, 1.0), 24, (CNT_X + 2.3, RY - 4.0, 1.2), (CNT_X + 0.3, RY, 1.0))
 cams["10"] = CAM("10", (CNT_X + 2.6, RY - 6.8, 1.1), (CNT_X - 0.9, RY, 3.4), 22, (CNT_X + 2.4, RY - 6.5, 1.15), (CNT_X - 0.9, RY, 3.6))
+cams["11b"] = CAM("11b", (-4.6, -6.2, 3.6), (-5.7, -2.2, 5.3), 30, (-4.65, -5.95, 3.65), (-5.7, -2.2, 5.35))
 cams["11"] = CAM("11", (LOAD_X + 3.4, RY - 6.2, 2.0), (LOAD_X - 0.9, RY, 4.0), 22, (LOAD_X + 3.2, RY - 5.9, 2.05), (LOAD_X - 0.9, RY, 4.2))
 cams["12"] = CAM("12", (LOAD_X + 2.8, RY - 8.5, 0.8), (LOAD_X, RY, 5.0), 20, (LOAD_X + 2.6, RY - 8.0, 0.85), (LOAD_X, RY, 5.2))
 cams["13"] = CAM("13", (LOAD_X + 0.9, RY - 2.7, 3.9), (LOAD_X + 0.35, RY - 0.1, 3.3), 30, (LOAD_X + 0.85, RY - 2.55, 3.9), (LOAD_X + 0.35, RY - 0.1, 3.3))
@@ -610,13 +691,52 @@ cams["16"] = CAM("16", (WHEEL.x + 2.5, -0.9, ROOF_Z + 1.1), (WHEEL.x, 0.35, ROOF
 cams["17a"] = CAM("17a", (LOAD_X - 0.15, RY - 1.45, ZC + 1.55), (LOAD_X + 0.45, RY - 0.4, ZC + 1.35), 30,
                   (LOAD_X - 0.12, RY - 1.38, ZC + 1.55), (LOAD_X + 0.45, RY - 0.4, ZC + 1.35))
 cams["17b"] = CAM("17b", (LOAD_X + 3.0, RY - 9.0, 1.2), (LOAD_X, RY, 5.0), 20, (LOAD_X + 2.9, RY - 8.7, 1.25), (LOAD_X, RY, 5.1))
-cams["18"] = CAM("18", (LOAD_X + 0.6, RY - 2.4, 8.9), (LOAD_X + 0.2, RY, 8.7), 30, (LOAD_X + 0.58, RY - 2.25, 8.9), (LOAD_X + 0.2, RY, 8.7))
+cams["18"] = CAM("18", (LOAD_X + 1.6, RY - 3.6, 7.9), (LOAD_X + 0.9, RY + 0.6, 9.5), 26, (LOAD_X + 1.55, RY - 3.4, 7.95), (LOAD_X + 0.9, RY + 0.6, 9.55))
 cams["19"] = CAM("19", (MOD.x + 1.0, MOD.y - 4.2, 0.55), (MOD.x, MOD.y + 0.6, 1.5), 24, (MOD.x + 0.9, MOD.y - 3.7, 0.6), (MOD.x, MOD.y + 0.6, 1.55))
+
+
+def follow_cam(cam, f0, f1, off, top_dz, lens0, lens1, win=2, step=2):
+    """Opening gag framing: camera at the nose line, pitched down by half the FOV so the frame top is a horizontal
+    plane just under the eyes -> only mouth + chest visible (hands work below frame)."""
+    bl = rig.data.bones["head"]
+    L = Vector((0.0, 0.012 + top_dz, 0.10))                    # head-bone space: just under the eyes (nose)
+    pts = {}
+    for f in range(f0 - win, f1 + win + 1):
+        sc.frame_set(f)
+        pts[f] = (rig.matrix_world @ rig.pose.bones["head"].matrix @ L).copy()
+    cam.animation_data_clear(); cam.data.animation_data_clear()
+    d = Vector((off[0], off[1], 0)).length
+    for f in list(range(f0, f1, step)) + [f1]:
+        T = sum((pts[g] for g in range(f - win, f + win + 1)), Vector()) / (2 * win + 1)
+        lens = lens0 + (lens1 - lens0) * (f - f0) / max(1, f1 - f0)
+        loc = T + Vector((off[0], off[1], 0))
+        tgt = T + Vector((0, 0, -d * 18.0 / lens))
+        al.cam_key(cam, f, loc, tgt, lens)
+    for fc in lib.fcurves_of(cam):
+        for kp in fc.keyframe_points:
+            kp.interpolation = 'BEZIER'
+    cam.data.dof.use_dof = True
+    cam.data.dof.aperture_fstop = 2.8
+    cam.data.dof.focus_distance = d
+
+
+follow_cam(cams["01a"], a0, a1 - 1, (0.12, -0.8), 0.0, 60, 66)
+follow_cam(cams["01b"], b0, b1 - 1, (-0.18, -0.7), 0.0, 64, 74)
 shake(cams["09"], LAND, LAND + 10, 1.2, seed=1)
 shake(cams["11"], hit1, hit1 + 8, 0.9, seed=2)
 shake(cams["11"], hit2, hit2 + 8, 0.9, seed=3)
+shake(cams["11b"], near, near + 8, 1.0, seed=8)
 shake(cams["16"], u0 + 7, u0 + 14, 0.8, seed=4)
 shake(cams["19"], z0 + 1, z0 + 10, 1.0, seed=5)
+for n_dof, fst in (("05b", 2.4), ("07", 2.4), ("15", 2.8), ("17a", 2.4), ("13", 3.2)):
+    cm_ = cams[n_dof]
+    cm_.data.dof.use_dof = True
+    cm_.data.dof.aperture_fstop = fst
+    sc.frame_set(S[n_dof][0] + 2)
+    tgt_ = cm_.matrix_world @ Vector((0, 0, -1))
+    # focus on the character's head
+    hd = rig.matrix_world @ rig.pose.bones["head"].head
+    cm_.data.dof.focus_distance = (hd - cm_.matrix_world.translation).length if n_dof not in ("17a", "13") else 1.2
 sc.camera = cams["01a"]
 
 # ================================================================== hold poses until each cut
@@ -640,7 +760,7 @@ for ob in list(bpy.data.objects):
 polish.life_noise(rig, k=0.9, seed=11)
 polish.auto_blinks(rig, first=40, last=TOTAL - 10, gap=(70, 105), seed=5)
 polish.camera_drift(list(cams.values()), deg=0.3, scale=42)
-for n, l0_, l1_ in (("01a", 38, 44), ("07", 42, 50), ("15", 36, 42), ("19", 24, 27)):
+for n, l0_, l1_ in (("07", 42, 50), ("15", 36, 42), ("19", 24, 27)):
     polish.lens_punch(cams[n], S[n][0], S[n][1] - 1, l0_, l1_)
 polish.better_metals()
 sc.world.use_sun_shadow = False

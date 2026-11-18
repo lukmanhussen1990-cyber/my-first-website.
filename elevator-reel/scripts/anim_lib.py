@@ -255,11 +255,11 @@ def key_obj(obj, f, loc=None, rot=None, scale=None, interp=None):
     if scale is not None:
         obj.scale = scale if hasattr(scale, "__len__") else (scale,) * 3
         obj.keyframe_insert("scale", frame=f)
-    if interp:
-        for fc in lib.fcurves_of(obj):
+    for fc in lib.fcurves_of(obj):
+        if fc.data_path in ("location", "rotation_euler", "scale"):
             for kp in fc.keyframe_points:
                 if abs(kp.co.x - f) < 0.01:
-                    kp.interpolation = interp
+                    kp.interpolation = interp or 'BEZIER'
 
 
 def key_node_value(mat, node_name, f, val):

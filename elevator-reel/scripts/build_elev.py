@@ -117,7 +117,26 @@ M["curb"] = lib.mat("M_Curb", "#AAA8A2", rough=0.8)
 M["wood"] = wood_mat("M_Wood")
 M["wood_dark"] = wood_mat("M_WoodDark", "#6E4A2A", "#55361E")
 M["iron"] = lib.mat("M_Iron", "#26262A", rough=0.4, metal=0.8)
-M["rope"] = wood_mat("M_Rope", "#D2B07A", "#B08D55", scale=12.0, rough=0.85)
+def rope_mat():
+    m = bpy.data.materials.new("M_Rope")
+    nt = m.node_tree
+    p = nt.nodes["Principled BSDF"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    wv = nt.nodes.new("ShaderNodeTexWave"); wv.wave_type = 'BANDS'; wv.bands_direction = 'DIAGONAL'
+    wv.inputs["Scale"].default_value = 60.0; wv.inputs["Distortion"].default_value = 0.5
+    nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
+    cr = nt.nodes.new("ShaderNodeMix"); cr.data_type = 'RGBA'
+    cr.inputs["A"].default_value = srgb("#C9A56A"); cr.inputs["B"].default_value = srgb("#9C7A45")
+    nt.links.new(wv.outputs["Fac"], cr.inputs["Factor"])
+    nt.links.new(cr.outputs[2], p.inputs["Base Color"])
+    p.inputs["Roughness"].default_value = 0.9
+    bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.8
+    nt.links.new(wv.outputs["Fac"], bump.inputs["Height"]); nt.links.new(bump.outputs[0], p.inputs["Normal"])
+    m.diffuse_color = srgb("#C9A56A")
+    return m
+
+
+M["rope"] = rope_mat()
 M["piano"] = lib.mat("M_PianoBlack", "#0C0C0E", rough=0.12, coat=1.0, spec=0.8)
 M["key_w"] = lib.mat("M_KeyWhite", "#F5F2E8", rough=0.25)
 M["key_b"] = lib.mat("M_KeyBlack", "#0A0A0A", rough=0.3)
@@ -136,9 +155,9 @@ def window(name, C, center, w=1.15, h=1.75, axis='Y', face=-1, depth=0.12, glass
     """Window on a wall. axis='Y' -> wall is XZ plane facing face*Y; axis='X' -> wall YZ plane facing face*X."""
     parts = []
     t = 0.07
-    back = lib.box(name + "_back", (w, 0.02, h), (0, 0.08, 0), C); lib.assign(back, M["win_dark"]); parts.append(back)
+    back = lib.box(name + "_back", (w, 0.004, h), (0, -0.004, 0), C); lib.assign(back, M["win_dark"]); parts.append(back)
     if pane:
-        pn = lib.box(name + "_pane", (w, 0.02, h), (0, 0, 0), C)
+        pn = lib.box(name + "_pane", (w, 0.01, h), (0, -0.016, 0), C)
         lib.assign(pn, M["sky_glass"] if glass else M["win_dark"])
         parts.append(pn)
     for (px, pz, sw, sh) in [(-w / 2, 0, t, h + t), (w / 2, 0, t, h + t), (0, -h / 2, w + t, t), (0, h / 2, w + t, t),
@@ -156,11 +175,11 @@ def window(name, C, center, w=1.15, h=1.75, axis='Y', face=-1, depth=0.12, glass
     if axis == 'Y':
         j.rotation_euler = (0, 0, 0 if face < 0 else math.pi)
     else:
-        j.rotation_euler = (0, 0, -math.pi / 2 if face > 0 else math.pi / 2)
+        j.rotation_euler = (0, 0, math.pi / 2 if face > 0 else -math.pi / 2)
     return j
 
 
-def building(name, C, d, mat, floors, win_cols, face_y=True, door_x=None, side_windows=None):
+def building(name, C, d, mat, floors, win_cols, face_y=True, door_x=None, side_windows=None, open_windows=()):
     x0, x1, y0, y1, h = d["x0"], d["x1"], d["y0"], d["y1"], d["h"]
     b = lib.box(name, (x1 - x0, y1 - y0, h), ((x0 + x1) / 2, (y0 + y1) / 2, h / 2), C)
     lib.assign(b, mat)
@@ -178,7 +197,7 @@ def building(name, C, d, mat, floors, win_cols, face_y=True, door_x=None, side_w
         for cx in win_cols:
             if door_x is not None and k == 0 and abs(cx - door_x) < 0.8:
                 continue
-            wins.append(window(f"{name}_w{k}_{cx:.1f}", C, (cx, y0 - 0.01, zc)))
+            wins.append(window(f"{name}_w{k}_{cx:.1f}", C, (cx, y0 - 0.01, zc), pane=(cx, k) not in open_windows))
     if door_x is not None:
         dr = lib.box(name + "_door", (1.25, 0.12, 2.3), (door_x, y0 - 0.04, 1.15), C, bevel=0.01); lib.assign(dr, M["door"])
         fr = lib.box(name + "_doorframe", (1.5, 0.08, 2.5), (door_x, y0 - 0.01, 1.25), C); lib.assign(fr, M["trim"])
@@ -188,7 +207,7 @@ def building(name, C, d, mat, floors, win_cols, face_y=True, door_x=None, side_w
             breakable = k < 2
             wins.append(window(f"{name}_sw_{sy:.1f}_{sz:.1f}", C, (sx, sy, sz), axis='X', face=face, pane=not breakable))
             if breakable:
-                bp_ = lib.box(f"BreakPane_{k}", (0.02, 1.15, 1.75), (sx + 0.01 * face, sy, sz), C)
+                bp_ = lib.box(f"BreakPane_{k}", (0.01, 1.15, 1.75), (sx + 0.016 * face, sy, sz), C)
                 lib.assign(bp_, M["sky_glass"])
     return b, wins
 
@@ -226,7 +245,7 @@ def build_exterior():
     # neighbour (taller, cream) with side windows facing +X at x=-5
     side = [(NB["x1"] + 0.01, -1.25, 1.9, +1), (NB["x1"] + 0.01, -1.25, 5.25, +1), (NB["x1"] + 0.01, -1.25, 8.55, +1),
             (NB["x1"] + 0.01, 2.0, 5.25, +1), (NB["x1"] + 0.01, 2.0, 8.55, +1)]
-    nb, nwins = building("Neigh", C, NB, M["neigh"], 4, [-10.6, -8.5, -6.4], side_windows=side)
+    nb, nwins = building("Neigh", C, NB, M["neigh"], 4, [-10.6, -8.5, -6.4], side_windows=side, open_windows=[(-6.4, 1)])
     # across the street (backdrop facing +Y)
     AC = dict(x0=-14, x1=14, y0=-25, y1=-17.2, h=11.0)
     ab = lib.box("Across", (AC["x1"] - AC["x0"], AC["y1"] - AC["y0"], AC["h"]), (0, (AC["y0"] + AC["y1"]) / 2, AC["h"] / 2), C)
@@ -494,7 +513,7 @@ for nm in ("Rope_load", "Rope_cnt", "Rope_hands", "Rope_belt"):
 # boulder
 objs = append_ph("boulder_01", C_props)
 meshes_ = [o for o in objs if o.type == 'MESH']
-rock = max(meshes_, key=lambda o: len(o.data.vertices))
+rock = sorted(meshes_, key=lambda o: len(o.data.vertices))[len(meshes_) // 2]
 mw = rock.matrix_world.copy(); rock.parent = None; rock.matrix_world = mw
 for o in objs:
     if o is not rock:
@@ -509,6 +528,79 @@ bpy.context.view_layer.update()
 # hammer
 hobjs = append_ph("cross_pein_hammer", C_props)
 hammer = hobjs[0]; hammer.name = "Hammer"
+# ------------------------------------------------------------------ street dressing
+def ph_place(name, loc, rz=0.0, scale=1.0, coll=C_ext, keep="largest"):
+    objs = append_ph(name, coll)
+    roots = [o for o in objs if o.parent is None]
+    for r_ in roots:
+        r_.location = loc
+        r_.rotation_euler = (0, 0, math.radians(rz))
+        r_.scale = (scale, scale, scale)
+    return objs
+
+
+for x_ in (-8.5, 2.6, 10.5):
+    ph_place("street_lamp_01", (x_, -3.65, 0.0), rz=90)
+hyd_ = ph_place("fire_hydrant", (4.4, -3.45, 0.0), rz=-20)
+for o_ in list(hyd_):
+    if "aged" in o_.name:
+        bpy.data.objects.remove(o_, do_unlink=True)
+ph_place("metal_trash_can", (5.6, -0.75, 0.0), rz=10)
+def cartoon_tree(loc, C=C_ext, seed=3):
+    rng_ = random.Random(seed)
+    trunk = lib.cylinder("Tree_trunk", 0.16, 3.0, (loc[0], loc[1], 1.5), (0, 0, 0), 16, C)
+    lib.assign(trunk, lib.mat("M_Bark", "#6B4B30", rough=0.9))
+    leaf_m = lib.mat("M_Foliage", "#4E8F3A", rough=0.75)
+    leaf_m2 = lib.mat("M_Foliage2", "#5FA244", rough=0.75)
+    for i_ in range(6):
+        bm2 = bmesh.new(); bmesh.ops.create_icosphere(bm2, subdivisions=3, radius=1.0)
+        ph_ = [rng_.uniform(0, 6) for _ in range(3)]
+        for v_ in bm2.verts:
+            p_ = v_.co.copy()
+            r_ = 1 + 0.12 * math.sin(3 * p_.x + ph_[0]) * math.cos(3 * p_.y + ph_[1]) + 0.08 * math.sin(4 * p_.z + ph_[2])
+            v_.co = p_ * r_
+        bl = lib.mesh_from_bmesh("Tree_leaves", bm2, C)
+        a_ = 2 * math.pi * i_ / 6
+        rr_ = 0.0 if i_ == 0 else 0.75
+        bl.location = (loc[0] + rr_ * math.cos(a_), loc[1] + rr_ * math.sin(a_), 3.4 + (0.6 if i_ == 0 else rng_.uniform(-0.3, 0.2)))
+        sz = 1.05 if i_ == 0 else rng_.uniform(0.7, 0.9)
+        bl.scale = (sz, sz, sz * 0.85)
+        lib.assign(bl, leaf_m if i_ % 2 == 0 else leaf_m2)
+
+
+cartoon_tree((8.2, -2.9, 0.0))
+ph_place("modular_street_seating", (11.6, -3.1, 0.0), rz=0)
+pit = lib.box("TreePit", (1.3, 1.3, 0.02), (8.2, -2.9, 0.005), C_ext); lib.assign(pit, lib.mat("M_Soil", "#4A3A2C", rough=1.0))
+for k_, x_ in enumerate((-1.0, 3.4)):
+    for z_ in (3.2 + 0.68, 6.4 + 0.68):
+        ph_place("planter_box_01", (x_, -0.22, z_ - 0.05), scale=1.1)
+for x_ in (0.15, 2.25):
+    pp_ = ph_place("potted_plant_02", (x_, -0.45, 0.0), scale=1.0)
+    for o_ in list(pp_):
+        if "dirt" in o_.name:
+            bpy.data.objects.remove(o_, do_unlink=True)
+# striped awning over the door
+aw = bpy.data.meshes.new("Awning")
+bm_ = bmesh.new()
+W_, D_, n_ = 2.0, 0.9, 10
+vs_ = []
+for i_ in range(n_ + 1):
+    x_ = -W_ / 2 + W_ * i_ / n_
+    vs_.append((bm_.verts.new((x_, 0.0, 0.0)), bm_.verts.new((x_, -D_, -0.45))))
+for i_ in range(n_):
+    f_ = bm_.faces.new((vs_[i_][0], vs_[i_ + 1][0], vs_[i_ + 1][1], vs_[i_][1]))
+    f_.material_index = i_ % 2
+bm_.to_mesh(aw); bm_.free()
+awo = bpy.data.objects.new("Awning", aw); C_ext.objects.link(awo)
+awo.location = (1.2, -0.02, 2.95)
+aw.materials.append(lib.mat("M_AwnGreen", "#2E7D4F", rough=0.7)); aw.materials.append(lib.mat("M_AwnWhite", "#F1EFE6", rough=0.7))
+sol_ = awo.modifiers.new("S", 'SOLIDIFY'); sol_.thickness = 0.02
+# extra characters (grandma, angry neighbour)
+with bpy.data.libraries.load("/opt/work/blend/extras.blend", link=False) as (src_, dst_):
+    dst_.collections = ["GRANDMA", "NEIGHBOUR"]
+for c_ in dst_.collections:
+    sc.collection.children.link(c_)
+
 # lights / world / render
 w = bpy.data.worlds.new("World_Street"); sc.world = w
 nt = w.node_tree
