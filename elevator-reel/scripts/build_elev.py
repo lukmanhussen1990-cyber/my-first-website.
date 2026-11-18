@@ -490,8 +490,17 @@ def build_stairwell():
         ld.use_custom_distance = True; ld.cutoff_distance = 14
         lo = bpy.data.objects.new(nm, ld); C.objects.link(lo); lo.location = loc
         d = Vector((x, 1.8, 1.5)) - Vector(loc); lo.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
-    lamp = lib.icosphere("Hall_lampbulb", 0.12, 2, (x + 0.2, 1.6, 4.6), C)
+    lamp = lib.icosphere("Hall_lampbulb", 0.09, 2, (x + 0.2, 1.6, 4.6), C)
     lib.assign(lamp, lib.mat("M_HallBulb", "#FFF2D0", emit="#FFE6B0", emit_strength=10))
+    # enamel shade + cord up to the (unseen) ceiling so the bulb doesn't float
+    bmS = bmesh.new()
+    bmesh.ops.create_cone(bmS, cap_ends=False, segments=28, radius1=0.26, radius2=0.05, depth=0.2)
+    shade = lib.mesh_from_bmesh("Hall_lampshade", bmS, C)
+    shade.location = (x + 0.2, 1.6, 4.7)
+    sol = shade.modifiers.new("S", 'SOLIDIFY'); sol.thickness = 0.008
+    lib.assign(shade, lib.mat("M_LampShade", "#2F4A3A", rough=0.3, metal=0.2, coat=0.4))
+    cord = lib.cylinder("Hall_lampcord", 0.007, 1.3, (x + 0.2, 1.6, 4.8 + 0.65), (0, 0, 0), 8, C)
+    lib.assign(cord, lib.mat("M_Cord", "#1A1A1A", rough=0.6))
     return dict(stair_top=(x, L, n * rise))
 
 

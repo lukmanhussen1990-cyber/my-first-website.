@@ -50,12 +50,16 @@ place(sfx.piano_clang(1.5, 87), sec(i0 + 9), -14); place(sfx.thud(60, 0.5, 1.2),
 j0 = S["06"][0]
 place(sfx.whoosh(0.3, 400, 1600), sec(j0), -18); place(sfx.metal_clank(0.6, 0.5), sec(j0 + 5), -12)
 place(sfx.sparkle(), sec(S["07"][0] + 2), -14)
+for f in (S["07"][0] + 4, S["07"][0] + 12, S["07"][0] + 20):          # temple taps
+    place(sfx.knock(950), sec(f), -24)
 for f in range(S["08a"][0], S["08a"][1], 7):
     place(sfx.rope_creak(0.3, 520), sec(f), -18)
 m0 = S["08b"][0]
 place(sfx.whoosh(1.4, 300, 2500, rise=True), sec(m0 + 1), -14)
 n0 = S["09"][0]; LAND = n0 + 8
 place(sfx.fall_whistle_down(0.3), sec(n0), -14); place(sfx.thud(45, 0.7, 1.5), sec(LAND), -6); place(sfx.poof(), sec(LAND), -12)
+for f in (LAND + 14, LAND + 22):                                       # dusting off his hands
+    place(sfx.scrub(0.22, 18.0, (2500, 7000)), sec(f), -24)
 for f in range(S["10"][0], S["10"][1], 12):
     place(sfx.rope_creak(0.4, 600), sec(f), -22)
 p0 = S["11"][0]; pb0, pb1 = S["11b"]
@@ -71,6 +75,8 @@ for f in range(r0, r1, 8):
     place(sfx.knock(320), sec(f + 5), -10); place(sfx.clink(), sec(f + 5), -18)
 s0, s1 = S["14"]
 place(sfx.rope_creak(0.8, 380), sec(s0 + 2), -16); place(sfx.whoosh(1.4, 300, 1200), sec(s0), -18)
+t0_ = S["15"][0]                                                        # noodle arms: strain... FLOP
+place(sfx.fall_whistle_down(0.35), sec(t0_ + 16), -18); place(sfx.thud(140, 0.18, 2.0), sec(t0_ + 18), -18)
 u0 = S["16"][0]
 place(sfx.fall_whistle_down(0.25), sec(u0), -16); place(sfx.metal_clank(0.9, 0.7), sec(u0 + 7), -8)
 place(sfx.motor_hum(sec(S["19"][0]) - sec(u0 + 14), f0=120, start_ramp=0.3), sec(u0 + 14), -18)

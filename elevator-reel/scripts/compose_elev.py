@@ -90,7 +90,7 @@ audio = sys.argv[3] if len(sys.argv) > 3 else None
 if mode == "quick":
     W, H, fps, step, src = 540, 960, 15, 2, "/opt/work/elev/quick"
 elif mode == "quick30":
-    W, H, fps, step, src = 540, 960, 30, 1, "/opt/work/elev/quick"
+    W, H, fps, step, src = 540, 960, 30, 1, os.environ.get("SRC", "/opt/work/elev/quick")
 else:
     W, H, fps, step, src = 1080, 1920, 30, 1, "/opt/work/elev/frames"
 cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(fps), "-i", "-"]
@@ -101,7 +101,7 @@ cmd += ["-c:v", "libx264", "-preset", "veryfast" if mode.startswith("quick") els
 p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 vig = None
 last = None
-for f in range(1, TOTAL + 1, step):
+for f in range(1, int(os.environ.get("END", TOTAL)) + 1, step):
     path = os.path.join(src, f"{f:04d}.jpg" if mode.startswith("quick") else f"{f:04d}.png")
     if os.path.exists(path):
         im = Image.open(path).convert("RGB")

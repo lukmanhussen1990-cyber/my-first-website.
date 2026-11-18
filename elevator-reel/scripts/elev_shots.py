@@ -260,24 +260,27 @@ for j, f in enumerate(range(g0, i0, 8)):
     A.spine(f, 18 + 6 * hi)
 A.face(h0, "proud", 0.9)
 # 05b: rope burn close-up, piano drops (off screen)
-A.hands(i0, l=(0.16, -0.38, 1.28), r=(-0.16, -0.38, 1.28), el=(0.4, 0.05, 1.0), er=(-0.4, 0.05, 1.0))
-A.wrist(i0, "l", 0, 70, 0); A.wrist(i0, "r", 0, -70, 0)
-A.fingers(i0, "l", 5, thumb=0); A.fingers(i0, "r", 5, thumb=0)
-A.spine(i0, 4); A.head(i0, 14, 0, 0)
-A.face(i0, "disgusted", 0.7, extra={"eyeWideLeft": 0.6, "eyeWideRight": 0.6, "jawOpen": 0.35, "mouthFunnel": 0.5})
+# "look at my hands!": forearms up, palms to camera (wrist angles solved numerically, see solve_palms.py)
+A.hands(i0, l=(0.13, -0.3, 1.34), r=(-0.13, -0.3, 1.34), el=(0.3, -0.02, 0.98), er=(-0.3, -0.02, 0.98))
+A.wrist(i0, "l", -40, 130, 0); A.wrist(i0, "r", -40, -120, 0)
+A.fingers(i0, "l", 14, thumb=-6); A.fingers(i0, "r", 14, thumb=-6)
+A.spine(i0, 2); A.head(i0, 4, 0, 0)
+A.face(i0, "disgusted", 0.7, extra={"eyeWideLeft": 0.7, "eyeWideRight": 0.7, "jawOpen": 0.4, "mouthFunnel": 0.5})
 for j, f in enumerate(range(i0 + 6, i1, 4)):
     sg = 1 if j % 2 == 0 else -1
-    A.hands(f, l=(0.16 + 0.03 * sg, -0.38, 1.28 + 0.04 * sg), r=(-0.16 - 0.03 * sg, -0.38, 1.28 - 0.04 * sg))
+    A.hands(f, l=(0.13 + 0.01 * sg, -0.3, 1.34 + 0.015 * sg), r=(-0.13 - 0.01 * sg, -0.3, 1.34 - 0.015 * sg))
 key_obj(piano, i0, loc=PIANO_WALL + Vector((0, 0, rise_top)))
 key_obj(piano, i0 + 8, loc=PIANO_WALL + Vector((0, 0, 0)))
 infl(rope_h, "toHands", i0, 1.0)
 # burn marks on palms
-burn_m = lib.mat("M_Burn", "#C2272D", rough=0.6, emit="#E0303A", emit_strength=0.3)
+burn_m = lib.mat("M_Burn", "#A8222A", rough=0.55, emit="#D02A33", emit_strength=0.15)
 for side in ("l", "r"):
     for k2 in range(3):
-        bm_ = lib.box(f"Burn_{side}{k2}", (0.06, 0.008, 0.012), (0, 0, 0), C_fx); lib.assign(bm_, burn_m)
+        bm_ = lib.box(f"Burn_{side}{k2}", ((0.05, 0.043, 0.034)[k2], 0.008, 0.003), (0, 0, 0), C_fx); lib.assign(bm_, burn_m)
         bm_.parent = rig; bm_.parent_type = 'BONE'; bm_.parent_bone = f"hand_{side}"
-        bm_.location = (0.0, -0.06 + 0.02 * k2, 0.022 if side == "l" else 0.022)
+        # hand bone is short (3.7 cm): the palm spans y -0.03..0.08 past its tail, palm surface at +z 0.032 (dbg_palm.py)
+        bm_.location = ((0.012 if side == "l" else -0.012), 0.004 + 0.021 * k2, 0.0335)
+        bm_.rotation_euler = (0, 0, math.radians((10, 17, 13)[k2] * (1 if side == "l" else -1)))
         vis(bm_, [(i0, i1)])
 
 # ================================================================== SHOT 06-08: wheel, clever, pulling down
@@ -294,20 +297,26 @@ infl(rope_c, "toHands", 1, 1.0); infl(rope_c, "toRock", 1, 0.0); infl(rope_c, "t
 STREET = (CNT_X + 0.02, RY + 0.36, 0.0)
 SIDE = (CNT_X + 0.3, RY + 0.02, 0.0)
 A.place(j0, SIDE, 0)
+A.wrist(j0, "l", 0, 0, 0); A.wrist(j0, "r", 0, 0, 0)          # undo the palms-out wrists of 05b
 A.hands(j0, r=(-0.3, -0.02, 1.48), l=(0.27, -0.05, 0.86), er=(-0.5, 0.25, 1.15), el=(0.35, 0.3, 1.1))
 A.spine(j0, 0); A.head(j0, -15, 0, 0)
 A.face(j0, "serious", 1.0)
 A.fingers(j0, "l", 75, thumb=35); A.fingers(j0, "r", 75, thumb=35)
 A.face(k0, "grin", 1.0, extra={"eyeBlinkLeft": 0.95, "browOuterUpRight": 0.9})
-A.hands(k0, r=(-0.3, -0.02, 1.48), l=(0.24, -0.12, 1.45), el=(0.62, 0.15, 1.35))
+# solved with solve_clever.py: left index tip on the temple (tap-tap), right hand thumbs-up
+TEMPLE = Vector((0.244, -0.052, 1.648))
+A.hands(k0, r=(-0.201, -0.336, 1.281), l=tuple(TEMPLE + Vector((0.03, -0.02, -0.03))), el=(0.62, 0.15, 1.35), er=(-0.45, 0.05, 1.0))
+A.wrist(k0, "l", -22.6, 7.0, 18.2); A.wrist(k0, "r", -30.4, -28.5, -58.8)
 for kk2, ft in enumerate(range(k0 + 4, k1, 4)):
-    off = 0.0 if kk2 % 2 == 0 else 0.018
-    A.hands(ft, l=(0.2 + off, -0.08 - off * 0.5, 1.58 - off))
+    off = 0.0 if kk2 % 2 == 0 else 1.0
+    A.hands(ft, l=tuple(TEMPLE + Vector((0.02, -0.01, -0.012)) * off))
+A.fingers(k0, "r", 88, thumb=-5)
 A.fingers(k0 + 2, "l", 82, thumb=35)
 for bn in ("index_01_l", "index_02_l", "index_03_l"):
     A.rot(k0 + 2, bn, 0, 0, 0)
 A.head(k0 + 4, -4, 0, 7)
 A.place(l0, STREET, 0)
+A.wrist(l0, "l", 0, 0, 0); A.wrist(l0, "r", 0, 0, 0)          # undo the temple-tap / thumbs-up wrists
 # 08a pulling down hand over hand; piano rises a bit
 for j, f in enumerate(range(l0, l1, 7)):
     hi = j % 2
@@ -355,6 +364,17 @@ for i in range(3):
     pf = fx.poof(f"Dust9_{i}", C_fx, ROCK_GROUND + Vector((R.uniform(-0.6, 0.6), R.uniform(-0.6, 0.3), 0.1)), LAND, size=0.45, dur=14)
 A.face(LAND + 4, "grin", 1.0)
 A.head(LAND + 4, 0, -10, 0)
+# then: dusts off his hands (two brushes) and goes hands-on-hips, proud nod
+A.hands(LAND + 10, l=(0.27, -0.05, 0.86), r=(-0.27, -0.05, 0.86))
+for c_, fc_ in enumerate((LAND + 14, LAND + 22)):
+    A.hands(fc_, l=(0.06, -0.3, 1.12), r=(-0.06, -0.3, 1.16), el=(0.35, 0.05, 1.0), er=(-0.35, 0.05, 1.0))
+    A.hands(fc_ + 4, l=(-0.04, -0.3, 1.16), r=(0.04, -0.3, 1.12))
+A.fingers(LAND + 12, "l", 8, thumb=0); A.fingers(LAND + 12, "r", 8, thumb=0)
+A.hands(LAND + 34, l=(0.21, 0.02, 1.0), r=(-0.21, 0.02, 1.0), el=(0.5, 0.1, 1.15), er=(-0.5, 0.1, 1.15))
+A.fingers(LAND + 34, "l", 30, thumb=10); A.fingers(LAND + 34, "r", 30, thumb=10)
+A.face(LAND + 34, "proud", 1.0)
+A.head(LAND + 34, -6, -4, 0); A.head(LAND + 42, 8, -4, 0); A.head(LAND + 50, -4, -4, 0)
+A.spine(LAND + 34, -6)
 # 10: rock comes down, piano goes up, one-finger smugness
 A.place(o0, (CNT_X + 0.75, RY - 0.55, 0), 15)
 A.hands(o0, r=(-0.18, -0.38, 1.45), l=(0.2, 0.02, 1.0), er=(-0.45, 0.2, 1.2), el=(0.5, 0.1, 1.15))
@@ -457,6 +477,7 @@ A.fingers(r0, "r", 80, thumb=40)
 A.face(r0, "serious", 1.0, extra={"mouthPressLeft": 0.8, "mouthPressRight": 0.8})
 # 14: ride up inside the box (with piano), rock goes down
 A.place(s0, (LOAD_X + 0.42, RY + 0.1, 0.12), 0)
+A.wrist(s0, "r", 0, 0, 0)                                      # end of hammering
 A.spine(s0, -2); A.head(s0, -6, 0, 0)
 A.hands(s0, l=(0.42, -0.14, 2.0), r=(-0.27, -0.05, 0.86), el=(0.6, 0.2, 1.5), er=(-0.35, 0.3, 1.1))
 A.face(s0, "grin", 1.0)
@@ -476,8 +497,20 @@ A.hands(t0_, l=(0.25, -0.02, 0.8), r=(-0.25, -0.02, 0.8), el=(0.3, 0.3, 1.1), er
 A.clav(t0_, "l", up=-6); A.clav(t0_, "r", up=-6)
 A.spine(t0_, 14); A.head(t0_, 22, 0, 6)
 A.face(t0_, "tired", 1.0, extra={"eyeBlinkLeft": 0.6, "eyeBlinkRight": 0.6, "jawOpen": 0.25})
-for f in range(t0_, t1_, 10):
-    A.hands(f, l=(0.25 + 0.03 * math.sin(f), -0.02, 0.79), r=(-0.25, -0.02 + 0.03 * math.cos(f), 0.8))
+# noodle arms: weak attempt to lift them... FLOP, bounce, limp pendulum sway
+A.hands(t0_ + 6, l=(0.22, -0.18, 0.98), r=(-0.22, -0.18, 0.98))
+A.hands(t0_ + 13, l=(0.2, -0.27, 1.1), r=(-0.2, -0.27, 1.1))
+A.face(t0_ + 8, "tired", 1.0, extra={"browInnerUp": 0.9, "jawOpen": 0.1, "mouthStretchLeft": 0.6, "mouthStretchRight": 0.6})
+A.hands(t0_ + 15, l=(0.205, -0.26, 1.09), r=(-0.195, -0.28, 1.11))               # tremble
+A.hands(t0_ + 18, l=(0.27, 0.03, 0.73), r=(-0.27, 0.03, 0.73), el=(0.32, 0.32, 1.06), er=(-0.32, 0.32, 1.06))   # FLOP
+A.clav(t0_ + 18, "l", up=-11); A.clav(t0_ + 18, "r", up=-11)
+A.head(t0_ + 18, 34, 0, 6); A.spine(t0_ + 18, 20)
+A.face(t0_ + 18, "tired", 1.0, extra={"eyeBlinkLeft": 0.75, "eyeBlinkRight": 0.75, "jawOpen": 0.35})
+A.hands(t0_ + 21, l=(0.27, -0.04, 0.8), r=(-0.27, -0.04, 0.8))
+for k6, f in enumerate(range(t0_ + 24, t1_, 6)):
+    amp = 0.06 * (0.7 ** k6); sg = 1 if k6 % 2 == 0 else -1
+    A.hands(f, l=(0.27, -0.01 + amp * sg, 0.76), r=(-0.27, -0.01 - amp * sg, 0.76))
+A.head(t0_ + 30, 26, 0, 6)
 
 # ================================================================== SHOT 16-19: motor, button, arrive, modern
 u0, u1 = S["16"]; v0, v1 = S["17a"]; x0, x1 = S["17b"]; y0, y1 = S["18"]; z0, z1 = S["19"]
@@ -494,8 +527,11 @@ key_obj(motor, u0 + 9, loc=mloc + Vector((0, 0, 0.06)))
 key_obj(motor, u0 + 11, loc=mloc)
 for f in range(u0 + 14, z0, 2):
     key_obj(motor, f, loc=mloc + Vector((R.uniform(-0.004, 0.004), R.uniform(-0.004, 0.004), 0)))
-# 17a: press the button (inside the cabin, right panel)
+# 17a: press the button (inside the cabin, right panel) - button + panel only exist once the motor is hooked up
 btn = O["Cabin_button"]
+vis([btn, O["Cabin_panel"]], [(u0, TOTAL + 10)], children=False)
+for o_ in (btn, O["Cabin_panel"]):
+    lib.hide_key(o_, r0, True)                                   # override the cabin's own "visible from r0" key
 A.place(v0, (LOAD_X + 0.1, RY + 0.15, 0.12 + ZC), 0)
 A.spine(v0, 4); A.head(v0, 10, -25, 0)
 A.face(v0, "smug", 1.0)
@@ -672,8 +708,8 @@ cams["03"] = CAM("03", (SX + 1.2, H3.y - 1.6, H3.z + 1.3), (SX, H3.y + 0.05, H3.
 cams["04a"] = CAM("04a", (LOAD_X + 1.6, -3.4, 1.3), (LOAD_X + 0.3, -0.7, 0.9), 30, (LOAD_X + 1.5, -3.2, 1.3), (LOAD_X + 0.3, -0.7, 0.9))
 cams["04b"] = CAM("04b", (LOAD_X + 2.2, -6.5, 1.2), (LOAD_X, -0.4, 6.0), 22, (LOAD_X + 2.0, -6.2, 1.2), (LOAD_X, -0.4, 6.4))
 cams["05a"] = CAM("05a", (LOAD_X + 1.8, -2.7, 11.5), (LOAD_X + 0.45, 0.4, 10.8), 26, (LOAD_X + 1.7, -2.55, 11.45), (LOAD_X + 0.45, 0.4, 10.8))
-cams["05b"] = CAM("05b", (LOAD_X + 0.1, -0.5, ROOF_Z + 1.45), (LOAD_X, 0.45, ROOF_Z + 1.3), 40,
-                  (LOAD_X + 0.1, -0.42, ROOF_Z + 1.45), (LOAD_X, 0.45, ROOF_Z + 1.3))
+cams["05b"] = CAM("05b", (LOAD_X + 0.08, -0.5, ROOF_Z + 1.52), (LOAD_X, 0.45, ROOF_Z + 1.44), 38,
+                  (LOAD_X + 0.08, -0.42, ROOF_Z + 1.52), (LOAD_X, 0.45, ROOF_Z + 1.44))
 cams["06"] = CAM("06", (WHEEL.x + 1.3, -3.6, 8.9), (WHEEL.x, RY, WHEEL.z + 0.1), 30, (WHEEL.x + 1.2, -3.4, 8.95), (WHEEL.x, RY, WHEEL.z + 0.1))
 cams["07"] = CAM("07", (CNT_X + 0.55, RY - 1.75, 1.62), (CNT_X + 0.3, RY + 0.02, 1.58), 42, (CNT_X + 0.53, RY - 1.65, 1.62), (CNT_X + 0.3, RY + 0.02, 1.58))
 cams["08a"] = CAM("08a", (CNT_X + 1.4, RY - 3.0, 1.4), (CNT_X - 0.6, RY, 1.3), 26, (CNT_X + 1.3, RY - 2.85, 1.4), (CNT_X - 0.6, RY, 1.3))
@@ -687,7 +723,8 @@ cams["13"] = CAM("13", (LOAD_X + 0.9, RY - 2.7, 3.9), (LOAD_X + 0.35, RY - 0.1, 
 cams["14"] = CAM("14", (LOAD_X + 2.6, RY - 7.0, 1.0), (LOAD_X, RY, 3.5), 22, (LOAD_X + 2.5, RY - 6.6, 1.1), (LOAD_X, RY, 4.6))
 cams["15"] = CAM("15", (LOAD_X + 0.55, RY - 1.75, ZC + 1.65), (LOAD_X + 0.42, RY + 0.1, ZC + 1.5), 36,
                  (LOAD_X + 0.55, RY - 1.65, ZC + 1.65), (LOAD_X + 0.42, RY + 0.1, ZC + 1.5))
-cams["16"] = CAM("16", (WHEEL.x + 2.5, -0.9, ROOF_Z + 1.1), (WHEEL.x, 0.35, ROOF_Z + 0.45), 28, (WHEEL.x + 2.35, -0.8, ROOF_Z + 1.1), (WHEEL.x, 0.35, ROOF_Z + 0.45))
+cams["16"] = CAM("16", (WHEEL.x + 2.0, 1.75, ROOF_Z + 1.5), (WHEEL.x - 0.05, -0.5, ROOF_Z + 0.7), 25,
+                 (WHEEL.x + 1.85, 1.6, ROOF_Z + 1.48), (WHEEL.x - 0.05, -0.5, ROOF_Z + 0.7))      # behind: wheel + belt + motor
 cams["17a"] = CAM("17a", (LOAD_X - 0.15, RY - 1.45, ZC + 1.55), (LOAD_X + 0.45, RY - 0.4, ZC + 1.35), 30,
                   (LOAD_X - 0.12, RY - 1.38, ZC + 1.55), (LOAD_X + 0.45, RY - 0.4, ZC + 1.35))
 cams["17b"] = CAM("17b", (LOAD_X + 3.0, RY - 9.0, 1.2), (LOAD_X, RY, 5.0), 20, (LOAD_X + 2.9, RY - 8.7, 1.25), (LOAD_X, RY, 5.1))
@@ -737,6 +774,9 @@ for n_dof, fst in (("05b", 2.4), ("07", 2.4), ("15", 2.8), ("17a", 2.4), ("13", 
     # focus on the character's head
     hd = rig.matrix_world @ rig.pose.bones["head"].head
     cm_.data.dof.focus_distance = (hd - cm_.matrix_world.translation).length if n_dof not in ("17a", "13") else 1.2
+    if n_dof == "05b":                                            # focus the burnt palms, not the face
+        hl_ = rig.matrix_world @ rig.pose.bones["hand_l"].head
+        cm_.data.dof.focus_distance = (hl_ - cm_.matrix_world.translation).length
 sc.camera = cams["01a"]
 
 # ================================================================== hold poses until each cut
