@@ -1,0 +1,12 @@
+REFERENCE LOOK NOTES (720x1280 24fps, 55.6s)
+- Character: MakeHuman male, slicked-back dark brown hair, slate-blue long-sleeve button shirt, jeans, dark belt, brown shoes. Slim. Default-ish MH face.
+- Walls: pale sage/grey-green (~#8E9C8E), darker baseboard line. Tall white-framed windows w/ light sky.
+- Floor: large checker tiles, terracotta/orange (#D9703F) + cream (#EFE3CF), visible grout/glossy.
+- Hanging green enamel pendant lamps (dark green #2E6B4A) on black cords.
+- Table: warm orange-brown wood, simple legs.
+- Light: bright soft daylight, soft shadows, mild AO, slightly warm.
+- Captions: white heavy rounded sans (Montserrat ExtraBold-like), ~4% of width tall, thin black outline + soft shadow, centred x, y ~ 58-60% of height. 1-3 words.
+- Cuts ~1.5-3s; MCU chest-up of him; CU hands/tub; high-angle wide crowd; low angle drum; inside-drum CU.
+- Props: dark steel tub w/ lighter rim & handles; blue/white detergent bottle w/ red cap; white undies w/ blue ribbed waistband + brown stain; blob clothes in saturated colours; brushed steel drum w/ front ring on black stand; green ribbed motor on black block w/ belt; grey outer tub; red pump + hose; final white washing machine w/ round chrome door + panel w/ blue display.
+- FX: thick pale-green wavy stink lines; white droplet spheres; foam = white flattened blobs; pale-yellow curved arrows w/ heads; white spin arcs.
+- End: hero shot of white washing machine, he raises arms.
