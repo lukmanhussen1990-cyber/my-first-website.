@@ -113,10 +113,11 @@ c = hmid.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle
 c = hmid.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle_01_l"; c.influence = 0.5
 hand_r = empty("HandR"); c = hand_r.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle_01_r"
 # anchors
-p_top = empty("PianoTop", piano, (0, 0.05, 1.21))
-ph_top = empty("PianoHallTop", pianoH, (0, 0.33, 1.15))
+p_top = empty("PianoTop", piano, (0, 0.05, 1.28))                # harness knot
+ph_top = empty("PianoHallTop", pianoH, (0, 0.05, 1.28))         # harness knot
 cab_top = empty("CabinTop", cabin, (0, 0, 2.48))
 rock_top = empty("RockTop", rock, (0, 0, 0))
+hang_pt = empty("RopeHangPt", None, (CNT_X, RY, 0.22))
 # strap (stairwell): from piano top to hands
 strap = rope_y_mesh("Strap", 0.022, "M_Rope"); strap.parent = ph_top
 stretch(strap, hmid, "toHands")
@@ -129,6 +130,7 @@ rope_l = rope_y_mesh("RopeLoad", 0.026); rope_l.location = (LOAD_X, RY, WHEEL.z)
 c1 = stretch(rope_l, p_top, "toPiano"); c2 = stretch(rope_l, cab_top, "toCabin")
 rope_c = rope_y_mesh("RopeCnt", 0.026); rope_c.location = (CNT_X, RY, WHEEL.z)
 c3 = stretch(rope_c, hmid, "toHands"); c4 = stretch(rope_c, rock_top, "toRock"); c5 = stretch(rope_c, hand_r, "toHandR")
+c6 = stretch(rope_c, hang_pt, "toHang")
 belt = rope_y_mesh("Belt", 0.018, "M_Iron")
 belt.location = motor.location + Vector((0, -0.26, 0.42))
 stretch(belt, wroot, "toWheel"); belt.constraints["toWheel"].influence = 1.0
@@ -292,7 +294,9 @@ key_obj(wroot, j0, scale=0.0); key_obj(wroot, j0 + 5, scale=1.15); key_obj(wroot
 vis([rope_l], [(j0 + 4, S["19"][0] + 4)])
 vis([rope_c], [(j0 + 4, S["19"][0] + 4)])
 infl(rope_l, "toPiano", 1, 1.0); infl(rope_l, "toCabin", 1, 0.0)
-infl(rope_c, "toHands", 1, 1.0); infl(rope_c, "toRock", 1, 0.0); infl(rope_c, "toHandR", 1, 0.0)
+infl(rope_c, "toHands", 1, 1.0); infl(rope_c, "toRock", 1, 0.0); infl(rope_c, "toHandR", 1, 0.0); infl(rope_c, "toHang", 1, 0.0)
+infl(rope_c, "toHands", S["07"][0], 0.0); infl(rope_c, "toHang", S["07"][0], 1.0)          # "Clever!": let go, rope hangs beside him
+infl(rope_c, "toHands", S["08a"][0], 1.0); infl(rope_c, "toHang", S["08a"][0], 0.0)
 # 07 clever: on the street holding counter rope
 STREET = (CNT_X + 0.02, RY + 0.36, 0.0)
 SIDE = (CNT_X + 0.3, RY + 0.02, 0.0)
@@ -645,6 +649,7 @@ G.spine(g0, 12); G.head(g0, 26, 0, 0)
 G.face(g0, "serious", 1.0, extra={"browDownLeft": 0.9, "browDownRight": 0.9, "mouthPressLeft": 0.8, "mouthPressRight": 0.8})
 for j_, f in enumerate(range(g0, i0, 9)):
     G.hands(f, r=(-0.22, -0.6, 1.05 + (0.08 if j_ % 2 else 0.0)))
+G.place(h0, (LOAD_X + 0.55, 1.45, ROOF_Z), -30)                 # 05a: behind him, visible from the side camera
 # top: clapping as the box arrives
 G.place(y0, (LOAD_X + 1.95, 0.15, ROOF_Z), 15)
 G.spine(y0, 22); G.head(y0, 26, 0, 0)
@@ -705,9 +710,10 @@ cams["02"] = CAM("02", (SX + 4.2, H2.y - 1.6, H2.z + 1.0), (SX, H2.y - 0.6, H2.z
 H3 = step_pos(K0 + 3)
 cams["03"] = CAM("03", (SX + 1.2, H3.y - 1.6, H3.z + 1.3), (SX, H3.y + 0.05, H3.z + 1.1), 32,
                  (SX + 1.1, H3.y - 1.45, H3.z + 1.3), (SX, H3.y + 0.05, H3.z + 1.1))
-cams["04a"] = CAM("04a", (LOAD_X + 1.6, -3.4, 1.3), (LOAD_X + 0.3, -0.7, 0.9), 30, (LOAD_X + 1.5, -3.2, 1.3), (LOAD_X + 0.3, -0.7, 0.9))
+cams["04a"] = CAM("04a", (LOAD_X + 2.3, -2.3, 1.45), (LOAD_X + 0.45, -0.8, 0.95), 26, (LOAD_X + 2.15, -2.15, 1.43), (LOAD_X + 0.45, -0.8, 0.95))   # his front + harnessed piano
 cams["04b"] = CAM("04b", (LOAD_X + 2.2, -6.5, 1.2), (LOAD_X, -0.4, 6.0), 22, (LOAD_X + 2.0, -6.2, 1.2), (LOAD_X, -0.4, 6.4))
-cams["05a"] = CAM("05a", (LOAD_X + 1.8, -2.7, 11.5), (LOAD_X + 0.45, 0.4, 10.8), 26, (LOAD_X + 1.7, -2.55, 11.45), (LOAD_X + 0.45, 0.4, 10.8))
+cams["05a"] = CAM("05a", (LOAD_X - 1.6, -0.5, ROOF_Z + 1.6), (LOAD_X + 0.4, 0.75, ROOF_Z + 1.08), 26,
+                  (LOAD_X - 1.48, -0.42, ROOF_Z + 1.58), (LOAD_X + 0.4, 0.75, ROOF_Z + 1.08))
 cams["05b"] = CAM("05b", (LOAD_X + 0.08, -0.5, ROOF_Z + 1.52), (LOAD_X, 0.45, ROOF_Z + 1.44), 38,
                   (LOAD_X + 0.08, -0.42, ROOF_Z + 1.52), (LOAD_X, 0.45, ROOF_Z + 1.44))
 cams["06"] = CAM("06", (WHEEL.x + 1.3, -3.6, 8.9), (WHEEL.x, RY, WHEEL.z + 0.1), 30, (WHEEL.x + 1.2, -3.4, 8.95), (WHEEL.x, RY, WHEEL.z + 0.1))

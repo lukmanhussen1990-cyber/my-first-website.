@@ -90,7 +90,8 @@ def wood_mat(name, c1="#B07A45", c2="#8E5C30", scale=3.0, rough=0.6):
     mp = nt.nodes.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (1.0, 8.0, 1.0)
     nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
     wv = nt.nodes.new("ShaderNodeTexWave"); wv.inputs["Scale"].default_value = scale
-    wv.inputs["Distortion"].default_value = 6.0; wv.inputs["Detail"].default_value = 3
+    wv.inputs["Distortion"].default_value = 1.6; wv.inputs["Detail"].default_value = 4
+    wv.inputs["Detail Scale"].default_value = 1.5
     nt.links.new(mp.outputs[0], wv.inputs["Vector"])
     cr = nt.nodes.new("ShaderNodeMix"); cr.data_type = 'RGBA'
     cr.inputs["A"].default_value = srgb(c1); cr.inputs["B"].default_value = srgb(c2)
@@ -100,6 +101,37 @@ def wood_mat(name, c1="#B07A45", c2="#8E5C30", scale=3.0, rough=0.6):
     bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.15
     nt.links.new(wv.outputs["Fac"], bump.inputs["Height"]); nt.links.new(bump.outputs[0], p.inputs["Normal"])
     m.diffuse_color = srgb(c1)
+    return m
+
+
+def pbr_mat(name, aid, scale=1.0, rot=0.0, rough_mult=1.0, nor=0.8):
+    """Poly Haven texture set (diff / rough / nor_gl), Object coords + box projection so any box face maps cleanly."""
+    d = f"/opt/work/assets/polyhaven/{aid}/"
+    m = bpy.data.materials.new(name)
+    nt = m.node_tree
+    p = nt.nodes["Principled BSDF"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (scale, scale, scale)
+    mp.inputs["Rotation"].default_value = (0, 0, math.radians(rot))
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+
+    def img(fn, color=True):
+        n = nt.nodes.new("ShaderNodeTexImage")
+        n.image = bpy.data.images.load(d + fn, check_existing=True)
+        n.projection = 'BOX'; n.projection_blend = 0.15
+        if not color:
+            n.image.colorspace_settings.name = 'Non-Color'
+        nt.links.new(mp.outputs[0], n.inputs["Vector"])
+        return n
+    nt.links.new(img(f"{aid}_diff_1k.jpg").outputs["Color"], p.inputs["Base Color"])
+    rg = img(f"{aid}_rough_1k.jpg", False)
+    mr = nt.nodes.new("ShaderNodeMath"); mr.operation = 'MULTIPLY'; mr.inputs[1].default_value = rough_mult
+    nt.links.new(rg.outputs["Color"], mr.inputs[0]); nt.links.new(mr.outputs[0], p.inputs["Roughness"])
+    nm = img(f"{aid}_nor_gl_1k.jpg", False)
+    nmap = nt.nodes.new("ShaderNodeNormalMap"); nmap.inputs["Strength"].default_value = nor
+    nt.links.new(nm.outputs["Color"], nmap.inputs["Color"]); nt.links.new(nmap.outputs[0], p.inputs["Normal"])
+    m.diffuse_color = (0.35, 0.22, 0.12, 1)
     return m
 
 
@@ -143,10 +175,10 @@ M["key_b"] = lib.mat("M_KeyBlack", "#0A0A0A", rough=0.3)
 M["gold"] = lib.mat("M_Gold", "#C9A24A", rough=0.25, metal=1.0)
 M["red_btn"] = lib.mat("M_RedButton", "#D3171C", rough=0.25, coat=0.6, emit="#FF2020", emit_strength=0.4)
 M["steel"] = lib.mat("M_Steel", "#B9BEC4", rough=0.18, metal=1.0)
-M["stair_tread"] = wood_mat("M_Tread", "#9A6A3E", "#7C5230", scale=2.0, rough=0.45)
+M["stair_tread"] = pbr_mat("M_Tread", "wood_floor", scale=1.1, rot=90, rough_mult=0.85)
 M["riser"] = lib.mat("M_Riser", "#EEE8DC", rough=0.6)
 M["hall_wall"] = wall_material()
-M["hall_floor"] = wood_mat("M_HallFloor", "#A3734A", "#86592F", scale=1.5, rough=0.5)
+M["hall_floor"] = pbr_mat("M_HallFloor", "herringbone_parquet", scale=0.55, rough_mult=0.8)
 M["glass_shard"] = lib.mat("M_Shard", "#DDEFF7", rough=0.05, emit="#EAF7FF", emit_strength=0.5, spec=1.0)
 
 
@@ -308,6 +340,30 @@ def build_piano(C, name="Piano"):
         if o.name.startswith(name + "_") and o.parent is None:
             o.parent = root
     return root
+
+
+def rope_curve(name, pts, radius, C, closed=False, parent=None):
+    cu = bpy.data.curves.new(name, 'CURVE'); cu.dimensions = '3D'
+    sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
+    for p, co in zip(sp.points, pts):
+        p.co = (co[0], co[1], co[2], 1.0)
+    sp.use_cyclic_u = closed
+    cu.bevel_depth = radius; cu.bevel_resolution = 2; cu.use_fill_caps = True
+    ob = bpy.data.objects.new(name, cu); C.objects.link(ob)
+    ob.data.materials.append(M["rope"])
+    if parent is not None:
+        ob.parent = parent
+    return ob
+
+
+def rope_harness(root, C, name):
+    """Rope tied around the piano: a band round the body + a bridle over the lid to a knot (rope attaches there)."""
+    xw, y0, y1, zb = 0.635, -0.255, 0.355, 0.93
+    band = rope_curve(name + "_harness_band", [(-xw, y0, zb), (xw, y0, zb), (xw, y1, zb), (-xw, y1, zb)], 0.016, C, True, root)
+    brid = rope_curve(name + "_harness_bridle", [(-xw, 0.05, zb), (-xw, 0.05, 1.2), (-0.3, 0.05, 1.235), (0.0, 0.05, 1.28),
+                                                 (0.3, 0.05, 1.235), (xw, 0.05, 1.2), (xw, 0.05, zb)], 0.016, C, False, root)
+    knot = lib.icosphere(name + "_harness_knot", 0.042, 2, (0, 0.05, 1.28), C); lib.assign(knot, M["rope"]); knot.parent = root
+    return [band, brid, knot]
 
 
 def build_box():
@@ -508,8 +564,10 @@ def build_stairwell():
 ext = build_exterior()
 wroot, wspin = build_wheel()
 piano = build_piano(C_props, "Piano")
+rope_harness(piano, C_props, "Piano")
 piano.location = (LOAD_X, ROPE_Y, 0.0)
 piano2 = build_piano(C_int, "PianoHall")
+rope_harness(piano2, C_int, "PianoHall")
 cabin = build_box()
 cabin.location = (LOAD_X, ROPE_Y, 0.0)
 stages = build_shaft()
