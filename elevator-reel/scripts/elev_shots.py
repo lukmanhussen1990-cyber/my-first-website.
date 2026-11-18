@@ -113,6 +113,7 @@ hmid = empty("HandsMid")
 c = hmid.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle_01_r"
 c = hmid.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle_01_l"; c.influence = 0.5
 hand_r = empty("HandR"); c = hand_r.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle_01_r"
+hand_l = empty("HandL"); c = hand_l.constraints.new('COPY_LOCATION'); c.target = rig; c.subtarget = "middle_01_l"
 # anchors
 p_top = empty("PianoTop", piano, (0, 0.05, 1.28))                # harness knot
 ph_top = empty("PianoHallTop", pianoH, (0, 0.05, 1.28))         # harness knot
@@ -132,6 +133,7 @@ c1 = stretch(rope_l, p_top, "toPiano"); c2 = stretch(rope_l, cab_top, "toCabin")
 rope_c = rope_y_mesh("RopeCnt", 0.026); rope_c.location = (CNT_X, RY, WHEEL.z)
 c3 = stretch(rope_c, hmid, "toHands"); c4 = stretch(rope_c, rock_top, "toRock"); c5 = stretch(rope_c, hand_r, "toHandR")
 c6 = stretch(rope_c, hang_pt, "toHang")
+c7 = stretch(rope_c, hand_l, "toHandL")
 belt = rope_y_mesh("Belt", 0.018, "M_Iron")
 belt.location = motor.location + Vector((0, -0.26, 0.42))
 stretch(belt, wroot, "toWheel"); belt.constraints["toWheel"].influence = 1.0
@@ -324,7 +326,13 @@ vis([rope_c], [(j0 + 4, S["19"][0] + 4)])
 infl(rope_l, "toPiano", 1, 1.0); infl(rope_l, "toCabin", 1, 0.0)
 infl(rope_c, "toHands", 1, 1.0); infl(rope_c, "toRock", 1, 0.0); infl(rope_c, "toHandR", 1, 0.0); infl(rope_c, "toHang", 1, 0.0)
 infl(rope_c, "toHands", S["07"][0], 0.0); infl(rope_c, "toHang", S["07"][0], 1.0)          # "Clever!": let go, rope hangs beside him
-infl(rope_c, "toHands", S["08a"][0], 1.0); infl(rope_c, "toHang", S["08a"][0], 0.0)
+infl(rope_c, "toHands", S["08a"][0], 0.0); infl(rope_c, "toHang", S["08a"][0], 0.0); infl(rope_c, "toHandL", 1, 0.0)
+# 08a hand-over-hand: the rope runs down through the upper hand INTO the lower hand (switch when the hands cross)
+for j_, f_ in enumerate(range(S["08a"][0], S["08a"][1], 7)):
+    low_ = "toHandR" if j_ % 2 else "toHandL"
+    ff_ = S["08a"][0] if j_ == 0 else f_ - 3
+    infl(rope_c, low_, ff_, 1.0); infl(rope_c, "toHandL" if low_ == "toHandR" else "toHandR", ff_, 0.0)
+infl(rope_c, "toHandL", S["08b"][0], 0.0); infl(rope_c, "toHandR", S["08b"][0], 0.0); infl(rope_c, "toHands", S["08b"][0], 1.0)
 # 07 clever: on the street holding counter rope
 STREET = (CNT_X + 0.02, RY + 0.36, 0.0)
 SIDE = (CNT_X + 0.3, RY + 0.02, 0.0)
@@ -356,7 +364,7 @@ for j, f in enumerate(range(l0, l1, 7)):
     z = 0.5 * (f - l0) / max(1, l1 - l0)
     key_obj(piano, f, loc=PIANO_LOAD + Vector((0, 0, z)))
     wheel_turn(f, z)
-A.fingers(l0, "r", 75, thumb=35)
+A.fingers(l0, "r", 75, thumb=35); A.fingers(l0, "l", 75, thumb=35)        # both fists on the rope (left had the temple-tap index out)
 A.head(l0, -12, 0, 0); A.spine(l0, -4)
 A.face(l0, "serious", 1.0, extra={"jawOpen": 0.3, "mouthStretchLeft": 0.7, "mouthStretchRight": 0.7})
 # 08b he gets lifted instead
@@ -723,6 +731,14 @@ for j_, f in enumerate(range(pb0, near - 3, 4)):
     up = j_ % 2
     NB_.hands(f, r=(-0.22, -0.72, 1.5 + 0.12 * up))
     NB_.face(f, "disgusted", 1.0, extra={"jawOpen": 0.35 + 0.3 * up, "browDownLeft": 1.0, "browDownRight": 1.0})
+# ...ducks the near miss, then pops right back out, even angrier
+NB_.place(near + 9, (-6.4, -1.5, NWZ - 0.2), -12, constant=False)
+NB_.place(near + 14, (-6.4, -2.14, NWZ), -12, constant=False)
+NB_.spine(near + 9, -10); NB_.spine(near + 14, 58, 0, 0); NB_.head(near + 14, -40, 20, 0)
+for j_, f in enumerate(range(near + 14, pb1, 3)):
+    up = j_ % 2
+    NB_.hands(f, r=(-0.22, -0.74, 1.52 + 0.14 * up))
+    NB_.face(f, "disgusted", 1.0, extra={"jawOpen": 0.4 + 0.35 * up, "browDownLeft": 1.0, "browDownRight": 1.0, "noseSneerLeft": 1.0})
 polish.life_noise(O["Grandma"], k=0.8, seed=31)
 polish.life_noise(O["Neighbour"], k=0.8, seed=32)
 
@@ -806,6 +822,24 @@ def follow_cam(cam, f0, f1, off, top_dz, lens0, lens1, win=2, step=2):
 follow_cam(cams["01a"], a0, a1 - 1, (0.12, -0.8), 0.0, 60, 66)
 follow_cam(cams["01b"], b0, b1 - 1, (-0.18, -0.7), 0.0, 64, 74)
 follow_cam(cams["18b"], yb0, yb1 - 1, (0.12, -0.8), 0.0, 60, 64)
+# ---- soft cuts: extra camera angles inside long shots (keep cuts every 1-2 s; no pose holds at these frames)
+def CAMX(name, f0, f1, loc, tgt, lens, loc2=None, tgt2=None):
+    cam = make_cam("CAM_" + name, loc, tgt, lens, f0, sc, C_cam)
+    if loc2 is not None:
+        cam_move(cam, f0, f1 - 1, loc, tgt, loc2, tgt2 or tgt, lens, lens)
+    cams[name] = cam
+    return cam
+
+
+sc.frame_set(TON)
+PZ_ = pianoH.matrix_world.translation.copy()
+CAMX("02b", TON - 8, c1_, (SX + 1.9, PZ_.y - 0.55, PZ_.z + 0.95), (SX, PZ_.y + 0.35, PZ_.z + 0.55), 30,
+     (SX + 1.8, PZ_.y - 0.45, PZ_.z + 0.95), (SX, PZ_.y + 0.35, PZ_.z + 0.55))                  # piano slips back
+H3c = step_pos(K0 + 3)
+CAMX("03b", d0 + 40, d1, (SX + 0.5, H3c.y - 0.95, H3c.z + 1.62), (SX, H3c.y + 0.05, H3c.z + 1.5), 45,
+     (SX + 0.47, H3c.y - 0.88, H3c.z + 1.62), (SX, H3c.y + 0.05, H3c.z + 1.5))                   # pained face close-up
+CAMX("09b", LAND + 30, n1, (CNT_X + 1.55, RY - 2.25, 1.35), (CNT_X + 0.85, RY - 0.25, 1.12), 35,
+     (CNT_X + 1.5, RY - 2.1, 1.35), (CNT_X + 0.85, RY - 0.25, 1.12))                            # dusts off hands, proud
 shake(cams["09"], LAND, LAND + 10, 1.2, seed=1)
 shake(cams["11"], hit1, hit1 + 8, 0.9, seed=2)
 shake(cams["11"], hit2, hit2 + 8, 0.9, seed=3)

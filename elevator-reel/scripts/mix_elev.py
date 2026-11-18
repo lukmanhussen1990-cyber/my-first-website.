@@ -87,6 +87,8 @@ for k, f in enumerate((x0, x0 + 8, x0 + 15, x0 + 22, x0 + 29)):
     place(sfx.whoosh(0.3, 300 if k % 2 == 0 else 2500, 2500 if k % 2 == 0 else 300, rise=(k % 2 == 0)), sec(f), -12)
 y0 = S["18"][0]
 place(sfx.bell_ding(), sec(y0 + 1), -8); place(sfx.sparkle(), sec(y0 + 4), -14)
+if "18b" in S:                                                        # callback close-up: long relieved exhale
+    place(sfx.breath(0.9, False, 0.9), sec(S["18b"][0] + 3), -15)
 z0 = S["19"][0]
 place(sfx.poof(), sec(z0 + 1), -6); place(sfx.bell_ding(), sec(z0 + 9), -10); place(sfx.whoosh(0.6, 1500, 600, rise=False), sec(z0 + 10), -16)
 for k in range(10):
