@@ -28,7 +28,7 @@ class Actor:
             self.units |= set(e.keys())
         self.units |= {"eyeBlinkLeft", "eyeBlinkRight", "jawOpen", "eyeLookInLeft", "eyeLookOutRight",
                        "eyeLookOutLeft", "eyeLookInRight", "eyeLookUpLeft", "eyeLookUpRight", "eyeLookDownLeft",
-                       "eyeLookDownRight", "mouthPucker"}
+                       "eyeLookDownRight", "mouthPucker", "cheekPuff"}
         self.owners = {u: mc.face_key_owners(rig, u) for u in self.units}
         # hands: follow forearm; feet keep COPY_ROTATION
         for side in ("l", "r"):

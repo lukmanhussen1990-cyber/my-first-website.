@@ -13,8 +13,9 @@ WHEEL = Vector(LY["wheel"]); WR = LY["wheel_r"]; LOAD_X = LY["load_x"]; CNT_X = 
 ROOF_Z = LY["bld_h"] + 0.51
 ST = LY["stair"]; SX, RISE, RUN = ST["x"], ST["rise"], ST["run"]
 SLOPE = math.atan2(RISE, RUN)
-words = json.load(open("/opt/work/elev/words.json"))["words"]
-VO_DUR = words[-1]["end"]
+_wj = json.load(open("/opt/work/elev/words.json"))
+words = _wj["words"]
+VO_DUR = _wj["duration"] if not _wj.get("estimated", True) else words[-1]["end"]     # real VO: file length; estimate: last word
 FPS = 30
 TOTAL = int(math.ceil((VO_DUR + 0.5) * FPS))
 sc.frame_start, sc.frame_end = 1, TOTAL
@@ -36,7 +37,7 @@ SHOTS = [("01a", 0.0), ("01b", ws(6) - 0.1), ("02", ws(9) - 0.05), ("03", ws(16)
          ("04b", ws(30) - 0.05), ("05a", ws(37) - 0.05), ("05b", ws(39) - 0.05), ("06", ws(46) - 0.05), ("07", ws(53) - 0.08),
          ("08a", ws(54) - 0.05), ("08b", ws(61) - 0.05), ("09", ws(66) - 0.05), ("10", ws(76) - 0.05), ("11", ws(83) - 0.05), ("11b", ws(87) - 0.05),
          ("12", ws(92) - 0.05), ("13", ws(99) - 0.05), ("14", ws(107) - 0.05), ("15", ws(114) - 0.05), ("16", ws(119) - 0.05),
-         ("17a", ws(125) - 0.05), ("17b", ws(131) - 0.05), ("18", ws(137) - 0.05), ("19", ws(143) - 0.05)]
+         ("17a", ws(125) - 0.05), ("17b", ws(131) - 0.05), ("18", ws(137) - 0.05), ("18b", ws(138) - 0.05), ("19", ws(143) - 0.05)]
 S = {}
 for i, (n, t) in enumerate(SHOTS):
     f0 = F(max(0.0, t))
@@ -234,6 +235,33 @@ for i, f in enumerate(range(a0 + 8, c0_, 9)):
                (R.uniform(-0.3, 0.3), -0.4, R.uniform(0.3, 0.8)), f, f + 14, size=0.0055)
 vis(pianoH, [(1, d1 + 1)])
 vis(strap, [(1, d1 + 1)])
+
+
+def fx_star(name, loc, f, face_pt, size=0.12, mat=None):
+    """Comic impact star (flat, emissive) popping in at frame f, facing face_pt."""
+    bmS = bmesh.new()
+    vs_ = []
+    for k in range(16):
+        r_ = size if k % 2 == 0 else size * 0.42
+        a_ = math.pi * 2 * k / 16
+        vs_.append(bmS.verts.new((r_ * math.cos(a_), r_ * math.sin(a_), 0)))
+    bmS.faces.new(vs_)
+    ob = lib.mesh_from_bmesh(name, bmS, C_fx, smooth=False)
+    lib.assign(ob, mat or lib.mat("M_Star", "#FFE14D", emit="#FFD21F", emit_strength=3.0))
+    ob.location = loc
+    ob.rotation_euler = (Vector(face_pt) - Vector(loc)).to_track_quat('Z', 'Y').to_euler()
+    ob.visible_shadow = False
+    vis(ob, [(f, f + 9)])
+    key_obj(ob, f, scale=0.0); key_obj(ob, f + 2, scale=1.3); key_obj(ob, f + 5, scale=1.0); key_obj(ob, f + 9, scale=0.0)
+    return ob
+
+
+# 03: "crack!" - comic impact star at his lower back, synced with the crack SFX (d0 + 3)
+sc.frame_set(d0 + 3)
+sp1_ = rig.matrix_world @ rig.pose.bones["spine_01"].head
+H3_ = step_pos(K0 + 3)
+fx_star("CrackStar", sp1_ + Vector((0.2, 0.12, 0.02)), d0 + 3, (SX + 1.2, H3_.y - 1.6, H3_.z + 1.3), 0.11)
+fx_star("CrackStar2", sp1_ + Vector((0.24, 0.16, 0.14)), d0 + 5, (SX + 1.2, H3_.y - 1.6, H3_.z + 1.3), 0.06)
 
 # ================================================================== SHOT 04-05: rope from the roof
 e0, e1 = S["04a"]; g0, g1 = S["04b"]; h0, h1 = S["05a"]; i0, i1 = S["05b"]
@@ -576,7 +604,8 @@ for k5, (nm, rotz, dz) in enumerate((("ArrowUp", 0, 1), ("ArrowDown", 180, -1)))
     key_obj(ao, x0, scale=0.0) if dz > 0 else None
     key_obj(ao, x0 + 4 + (0 if dz > 0 else 8), scale=1.0)
 # 18: arrived at the top, ding
-for f in (y0, y1):
+yb0, yb1 = S["18b"]
+for f in (y0, y1, yb1 - 1):                       # yb1 == z0 (shot 19 re-places him on the street at that frame)
     key_obj(cabin, f, loc=(LOAD_X, RY, 7.2))
     key_obj(piano, f, loc=(LOAD_X - 0.2, RY + 0.25, 7.32), rot=(0, 0, 90))
     A.place(f, (LOAD_X + 0.1, RY + 0.15, 7.32), 0, constant=False)
@@ -599,6 +628,16 @@ for i in range(5):
     stx.location = (LOAD_X + R.uniform(-0.9, 0.9), RY - 1.0, 7.4 + R.uniform(0.2, 2.2))
     key_obj(stx, fsp, scale=0.0); key_obj(stx, fsp + 4, scale=0.12); key_obj(stx, fsp + 9, scale=0.0)
     vis(stx, [(fsp, fsp + 10)])
+# 18b: callback to the opening - same mouth+chest framing ("You finally got it up."), now a relieved, proud exhale
+A.hands(yb0, l=(0.21, 0.02, 1.0), r=(-0.21, 0.02, 1.0), el=(0.5, 0.1, 1.15), er=(-0.5, 0.1, 1.15))
+A.fingers(yb0, "l", 30, thumb=10); A.fingers(yb0, "r", 30, thumb=10)
+A.spine(yb0, -3); A.head(yb0, -4, 0, 0)
+A.face(yb0, "neutral", 1.0, extra={"mouthPucker": 0.7, "cheekPuff": 0.6, "jawOpen": 0.08})            # "phewww"
+A.clav(yb0 + 2, "l", up=7); A.clav(yb0 + 2, "r", up=7); A.spine(yb0 + 2, -7)                          # big breath in
+A.face(yb0 + 9, "grin", 1.0, extra={"jawOpen": 0.05})
+A.clav(yb0 + 14, "l", up=-2); A.clav(yb0 + 14, "r", up=-2); A.spine(yb0 + 14, -4)                       # ...and out
+A.face(yb1 - 4, "grin", 1.0, extra={"jawOpen": 0.05, "mouthSmileLeft": 1.0, "mouthSmileRight": 1.0})
+A.clav(yb1 - 1, "l", up=0); A.clav(yb1 - 1, "r", up=0)
 # 19: poof -> modern elevator; doors open; him + piano inside; confetti
 big = fx.poof("BigPoof19", C_fx, (LOAD_X, RY - 1.0, 2.5), z0 + 1, size=3.0, dur=12)
 vis(modern, [(z0 + 3, TOTAL + 10)])
@@ -735,6 +774,7 @@ cams["17a"] = CAM("17a", (LOAD_X - 0.15, RY - 1.45, ZC + 1.55), (LOAD_X + 0.45, 
                   (LOAD_X - 0.12, RY - 1.38, ZC + 1.55), (LOAD_X + 0.45, RY - 0.4, ZC + 1.35))
 cams["17b"] = CAM("17b", (LOAD_X + 3.0, RY - 9.0, 1.2), (LOAD_X, RY, 5.0), 20, (LOAD_X + 2.9, RY - 8.7, 1.25), (LOAD_X, RY, 5.1))
 cams["18"] = CAM("18", (LOAD_X + 1.6, RY - 3.6, 7.9), (LOAD_X + 0.9, RY + 0.6, 9.5), 26, (LOAD_X + 1.55, RY - 3.4, 7.95), (LOAD_X + 0.9, RY + 0.6, 9.55))
+cams["18b"] = CAM("18b", (LOAD_X + 0.2, RY - 0.7, 8.9), (LOAD_X + 0.1, RY + 0.1, 8.7), 60)
 cams["19"] = CAM("19", (MOD.x + 1.0, MOD.y - 4.2, 0.55), (MOD.x, MOD.y + 0.6, 1.5), 24, (MOD.x + 0.9, MOD.y - 3.7, 0.6), (MOD.x, MOD.y + 0.6, 1.55))
 
 
@@ -765,6 +805,7 @@ def follow_cam(cam, f0, f1, off, top_dz, lens0, lens1, win=2, step=2):
 
 follow_cam(cams["01a"], a0, a1 - 1, (0.12, -0.8), 0.0, 60, 66)
 follow_cam(cams["01b"], b0, b1 - 1, (-0.18, -0.7), 0.0, 64, 74)
+follow_cam(cams["18b"], yb0, yb1 - 1, (0.12, -0.8), 0.0, 60, 64)
 shake(cams["09"], LAND, LAND + 10, 1.2, seed=1)
 shake(cams["11"], hit1, hit1 + 8, 0.9, seed=2)
 shake(cams["11"], hit2, hit2 + 8, 0.9, seed=3)

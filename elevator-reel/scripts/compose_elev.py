@@ -7,7 +7,8 @@ import numpy as np
 from PIL import Image
 import compose as C  # reuse text_layer / bounce_scale / vignette
 
-words = json.load(open("/opt/work/elev/words.json"))["words"]
+_wvo = "/opt/work/elev/words_vo.json"                       # captions = what is actually spoken (once the VO exists)
+words = json.load(open(_wvo if os.path.exists(_wvo) else "/opt/work/elev/words.json"))["words"]
 shots = json.load(open("/opt/work/elev/shots.json"))
 TOTAL = max(v[1] for v in shots.values()) - 1
 FPS = 30
