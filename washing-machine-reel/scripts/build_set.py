@@ -151,6 +151,9 @@ def build_room(C):
         bb = lib.box(name + "_base", (size[0] + (0.02 if size[0] > 1 else 0.06), size[1] + (0.06 if size[0] > 1 else 0.02), 0.16),
                      (loc[0], loc[1], 0.08), C)
         lib.assign(bb, base_m)
+    ceil = lib.box("Ceiling", (sx, sy, 0.2), (cx, cy, h + 0.1), C)
+    lib.assign(ceil, lib.mat("M_Ceiling", "#DADDD6", rough=0.9))
+    ceil.visible_shadow = False
     # windows on back + right + left walls
     frame_m = lib.mat("M_WindowFrame", "#EDEDE6", rough=0.45)
     glass_m = bpy.data.materials.new("M_WindowSky")
@@ -220,10 +223,11 @@ def build_lamps(C):
     for x in [-20, -15.5, -11, -6.5, -2, 2.5, 7]:
         for y in [-13.5, -9, -4.5, 0.6]:
             positions.append((x, y))
+    low = [(-1.15, 2.1), (1.25, 2.6), (3.9, 1.9)]
     bulb = lib.icosphere("BulbSrc", 0.07, 2, collection=C); lib.assign(bulb, bulb_m)
     cord = lib.cylinder("CordSrc", 0.012, 1.0, collection=C); lib.assign(cord, cord_m)
-    for i, (x, y) in enumerate(positions):
-        z_bottom = 3.95
+    for i, (x, y) in enumerate(positions + low):
+        z_bottom = 3.95 if i < len(positions) else 2.85
         l = src.copy(); C.objects.link(l)
         l.location = (x, y, z_bottom - zmin * l.scale.z)
         l.name = f"Lamp_{i}"

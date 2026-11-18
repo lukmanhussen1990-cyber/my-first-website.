@@ -2,6 +2,7 @@
 import bpy, sys, os, time
 argv = sys.argv[sys.argv.index("--") + 1:]
 a, b = int(argv[0]), int(argv[1])
+step = int(argv[2]) if len(argv) > 2 else 1
 OUT = "/opt/work/render/frames"
 os.makedirs(OUT, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath="/opt/work/blend/anim.blend")
@@ -16,7 +17,7 @@ sc.render.image_settings.color_mode = 'RGB'
 sc.render.image_settings.color_depth = '8'
 sc.render.image_settings.compression = 15
 t0 = time.time(); n = 0
-for f in range(a, b + 1):
+for f in range(a, b + 1, step):
     path = os.path.join(OUT, f"{f:04d}.png")
     if os.path.exists(path) and os.path.getsize(path) > 10000:
         continue

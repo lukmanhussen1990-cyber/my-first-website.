@@ -58,7 +58,7 @@ def W(p):
 PLACES = [
     ("1a", (0.0, 0.02, 0.0), 0), ("5b", (-12.8, -14.2, 0), 0), ("6a", (-8.6, -15.4, 0), 0),
     ("6b", (-9.0, -15.4, 0), -154), ("7a", (3.45, -1.25, 0), -131), ("7b", (2.85, 0.95, 0), 0),
-    ("8a", (1.75, -0.15, 0), -20), ("9a", (1.62, -0.5, 0), 55), ("12a", (1.6, -1.05, 0), -25),
+    ("8a", (1.75, -0.15, 0), -20), ("8b", (0.5, 2.4, 0), 0), ("9a", (1.62, -0.5, 0), 55), ("12a", (1.6, -1.05, 0), -25),
     ("12c", (1.72, -1.32, 0), 124), ("13a", (1.55, -0.85, 0), -15),
 ]
 for n, loc, rz in PLACES:
@@ -179,6 +179,8 @@ for i in range(14):
     v = W((math.cos(a) * R.uniform(0.3, 0.9), math.sin(a) * R.uniform(0.3, 0.9), R.uniform(1.6, 2.6)))
     d = fx.droplet(f"Splash1_{i}", C_fx, TUBW + W((math.cos(a) * 0.08, math.sin(a) * 0.08, 0.02)), v, SPLASH_F, SPLASH_F + 24,
                    size=R.uniform(0.008, 0.014), floor_z=TUBW.z - 0.01)
+import polish
+polish.ripple_rings(C_fx, TUBW, SPLASH_F, n=3)
 key_node_value(tw_mat, "Dirt", 1, 0.0)
 key_node_value(tw_mat, "Dirt", SPLASH_F, 0.0)
 key_node_value(tw_mat, "Dirt", SPLASH_F + 30, 0.7)
@@ -336,10 +338,10 @@ A.spine(LAND + 2, -6, 12, 0)
 A.blink(LAND + 22)
 # 4c take forever: tired slump
 A.face(q0, "tired", 1.0)
-A.head(q0, 10, 25, -6)
+A.head(q0, -14, 32, -4)
 A.spine(q0, 12, 8, 0)
 A.hands(q0, l=(0.24, -0.1, 0.88), r=(-0.24, -0.1, 0.88))
-A.head(q1, 14, 22, -8)
+A.head(q1 - 1, 12, 26, -8)
 A.spine(q1, 15, 8, 0)
 
 # =================================================================== SHOT 5/6 crowd
@@ -434,6 +436,7 @@ for e in inst:
         tt = k5 / 30.0
         key_obj(e, fs + k5, loc=(p0.x + tdir * 0.9 * tt, p0.y, p0.z - 0.5 * 9.8 * tt * tt),
                 rot=(R.uniform(-8, 8), tdir * min(80, 140 * tt), rzd))
+polish.embers(C_fx, (PX0 + 0.5, PX1 - 0.5, build_pit.PIT['y0'] + 0.5, build_pit.PIT['y1'] - 0.5, -5.5), DROP0 + 2, S['7a'][0], n=110)
 pit_objs = [o for o in bpy.data.collections["PIT"].objects if not o.name.startswith(("Trapdoor", "Hinge"))]
 for o in pit_objs:
     lib.visible_between(o, DROP0 - 1, S["7a"][0])
@@ -548,8 +551,15 @@ A.head(v0 + 7, 10, 0, 0)
 A.head(v0 + 13, -8, 0, 4)
 A.head(v0 + 19, 6, 0, 2)
 A.spine(v0, 2)
-A.hands(v0, l=(0.15, -0.38, 1.35), el=(0.4, 0.2, 1.1))   # thumbs-up hand near chest
-A.fingers(v0, "l", 85, thumb=-10)
+A.face(v0 + 5, "grin", 1.0, extra={"eyeBlinkRight": 0.95, "browOuterUpLeft": 0.9, "cheekSquintRight": 1.0})
+A.hands(v0, r=(-0.24, -0.12, 1.45), er=(-0.62, 0.15, 1.35))
+for kk, ft in enumerate(range(v0 + 4, v1, 4)):
+    off = 0.0 if kk % 2 == 0 else 0.018
+    A.hands(ft, r=(-0.2 - off, -0.08 - off * 0.5, 1.58 - off), er=(-0.62, 0.15, 1.35))
+A.fingers(v0 + 3, "r", 82, thumb=35)
+for bn in ("index_01_r", "index_02_r", "index_03_r"):
+    A.rot(v0 + 3, bn, 0, 0, 0)
+A.head(v0 + 4, -4, 0, -7)
 
 # =================================================================== SHOT 8 sore arm + motor
 a0, a1 = S["8a"]
@@ -557,6 +567,7 @@ a20, a21 = S["8a2"]
 A.feet(a0)
 A.spine(a0, 6, 0, -4); A.head(a0, 8, -8, -6)
 A.face(a0, "tired", 1.0)
+A.face(a0 + 12, "tired", 1.0, extra={"eyeSquintRight": 0.8, "mouthStretchRight": 0.6, "browDownRight": 0.5})
 A.fingers(a0, "l", 30)
 A.fingers(a0, "r", 20)
 for k3, f in enumerate(range(a0, a21 + 1, 6)):
@@ -784,7 +795,8 @@ for i in range(24):
     f = pmp0 + 3 + int(i * 1.5)
     dd = fx.droplet(f"DrainSplash_{i}", C_fx, DR + W((1.36, -1.16, 0.01)), (R.uniform(-0.5, 0.5), R.uniform(-0.5, 0.5), R.uniform(0.8, 1.4)),
                f, f + 10, size=0.016, floor_z=0.0)
-    dd.active_material = bpy.data.materials["M_BrownPuddle"]
+    dd.material_slots[0].link = 'OBJECT'
+    dd.material_slots[0].material = bpy.data.materials["M_BrownPuddle"]
 key_obj(drum_water, pmp0, scale=(1, 1, 1))
 key_obj(drum_water, pmp1, scale=(1, 1, 0.05))
 # 11d rinse
@@ -894,7 +906,7 @@ key_obj(drum_water, SPIN_FAST, scale=(1, 1, 1.0))
 key_obj(drum_water, SPIN_FAST + 30, scale=(1, 1, 0.02))
 # 12d fling droplets radially
 fl0, fl1 = S["12d"]
-for i in range(260):
+for i in range(380):
     f = R.randint(SPIN_FAST + 4, fl1 - 4)
     a = R.uniform(0, 2 * math.pi)
     yy = R.uniform(-0.22, 0.22)
@@ -979,17 +991,17 @@ cams["3a"] = CAM("3a", (0.95, -1.5, 1.38), (0.12, -0.5, 1.07), 34, (0.9, -1.45, 
 cams["3b"] = CAM("3b", (0.05, -1.05, 1.78), (0, -0.48, 1.07), 30, (0.04, -1.02, 1.74), (0, -0.48, 1.07))
 cams["4a"] = CAM("4a", (0.1, -2.0, 1.4), (0, -0.1, 1.45), 38, (0.08, -1.9, 1.4), (0, -0.1, 1.46))
 cams["4b"] = CAM("4b", (1.5, -3.7, 1.55), (-0.55, -0.2, 1.0), 26, (1.45, -3.6, 1.56), (-0.55, -0.2, 1.0))
-cams["4c"] = CAM("4c", (0.45, -1.3, 1.5), (-0.25, 0.0, 1.55), 36, (0.42, -1.22, 1.5), (-0.25, 0.0, 1.56))
+cams["4c"] = CAM("4c", (1.0, -2.75, 0.62), (-0.85, -0.15, 1.25), 24, (0.95, -2.62, 0.63), (-0.85, -0.15, 1.27))
 cams["5a"] = CAM("5a", (-5.8, -17.2, 6.9), (-13.6, -5.4, 0.4), 22, (-6.6, -17.2, 6.8), (-14.2, -5.4, 0.4))
 cams["5b"] = CAM("5b", (-12.35, -17.0, 1.55), (-12.8, -13.4, 1.3), 31, (-12.35, -16.8, 1.55), (-12.8, -13.4, 1.3))
 cams["6a"] = CAM("6a", (-14.75, -15.95, 1.5), (-14.75, -12.4, 1.3), 34, (-14.75, -15.8, 1.5), (-14.75, -12.4, 1.32))
 cams["6b"] = CAM("6b", (-6.7, -17.3, 5.7), (-12.8, -7.6, -1.5), 20, (-6.9, -17.2, 5.9), (-12.9, -7.4, -1.7))
 cams["7a"] = CAM("7a", (1.2, -3.05, 1.3), (2.65, -0.65, 0.9), 27, (1.25, -2.95, 1.3), (2.65, -0.65, 0.9))
 cams["7b"] = CAM("7b", (2.5, -2.05, 1.12), (2.78, 0.1, 1.12), 28, (2.52, -1.95, 1.12), (2.78, 0.1, 1.12))
-cams["7c"] = CAM("7c", (2.6, -0.95, 1.6), (2.85, 0.95, 1.58), 45, (2.6, -0.85, 1.6), (2.85, 0.95, 1.58))
-cams["8a"] = CAM("8a", (1.5, -2.05, 1.42), (1.75, -0.15, 1.33), 33, (1.52, -1.95, 1.42), (1.75, -0.15, 1.33))
+cams["7c"] = CAM("7c", (2.68, -0.9, 1.63), (2.85, 0.95, 1.6), 45, (2.68, -0.82, 1.63), (2.85, 0.95, 1.6))
+cams["8a"] = CAM("8a", (1.52, -1.62, 1.45), (1.74, -0.15, 1.36), 38, (1.53, -1.54, 1.45), (1.74, -0.15, 1.36))
 cams["8a2"] = CAM("8a2", (1.42, -0.98, 1.62), (1.73, -0.15, 1.64), 50, (1.43, -0.94, 1.62), (1.73, -0.15, 1.64))
-cams["8b"] = CAM("8b", (3.8, 1.05, 0.78), (2.7, 0.2, 0.42), 31, (3.75, 1.0, 0.76), (2.7, 0.2, 0.42))
+cams["8b"] = CAM("8b", (3.75, 1.2, 0.62), (2.72, 0.28, 0.32), 28, (3.7, 1.14, 0.61), (2.72, 0.28, 0.32))
 cams["9a"] = CAM("9a", (1.55, -3.05, 1.3), (2.45, -0.4, 0.95), 27, (1.6, -2.95, 1.3), (2.45, -0.4, 0.95))
 cams["9b"] = CAM("9b", (2.15, -2.3, 1.15), (2.7, -0.45, 0.92), 32, (2.17, -2.2, 1.15), (2.7, -0.45, 0.92))
 cams["9c"] = CAM("9c", (2.72, -1.6, 0.98), (2.7, -0.4, 0.86), 40, (2.72, -1.5, 0.97), (2.7, -0.4, 0.86))
@@ -997,7 +1009,7 @@ cams["10a"] = CAM("10a", (2.7, -0.98, 1.0), (2.7, -0.1, 0.72), 30, (2.7, -0.93, 
 cams["10b"] = CAM("10b", (2.5, -1.5, 1.08), (2.7, -0.5, 1.08), 34, (2.52, -1.42, 1.08), (2.7, -0.5, 1.1))
 cams["11a"] = CAM("11a", (3.8, -1.65, 1.22), (2.75, -0.3, 0.86), 32, (3.75, -1.58, 1.2), (2.75, -0.3, 0.86))
 cams["11b"] = CAM("11b", (1.55, -2.75, 1.35), (2.7, -0.3, 0.8), 28, (1.6, -2.65, 1.33), (2.7, -0.3, 0.8))
-cams["11c"] = CAM("11c", (3.62, -2.35, 0.42), (3.78, -1.15, 0.1), 32, (3.63, -2.27, 0.4), (3.78, -1.15, 0.1))
+cams["11c"] = CAM("11c", (3.35, -2.2, 0.45), (3.85, -1.25, 0.08), 28, (3.37, -2.12, 0.44), (3.85, -1.25, 0.08))
 cams["11d"] = CAM("11d", (2.6, -1.8, 1.32), (2.7, -0.55, 1.0), 35, (2.62, -1.72, 1.3), (2.7, -0.55, 1.0))
 cams["12a"] = CAM("12a", (1.2, -2.85, 1.36), (1.6, -1.05, 1.38), 34, (1.22, -2.75, 1.36), (1.6, -1.05, 1.38))
 cams["12b"] = CAM("12b", (1.32, -2.4, 1.42), (1.62, -1.4, 1.32), 36, (1.33, -2.33, 1.42), (1.62, -1.4, 1.32))
@@ -1020,6 +1032,23 @@ sc.camera = cams["1a"]
 for o in bpy.data.objects:
     if o.type == 'CAMERA':
         continue
+# ---------------------------------------------------------------- polish pass
+polish.life_noise(rig, k=1.0, seed=11)
+for vi, cl in enumerate(variants):
+    wr = [o for o in cl.objects if o.type == 'ARMATURE'][0]
+    polish.life_noise(wr, k=0.7, seed=20 + vi)
+polish.auto_blinks(rig, first=20, last=TOTAL - 10, gap=(70, 105), seed=5)
+polish.camera_drift(list(cams.values()), deg=0.3, scale=42)
+for n, l0, l1 in (("1b", 46, 54), ("7c", 45, 53), ("8a2", 50, 58), ("12b", 36, 42), ("13b", 26, 29)):
+    polish.lens_punch(cams[n], S[n][0], S[n][1] - 1, l0, l1)
+img = bpy.data.images.load("/opt/work/assets/polyhaven/abandoned_hall_01/abandoned_hall_01_2k.exr", check_existing=True)
+px = img.pixels[:]
+idx = range(0, len(px) - 4, 4 * 97)
+lum = sum(0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2] for i in idx) / len(idx)
+hdri_strength = max(0.3, min(3.0, 0.62 / max(lum, 1e-3)))
+print("HDRI mean lum", lum, "strength", hdri_strength)
+polish.hdri_world(sc, img.filepath, strength=hdri_strength, rot_deg=40)
+polish.better_metals()
 sc["shots"] = {k: list(v) for k, v in S.items()}
 sc.world.use_sun_shadow = False
 bpy.ops.wm.save_as_mainfile(filepath="/opt/work/blend/anim.blend")

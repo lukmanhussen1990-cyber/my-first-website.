@@ -93,8 +93,22 @@ def caption_for(f):
     return None
 
 
+_vig = None
+
+
+def vignette_mask(w, h, strength=0.2):
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    r = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h / 2) / (h / 2)) ** 2) / np.sqrt(2)
+    return (1.0 - strength * np.clip(r, 0, 1) ** 2.4)[..., None]
+
+
 def compose_frame(f):
-    img = Image.open(os.path.join(FRAMES, f"{f:04d}.png")).convert("RGBA")
+    global _vig
+    base = Image.open(os.path.join(FRAMES, f"{f:04d}.png")).convert("RGB")
+    if _vig is None or _vig.shape[0] != base.height:
+        _vig = vignette_mask(base.width, base.height)
+    arr = (np.asarray(base, dtype=np.float32) * _vig).clip(0, 255).astype(np.uint8)
+    img = Image.fromarray(arr).convert("RGBA")
     c = caption_for(f)
     if c:
         s = bounce_scale(f - c["f0"]) if c["bounce"] else 1.0
