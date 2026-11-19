@@ -2,59 +2,41 @@
 
 This is a 51-second vertical short (1080×1920, 24 fps) cut to the user's voiceover (`dale_larru.mp3`, 49.7 s). It has 35 shots, plus a 1.5-second tail for the final sting.
 
-## Status
+## Status: done (2026-11-19)
 
-| Step | State |
-|---|---|
-| Voiceover transcription (faster-whisper `small.en`, word timestamps) | **Done.** Timings are in `captions.py`. Whisper missed "Genius!" (9.30–10.00 s), so it was placed by voice energy. |
-| Cut list: 35 shots, one per phrase, with a separate beat for every "…is" pause before a reveal | **Done:** `cuts.py` |
-| Captions: Montserrat Black, W/Y/R/L styles as in Episode 1 | **Done:** `captions.py`, checked burned in |
-| Sound effects and mix: `audio.py` (Episode 1 recipes plus 14 new ones), −14 LUFS | **Done.** Checked by measurement and spectrogram only, not by ear. |
-| In-world graphics: `make_decals.py` (25 images: signs, badges, vending front, passport, heart stamp, T-shirt print, ECG screens) | **Done.** Re-run it with the `you` portrait render (step 3 below) so the T-shirt, polaroids and passport show your real face. |
-| Shots: `shots.py` | **Written, but not rendered yet.** All 35 run cleanly against a mocked Blender. Prop offsets and the new sit, squat and all-fours poses still need the preview pass. |
-| Dale's design: draft `dale` / `dale_tee` recipes in `scripts/build_character.py` | **Draft.** Needs lookdev and lineup, then user approval, then the picked assets get pinned. |
-| Render and assemble | **Blocked in the session that wrote this.** Its network policy didn't allow `download.blender.org`, `extensions.blender.org`, `files2.makehumancommunity.org` or `mocap.cs.cmu.edu`, and `files.makehumancommunity.org` reset every connection. |
+Rendered and delivered to the user:
+- `larry_ep2_final.mp4`: captions burned in.
+- `larry_ep2_clean.mp4`: no captions.
 
-`larry_ep2_animatic.mp4` (made with `animatic.py`) is a storyboard-card animatic of this exact edit: the final mix and captions over one card per shot. Use it to approve timing before spending about 2.5 hours on the render.
+Both are 1080×1920 at 24 fps, 51 s long, with −14 LUFS audio. Render outputs live in `$LARRY_WORK/ep2/` and are not committed.
 
-## Finishing it (needs a machine or session that can reach the hosts above)
+- **Audio: voiceover only.** The user asked to remove the sound effects and music. Build the track with `audio.py <vo.mp3> <out.wav> voice-only`; without that argument you get the SFX version.
+- **Dale:** redesigned from the user's reference stills of the viral "Dale" shorts. He's a slim Black man of average height with slicked-back `short04` hair. He wears `male_casualsuit05` (grey utility jacket over a dark striped shirt, plus jeans) and brown `shoes01`. For the matching T-shirts he wears `male_casualsuit06` (white tee and jeans). All are CC0 MakeHuman system assets, pinned in `scripts/build_character.py`.
+- **Larry:** built unchanged from his Episode 1 recipe.
+- **Restricted-network setup.** This session couldn't reach Blender, MPFB or CMU, so it used `../setup_env_restricted.sh` instead:
+  - the `bpy==4.5.16` wheel with a `blender` command-line stand-in;
+  - MPFB 2.0.18 uploaded by the user;
+  - CMU clips rebuilt from Hugging Face by `../scripts/glb2amc.py`.
+
+  Rendering took about 13 s per frame per worker, with 2 workers.
+
+## Re-rendering
 
 ```bash
-bash animation/larry/setup_env.sh                      # Blender 4.5.16, MPFB, MakeHuman packs, CMU clips, fonts, whisper
+bash animation/larry/setup_env.sh        # or setup_env_restricted.sh <mpfb zip> when those hosts are blocked
 export LARRY_WORK=~/larry_work; B=/opt/blender-4.5.16-linux-x64/blender
-mkdir -p $LARRY_WORK/chars $LARRY_WORK/ep2
-cp dale_larru.mp3 $LARRY_WORK/vo.mp3                   # the user's voiceover (not committed)
-# 1. cast (Larry etc. are unchanged recipes; dale/dale_tee/larry_tee/you_old are new)
 for c in you larry you_sun you_pj dale dale_tee larry_tee you_old; do
   $B -b --python animation/larry/scripts/build_character.py -- $c $LARRY_WORK/chars/$c.blend; done
-# 2. Dale look-dev: show the user, iterate on SPECS["dale"], then pin the PICKED asset names and commit
-$B -b --python animation/larry/scripts/lookdev.py -- $LARRY_WORK/chars/dale.blend /tmp/dale.png full
-$B -b --python animation/larry/scripts/lineup.py -- $LARRY_WORK/chars /tmp/lineup.png you,larry,dale
-# 3. graphics with your real face (portrait render of "you")
 $B -b --python animation/larry/scripts/lookdev.py -- $LARRY_WORK/chars/you.blend $LARRY_WORK/ep2/you_face.png closeup
+python3 animation/larry/scripts/make_decals.py $LARRY_WORK/decals $LARRY_WORK/ep2/you_face.png     # episode-1 sets
 python3 animation/larry/ep2/make_decals.py $LARRY_WORK/ep2/decals $LARRY_WORK/ep2/you_face.png
-# 4. audio + captions (deterministic; same result as committed)
-python3 -I animation/larry/ep2/audio.py $LARRY_WORK/vo.mp3 $LARRY_WORK/ep2/mix_raw.wav
+python3 -I animation/larry/ep2/audio.py $LARRY_WORK/vo.mp3 $LARRY_WORK/ep2/mix_raw.wav voice-only
 bash animation/larry/ep2/normalize.sh $LARRY_WORK/ep2/mix_raw.wav $LARRY_WORK/ep2/mix.wav
-# 5. preview stills for every shot -> look at them all, fix offsets/poses
-bash animation/larry/ep2/preview_all.sh
-# 6. render (2 workers, 4 samples; ~1224 frames ≈ 2.3 h) and assemble both deliverables
-bash animation/larry/ep2/render_all.sh 2 4
+W=2 bash animation/larry/ep2/preview_all.sh          # 3 stills per shot, check them
+bash animation/larry/ep2/render_all.sh 2 4           # resume a killed shot: render_shot.py ... full 4 <f0> <f1>
 bash animation/larry/ep2/assemble.sh $LARRY_WORK/ep2/larry_ep2_final.mp4 final captions
 bash animation/larry/ep2/assemble.sh $LARRY_WORK/ep2/larry_ep2_clean.mp4 final clean
 ```
-
-### Things to check in the preview pass (first guesses in the code)
-
-- **New static poses.** `pose()` edits one CMU frame. These conventions were taken from the CMU data:
-  - femur rx < 0 swings the thigh forward;
-  - tibia rx > 0 bends the knee;
-  - root rx > 0 pitches the body forward.
-
-  Check `SIT` (bus, driver, boss chair, booth), `SQUAT` (Dale in the vending machine) and `ALL_FOURS` (sniffer-dog Dale). If one comes out mirrored, flip the sign.
-- **Bone-space prop offsets (`on_bone`).** These are the caps, halos, wings, the K-9 vest, the T-shirt prints and Dale's badge. They assume the cmu_mb convention used in Episode 1 (bone +Y runs along the bone, +Z faces forward).
-- **Hand IK targets.** These cover the steering wheel, the steepled fingers, the vending keypad, the boxing guard, the high five and the arms around the shoulders.
-- **Dale's look.** Check that his long ginger hair and beard tint correctly. Hair materials may not be Principled; the build log prints `NO_BSDF` if so.
 
 ## Shot list
 
@@ -63,7 +45,7 @@ bash animation/larry/ep2/assemble.sh $LARRY_WORK/ep2/larry_ep2_clean.mp4 final c
 | sh01 | 0.00 | You just want a normal life. | Sunny living room. You smile, slow push-in. |
 | sh02 | 2.55 | But Larry from accounting | (Episode 1 callback) Larry's head rises over his cubicle wall. |
 | sh03 | 3.80 | is obsessed with you. | A shrine of your polaroids on red string. Larry cradles one, lovestruck. |
-| sh04 | 5.25 | And so is Dale from IT. | Blue server room. Tall Dale rises behind three monitors and waves creepily. Keyboard clatter. |
+| sh04 | 5.25 | And so is Dale from IT. | Blue server room. Dale rises behind three monitors and waves creepily. |
 | sh05 | 7.25 | So you take a different bus to work. | Street. A city bus ("42 NOT YOUR USUAL BUS") glides into the stop. |
 | sh06 | 9.15 | GENIUS! | Seated on the bus: smug, low-angle hero close-up. |
 | sh07 | 10.25 | But the bus driver… is | Push down the aisle toward the driver's back (mustard polo, cap). |

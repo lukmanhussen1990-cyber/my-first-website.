@@ -37,17 +37,13 @@ You finally sleep… but who's tucking you in? LARRY, now a soldier in the army.
 
 The full voiceover text and timings are in `scripts/captions.py`. The cut list is in `scripts/cuts.py` and the shots are in `scripts/shots.py`.
 
-### Episode 2 "Larry & Dale" (in progress: everything except the 3D render; see `ep2/README.md`)
+### Episode 2 "Larry & Dale" (done: 51 s, 35 shots; see `ep2/README.md`)
 
-**Status (2026-11-19).** These are done and committed in `ep2/`:
-- the transcription, cut list (35 shots), captions, SFX and mix;
-- the in-world graphics and the shot code (it passes a mocked-Blender smoke test);
-- a storyboard animatic of the exact edit.
+- The final videos are 51 s long. The audio is **voice only**: the user asked to remove the SFX and music.
+- Dale is designed from the user's reference (the viral "Dale" shorts) and is now pinned in `SPECS`.
+- The render used `setup_env_restricted.sh`, because Blender, MPFB and CMU were unreachable from that session.
 
-Dale's recipe is a **draft** in `scripts/build_character.py` and still needs lookdev and the user's approval. The render didn't happen because that session's network blocked Blender, MPFB, MakeHuman and CMU (see "Network" below). Next step: run `ep2/README.md` → "Finishing it".
-
-
-The user records the voiceover with TTS and uploads it as an mp3. This is the approved script:
+This is the approved script:
 
 > You just want a normal life. But Larry from accounting is obsessed with you. And so is Dale from IT.
 >
@@ -75,11 +71,12 @@ Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The
   - Variants: `larry_b` is a second copy, and `larry_soldier` is the army outfit.
 - **You:** a young man with hair `short02`, a light-blue shirt and tie, and dark grey pants.
   - Variants: `you_sun` (white tee, jean shorts, sunglasses) and `you_pj` (white tee).
-- **Dale from IT (new, design him at the start of episode 2):**
-  - He must look instantly different from Larry in silhouette and colour. For example: tall and skinny, a ginger mullet or long hair, a beard, a hoodie or graphic tee with an IT lanyard, and cargo shorts.
-  - Use assets from the MPFB data folder (`~/.config/blender/4.5/extensions/.user/user_default/mpfb/data`).
-  - Check him with `scripts/lookdev.py` and `scripts/lineup.py`.
-  - Once the user likes him, add `"dale"` to `SPECS` and commit, so he stays the same in every future episode. Also add his CC-BY credits, if any, to `CREDITS.md`.
+- **Dale from IT** (`dale`, `dale_tee`), designed from the user's reference stills of the viral "Dale" shorts:
+  - A slim Black man of average height (race AFR, height 0.68) with slicked-back `short04` hair.
+  - `male_casualsuit05`: grey utility jacket with chest pockets over a dark striped shirt, plus jeans.
+  - Brown `shoes01`.
+  - `dale_tee` wears `male_casualsuit06` (white tee and jeans).
+  - All CC0. Never redesign him.
 - **Supporting cast:** `cop`, `bodyguard`, `soldier`, `soldier2`.
 
 ## Network (cloud sessions)
@@ -174,6 +171,8 @@ python3 animation/larry/scripts/make_decals.py $LARRY_WORK/decals    # signs/lab
 - The ElevenLabs connector had only 4 credits, so don't rely on it for sound effects. `audio.py` synthesizes them.
 
 ## Working with this user
+
+- **Audio:** in Episode 2 they asked for **voiceover only** (no SFX, no music). Use `audio.py ... voice-only` unless they ask otherwise.
 
 - **Keep replies short.** "No other word" means deliver only the requested text (a script, a caption) and nothing else.
 - **Ideas:** they like "top 5" lists of escalation premises, each with a twist. The humour is edgy and absurd. Larry's obsession never ends: no redemption or "he gives up" endings.
