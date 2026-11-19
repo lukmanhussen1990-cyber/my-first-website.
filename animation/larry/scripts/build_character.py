@@ -96,7 +96,7 @@ SPECS = {
     # so he can never change between episodes. Silhouette/colour must read opposite to Larry: tall, skinny, younger,
     # long ginger hair + beard, green hoodie/tee, khaki shorts, no glasses.
     "dale": dict(
-        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=1.0, proportions=0.45, race=CAU),
+        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=0.85, proportions=0.45, race=CAU),
         skin="young_caucasian_male.mhmat", hair="long01.mhclo",
         clothes=[("*hoodie*male*.mhclo", "*hoodie*.mhclo", "elvs_crude_t-shirt_male.mhclo"),
                  "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
@@ -106,7 +106,7 @@ SPECS = {
     ),
     # matching T-shirts (episode 2): plain white tees; the shot attaches the "your face" print to the chest
     "dale_tee": dict(
-        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=1.0, proportions=0.45, race=CAU),
+        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=0.85, proportions=0.45, race=CAU),
         skin="young_caucasian_male.mhmat", hair="long01.mhclo",
         clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
                  ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],

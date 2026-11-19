@@ -188,7 +188,7 @@ def wings():
     return root
 
 
-def angelify(ch, head_y=0.3, wings_y=0.05):
+def angelify(ch, head_y=0.25, wings_y=0.05):
     """Halo over the head and wings on the back (bone-space offsets: tune in preview)."""
     on_bone(ch, halo(), "Head", (0, head_y, 0.0))
     on_bone(ch, wings(), "Spine1", (0, wings_y, -0.12))
@@ -205,9 +205,10 @@ def k9_vest(ch):
     vest = mat_flat("vest", (0.03, 0.03, 0.035), rough=0.6)
     root = empty("k9", (0, 0, 0))
     v = box("k9_body", (0.42, 0.3, 0.42), (0, 0, 0), vest, bevel=0.03); v.parent = root
-    p = decal("k9_patch", f"{D2}/patch_k9.png", 0.34, (0, 0.152, 0.02), rot=(-90, 0, 180)); p.parent = root
+    # vest model space: +Z toward the head, +Y out of the back, +X the dog's left
+    p = decal("k9_patch", f"{D2}/patch_k9.png", 0.34, (0, 0.152, 0.02), rot=(-90, 0, 0)); p.parent = root  # reads from the front
     for x in (-0.213, 0.213):
-        s = decal(f"k9_side{x}", f"{D2}/patch_k9.png", 0.26, (x, 0, 0.02), rot=(90, 0, 90 if x > 0 else -90))
+        s = decal(f"k9_side{x}", f"{D2}/patch_k9.png", 0.26, (x, 0, 0.02), rot=(0, 90 if x > 0 else -90, 0))  # upright
         s.parent = root
     on_bone(ch, root, "Spine", (0, 0.1, 0.09))        # bone +Z points to the belly: centre the vest on the torso
     return root
@@ -483,7 +484,7 @@ def ring_set():
 
 
 def hospital_set(flat_from=None):
-    world_color((0.6, 0.62, 0.6), 0.5)
+    world_color((0.6, 0.62, 0.6), 0.3)
     plane("floor", (10, 10), (0, 0, 0), mat_tex("hfloor", "floor_tiles_02", scale=1.0, tint=(0.85, 0.9, 0.88)),
           uv_scale=0.6)
     wall = mat_tex("hwall", "painted_plaster_wall", scale=1.0, tint=(0.78, 0.9, 0.84))
@@ -497,7 +498,7 @@ def hospital_set(flat_from=None):
     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.3, location=(0, 1.82, 0.88)); p = bpy.context.object
     p.scale = (1.15, 0.5, 0.3); bpy.ops.object.shade_smooth()
     p.data.materials.append(mat_flat("hpillow", (0.95, 0.95, 0.97), rough=0.9))
-    bpy.ops.mesh.primitive_grid_add(x_subdivisions=30, y_subdivisions=30, size=1, location=(0, 0.6, 0.95))
+    bpy.ops.mesh.primitive_grid_add(x_subdivisions=30, y_subdivisions=30, size=1, location=(0, 0.62, 1.05))
     bl = bpy.context.object; bl.name = "blanket"; bl.scale = (1.15, 1.35, 1); bpy.ops.object.transform_apply(scale=True)
     tex = bpy.data.textures.new("hbl", "CLOUDS"); tex.noise_scale = 0.25
     dsp = bl.modifiers.new("d", "DISPLACE"); dsp.texture = tex; dsp.strength = 0.03
@@ -524,9 +525,9 @@ def hospital_set(flat_from=None):
     box("iv_bag", (0.14, 0.04, 0.22), (-0.8, 1.7, 1.75), mat_flat("ivbag", (0.9, 0.95, 1.0), alpha=0.6))
     win = mat_flat("sunset", (1, 1, 1), emit=(1.0, 0.65, 0.4), emit_strength=3.0)
     plane("hwin", (1.6, 1.3), (-2.49, 0.4, 1.6), win, rot=(90, 0, 90))
-    sun(energy=2.2, rot=(65, 0, -80), color=(1.0, 0.75, 0.55))
-    area("fill", (1.5, -2.0, 2.4), (0, 1.0, 0.8), energy=420, size=2.5, color=(0.95, 0.98, 1.0))
-    area("top", (0, 1.0, 2.9), (0, 1.0, 0.7), energy=200, size=1.5)
+    sun(energy=1.6, rot=(65, 0, -80), color=(1.0, 0.72, 0.5))
+    area("fill", (1.5, -2.0, 2.4), (0, 1.0, 0.8), energy=200, size=2.5, color=(0.95, 0.98, 1.0))
+    area("top", (0, 1.0, 2.9), (0, 1.0, 0.7), energy=90, size=1.5)
 
 
 def you_in_hospital_bed(subdiv=True):
@@ -543,7 +544,7 @@ _CLOUD = {}
 
 def cloud(loc, r=1.0, seed=0):
     if not _CLOUD:
-        m = mat_flat("cloud", (1.0, 1.0, 1.0), rough=1.0, emit=(1.0, 0.97, 0.92), emit_strength=0.35)
+        m = mat_flat("cloud", (0.98, 0.95, 0.9), rough=1.0, emit=(1.0, 0.93, 0.85), emit_strength=0.1)
         tex = bpy.data.textures.new("cloudnoise", "CLOUDS"); tex.noise_scale = 0.7
         _CLOUD.update(m=m, tex=tex)
     rnd = random.Random(seed)
@@ -560,9 +561,9 @@ def cloud(loc, r=1.0, seed=0):
 
 def heaven_set(gate_open_frames=None):
     """Clouds, golden pearly gates (two hinged halves) and the HEAVEN sign. Gate centre at (0, 4, 0)."""
-    world_color((1.0, 0.95, 0.85), 1.6)
-    plane("cloudfloor", (200, 200), (0, 0, -0.05), mat_flat("cloudbase", (1.0, 0.99, 0.96), rough=1.0,
-                                                            emit=(1.0, 0.97, 0.9), emit_strength=0.4))
+    world_color((1.0, 0.86, 0.62), 0.75)
+    plane("cloudfloor", (200, 200), (0, 0, -0.05), mat_flat("cloudbase", (0.95, 0.9, 0.82), rough=1.0,
+                                                            emit=(1.0, 0.9, 0.75), emit_strength=0.12))
     rnd = random.Random(11)
     for i in range(36):
         x, y = rnd.uniform(-16, 16), rnd.uniform(-4, 30)
@@ -589,9 +590,9 @@ def heaven_set(gate_open_frames=None):
             key_rot(hinge, 1, (0, 0, 0)); key_rot(hinge, f0, (0, 0, 0)); key_rot(hinge, f1, (0, 0, -side * 95))
         halves.append(hinge)
     decal("heaven_sign", f"{D2}/sign_heaven.png", 2.6, (0, 3.95, 4.95), rot=(90, 0, 0), alpha=True, emit=0.6)
-    sun(energy=4.0, rot=(35, 0, 180), color=(1.0, 0.92, 0.75))
-    area("glow", (0, 7.0, 3.5), (0, 0, 1.5), energy=2500, size=4.0, color=(1.0, 0.85, 0.55))
-    area("fill", (0, -5.0, 3.0), (0, 3.0, 1.5), energy=900, size=4.0, color=(1.0, 0.97, 0.92))
+    sun(energy=3.0, rot=(35, 0, 160), color=(1.0, 0.88, 0.68))
+    area("glow", (0, 7.0, 3.5), (0, 0, 1.5), energy=1500, size=4.0, color=(1.0, 0.8, 0.5))
+    area("fill", (0, -5.0, 3.0), (0, 3.0, 1.5), energy=500, size=4.0, color=(1.0, 0.95, 0.88))
     return halves
 
 
@@ -770,7 +771,7 @@ def lap_scene(n):
     pose(dale, SIT)
     bpy.context.scene.frame_set(1)
     thigh = (you.world("LeftLeg") + you.world("Hips")) / 2
-    settle(dale, "Hips", thigh.z + 0.2)
+    settle(dale, "Hips", thigh.z + 0.14)
     return you, dale
 
 
@@ -798,13 +799,12 @@ def sh10():
     face(you, 1, UNEASY)
     face(dale, 1, SERENE)
     face(dale, 8, CREEPY)
-    turn = empty("yourface", (0, 0, 0))
-    you.bake_follow(turn, "Head", n, offset=(0.0, -0.08, 0.08))
+    bpy.data.objects["pole2"].hide_render = True          # the aisle pole crossed the lens
     look_at(dale, (-2.0, 0.7, 1.6), 0.6)
-    stare_at(dale, turn, 2, 10, influence=0.9)
     cam = Cam(lens=40, loc=(0.1, -0.35, 1.6), target=(0.95, 0.85, 1.5), dof=2.8)
     cam.key(1, loc=(0.1, -0.35, 1.6))
     cam.key(n, loc=(0.2, -0.25, 1.6))
+    stare_at(dale, cam.cam, 2, 10, influence=0.95)          # turns into the lens, cheek to cheek with you
     return n
 
 
@@ -849,7 +849,8 @@ def boss_office(n, spin=None):
     """Boss desk with CEO nameplate, high-back chair (facing away), you in front of the desk."""
     newcorp_set()
     model("metal_office_desk", (0, 1.6, 0), rot_z=180)
-    decal("np_ceo", f"{D2}/nameplate_ceo.png", 0.6, (0.0, 1.18, 0.6), rot=(90, 0, 0))
+    box("plaque_base", (0.5, 0.06, 0.03), (0.0, 1.27, 0.785), mat_flat("plaque", (0.15, 0.1, 0.06), rough=0.3))
+    decal("np_ceo", f"{D2}/nameplate_ceo.png", 0.46, (0.0, 1.265, 0.86), rot=(78, 0, 0))   # desk plaque
     piv, sz = chair((0, 2.35, 0), rot_z=0, seat_h=0.5, high_back=True)
     larry = load_char("larry", (0, 0, 0), rot_z=0, subdiv=True)
     sit(larry, sz)
@@ -1033,7 +1034,7 @@ def sh20():
         o.parent = stamp
     larry.attach(stamp, "RightHand", keep_world=False)
     stamp.location = (0, 0.08, 0.02)
-    hand_ik(larry, "Right", empty("cheek", (-0.16, 1.22, 1.5)))
+    hand_ik(larry, "Right", empty("cheek", (-0.19, 1.16, 1.3)))
     face(larry, 1, CREEPY)
     face(larry, n, CREEPY_ENJOY)
     cam = Cam(lens=34, loc=(0.2, -0.05, 1.5), target=(0.0, 1.4, 1.42))
@@ -1089,9 +1090,9 @@ def sh22():
     dale = dog_dale((0.0, 1.8, 0), rot_z=0)
     face(dale, 1, SERENE)
     face(dale, 5, DOGGY)
-    cam = Cam(lens=34, loc=(0.05, 0.75, 1.45), target=(0.0, 1.55, 0.75), dof=2.8)
-    cam.key(1, loc=(0.05, 0.75, 1.45))
-    cam.key(n, loc=(0.05, 0.95, 1.35))
+    cam = Cam(lens=38, loc=(0.08, -0.25, 0.8), target=(0.0, 1.05, 0.62), dof=2.8)   # in front of his face, low
+    cam.key(1, loc=(0.08, -0.25, 0.8))
+    cam.key(n, loc=(0.06, -0.05, 0.76))
     stare_at(dale, cam.cam, 1, 6)
     return n
 
@@ -1101,7 +1102,7 @@ def guard_up(ch, f=None):
     n = bpy.context.scene.frame_end if f is None else f
     for side, dx in (("Left", 0.13), ("Right", -0.13)):
         t = empty(f"fist{side}{ch.name}", (0, 0, 0))
-        ch.bake_follow(t, "Head", max(n, 2), offset=(dx, -0.12, 0.28), local=True)  # bone: +Y up, +Z forward
+        ch.bake_follow(t, "Head", max(n, 2), offset=(dx * 1.1, -0.27, 0.27), local=True)  # bone: +Y up, +Z forward
         hand_ik(ch, side, t)
 
 
@@ -1167,9 +1168,9 @@ def sh25():
         hand_ik(ch, "Right" if sx < 0 else "Left", t)
         face(ch, 1, SMILE)
         face(ch, hit, TADA)
-    cam = Cam(lens=26, loc=(0.3, -2.6, Hh + 1.3), target=(0.0, 0.35, Hh + 1.55))
-    cam.key(1, loc=(0.3, -2.6, Hh + 1.3))
-    cam.key(n, loc=(0.25, -2.3, Hh + 1.35))
+    cam = Cam(lens=24, loc=(0.3, -1.95, Hh + 1.4), target=(0.0, 0.35, Hh + 1.55))
+    cam.key(1, loc=(0.3, -1.95, Hh + 1.4))
+    cam.key(n, loc=(0.25, -1.75, Hh + 1.42))
     cam.shake(hit, hit + 5, amp=0.015, freq=0.7)
     return n
 
@@ -1181,9 +1182,9 @@ def tee_duo(n):
     larry.clip("137_41", **src(n, 4150))
     dale = load_char("dale_tee", (0.33, 0.3, Hh), rot_z=0, subdiv=True, tag="dale")
     dale.clip("137_41", **src(n, 4200))
-    chest_print(larry, f"{D2}/tshirt_print.png", width=0.26, y=0.05, z=0.17, name="print_larry")
-    chest_print(dale, f"{D2}/tshirt_print.png", width=0.24, y=0.07, z=0.12, name="print_dale")
-    sl = empty("dale_shoulder", (0, 0, 0)); dale.bake_follow(sl, "RightArm", n, offset=(0.02, 0.0, 0.03))
+    chest_print(larry, f"{D2}/tshirt_print.png", width=0.26, y=0.04, z=0.25, name="print_larry")   # clears his belly
+    chest_print(dale, f"{D2}/tshirt_print.png", width=0.24, y=0.08, z=0.17, name="print_dale")
+    sl = empty("dale_waist", (0, 0, 0)); dale.bake_follow(sl, "Hips", n, offset=(-0.1, 0.08, 0.1))  # behind Dale's hip
     hand_ik(larry, "Left", sl)
     sr = empty("larry_shoulder", (0, 0, 0)); larry.bake_follow(sr, "RightArm", n, offset=(0.0, 0.0, 0.05))
     hand_ik(dale, "Right", sr)
@@ -1198,9 +1199,9 @@ def sh26():
     Hh, larry, dale = tee_duo(n)
     for ch in (larry, dale):
         face(ch, 1, TADA)
-    cam = Cam(lens=30, loc=(0.0, -2.6, Hh + 1.25), target=(0.0, 0.3, Hh + 1.25))
-    cam.key(1, loc=(0.0, -2.6, Hh + 1.25))
-    cam.key(n, loc=(0.0, -2.2, Hh + 1.3))
+    cam = Cam(lens=30, loc=(0.0, -2.0, Hh + 1.4), target=(0.0, 0.3, Hh + 1.3))
+    cam.key(1, loc=(0.0, -2.0, Hh + 1.4))
+    cam.key(n, loc=(0.0, -1.75, Hh + 1.4))
     for ch in (larry, dale):
         look_at(ch, cam.cam, 0.8)
     return n
@@ -1215,10 +1216,10 @@ def sh27():
     for ch in (larry, dale):
         face(ch, 1, CREEPY)
         face(ch, n, CREEPY_ENJOY)
-    cam = Cam(lens=45, loc=(0.0, -1.3, Hh + 1.2), target=(0.0, 0.3, Hh + 1.15))
-    cam.key(1, loc=(0.0, -1.3, Hh + 1.2), target=(0.0, 0.3, Hh + 1.15))
-    cam.key(int(n * 0.45), loc=(0.0, -1.0, Hh + 1.2), target=(0.0, 0.3, Hh + 1.17))
-    cam.key(n, loc=(0.0, -1.15, Hh + 1.45), target=(0.0, 0.3, Hh + 1.62))
+    cam = Cam(lens=30, loc=(0.0, -1.35, Hh + 1.35), target=(0.0, 0.3, Hh + 1.35))   # both prints, then both faces
+    cam.key(1, loc=(0.0, -1.35, Hh + 1.35), target=(0.0, 0.3, Hh + 1.35), lens=30)
+    cam.key(int(n * 0.45), loc=(0.0, -1.15, Hh + 1.35), target=(0.0, 0.3, Hh + 1.37), lens=30)
+    cam.key(n, loc=(0.0, -1.3, Hh + 1.6), target=(0.0, 0.3, Hh + 1.64), lens=28)
     for ch in (larry, dale):
         look_at(ch, cam.cam, 0.8)
     return n
@@ -1255,12 +1256,13 @@ def sh30():
     """Peace at last. - heaven: you (white tee, young again) walk the clouds toward the golden gates. Harp, choir."""
     n = frames_of("sh30")
     heaven_set()
-    you = load_char("you_pj", (0.0, -1.5, 0), rot_z=180)
+    you = load_char("you_sun", (0.0, -1.5, 0), rot_z=180)     # white tee + shorts; sunglasses off in heaven
+    you.hide("sunglass")
     you.clip("07_01", **src(n, 60, speed=0.8, in_place=False))
     face(you, 1, SERENE)
-    cam = Cam(lens=26, loc=(0.6, -5.5, 1.3), target=(0.0, 3.0, 2.0))
-    cam.key(1, loc=(0.6, -5.5, 1.3))
-    cam.key(n, loc=(0.4, -4.6, 1.5), target=(0.0, 3.5, 2.3))
+    cam = Cam(lens=28, loc=(0.7, -3.6, 1.2), target=(0.0, 3.0, 1.9))
+    cam.key(1, loc=(0.7, -3.6, 1.2))
+    cam.key(n, loc=(0.5, -3.0, 1.35), target=(0.0, 3.5, 2.2))
     return n
 
 
@@ -1276,13 +1278,14 @@ def sh31():
     """But the angel at heaven's gate... is - over your shoulder: an angel stands at the gate, back to us."""
     n = frames_of("sh31")
     heaven_set()
-    you = load_char("you_pj", (0.3, 1.2, 0), rot_z=180)
+    you = load_char("you_sun", (1.0, 1.0, 0), rot_z=180)
+    you.hide("sunglass")
     you.clip("137_41", **src(n, 4200))
     larry = angel("larry", (-0.9, 3.4, 0), n, rot_z=180, tag="larry")
     face(larry, 1, CREEPY)
-    cam = Cam(lens=32, loc=(0.75, -0.6, 1.65), target=(-0.6, 3.4, 1.5))
-    cam.key(1, loc=(0.75, -0.6, 1.65))
-    cam.key(n, loc=(0.6, -0.1, 1.62))
+    cam = Cam(lens=32, loc=(1.3, -0.6, 1.65), target=(-0.85, 3.4, 1.5))
+    cam.key(1, loc=(1.3, -0.6, 1.65))
+    cam.key(n, loc=(1.2, -0.1, 1.62))
     return n
 
 
@@ -1340,8 +1343,8 @@ def sh35():
     n = frames_of("sh35")
     lib.set_frames(n)
     heaven_set(gate_open_frames=(1, at("sh35", 49.4)))
-    larry = angel("larry", (-0.5, 2.6, 0), n, rot_z=0, tag="larry")
-    dale = angel("dale", (0.5, 2.6, 0), n, rot_z=0, tag="dale", clip_start=1000)
+    larry = angel("larry", (-0.33, 2.6, 0), n, rot_z=8, tag="larry", clip_start=4150)
+    dale = angel("dale", (0.33, 2.6, 0), n, rot_z=-8, tag="dale", clip_start=4200)
     syll = [(48.48, 48.64, 0.3, 0.1), (48.64, 48.74, 0.2, 0.0), (48.74, 48.86, 0.3, 0.0), (48.86, 48.96, 0.15, 0.0),
             (48.96, 49.28, 0.25, 0.3), (49.28, 49.49, 0.3, 0.7)]
     for ch in (larry, dale):
@@ -1350,11 +1353,11 @@ def sh35():
         face(ch, at("sh35", 49.55), CREEPY_ENJOY)
     blink(dale, [at("sh35", 49.9)])
     sting = at("sh35", 49.55)
-    cam = Cam(lens=30, loc=(0.0, -0.4, 1.55), target=(0.0, 2.6, 1.6))
-    cam.key(1, loc=(0.0, -0.4, 1.55), lens=30)
-    cam.key(sting - 1, loc=(0.0, 0.25, 1.58), lens=32, interp="CONSTANT")
-    cam.key(sting, loc=(0.0, 0.3, 1.6), lens=44, interp="CONSTANT")
-    cam.key(n, loc=(0.0, 0.4, 1.6), lens=48)
+    cam = Cam(lens=30, loc=(0.0, -1.0, 1.5), target=(0.0, 2.6, 1.55))      # both faces stay in frame to the end
+    cam.key(1, loc=(0.0, -1.0, 1.5), lens=30)
+    cam.key(sting - 1, loc=(0.0, -0.5, 1.52), lens=30, interp="CONSTANT")
+    cam.key(sting, loc=(0.0, -0.45, 1.55), lens=37, interp="CONSTANT")
+    cam.key(n, loc=(0.0, -0.35, 1.55), lens=39)
     cam.shake(sting, n, amp=0.01, freq=0.8)
     for ch in (larry, dale):
         stare_at(ch, cam.cam, 1, 4)
