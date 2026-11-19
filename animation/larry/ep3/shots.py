@@ -63,8 +63,8 @@ def steak_mat():
     nz = nt.nodes.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 9; nz.inputs["Detail"].default_value = 8
     nz.inputs["Distortion"].default_value = 1.4
     ramp = nt.nodes.new("ShaderNodeValToRGB")
-    ramp.color_ramp.elements[0].position = 0.55; ramp.color_ramp.elements[0].color = (0.42, 0.03, 0.04, 1)
-    ramp.color_ramp.elements[1].position = 0.68; ramp.color_ramp.elements[1].color = (0.93, 0.8, 0.72, 1)
+    ramp.color_ramp.elements[0].position = 0.64; ramp.color_ramp.elements[0].color = (0.36, 0.02, 0.03, 1)
+    ramp.color_ramp.elements[1].position = 0.72; ramp.color_ramp.elements[1].color = (0.9, 0.72, 0.66, 1)
     nt.links.new(nz.outputs["Fac"], ramp.inputs[0]); nt.links.new(ramp.outputs[0], b.inputs["Base Color"])
     bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25
     nt.links.new(nz.outputs["Fac"], bump.inputs["Height"]); nt.links.new(bump.outputs[0], b.inputs["Normal"])
@@ -102,6 +102,20 @@ def hold(ch, obj, side="Right", loc=(0.0, 0.08, 0.03), rot=(0, 0, 0)):
     obj.location = Vector(loc)
     obj.rotation_euler = [math.radians(a) for a in rot]
     return obj
+
+
+def burger(name="burger"):
+    """Simple burger built from primitives (Z up, origin at its centre)."""
+    root = empty(name, (0, 0, 0))
+    bun = mat_flat("bun", (0.78, 0.48, 0.18), rough=0.45)
+    for nm, z, sc, m in (("bun_bottom", -0.025, (0.065, 0.065, 0.02), bun), ("patty", -0.004, (0.07, 0.07, 0.014),
+                         mat_flat("patty", (0.2, 0.09, 0.04), rough=0.7)),
+                         ("lettuce", 0.008, (0.074, 0.074, 0.006), mat_flat("lettuce", (0.3, 0.65, 0.12), rough=0.6)),
+                         ("bun_top", 0.03, (0.066, 0.066, 0.035), bun)):
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=1.0, location=(0, 0, z))
+        o = bpy.context.object; o.name = f"{name}_{nm}"; o.scale = sc; bpy.ops.object.shade_smooth()
+        o.data.materials.append(m); o.parent = root
+    return root
 
 
 def burger_plate(loc):
@@ -311,7 +325,7 @@ def butcher_set():
     box("w_back", (14, 0.2, 3.2), (0, 2.6, 1.6), wall, uv_scale=0.4)
     box("w_left", (0.2, 14, 3.2), (-3.4, 0, 1.6), wall, uv_scale=0.4)
     plane("ceil", (14, 14), (0, 0, 3.2), mat_flat("bceil", (0.92, 0.92, 0.9)), rot=(180, 0, 0))
-    decal("sign_butcher", f"{D3}/sign_butcher.png", 3.0, (0, 2.49, 2.55), rot=(90, 0, 0))
+    decal("sign_butcher", f"{D3}/sign_butcher.png", 2.6, (0, 2.49, 2.85), rot=(90, 0, 0))
     decal("prices", f"{D3}/board_prices.png", 0.9, (-2.3, 2.49, 1.6), rot=(90, 0, 0))
     # counter with a glass display front
     box("ctr_base", (3.2, 0.8, 0.9), (0.2, 0.9, 0.45), mat_flat("ctr", (0.85, 0.1, 0.12), rough=0.4))
@@ -320,12 +334,12 @@ def butcher_set():
     fit(board, length=0.55, ground=False); drop_to(board, 0.95)
     # hanging steaks on a rail
     rail = mat_flat("rail", (0.8, 0.8, 0.82), metal=1.0, rough=0.2)
-    cylinder("hang_rail", 0.02, 3.6, (0.2, 2.2, 2.5), rail, rot=(0, 90, 0))
+    cylinder("hang_rail", 0.02, 3.6, (0.2, 2.2, 2.3), rail, rot=(0, 90, 0))
     for k, x in enumerate((-1.3, -0.8, -0.3, 0.7, 1.2, 1.7)):
         s = steak(f"hang{k}", size=1.6)
         s.rotation_euler = (math.radians(90), 0, math.radians(8 * (k % 3 - 1)))
-        s.location = (x, 2.2, 2.2)
-        cylinder(f"hook{k}", 0.006, 0.18, (x, 2.2, 2.4), rail)
+        s.location = (x, 2.2, 2.0)
+        cylinder(f"hook{k}", 0.006, 0.18, (x, 2.2, 2.2), rail)
     panel = mat_flat("bpanel", (1, 1, 1), emit=(1.0, 0.98, 0.95), emit_strength=5)
     plane("blp", (2.4, 0.5), (0.2, 1.2, 3.18), panel, rot=(180, 0, 0))
     sun(energy=2.0, rot=(55, 0, 160), color=(1.0, 0.97, 0.92))
@@ -386,16 +400,15 @@ def sh01():
     you = load_char("you", (0.0, -0.78, 0), rot_z=0, subdiv=True)
     sit(you, sz)
     burger_plate((0.08, -1.3, tz))
-    bun = model("hamburger_buns", (0, 0, 0), rot_z=0); fit(bun, length=0.1, ground=False)
-    hold(you, bun, "Right", loc=(0.0, 0.09, 0.04))
+    hold(you, burger("held_burger"), "Right", loc=(0.0, 0.09, 0.05))
     t = empty("bite", (0, 0, 0))
     key_loc(t, 1, (-0.12, -1.18, 1.0)); key_loc(t, int(n * 0.5), (-0.08, -1.0, 1.2)); key_loc(t, n, (-0.1, -1.08, 1.12))
     hand_ik(you, "Right", t)
     face(you, 1, SMILE)
     blink(you, [30])
-    cam = Cam(lens=32, loc=(0.6, -3.2, 1.3), target=(0.0, -0.9, 1.0))
-    cam.key(1, loc=(0.6, -3.2, 1.3))
-    cam.key(n, loc=(0.45, -2.6, 1.32))
+    cam = Cam(lens=32, loc=(0.7, -2.7, 1.45), target=(0.0, -0.85, 1.05))
+    cam.key(1, loc=(0.7, -2.7, 1.45))
+    cam.key(n, loc=(0.55, -2.25, 1.45))
     return n
 
 
@@ -423,12 +436,12 @@ def beg_scene(n):
     you = load_char("you", (0.0, -0.78, 0), rot_z=0, subdiv=True)
     sit(you, sz)
     burger_plate((0.08, -1.3, tz))
-    larry = load_char("larry", (0.72, -0.85, 0), rot_z=-90 + 15, subdiv=True)   # kneeling at your side, facing you
+    larry = load_char("larry", (0.95, -0.7, 0), rot_z=-90 + 25, subdiv=True)    # kneeling at your side, facing you
     kneel(larry)
     s = steak("larry_steak")
     hold(larry, s, "Right", loc=(0.0, 0.1, 0.06), rot=(90, 0, 0))
     for side, dy in (("Right", -0.03), ("Left", 0.03)):
-        hand_ik(larry, side, empty(f"beg{side}", (0.42, -0.85 + dy, 1.05)))
+        hand_ik(larry, side, empty(f"beg{side}", (0.68, -0.8 + dy, 1.0)))
     return you, larry
 
 
@@ -441,9 +454,9 @@ def sh03():
     look_at(larry, (0.0, -0.85, 1.25), 0.9)
     face(you, 1, DEADPAN)
     look_at(you, (0.7, -0.85, 0.9), 0.6)
-    cam = Cam(lens=30, loc=(1.6, -2.7, 1.25), target=(0.35, -0.85, 0.95))
-    cam.key(1, loc=(1.6, -2.7, 1.25))
-    cam.key(n, loc=(1.4, -2.4, 1.2))
+    cam = Cam(lens=30, loc=(1.9, -2.3, 1.3), target=(0.45, -0.75, 0.95))
+    cam.key(1, loc=(1.9, -2.3, 1.3))
+    cam.key(n, loc=(1.7, -2.05, 1.27))
     return n
 
 
@@ -454,9 +467,9 @@ def sh04():
     you, larry = beg_scene(n)
     face(larry, 1, BEGGING)
     face(larry, n, dict(BEGGING, browInnerUp=1.0, mouthPucker=0.7))
-    cam = Cam(lens=40, loc=(0.1, -1.25, 1.12), target=(0.62, -0.83, 0.98), dof=2.8)
-    cam.key(1, loc=(0.1, -1.25, 1.12))
-    cam.key(n, loc=(0.2, -1.15, 1.1))
+    cam = Cam(lens=36, loc=(0.2, -1.75, 1.15), target=(0.85, -0.72, 1.0), dof=3.5)
+    cam.key(1, loc=(0.2, -1.75, 1.15))
+    cam.key(n, loc=(0.3, -1.6, 1.12))
     look_at(larry, cam.cam, 0.9)
     return n
 
@@ -707,9 +720,9 @@ def sh18():
     larry, piv, s, (bx, by) = meat_bell(n, 4)
     face(larry, 1, CREEPY_ENJOY)
     look_at(larry, (bx, by, 2.2), 0.8)
-    cam = Cam(lens=34, loc=(bx + 1.35, by - 1.25, 2.05), target=(bx + 0.3, by - 0.1, 2.1), clip_end=5000)
-    cam.key(1, loc=(bx + 1.35, by - 1.25, 2.05))
-    cam.key(n, loc=(bx + 1.25, by - 1.15, 2.05))
+    cam = Cam(lens=30, loc=(bx + 1.5, by - 1.5, 1.85), target=(bx + 0.45, by - 0.2, 1.85), clip_end=5000)
+    cam.key(1, loc=(bx + 1.5, by - 1.5, 1.85))
+    cam.key(n, loc=(bx + 1.4, by - 1.4, 1.85))
     for h in (4, 14, 24):
         cam.shake(h, h + 4, amp=0.01, freq=0.8)
     return n
@@ -753,14 +766,14 @@ def sh20():
     butcher_set()
     tony = butcher_char(n, pounding=True)
     face(tony, 1, DETERMINED)
-    larry = load_char("larry", (1.35, 0.15, 0), rot_z=-125, subdiv=True)
+    larry = load_char("larry", (1.15, 0.35, 0), rot_z=-125, subdiv=True)
     larry.clip("137_41", **src(n, 600))
     face(larry, 1, DEADPAN)
     look_at(larry, (0.2, 0.95, 1.0), 0.7)
     look_at(tony, (0.2, 0.95, 0.95), 0.7)
-    cam = Cam(lens=28, loc=(-0.6, -1.6, 1.55), target=(0.4, 0.9, 1.25))
-    cam.key(1, loc=(-0.6, -1.6, 1.55))
-    cam.key(n, loc=(-0.45, -1.35, 1.5))
+    cam = Cam(lens=28, loc=(-0.35, -0.55, 1.55), target=(0.45, 1.0, 1.3))
+    cam.key(1, loc=(-0.35, -0.55, 1.55))
+    cam.key(n, loc=(-0.25, -0.4, 1.52))
     return n
 
 
@@ -813,7 +826,7 @@ def sh23():
     cam.key(1, loc=(0.75, -0.95, 1.45))
     cam.key(n, loc=(0.78, -0.8, 1.45))
     pt = empty("pointat", (0, 0, 0))
-    key_loc(pt, 1, (1.05, -0.2, 1.1)); key_loc(pt, 6, (0.85, -0.45, 1.42)); key_loc(pt, n, (0.85, -0.47, 1.43))
+    key_loc(pt, 1, (1.05, -0.2, 1.1)); key_loc(pt, 6, (0.78, -0.35, 1.3)); key_loc(pt, n, (0.78, -0.37, 1.31))
     hand_ik(larry, "Right", pt)
     face(larry, 1, LOVESTRUCK)
     stare_at(larry, cam.cam, 1, 4)
@@ -829,9 +842,11 @@ def sh24():
     face(you, 1, SLEEP)
     face(you, wink_f, dict(SLEEP, eyeBlinkRight=0.0, eyeWideRight=0.5, mouthSmileLeft=0.5, mouthSmileRight=0.6))
     face(you, wink_f + 12, SLEEP)
-    cam = Cam(lens=34, loc=(0.0, 3.25, 1.75), target=(0.0, 2.55, 0.98))
-    cam.key(1, loc=(0.0, 3.25, 1.75))
-    cam.key(n, loc=(0.0, 3.15, 1.6))
+    bpy.context.scene.frame_set(1)
+    yh = you.world("Head")
+    cam = Cam(lens=40, loc=(-0.08, yh.y - 0.22, yh.z + 0.85), target=(0.0, yh.y + 0.04, yh.z))   # straight above the face
+    cam.key(1, loc=(-0.08, yh.y - 0.22, yh.z + 0.85))
+    cam.key(n, loc=(-0.07, yh.y - 0.18, yh.z + 0.72))
     return n
 
 
@@ -856,11 +871,11 @@ def sh26():
     s = steak("funeral_steak")
     hold(larry, s, "Right", loc=(0.0, 0.1, 0.06), rot=(90, 0, 0))
     face(larry, 1, CREEPY)
-    cam = Cam(lens=30, loc=(0.4, 1.6, 1.35), target=(0.0, -1.2, 1.3))
+    cam = Cam(lens=30, loc=(-0.75, 3.3, 2.0), target=(0.0, -1.2, 1.3))
     trk = cam.tgt
     larry.bake_follow(trk, "Head", n, offset=(0.0, 0.0, -0.1))
-    cam.key(1, loc=(0.4, 1.6, 1.35))
-    cam.key(n, loc=(0.45, 1.75, 1.35))
+    cam.key(1, loc=(-0.75, 3.3, 2.0))
+    cam.key(n, loc=(-0.7, 3.2, 1.95))
     return n
 
 
@@ -923,9 +938,9 @@ def sh29():
     steak_in_hands()
     face(larry, 1, LOVESTRUCK)
     look_at(larry, (0.0, 2.95, 1.0), 0.9)
-    cam = Cam(lens=32, loc=(0.85, 3.6, 1.55), target=(-0.15, 2.6, 1.25))
-    cam.key(1, loc=(0.85, 3.6, 1.55))
-    cam.key(n, loc=(0.75, 3.45, 1.5))
+    cam = Cam(lens=32, loc=(-0.35, 3.6, 1.6), target=(-0.25, 2.6, 1.2))
+    cam.key(1, loc=(-0.35, 3.6, 1.6))
+    cam.key(n, loc=(-0.32, 3.45, 1.55))
     return n
 
 
@@ -960,10 +975,10 @@ def sh31():
     face(larry, 1, CREEPY_ENJOY)
     bpy.context.scene.frame_set(1)
     yh = you.world("Head")
-    cam = Cam(lens=30, loc=(0.25, yh.y + 0.75, yh.z + 0.85), target=(0.0, yh.y + 0.05, yh.z))
-    cam.key(1, loc=(0.25, yh.y + 0.75, yh.z + 0.85))
-    cam.key(snap, loc=(0.25, yh.y + 0.7, yh.z + 0.8))
-    cam.key(snap + 6, loc=(0.2, yh.y + 0.55, yh.z + 0.62), lens=34)
-    cam.key(n, loc=(0.2, yh.y + 0.52, yh.z + 0.6), lens=35)
+    cam = Cam(lens=32, loc=(-0.12, yh.y - 0.45, yh.z + 1.05), target=(-0.02, yh.y + 0.04, yh.z))   # above face + hands
+    cam.key(1, loc=(-0.12, yh.y - 0.45, yh.z + 1.05))
+    cam.key(snap, loc=(-0.12, yh.y - 0.43, yh.z + 1.0))
+    cam.key(snap + 6, loc=(-0.08, yh.y - 0.2, yh.z + 0.72), lens=38)
+    cam.key(n, loc=(-0.08, yh.y - 0.19, yh.z + 0.69), lens=39)
     cam.shake(snap, snap + 8, amp=0.01, freq=0.8)
     return n
