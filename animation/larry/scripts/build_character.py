@@ -91,25 +91,23 @@ SPECS = {
         tint={"cargo": (0.28, 0.31, 0.2), "boots": (0.12, 0.1, 0.08), "moustache": (0.16, 0.12, 0.1)},
     ),
     # ---------------------------------------------------------------- episode 2
-    # DALE FROM IT (episode 2). Assets pinned to what look-dev picked, so he never changes between episodes.
-    # Reads opposite to Larry: tall (height 0.85), skinny, younger, long ginger hair + full beard, green tee,
-    # khaki shorts, no glasses. (No hoodie exists in the installed packs.)
+    # DALE FROM IT (episode 2), designed from the user's reference stills of the viral "Dale" shorts:
+    # a slim Black man of average height, slicked-back short dark hair, grey utility jacket with chest pockets over
+    # a dark striped shirt, blue jeans, brown leather shoes. All CC0 MakeHuman system assets.
     "dale": dict(
-        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=0.85, proportions=0.45, race=CAU),
-        skin="young_caucasian_male.mhmat", hair="long01.mhclo",
-        clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
-                 "grinsegold_full_beard.mhclo"],
-        tint={"long01": (0.66, 0.24, 0.05), "hoodie": (0.04, 0.26, 0.14), "crude_t-shirt": (0.04, 0.26, 0.14),
-              "jeans_shorts": (0.52, 0.46, 0.3), "beard": (0.55, 0.2, 0.05), "goatee": (0.55, 0.2, 0.05)},
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.5, weight=0.42, height=0.68, proportions=0.6, race=AFR),
+        skin="young_african_male.mhmat", hair="short04.mhclo",
+        clothes=["male_casualsuit05.mhclo", "shoes01.mhclo"],
+        eye_mat="brown.mhmat",
+        tint={},
     ),
-    # matching T-shirts (episode 2): plain white tees; the shot attaches the "your face" print to the chest
+    # matching T-shirts (episode 2): same Dale in a white tee + jeans; the shot attaches the "your face" print
     "dale_tee": dict(
-        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=0.85, proportions=0.45, race=CAU),
-        skin="young_caucasian_male.mhmat", hair="long01.mhclo",
-        clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
-                 "grinsegold_full_beard.mhclo"],
-        tint={"long01": (0.66, 0.24, 0.05), "crude_t-shirt": (0.95, 0.95, 0.95), "jeans_shorts": (0.52, 0.46, 0.3),
-              "beard": (0.55, 0.2, 0.05), "goatee": (0.55, 0.2, 0.05)},
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.5, weight=0.42, height=0.68, proportions=0.6, race=AFR),
+        skin="young_african_male.mhmat", hair="short04.mhclo",
+        clothes=["male_casualsuit06.mhclo", "shoes01.mhclo"],
+        eye_mat="brown.mhmat",
+        tint={},
     ),
     "larry_tee": dict(
         phenotype=dict(gender=1.0, age=0.78, muscle=0.3, weight=0.82, height=0.38, proportions=0.35, race=CAU),

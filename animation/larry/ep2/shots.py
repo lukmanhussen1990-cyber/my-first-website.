@@ -210,7 +210,8 @@ def k9_vest(ch):
     for x in (-0.213, 0.213):
         s = decal(f"k9_side{x}", f"{D2}/patch_k9.png", 0.26, (x, 0, 0.02), rot=(0, 90 if x > 0 else -90, 0))  # upright
         s.parent = root
-    on_bone(ch, root, "Spine", (0, 0.1, 0.09))        # bone +Z points to the belly: centre the vest on the torso
+    on_bone(ch, root, "Spine", (0, 0.1, 0.07))        # bone +Z points to the belly: centre the vest on the torso
+    root.scale = (1.2, 1.25, 1.1)                       # big enough to sit over Dale's jacket
     return root
 
 
@@ -1183,7 +1184,7 @@ def tee_duo(n):
     dale = load_char("dale_tee", (0.33, 0.3, Hh), rot_z=0, subdiv=True, tag="dale")
     dale.clip("137_41", **src(n, 4200))
     chest_print(larry, f"{D2}/tshirt_print.png", width=0.26, y=0.04, z=0.25, name="print_larry")   # clears his belly
-    chest_print(dale, f"{D2}/tshirt_print.png", width=0.24, y=0.08, z=0.17, name="print_dale")
+    chest_print(dale, f"{D2}/tshirt_print.png", width=0.25, y=0.06, z=0.2, name="print_dale")
     sl = empty("dale_waist", (0, 0, 0)); dale.bake_follow(sl, "Hips", n, offset=(-0.1, 0.08, 0.1))  # behind Dale's hip
     hand_ik(larry, "Left", sl)
     sr = empty("larry_shoulder", (0, 0, 0)); larry.bake_follow(sr, "RightArm", n, offset=(0.0, 0.0, 0.05))
@@ -1329,9 +1330,9 @@ def sh34():
     turn_around(dale, 1, 6)
     face(dale, 1, DEADPAN)
     face(dale, 6, CREEPY)
-    cam = Cam(lens=38, loc=(0.75, 1.7, 1.6), target=(0.9, 3.4, 1.75))
-    cam.key(1, loc=(0.75, 1.7, 1.6))
-    cam.key(n, loc=(0.78, 1.95, 1.62))
+    cam = Cam(lens=38, loc=(0.75, 1.7, 1.55), target=(0.9, 3.4, 1.6))
+    cam.key(1, loc=(0.75, 1.7, 1.55))
+    cam.key(n, loc=(0.78, 1.95, 1.56))
     stare_at(dale, cam.cam, 5, 9)
     return n
 
