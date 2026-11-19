@@ -1,0 +1,30 @@
+{
+  "name": "engine-reel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "9:16 3D explainer reel: the 4-stroke engine (suck, squeeze, bang, blow) built with Remotion + React Three Fiber",
+  "scripts": {
+    "dev": "remotion studio",
+    "studio": "remotion studio",
+    "render": "remotion render EngineReel out/engine-reel.mp4",
+    "render:fast": "remotion render EngineReel out/engine-reel.mp4 --concurrency=50%",
+    "still": "remotion still EngineReel out/still.png",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.2",
+    "@remotion/cli": "4.0.545",
+    "@remotion/fonts": "4.0.545",
+    "@remotion/three": "4.0.545",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.545",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "@types/three": "0.180.0",
+    "typescript": "5.9.3"
+  }
+}
