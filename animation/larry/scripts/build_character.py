@@ -124,6 +124,31 @@ SPECS = {
         clothes=["elvs_crude_t-shirt_male.mhclo"],
         tint={"crude_t-shirt": (0.78, 0.86, 0.95), "short02": (0.75, 0.75, 0.77)},
     ),
+    # ---------------------------------------------------------------- episode 3 (supporting cast + Larry variant)
+    # HR lady: middle-aged, grey trouser suit, bob haircut
+    "hr": dict(
+        phenotype=dict(gender=0.0, age=0.62, muscle=0.35, weight=0.55, height=0.45, proportions=0.55, race=CAU),
+        skin="middleage_caucasian_female.mhmat", hair="bob02.mhclo",
+        clothes=["toigo_female_suit.mhclo", "toigo_ankle_boots_female.mhclo"],
+        tint={"female_suit": (0.32, 0.33, 0.38), "bob02": (0.32, 0.2, 0.12)},
+    ),
+    # Larry the monk: same Larry (body, face, moustache, glasses), head shaved, brown hooded robe-ish top + brown trousers
+    "larry_monk": dict(
+        phenotype=dict(gender=1.0, age=0.78, muscle=0.3, weight=0.82, height=0.38, proportions=0.35, race=CAU),
+        skin="middleage_caucasian_male.mhmat", hair="",
+        clothes=["elvs_hooded_sweat_jacket1.mhclo", "toigo_wool_pants.mhclo", "shoes01.mhclo",
+                 "grinsegold_moustache.mhclo", "frankyaye_glasses_library_male.mhclo"],
+        eye_mat="grey.mhmat",
+        tint={"hooded_sweat": (0.42, 0.24, 0.1), "wool_pants": (0.36, 0.22, 0.1), "moustache": (0.16, 0.12, 0.1)},
+    ),
+    # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
+    "butcher": dict(
+        phenotype=dict(gender=1.0, age=0.6, muscle=0.9, weight=0.85, height=0.85, proportions=0.7, race=MIX),
+        skin="middleage_caucasian_male.mhmat", hair="",
+        clothes=["male_worksuit01.mhclo", "shoes04.mhclo"],
+        eye_mat="brown.mhmat",
+        tint={"worksuit": (0.93, 0.93, 0.92)},
+    ),
 }
 
 
