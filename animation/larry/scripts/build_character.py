@@ -91,16 +91,14 @@ SPECS = {
         tint={"cargo": (0.28, 0.31, 0.2), "boots": (0.12, 0.1, 0.08), "moustache": (0.16, 0.12, 0.1)},
     ),
     # ---------------------------------------------------------------- episode 2
-    # DALE FROM IT: DRAFT, not yet approved by the user. Check with lookdev.py + lineup.py next to Larry, adjust,
-    # then replace each candidate tuple with the asset that was actually picked (the build log prints PICKED ...)
-    # so he can never change between episodes. Silhouette/colour must read opposite to Larry: tall, skinny, younger,
-    # long ginger hair + beard, green hoodie/tee, khaki shorts, no glasses.
+    # DALE FROM IT (episode 2). Assets pinned to what look-dev picked, so he never changes between episodes.
+    # Reads opposite to Larry: tall (height 0.85), skinny, younger, long ginger hair + full beard, green tee,
+    # khaki shorts, no glasses. (No hoodie exists in the installed packs.)
     "dale": dict(
         phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=0.85, proportions=0.45, race=CAU),
         skin="young_caucasian_male.mhmat", hair="long01.mhclo",
-        clothes=[("*hoodie*male*.mhclo", "*hoodie*.mhclo", "elvs_crude_t-shirt_male.mhclo"),
-                 "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
-                 ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],
+        clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
+                 "grinsegold_full_beard.mhclo"],
         tint={"long01": (0.66, 0.24, 0.05), "hoodie": (0.04, 0.26, 0.14), "crude_t-shirt": (0.04, 0.26, 0.14),
               "jeans_shorts": (0.52, 0.46, 0.3), "beard": (0.55, 0.2, 0.05), "goatee": (0.55, 0.2, 0.05)},
     ),
@@ -109,7 +107,7 @@ SPECS = {
         phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=0.85, proportions=0.45, race=CAU),
         skin="young_caucasian_male.mhmat", hair="long01.mhclo",
         clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
-                 ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],
+                 "grinsegold_full_beard.mhclo"],
         tint={"long01": (0.66, 0.24, 0.05), "crude_t-shirt": (0.95, 0.95, 0.95), "jeans_shorts": (0.52, 0.46, 0.3),
               "beard": (0.55, 0.2, 0.05), "goatee": (0.55, 0.2, 0.05)},
     ),
@@ -124,7 +122,7 @@ SPECS = {
     # you, seventy years later (hospital bed)
     "you_old": dict(
         phenotype=dict(gender=1.0, age=1.0, muscle=0.35, weight=0.4, height=0.5, proportions=0.6, race=CAU),
-        skin=("old_caucasian_male.mhmat", "old_*male*.mhmat", "middleage_caucasian_male.mhmat"), hair="short02.mhclo",
+        skin="old_caucasian_male.mhmat", hair="short02.mhclo",
         clothes=["elvs_crude_t-shirt_male.mhclo"],
         tint={"crude_t-shirt": (0.78, 0.86, 0.95), "short02": (0.75, 0.75, 0.77)},
     ),

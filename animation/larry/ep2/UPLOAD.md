@@ -16,8 +16,6 @@
 >
 > Credits: characters made with MakeHuman/MPFB (CC0), including CC-BY assets by Elvaerwyn and grinsegold (MakeHuman community asset repository). Motion capture: CMU Graphics Lab Motion Capture Database (mocap.cs.cmu.edu). Props, textures and skies: Poly Haven (CC0). Font: Montserrat (OFL).
 
-If Dale's final look uses more CC-BY assets (hoodie or beard), add their authors here and in `../CREDITS.md`. The build log names each asset it picks.
-
 **Files**
 - `larry_ep2_final.mp4`: 1080×1920, 24 fps, 51 s, captions burned in, −14 LUFS audio.
 - `larry_ep2_clean.mp4`: the same video without captions.
