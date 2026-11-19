@@ -1,6 +1,7 @@
 """Episode 2 "Larry & Dale": synthesise SFX (numpy) and mix them under the voiceover to a stereo WAV.
 Recipes from episode 1 are copied unchanged; new ones are below them. The voiceover needs no edit.
-Usage: python3 -I audio.py <vo.mp3> <out.wav>"""
+Usage: python3 -I audio.py <vo.mp3> <out.wav> [voice-only]
+voice-only (the user's choice for the final episode 2): just the voiceover, no SFX, choir or harp."""
 import os, subprocess, sys, wave
 import numpy as np
 
@@ -9,6 +10,7 @@ from cuts import TOTAL
 
 SR = 48000
 VO, OUT = sys.argv[1], sys.argv[2]
+VOICE_ONLY = len(sys.argv) > 3 and sys.argv[3] == "voice-only"
 rng = np.random.default_rng(7)
 
 
@@ -349,6 +351,8 @@ mix[:min(N, len(vo))] += vo[:N] * 1.0
 
 
 def put(sig, t, gain=1.0):
+    if VOICE_ONLY:
+        return
     i = t2s(t)
     if i >= N:
         return
