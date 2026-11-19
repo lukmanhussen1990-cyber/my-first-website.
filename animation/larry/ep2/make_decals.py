@@ -32,11 +32,14 @@ def heart(d, cx, cy, s, fill):
     d.polygon([(cx - s * 0.97, cy - 0.1 * s), (cx + s * 0.97, cy - 0.1 * s), (cx, cy + s * 1.05)], fill=fill)
 
 
-def face_img(size):
+def face_img(size, zoom=0.8, cy_frac=0.5):
     """Square portrait of 'you' (render if given, else a neutral placeholder head)."""
     if FACE and os.path.exists(FACE):
         im = Image.open(FACE).convert("RGB")
-        return ImageOps.fit(im, (size, size), Image.LANCZOS, centering=(0.5, 0.38))
+        W, H = im.size                       # lookdev close-up: head roughly in y 0.34..0.6 of a tall frame
+        side = int(W * zoom); cy = int(H * cy_frac)
+        box = (W // 2 - side // 2, cy - side // 2, W // 2 + side // 2, cy + side // 2)
+        return im.crop(box).resize((size, size), Image.LANCZOS)
     im = Image.new("RGB", (size, size), (150, 185, 225))
     d = ImageDraw.Draw(im)
     s = size
@@ -218,7 +221,7 @@ heart(ImageDraw.Draw(mask), S / 2, S * 0.4, S * 0.4, 255)
 red = Image.new("RGBA", (S, S), (215, 25, 55, 255))
 im.paste(red, (0, 0), mask)
 inner = mask.resize((int(S * 0.84), int(S * 0.84)), Image.LANCZOS)
-f = face_img(int(S * 0.84)).convert("RGBA")
+f = face_img(int(S * 0.84), zoom=0.92, cy_frac=0.6).convert("RGBA")
 im.paste(f, (int(S * 0.08), int(S * 0.064)), inner)
 d = ImageDraw.Draw(im)
 ctext(d, (S / 2, S * 0.965), "OUR BOY", font(FK, 120), (215, 25, 55, 255))

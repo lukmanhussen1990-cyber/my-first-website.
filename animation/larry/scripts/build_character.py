@@ -101,8 +101,8 @@ SPECS = {
         clothes=[("*hoodie*male*.mhclo", "*hoodie*.mhclo", "elvs_crude_t-shirt_male.mhclo"),
                  "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
                  ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],
-        tint={"long01": (0.72, 0.3, 0.08), "hoodie": (0.12, 0.42, 0.3), "crude_t-shirt": (0.12, 0.42, 0.3),
-              "jeans_shorts": (0.52, 0.46, 0.3), "beard": (0.62, 0.26, 0.07), "goatee": (0.62, 0.26, 0.07)},
+        tint={"long01": (0.66, 0.24, 0.05), "hoodie": (0.04, 0.26, 0.14), "crude_t-shirt": (0.04, 0.26, 0.14),
+              "jeans_shorts": (0.52, 0.46, 0.3), "beard": (0.55, 0.2, 0.05), "goatee": (0.55, 0.2, 0.05)},
     ),
     # matching T-shirts (episode 2): plain white tees; the shot attaches the "your face" print to the chest
     "dale_tee": dict(
@@ -110,8 +110,8 @@ SPECS = {
         skin="young_caucasian_male.mhmat", hair="long01.mhclo",
         clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
                  ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],
-        tint={"long01": (0.72, 0.3, 0.08), "crude_t-shirt": (0.95, 0.95, 0.95), "jeans_shorts": (0.52, 0.46, 0.3),
-              "beard": (0.62, 0.26, 0.07), "goatee": (0.62, 0.26, 0.07)},
+        tint={"long01": (0.66, 0.24, 0.05), "crude_t-shirt": (0.95, 0.95, 0.95), "jeans_shorts": (0.52, 0.46, 0.3),
+              "beard": (0.55, 0.2, 0.05), "goatee": (0.55, 0.2, 0.05)},
     ),
     "larry_tee": dict(
         phenotype=dict(gender=1.0, age=0.78, muscle=0.3, weight=0.82, height=0.38, proportions=0.35, race=CAU),

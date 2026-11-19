@@ -209,7 +209,7 @@ def k9_vest(ch):
     for x in (-0.213, 0.213):
         s = decal(f"k9_side{x}", f"{D2}/patch_k9.png", 0.26, (x, 0, 0.02), rot=(90, 0, 90 if x > 0 else -90))
         s.parent = root
-    on_bone(ch, root, "Spine", (0, 0.12, -0.02))
+    on_bone(ch, root, "Spine", (0, 0.1, 0.09))        # bone +Z points to the belly: centre the vest on the torso
     return root
 
 
@@ -264,7 +264,7 @@ def it_set():
             box(f"led{i}_{k}", (0.025, 0.01, 0.012), (x + rnd.uniform(-0.3, 0.3), 1.945, rnd.uniform(0.2, 2.1)),
                 leds[0 if rnd.random() < 0.6 else (1 if rnd.random() < 0.7 else 2)])
     model("metal_office_desk", (0, 0.62, 0), rot_z=180)
-    scr = mat_flat("itscr", (0.05, 0.15, 0.3), emit=(0.25, 0.6, 1.0), emit_strength=3.5)
+    scr = mat_flat("itscr", (0.02, 0.06, 0.12), emit=(0.15, 0.45, 1.0), emit_strength=1.1)
     frame = mat_flat("bezel", (0.02, 0.02, 0.02), rough=0.3)
     for i, (x, r) in enumerate(((-0.55, 18), (0.0, 0), (0.55, -18))):
         b = box(f"mon{i}", (0.5, 0.03, 0.3), (x, 0.75, 1.08), frame, rot=(0, 0, r), bevel=0.005)
@@ -601,6 +601,7 @@ def sh01():
     """You just want a normal life. - sunny living room, you with a coffee mug, content smile, slow push-in."""
     n = frames_of("sh01")
     ep1.interior_set()
+    bpy.data.objects["vent_hole"].hide_render = True      # episode 1's Larry vent: not in the "normal life" home
     you = load_char("you", (0, 0.2, 0), subdiv=True)
     you.clip("137_41", **src(n, 4150))
     face(you, 1, SMILE)
@@ -623,11 +624,11 @@ def sh02():
     key_loc(larry.rig, 1, (1.95, 0.25, -0.75))
     key_loc(larry.rig, int(n * 0.55), (1.95, 0.25, 0.02))
     key_loc(larry.rig, n, (1.95, 0.25, 0.08))
-    look_at(larry, (0.2, -1.2, 1.45), 0.9)
+    look_at(larry, (0.15, -0.35, 1.45), 0.9)
     face(larry, 1, CREEPY)
-    cam = Cam(lens=34, loc=(0.0, -1.3, 1.3), target=(1.55, 0.25, 1.3))
-    cam.key(1, loc=(0.0, -1.3, 1.3))
-    cam.key(n, loc=(0.3, -1.0, 1.36))
+    cam = Cam(lens=38, loc=(0.0, -0.55, 1.42), target=(1.5, 0.25, 1.36))   # episode 1 sh02 framing
+    cam.key(1, loc=(0.0, -0.55, 1.42))
+    cam.key(n, loc=(0.25, -0.4, 1.45))
     return n
 
 
@@ -646,19 +647,19 @@ def sh03():
         d = Vector((b[0] - a[0], 0, b[1] - a[1]))
         s = cylinder("str", 0.003, d.length, mid, red, verts=6)
         s.rotation_mode = "QUATERNION"; s.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(d.normalized())
-    larry = load_char("larry", (3.35, 0.05, 0), rot_z=200, subdiv=True)
+    larry = load_char("larry", (3.0, 0.0, 0), rot_z=15, subdiv=True)
     larry.clip("137_41", **src(n, 800))
     held = decal("pol_held", f"{D2}/polaroid_2.png", 0.14, (0, 0, 0), rot=(0, 0, 0), alpha=True)
     larry.attach(held, "RightHand", keep_world=False)
     held.location = (0.0, 0.09, 0.03)
-    tgt = empty("hold", (3.15, 0.3, 1.4))
+    tgt = empty("hold", (2.86, -0.26, 1.36))
     hand_ik(larry, "Right", tgt)
     face(larry, 1, LOVESTRUCK)
     face(larry, n, dict(LOVESTRUCK, mouthPucker=0.8))
     look_at(larry, tgt, 0.8)
-    cam = Cam(lens=40, loc=(2.3, -0.45, 1.45), target=(3.1, 0.8, 1.25), dof=2.8)
-    cam.key(1, loc=(2.3, -0.45, 1.45))
-    cam.key(n, loc=(2.45, -0.15, 1.42))
+    cam = Cam(lens=36, loc=(2.5, -1.45, 1.5), target=(3.0, 0.35, 1.3), dof=4.0)
+    cam.key(1, loc=(2.5, -1.45, 1.5))
+    cam.key(n, loc=(2.6, -1.15, 1.48))
     return n
 
 
@@ -679,9 +680,9 @@ def sh04():
     hand_ik(dale, "Left", wave)
     face(dale, 1, CREEPY)
     blink(dale, [int(n * 0.75)])
-    cam = Cam(lens=30, loc=(0.25, -1.9, 1.25), target=(0.0, 1.0, 1.55))
-    cam.key(1, loc=(0.25, -1.9, 1.25))
-    cam.key(n, loc=(0.2, -1.5, 1.32))
+    cam = Cam(lens=32, loc=(0.25, -0.75, 1.4), target=(0.0, 1.1, 1.65))
+    cam.key(1, loc=(0.25, -0.75, 1.4))
+    cam.key(n, loc=(0.2, -0.5, 1.45))
     look_at(dale, cam.cam, 0.85)
     return n
 
@@ -699,9 +700,9 @@ def sh05():
     you = load_char("you", (1.0, -1.6, 0.08), rot_z=-60)
     you.clip("137_41", **src(n, 4200))
     face(you, 1, SMILE)
-    cam = Cam(lens=26, loc=(-3.5, -6.5, 1.5), target=(1.5, -0.5, 1.4))
-    cam.key(1, loc=(-3.5, -6.5, 1.5))
-    cam.key(n, loc=(-2.8, -5.8, 1.55))
+    cam = Cam(lens=26, loc=(-2.6, -2.4, 1.5), target=(1.5, -0.6, 1.5))
+    cam.key(1, loc=(-2.6, -2.4, 1.5))
+    cam.key(n, loc=(-2.2, -2.2, 1.5))
     look_at(you, (6.0, 0.0, 1.8), 0.6)
     return n
 
@@ -726,7 +727,7 @@ def driver(n, turn=None):
     ch_, sz = chair((-0.75, -4.25, 0), rot_z=0, seat_h=0.55)
     larry = load_char("larry", (-0.75, -4.3, 0), rot_z=0, subdiv=True)
     sit(larry, sz)
-    on_bone(larry, cap(), "Head", (0, 0.2, 0.01))
+    on_bone(larry, cap(), "Head", (0, 0.105, 0.0))
     for side, dx in (("Left", 0.16), ("Right", -0.16)):
         hand_ik(larry, side, empty(f"wheel{side}", (-0.75 + dx, -4.7, 1.1)))
     return larry
@@ -765,11 +766,11 @@ def lap_scene(n):
     bus_interior_set()
     you = load_char("you", (0.85, 1.0, 0), rot_z=0, subdiv=True)
     sit(you, 0.53)
-    dale = load_char("dale", (0.85, 0.66, 0), rot_z=0, subdiv=True)
+    dale = load_char("dale", (0.92, 0.74, 0), rot_z=-90, subdiv=True)   # sideways across your thighs, facing the aisle
     pose(dale, SIT)
     bpy.context.scene.frame_set(1)
-    knee = (you.world("LeftLeg") + you.world("RightLeg")) / 2
-    settle(dale, "Hips", knee.z + 0.12)
+    thigh = (you.world("LeftLeg") + you.world("Hips")) / 2
+    settle(dale, "Hips", thigh.z + 0.2)
     return you, dale
 
 
@@ -782,10 +783,10 @@ def sh09():
     blink(you, [20])
     look_at(you, (1.6, -4.0, 1.5), 0.6)
     face(dale, 1, SERENE)
-    look_at(dale, (0.85, -4.0, 1.6), 0.8)
-    cam = Cam(lens=28, loc=(-0.55, -1.9, 1.45), target=(0.8, 0.5, 1.15))
-    cam.key(1, loc=(-0.55, -1.9, 1.45))
-    cam.key(n, loc=(-0.45, -1.55, 1.42))
+    look_at(dale, (-2.0, 0.7, 1.6), 0.6)
+    cam = Cam(lens=28, loc=(-0.35, -1.05, 1.4), target=(0.85, 0.85, 1.2))
+    cam.key(1, loc=(-0.35, -1.05, 1.4))
+    cam.key(n, loc=(-0.25, -0.8, 1.4))
     return n
 
 
@@ -798,12 +799,12 @@ def sh10():
     face(dale, 1, SERENE)
     face(dale, 8, CREEPY)
     turn = empty("yourface", (0, 0, 0))
-    you.bake_follow(turn, "Head", n, offset=(0.0, -0.05, 0.08))
-    c = look_at(dale, (0.85, -4.0, 1.7), 1.0)
-    stare_at(dale, turn, 2, 10)
-    cam = Cam(lens=42, loc=(0.2, -0.75, 1.6), target=(0.85, 0.55, 1.6), dof=2.8)
-    cam.key(1, loc=(0.2, -0.75, 1.6))
-    cam.key(n, loc=(0.3, -0.6, 1.62))
+    you.bake_follow(turn, "Head", n, offset=(0.0, -0.08, 0.08))
+    look_at(dale, (-2.0, 0.7, 1.6), 0.6)
+    stare_at(dale, turn, 2, 10, influence=0.9)
+    cam = Cam(lens=40, loc=(0.1, -0.35, 1.6), target=(0.95, 0.85, 1.5), dof=2.8)
+    cam.key(1, loc=(0.1, -0.35, 1.6))
+    cam.key(n, loc=(0.2, -0.25, 1.6))
     return n
 
 
@@ -871,14 +872,14 @@ def sh13():
     """But your new boss... is - the big leather chair behind the CEO desk, turned away. Creak."""
     n = frames_of("sh13")
     larry, piv = boss_office(n)
-    you = load_char("you", (0.35, -0.6, 0), rot_z=180)
+    you = load_char("you", (0.75, -0.35, 0), rot_z=180)
     you.clip("137_41", **src(n, 4200))
     face(larry, 1, SMUG)
     for f, r in ((1, 180), (int(n * 0.5), 186), (n, 178)):
         key_rot(piv, f, (0, 0, r))
-    cam = Cam(lens=30, loc=(0.9, -1.9, 1.45), target=(0.0, 2.2, 1.15))
-    cam.key(1, loc=(0.9, -1.9, 1.45))
-    cam.key(n, loc=(0.7, -1.4, 1.4))
+    cam = Cam(lens=30, loc=(-0.45, -1.9, 1.5), target=(0.05, 2.2, 1.15))
+    cam.key(1, loc=(-0.45, -1.9, 1.5))
+    cam.key(n, loc=(-0.35, -1.45, 1.45))
     return n
 
 
@@ -889,9 +890,9 @@ def sh14():
     larry, piv = boss_office(n, spin=(1, 9))
     face(larry, 1, SMUG)
     face(larry, 12, CREEPY)
-    cam = Cam(lens=36, loc=(0.0, -0.4, 1.3), target=(0.0, 2.2, 1.2))
-    cam.key(1, loc=(0.0, -0.4, 1.3))
-    cam.key(n, loc=(0.0, 0.05, 1.3))
+    cam = Cam(lens=34, loc=(0.0, -0.55, 1.05), target=(0.0, 2.2, 1.2))   # low enough to read the CEO nameplate
+    cam.key(1, loc=(0.0, -0.55, 1.05))
+    cam.key(n, loc=(0.0, -0.2, 1.08))
     stare_at(larry, cam.cam, 9, 14)
     return n
 
@@ -925,6 +926,7 @@ def sh16():
     n = frames_of("sh16")
     newcorp_set()
     vm = vending_machine((1.2, 2.9, 0))
+    bpy.data.objects["vm_glass"].hide_render = True       # close-up: the glass only fogged the frame
     dale = load_char("dale", (1.06, 2.95, 0), rot_z=0, subdiv=True)
     pose(dale, SQUAT)
     settle(dale, "Hips", 0.75)
@@ -954,9 +956,9 @@ def sh17():
     mn, mx = bbox(s)
     you.bake_follow(s, "RightHand", n, offset=(0.0, 0.0, -(mx.z - mn.z) * 0.95))
     face(you, 1, SMILE)
-    cam = Cam(lens=26, loc=(1.8, -4.5, 1.5), target=(0.3, 2.0, 1.6))
-    cam.key(1, loc=(1.8, -4.5, 1.5))
-    cam.key(n, loc=(1.5, -3.9, 1.5))
+    cam = Cam(lens=28, loc=(1.3, -0.6, 1.45), target=(0.3, 3.0, 1.35))
+    cam.key(1, loc=(1.3, -0.6, 1.45))
+    cam.key(n, loc=(1.15, -0.9, 1.45), target=(0.3, 2.0, 1.35))
     return n
 
 
@@ -1020,10 +1022,11 @@ def sh20():
     n = frames_of("sh20")
     airport_set()
     passport_booth((0, 1.2, 0))
+    bpy.data.objects["bt_glass"].hide_render = True      # glass fogged the whole frame
     piv, sz = chair((0, 1.45, 0), rot_z=0, seat_h=0.62)
     larry = load_char("larry", (0, 1.4, 0), rot_z=0, subdiv=True)
     sit(larry, sz)
-    on_bone(larry, cap(), "Head", (0, 0.2, 0.01))
+    on_bone(larry, cap(), "Head", (0, 0.105, 0.0))
     stamp = empty("held_stamp", (0, 0, 0))
     for o in (box("hs_base", (0.07, 0.07, 0.02), (0, 0, 0.01), mat_flat("hsr", (0.12, 0.1, 0.1))),
               box("hs_block", (0.065, 0.065, 0.025), (0, 0, 0.032), mat_flat("hsw", (0.45, 0.25, 0.12)))):
@@ -1033,9 +1036,9 @@ def sh20():
     hand_ik(larry, "Right", empty("cheek", (-0.16, 1.22, 1.5)))
     face(larry, 1, CREEPY)
     face(larry, n, CREEPY_ENJOY)
-    cam = Cam(lens=36, loc=(0.25, -0.9, 1.45), target=(0.0, 1.0, 1.5))
-    cam.key(1, loc=(0.25, -0.9, 1.45))
-    cam.key(n, loc=(0.15, -0.55, 1.47))
+    cam = Cam(lens=34, loc=(0.2, -0.05, 1.5), target=(0.0, 1.4, 1.42))
+    cam.key(1, loc=(0.2, -0.05, 1.5))
+    cam.key(n, loc=(0.12, 0.15, 1.5))
     look_at(larry, cam.cam, 0.9)
     return n
 
@@ -1072,9 +1075,9 @@ def sh21():
         key_loc(nose, f, (0.0 + 0.06 * math.sin(f * 0.9), 1.8, 0.45 + 0.05 * math.sin(f * 1.3)))
     look_at(dale, nose, 0.9)
     face(dale, 1, SERENE)
-    cam = Cam(lens=24, loc=(-0.6, -1.2, 0.45), target=(-0.3, 1.9, 0.55))
-    cam.key(1, loc=(-0.6, -1.2, 0.45))
-    cam.key(n, loc=(-0.5, -0.8, 0.42))
+    cam = Cam(lens=24, loc=(-1.0, -1.1, 0.5), target=(-0.5, 1.9, 0.5))
+    cam.key(1, loc=(-1.0, -1.1, 0.5))
+    cam.key(n, loc=(-0.9, -0.75, 0.48))
     return n
 
 

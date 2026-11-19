@@ -7,8 +7,11 @@ OUT=$S/ep2/preview
 mkdir -p $OUT
 SHOTS="$@"
 [ -z "$SHOTS" ] && SHOTS=$(python3 -c "import sys; sys.path.insert(0,'$HERE'); import cuts; print(' '.join(cuts.SHOT_NAMES))")
-cd /tmp
-for sh in $SHOTS; do
+export B OUT HERE
+one() {
+  sh=$1; cd /tmp
   xvfb-run -a -s "-screen 0 1280x1024x24" $B -b --python $HERE/render_shot.py -- $sh $OUT preview 4 > $OUT/$sh.log 2>&1
   if grep -q SHOT_DONE $OUT/$sh.log; then echo "OK $sh $(grep SHOT_DONE $OUT/$sh.log | sed 's/.*secs=//')s"; else echo "FAIL $sh"; grep -B2 -A12 Traceback $OUT/$sh.log | head -30; fi
-done
+}
+export -f one
+echo $SHOTS | tr ' ' '\n' | xargs -P ${W:-1} -I{} bash -c 'one {}'     # W=2 runs two shots at once (RAM: max 2)
