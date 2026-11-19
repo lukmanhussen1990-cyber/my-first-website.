@@ -16,10 +16,10 @@ export const Workshop: React.FC = () => {
   const mats = useMemo(() => {
     const wallTex = tileTexture().clone();
     wallTex.needsUpdate = true;
-    wallTex.repeat.set(36 / 4, 14 / 4); // 8 tiles per texture → 0.5-unit tiles
+    wallTex.repeat.set(60 / 4, 28 / 4); // 8 tiles per texture → 0.5-unit tiles
     const floorTex = floorTexture().clone();
     floorTex.needsUpdate = true;
-    floorTex.repeat.set(36 / 6, 20 / 6);
+    floorTex.repeat.set(60 / 6, 50 / 6);
     return {
       wall: new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.88, metalness: 0 }),
       floor: new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.72, metalness: 0.05 }),
@@ -29,11 +29,11 @@ export const Workshop: React.FC = () => {
   }, []);
   return (
     <group>
-      <mesh material={mats.wall} position={[6, E.floorY + 7, WALL_Z]} receiveShadow>
-        <planeGeometry args={[36, 14]} />
+      <mesh material={mats.wall} position={[6, E.floorY + 14, WALL_Z]} receiveShadow>
+        <planeGeometry args={[60, 28]} />
       </mesh>
-      <mesh material={mats.floor} position={[6, E.floorY, WALL_Z + 10]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[36, 20]} />
+      <mesh material={mats.floor} position={[6, E.floorY, WALL_Z + 25]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[60, 50]} />
       </mesh>
       {/* baseboard */}
       <mesh material={mats.trim} position={[6, E.floorY + 0.12, WALL_Z + 0.04]} receiveShadow castShadow>

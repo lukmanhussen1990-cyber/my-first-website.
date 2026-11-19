@@ -4,14 +4,15 @@
  */
 import React from 'react';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
-import { EVENTS } from '../timeline';
+import { EVENTS, HOOK } from '../timeline';
 import { crankRad, cycleDeg, exhaustLift, intakeLift } from '../lib/kinematics';
 import { Engine } from './Engine';
 import { ChargeParticles, SmokeParticles } from './Particles';
 import { Combustion } from './Combustion';
 import { CameraRig, cameraState } from './CameraRig';
 import { Atmosphere, Lighting, Reflections } from './Lighting';
-import { HookMist, Workshop } from './Workshop';
+import { Workshop } from './Workshop';
+import { CarInterior, DarkRoom, HookCharacter } from './HookCharacter';
 import { CAR_ORIGIN, CarSet, carOffset } from './CarSet';
 
 export const Scene3D: React.FC = () => {
@@ -33,15 +34,23 @@ export const Scene3D: React.FC = () => {
       <CameraRig t={t} />
       <Lighting t={t} focus={cam.target} carPos={carPos} onRoad={onRoad} />
 
-      <group visible={!onRoad}>
-        <group visible={!hook}>
-          <Workshop />
+      {/* Scene 1: goofy guy (dark room → daylight car interior) */}
+      <group visible={t < HOOK.engineCut}>
+        <HookCharacter t={t} camPos={cam.pos} />
+        <group visible={hook}>
+          <DarkRoom />
         </group>
+        <group visible={!hook}>
+          <CarInterior />
+        </group>
+      </group>
+
+      <group visible={!onRoad && t >= HOOK.engineCut}>
+        <Workshop />
         <Engine theta={theta} intakeLift={intakeLift(cyc)} exhaustLift={exhaustLift(cyc)} fullLip={hook} />
         <ChargeParticles t={t} />
         <SmokeParticles t={t} />
         <Combustion t={t} frame={frame} />
-        {hook && <HookMist t={t} cam={cam} />}
       </group>
 
       <group visible={onRoad}>

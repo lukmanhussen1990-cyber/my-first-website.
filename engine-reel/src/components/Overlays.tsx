@@ -9,6 +9,7 @@ import {
   CAPTIONS,
   CAPTION_STYLE,
   EVENTS,
+  HOOK,
   LABEL_PILLS,
   LABEL_PILLS_OUT,
   RPM_COUNTER,
@@ -259,7 +260,7 @@ export const Vignette: React.FC = () => {
 
 export const Flashes: React.FC = () => {
   const { t } = useT();
-  const snap = 0.55 * Math.exp(-14 * Math.max(0, t - EVENTS.lightSnap)) * (t >= EVENTS.lightSnap ? 1 : 0);
+  const snap = 0.45 * Math.exp(-40 * Math.max(0, t - EVENTS.lightSnap)) * (t >= EVENTS.lightSnap ? 1 : 0);
   const bang = 0.6 * Math.exp(-9 * Math.max(0, t - EVENTS.bang)) * (t >= EVENTS.bang ? 1 : 0);
   return (
     <>
@@ -271,5 +272,5 @@ export const Flashes: React.FC = () => {
 
 /** Motion-blur amount (px) for whip-pans, applied to the 3D canvas. */
 export const whipBlur = (t: number) =>
-  10 * bump(EVENTS.lightSnap, EVENTS.lightSnap + 0.06, EVENTS.lightSnap + 0.32, t) +
+  18 * bump(HOOK.pushStart + 0.12, HOOK.engineCut, HOOK.engineCut + 0.3, t) +
   16 * bump(EVENTS.whipStart + 0.05, EVENTS.whipCut, EVENTS.whipEnd, t);

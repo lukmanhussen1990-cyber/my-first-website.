@@ -10,10 +10,12 @@ import React, { useLayoutEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import { Environment, Lightformer } from '@react-three/drei';
-import { EVENTS } from '../timeline';
+import { EVENTS, HOOK } from '../timeline';
+import { HOOK_ORIGIN } from './HookCharacter';
 import { bump } from '../lib/math';
 
 type Props = { t: number; focus: THREE.Vector3; carPos: THREE.Vector3; onRoad: boolean };
+const H = (x: number, y: number, z: number): [number, number, number] => [HOOK_ORIGIN.x + x, HOOK_ORIGIN.y + y, HOOK_ORIGIN.z + z];
 
 const useTarget = (pos: [number, number, number]) => {
   const scene = useThree((s) => s.scene);
@@ -31,26 +33,47 @@ const useTarget = (pos: [number, number, number]) => {
 
 export const Lighting: React.FC<Props> = ({ t, focus, carPos, onRoad }) => {
   const hook = t < EVENTS.lightSnap;
-  const studio = !hook && !onRoad;
+  const inCar = !hook && t < HOOK.engineCut;
+  const studio = !hook && !inCar && !onRoad;
 
   // spotlight targets (the "sleeve")
   const sleeve = useTarget([0, 0.9, 0]);
-  const keyTarget = useTarget(onRoad ? [carPos.x, 0, carPos.z - 2] : [focus.x, 1.2, 0]);
+  const face = useTarget(H(0, 1.45, 0));
+  const keyTarget = useTarget(onRoad ? [carPos.x, 0, carPos.z - 2] : inCar ? H(0, 0.9, 0.4) : [focus.x, 1.2, 0]);
 
   // rhythmic breathing of the mood lights in the hook
   const breathe = 0.85 + 0.15 * Math.sin(t * Math.PI * 2 * 0.7);
-  const hookK = hook ? breathe : 0;
+  const hookK = 0 * breathe;
+  // one creepy, dim red lamp from below (flickers ever so slightly)
+  const lamp = hook ? 8 * (0.94 + 0.06 * Math.sin(t * 37) * Math.sin(t * 13)) : 0;
   // dim the studio a touch for the combustion close-up so the fire pops
   const fireDim = 1 - 0.35 * bump(22.4, 23.0, 29.4, t);
 
   const keyPos: [number, number, number] = onRoad
     ? [carPos.x - 9, 16, carPos.z + 10]
-    : [focus.x - 4.5, 8.5, 7.5];
+    : inCar
+      ? H(-2.5, 5.5, 5.5)
+      : [focus.x - 4.5, 8.5, 7.5];
+  const day = onRoad || inCar;
 
   return (
     <>
       {/* ── HOOK: moody rim spots ── */}
-      <ambientLight color="#2a0712" intensity={hook ? 0.06 : 0} />
+      <ambientLight color="#2a0712" intensity={hook ? 0.05 : 0} />
+      <spotLight
+        position={H(-0.12, 0.12, 1.55)}
+        target={face}
+        color="#ff2416"
+        intensity={lamp}
+        angle={0.95}
+        penumbra={0.55}
+        decay={2}
+        distance={0}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.02}
+      />
       <spotLight position={[-1.7, 2.3, -1.5]} target={sleeve} color="#ff2bd0" intensity={hookK * 38} angle={0.55} penumbra={0.85} decay={2} distance={0} />
       <spotLight position={[2.4, 0.4, -0.6]} target={sleeve} color="#ff1f3d" intensity={hookK * 30} angle={0.5} penumbra={0.9} decay={2} distance={0} />
       <spotLight position={[0.4, 3.0, 2.0]} target={sleeve} color="#ffa040" intensity={hookK * 14} angle={0.32} penumbra={1} decay={2} distance={0} />
@@ -58,28 +81,28 @@ export const Lighting: React.FC<Props> = ({ t, focus, carPos, onRoad }) => {
 
       {/* ── STUDIO / ROAD ── */}
       <hemisphereLight
-        color={onRoad ? '#dff3ff' : '#f2fbff'}
-        groundColor={onRoad ? '#7fae6a' : '#4c5f64'}
-        intensity={studio ? 1.15 * fireDim : onRoad ? 1.1 : 0}
+        color={day ? '#dff3ff' : '#f2fbff'}
+        groundColor={day ? '#7fae6a' : '#4c5f64'}
+        intensity={studio ? 1.15 * fireDim : day ? 1.15 : 0}
       />
       <directionalLight
         position={keyPos}
         target={keyTarget}
-        color={onRoad ? '#fff3df' : '#fff6ea'}
-        intensity={studio ? 2.7 * fireDim : onRoad ? 3.0 : 0}
+        color={day ? '#fff3df' : '#fff6ea'}
+        intensity={studio ? 2.7 * fireDim : day ? 3.0 : 0}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.03}
         shadow-camera-near={1}
         shadow-camera-far={45}
-        shadow-camera-left={onRoad ? -12 : -6}
-        shadow-camera-right={onRoad ? 12 : 6}
-        shadow-camera-top={onRoad ? 12 : 6}
-        shadow-camera-bottom={onRoad ? -12 : -4}
+        shadow-camera-left={onRoad ? -12 : inCar ? -3 : -6}
+        shadow-camera-right={onRoad ? 12 : inCar ? 3 : 6}
+        shadow-camera-top={onRoad ? 12 : inCar ? 3 : 6}
+        shadow-camera-bottom={onRoad ? -12 : inCar ? -3 : -4}
       />
-      <directionalLight position={[focus.x + 6, 3, 5]} color="#d6ecff" intensity={studio ? 0.7 * fireDim : onRoad ? 0.4 : 0} />
-      <directionalLight position={[focus.x + 2, 6, -6]} color="#ffffff" intensity={studio ? 1.1 : onRoad ? 0.6 : 0} />
+      <directionalLight position={[focus.x + 6, 3, 5]} color="#d6ecff" intensity={studio ? 0.7 * fireDim : day ? 0.4 : 0} />
+      <directionalLight position={[focus.x + 2, 6, -6]} color="#ffffff" intensity={studio ? 1.1 : day ? 0.6 : 0} />
     </>
   );
 };
@@ -92,11 +115,11 @@ export const Atmosphere: React.FC<{ t: number; onRoad: boolean }> = ({ t, onRoad
   useLayoutEffect(() => {
     const hook = t < EVENTS.lightSnap;
     if (hook) {
-      bg.set('#050207');
-      fog.color.set('#07030a');
-      fog.near = 2.2;
-      fog.far = 7.5;
-    } else if (onRoad) {
+      bg.set('#030203');
+      fog.color.set('#030203');
+      fog.near = 6;
+      fog.far = 14;
+    } else if (onRoad || t < HOOK.engineCut) {
       bg.set('#9fdcf7');
       fog.color.set('#bfe8fa');
       fog.near = 35;
@@ -109,7 +132,7 @@ export const Atmosphere: React.FC<{ t: number; onRoad: boolean }> = ({ t, onRoad
     }
     scene.background = bg;
     scene.fog = fog;
-    scene.environmentIntensity = hook ? 0.18 : 1;
+    scene.environmentIntensity = hook ? 0.3 : 1;
   }, [t, onRoad, scene, bg, fog]);
   return null;
 };

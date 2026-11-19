@@ -97,8 +97,8 @@ function glowMaterial(params: THREE.MeshStandardMaterialParameters) {
 const C = {
   air: new THREE.Color('#5cb9ff'),
   fuel: new THREE.Color('#ffc634'),
-  hot1: new THREE.Color('#ff8a1f'),
-  hot2: new THREE.Color('#ff3a1e'),
+  hot1: new THREE.Color('#ff5a00'),
+  hot2: new THREE.Color('#ff1e00'),
   burn: new THREE.Color('#fff1b0'),
 };
 
@@ -165,7 +165,7 @@ export const ChargeParticles: React.FC<{ t: number }> = ({ t }) => {
     const flameR = ignite ? (t - EVENTS.sparkFire) * 0.34 : -1;
     const consumed = smoothstep(EVENTS.bang, EVENTS.bang + 0.2, t);
     const jitterAmp = 0.018 * Math.pow(H, 1.4);
-    mat.emissiveIntensity = 0.3 + 1.9 * H;
+    mat.emissiveIntensity = 0.3 + 1.1 * H;
 
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i];
@@ -192,14 +192,14 @@ export const ChargeParticles: React.FC<{ t: number }> = ({ t }) => {
       if (H > 0) {
         const h1 = smoothstep(0.0, 0.6, H);
         const h2 = smoothstep(0.55, 1.0, H);
-        col.lerp(C.hot1, h1 * 0.9).lerp(C.hot2, h2 * 0.75);
+        col.lerp(C.hot1, h1).lerp(C.hot2, h2 * 0.8);
       }
       if (ignite) {
         const d = _v.distanceTo(PLUG_TIP.center);
         const burning = smoothstep(flameR, flameR - 0.12, d);
         if (burning > 0) {
           const flick = 0.85 + 0.15 * Math.sin(t * 60 + p.seed * 20);
-          col.lerp(C.burn, burning).multiplyScalar(1 + 1.6 * burning * flick);
+          col.lerp(C.burn, burning).multiplyScalar(1 + 0.6 * burning * flick);
           scale *= 1 + 0.35 * burning;
         }
       }

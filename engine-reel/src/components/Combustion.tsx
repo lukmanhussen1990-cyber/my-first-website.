@@ -111,8 +111,8 @@ export const Combustion: React.FC<{ t: number; frame: number }> = ({ t, frame })
 
   // ── lights ──
   const bangLight = tb >= 0 ? 70 * Math.exp(-2.6 * tb) * (1 - fade) : 0;
-  const kernelLight = kernelOn ? 1.5 + 3 * smoothstep(EVENTS.sparkFire, EVENTS.bang, t) : 0;
-  const sparkLight = sparkOn ? 14 : 0;
+  const kernelLight = kernelOn ? 0.5 + 1.2 * smoothstep(EVENTS.sparkFire, EVENTS.bang, t) : 0;
+  const sparkLight = sparkOn ? 0.5 : 0;
   const glowSize = tb >= 0 ? 3.2 * Math.exp(-2.2 * tb) * (1 - fade) + 0.6 * (1 - fade) : 0;
 
   return (
@@ -124,22 +124,22 @@ export const Combustion: React.FC<{ t: number; frame: number }> = ({ t, frame })
           {spark.tendrils.map((pts, i) => (
             <Line key={i} points={pts} color="#b5fbff" lineWidth={2.5} toneMapped={false} />
           ))}
-          <sprite position={PLUG_TIP.ground.toArray()} scale={[0.45, 0.45, 1]}>
-            <spriteMaterial map={glow} color="#5fe6ff" transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+          <sprite position={PLUG_TIP.ground.toArray()} scale={[0.16, 0.16, 1]}>
+            <spriteMaterial map={glow} color="#5fe6ff" transparent opacity={0.7} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
           </sprite>
         </group>
       )}
-      <pointLight position={[0, E.roofY - 0.12, 0.25]} color="#7fe9ff" intensity={sparkLight} distance={0} decay={2} />
+      <pointLight position={[0, E.roofY - 0.1, 0.7]} color="#7fe9ff" intensity={sparkLight} distance={0} decay={2} />
 
       {kernelOn && (
         <group position={[0, E.roofY - 0.12, 0]}>
           <mesh geometry={g.core} material={m.kernel} scale={kernelR} />
-          <sprite scale={[kernelR * 9, kernelR * 9, 1]}>
+          <sprite scale={[kernelR * 5, kernelR * 5, 1]}>
             <spriteMaterial map={glow} color="#ffb347" transparent blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} opacity={0.8} />
           </sprite>
         </group>
       )}
-      <pointLight position={[0, E.roofY - 0.15, 0.3]} color="#ffaa4a" intensity={kernelLight} distance={0} decay={2} />
+      <pointLight position={[0, E.roofY - 0.15, 0.7]} color="#ffaa4a" intensity={kernelLight} distance={0} decay={2} />
 
       {showFire && (
         <group position={[0, mid, -0.1]}>

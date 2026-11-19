@@ -66,7 +66,7 @@ export const WORDS: [string, number, number][] = [
 
 // ── Scenes ───────────────────────────────────────────────────────────────
 export const SCENES = {
-  hook: { start: 0.0, end: 3.15 }, //        "Every time you turn her on… four moves—"
+  hook: { start: 0.0, end: 2.5 }, //        "Every time you turn her on… four moves—"
   reveal: { start: 3.15, end: 8.45 }, //     "suck, squeeze, bang, and blow—over 3000 times a minute."
   intake: { start: 8.45, end: 16.4 }, //     "First, the piston drops down and sucks…"
   compression: { start: 16.4, end: 22.25 }, // "So the intake valve shuts…"
@@ -77,7 +77,7 @@ export const SCENES = {
 
 // ── One-off events (all in seconds) ─────────────────────────────────────
 export const EVENTS = {
-  lightSnap: 3.15, //            moody red → bright studio (right before "suck")
+  lightSnap: 2.5, //             HARD CUT: dark red room → daylight car interior ("moves")
   // intake
   airStreamStart: 10.3, //       "and sucks a fresh mix…"
   airStreamEnd: 13.25,
@@ -109,6 +109,15 @@ export const EVENTS = {
 // ── Crankshaft choreography ─────────────────────────────────────────────
 // Crank angle θ drives EVERYTHING mechanical (piston, rod, valves, cams).
 // 0° = TDC at the start of intake. One 4-stroke cycle = 720°.
+/** Scene-1 character hook. */
+export const HOOK = {
+  cut: 2.5, //          hard 1-frame snap-cut to daylight (same as EVENTS.lightSnap)
+  bobHz: 1.9, //        rhythm of the suspicious hand bob / key cranking
+  sweatStart: 0.5,
+  pushStart: 3.05, //   camera rushes from the key toward the engine bay…
+  engineCut: 3.42, //   …and cuts (inside the whip blur) to the engine cutaway
+};
+
 export const CRANK = {
   hookRevPerSec: 1.45, //   rhythmic pumping during the dark hook + early reveal
   spinUpStart: 5.7, //      "over three thousand times a minute" — accelerate…
@@ -153,16 +162,21 @@ export type CamKey = {
   fov: number;
   roll?: number;
   ease?: EaseName;
-  set?: 'engine' | 'car';
+  set?: 'engine' | 'car' | 'hook';
   follow?: boolean;
 };
 
 export const CAMERA: CamKey[] = [
-  // 1 · HOOK — tight, tilted, dark close-up on the "sleeve"
-  { t: 0.0, target: [0, 0.92, 0.1], dist: 3.5, az: 52, el: -9, fov: 32, roll: -56 },
-  { t: 3.15, target: [0, 0.95, 0.1], dist: 3.1, az: 44, el: -7, fov: 32, roll: -52, ease: 'inOutSine' },
-  // 2 · REVEAL — whip back and orbit 35°
-  { t: 4.35, target: [0, 1.6, 0], dist: 11.4, az: -6, el: 8, fov: 34, roll: 0, ease: 'outExpo' },
+  // 1 · HOOK — goofy guy in the dark, slow creep-in on his guilty face
+  { t: 0.0, set: 'hook', target: [-0.05, 1.42, 0.1], dist: 4.0, az: 3, el: 4, fov: 34, roll: -3 },
+  { t: 2.5, set: 'hook', target: [0, 1.6, 0.2], dist: 1.25, az: 1, el: -2, fov: 34, roll: -1.5, ease: 'inOutSine' },
+  // ── HARD CUT: daylight, he's just cranking the ignition key ──
+  { t: 2.5, set: 'hook', target: [-0.12, 1.18, 0.45], dist: 2.6, az: -78, el: 6, fov: 42, roll: 0 },
+  { t: 3.05, set: 'hook', target: [-0.18, 1.02, 0.6], dist: 2.0, az: -72, el: 6, fov: 42, ease: 'outSine' },
+  { t: 3.42, set: 'hook', target: [0.3, 1.0, 3.0], dist: 0.6, az: -170, el: 4, fov: 46, ease: 'inCubic' },
+  // 2 · REVEAL — cut inside the blur, keep zooming straight into the engine
+  { t: 3.42, target: [0, 1.75, 0], dist: 26, az: -4, el: 9, fov: 34, roll: 0 },
+  { t: 4.4, target: [0, 1.6, 0], dist: 11.4, az: -6, el: 8, fov: 34, roll: 0, ease: 'outExpo' },
   { t: 8.3, target: [0, 1.65, 0], dist: 10.6, az: 5, el: 7, fov: 34, ease: 'inOutSine' },
   // 3 · INTAKE — cutaway front-and-center, slow push in
   { t: 9.25, target: [-0.5, 2.55, 0], dist: 6.6, az: -5, el: 5, fov: 34, ease: 'inOutCubic' },
@@ -184,9 +198,9 @@ export const CAMERA: CamKey[] = [
   { t: 34.95, target: [5.2, 2.0, 0], dist: 4.2, az: 0, el: 3, fov: 34, ease: 'inOutCubic' },
   { t: 35.25, target: [9.8, 1.9, 0], dist: 4.2, az: 0, el: 3, fov: 34, ease: 'inQuad' },
   // ── hard cut (hidden by the whip blur) to the car set ──
-  { t: 35.25, set: 'car', follow: true, target: [-2.6, 0.5, 2.2], dist: 2.8, az: 22, el: 7, fov: 32 },
-  { t: 35.65, set: 'car', follow: true, target: [0.5, 0.42, 2.2], dist: 2.3, az: 26, el: 7, fov: 32, ease: 'outCubic' },
-  { t: 36.9, set: 'car', follow: true, target: [0.45, 0.45, 2.15], dist: 2.05, az: 22, el: 8, fov: 32, ease: 'inOutSine' },
+  { t: 35.25, set: 'car', follow: true, target: [-2.6, 0.5, 2.2], dist: 3.8, az: 22, el: 8, fov: 32 },
+  { t: 35.65, set: 'car', follow: true, target: [0.45, 0.5, 2.2], dist: 3.5, az: 28, el: 9, fov: 32, ease: 'outCubic' },
+  { t: 36.9, set: 'car', follow: true, target: [0.4, 0.55, 2.15], dist: 3.1, az: 24, el: 9, fov: 32, ease: 'inOutSine' },
   // 7 · ENDING — pull back as the car takes off down the road
   { t: 38.5, set: 'car', follow: true, target: [0, 0.75, -0.5], dist: 9.5, az: 20, el: 13, fov: 34, ease: 'inOutCubic' },
   { t: DURATION_SEC, set: 'car', target: [0, 0.8, -28], dist: 36, az: 7, el: 10, fov: 34, ease: 'outSine' },
@@ -194,7 +208,7 @@ export const CAMERA: CamKey[] = [
 
 /** Decaying camera-shake impulses. amp in world units, freq in Hz. */
 export const SHAKES = [
-  { t: 3.15, amp: 0.05, decay: 7, freq: 18 }, //  light snap
+  { t: 4.0, amp: 0.03, decay: 7, freq: 16 }, //   engine lands
   { t: 17.88, amp: 0.025, decay: 9, freq: 20 }, // valve snaps shut
   { t: 19.45, amp: 0.06, decay: 7, freq: 16 }, //  piston slams up
   { t: 26.24, amp: 0.2, decay: 4.5, freq: 21 }, // BANG
@@ -286,7 +300,7 @@ export const STROKE_BADGES = [
 
 // ── Comic stickers (reference-style onomatopoeia) ───────────────────────
 export const STICKERS = [
-  { text: '*CLICK*', t: 3.15, dur: 0.75, x: 50, y: 30, color: '#FFFFFF', ink: '#1B1B1F', size: 64, tilt: -8 },
+  { text: '*CLICK*', t: 2.5, dur: 0.55, x: 34, y: 50, color: '#FFFFFF', ink: '#1B1B1F', size: 64, tilt: -8 },
   { text: 'BANG!', t: 26.24, dur: 1.35, x: 52, y: 25, color: '#FFD43B', ink: '#E8361F', size: 190, tilt: -9 },
   { text: 'PFFFT!', t: 34.3, dur: 0.9, x: 64, y: 27, color: '#E9EEF2', ink: '#5B6672', size: 120, tilt: 7 },
   { text: 'VROOM!', t: 37.05, dur: 1.6, x: 50, y: 24, color: '#4FC3F7', ink: '#0B4F8A', size: 150, tilt: -7 },

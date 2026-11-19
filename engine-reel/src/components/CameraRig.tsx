@@ -7,8 +7,9 @@ import { useLayoutEffect } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import { CAMERA, CamKey, EVENTS, PRESSURE_RUMBLE, SHAKES } from '../timeline';
-import { DEG, EASE, lerp, smoothstep } from '../lib/math';
-import { crankRad } from '../lib/kinematics';
+import { DEG, EASE, lerp, smoothstep, wobble } from '../lib/math';
+import { HOOK_ORIGIN } from './HookCharacter';
+import { HOOK } from '../timeline';
 import { carOffset, CAR_ORIGIN } from './CarSet';
 
 export type CamState = {
@@ -24,6 +25,7 @@ export type CamState = {
 const resolveTarget = (k: CamKey, t: number) => {
   const v = new THREE.Vector3(...k.target);
   if (k.set === 'car') v.add(CAR_ORIGIN);
+  if (k.set === 'hook') v.add(HOOK_ORIGIN);
   if (k.follow) v.add(carOffset(t));
   return v;
 };
@@ -51,15 +53,6 @@ export function cameraState(t: number): CamState {
   let el = lerp(a.el, b.el, p);
   const fov = lerp(a.fov, b.fov, p);
   let roll = lerp(a.roll ?? 0, b.roll ?? 0, p);
-
-  // hook: slow sway + a slight bounce in rhythm with the piston
-  if (t < EVENTS.lightSnap + 0.4) {
-    const k = 1 - smoothstep(EVENTS.lightSnap, EVENTS.lightSnap + 0.4, t);
-    az += k * 2.6 * Math.sin(t * Math.PI * 2 * 0.33);
-    el += k * 1.6 * Math.sin(t * Math.PI * 2 * 0.25 + 1.0);
-    dist += k * 0.045 * Math.cos(crankRad(t));
-    roll += k * 1.2 * Math.sin(t * Math.PI * 2 * 0.2);
-  }
 
   const pos = new THREE.Vector3(
     Math.sin(az * DEG) * Math.cos(el * DEG),
@@ -90,6 +83,13 @@ export function cameraState(t: number): CamState {
     sx += env * Math.sin(w + 0.3);
     sy += env * Math.sin(w * 1.27 + 1.1);
     sr += env * 6 * Math.sin(w * 0.83 + 2.0);
+  }
+  // hook: tiny nervous hand-held jitters that grow as we creep in on his face
+  if (t < HOOK.cut) {
+    const A = 0.003 + 0.009 * smoothstep(0, HOOK.cut, t);
+    sx += A * wobble(t * 9.0, 1.3);
+    sy += A * wobble(t * 11.0, 2.7);
+    sr += 0.5 * wobble(t * 7.0, 4.1) * (0.5 + smoothstep(0, HOOK.cut, t));
   }
   const R = PRESSURE_RUMBLE;
   if (t > R.start && t < R.end) {

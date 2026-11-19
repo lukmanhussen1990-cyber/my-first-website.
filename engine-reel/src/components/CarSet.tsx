@@ -175,11 +175,11 @@ type Puff = { born: number; life: number; size: number; seed: number };
 function puffSchedule(): Puff[] {
   const out: Puff[] = [];
   // idling puffs while we look at the tailpipe
-  for (let tt = EVENTS.whipCut - 0.6; tt < CAR.launchAt; tt += 0.3) out.push({ born: tt, life: 1.2, size: 0.12, seed: out.length });
+  for (let tt = EVENTS.whipCut - 0.6; tt < CAR.launchAt; tt += 0.3) out.push({ born: tt, life: 1.2, size: 0.08, seed: out.length });
   // big "out the tailpipe" puff burst
-  for (let k = 0; k < 4; k++) out.push({ born: EVENTS.tailpipePuff + k * 0.05, life: 1.6, size: 0.26 - k * 0.03, seed: 100 + k });
+  for (let k = 0; k < 4; k++) out.push({ born: EVENTS.tailpipePuff + k * 0.05, life: 1.6, size: 0.17 - k * 0.02, seed: 100 + k });
   // trailing puffs while driving off
-  for (let tt = CAR.launchAt; tt < CAR.launchAt + 4.6; tt += 0.085) out.push({ born: tt, life: 0.95, size: 0.14, seed: out.length });
+  for (let tt = CAR.launchAt; tt < CAR.launchAt + 4.6; tt += 0.085) out.push({ born: tt, life: 0.95, size: 0.12, seed: out.length });
   return out.slice(0, MAX_PUFFS);
 }
 
