@@ -1,6 +1,6 @@
 # Larry series: handoff (read this first)
 
-Everything needed to continue this series in a new session or on a new account. The code is on branch `claude/animation-video-blender-ideas-tdfyh9`, under `animation/larry/`.
+Everything needed to continue this series in a new session or on a new account. The code is on branch `ccr-35ca5e9e-l7qz15` (originally `claude/animation-video-blender-ideas-tdfyh9`, which is not on this remote), under `animation/larry/`.
 
 ## What this is
 
@@ -37,7 +37,15 @@ You finally sleep… but who's tucking you in? LARRY, now a soldier in the army.
 
 The full voiceover text and timings are in `scripts/captions.py`. The cut list is in `scripts/cuts.py` and the shots are in `scripts/shots.py`.
 
-### Episode 2 (next): Larry AND Dale are both obsessed with you
+### Episode 2 "Larry & Dale" (in progress: everything except the 3D render; see `ep2/README.md`)
+
+**Status (2026-11-19).** These are done and committed in `ep2/`:
+- the transcription, cut list (35 shots), captions, SFX and mix;
+- the in-world graphics and the shot code (it passes a mocked-Blender smoke test);
+- a storyboard animatic of the exact edit.
+
+Dale's recipe is a **draft** in `scripts/build_character.py` and still needs lookdev and the user's approval. The render didn't happen because that session's network blocked Blender, MPFB, MakeHuman and CMU (see "Network" below). Next step: run `ep2/README.md` → "Finishing it".
+
 
 The user records the voiceover with TTS and uploads it as an mp3. This is the approved script:
 
@@ -74,6 +82,22 @@ Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The
   - Once the user likes him, add `"dale"` to `SPECS` and commit, so he stays the same in every future episode. Also add his CC-BY credits, if any, to `CREDITS.md`.
 - **Supporting cast:** `cop`, `bodyguard`, `soldier`, `soldier2`.
 
+## Network (cloud sessions)
+
+`setup_env.sh` downloads from these hosts:
+- `download.blender.org`
+- `extensions.blender.org`
+- `files.makehumancommunity.org` and `files2.makehumancommunity.org`
+- `mocap.cs.cmu.edu` (plain http)
+- `fonts.googleapis.com` and `fonts.gstatic.com`
+- `opengameart.org` (Episode 1's tank and jets only)
+- Poly Haven (`api.polyhaven.com`, `dl.polyhaven.org`)
+- Hugging Face (whisper model)
+
+A cloud environment must allow them; otherwise run the pipeline on your own Linux machine.
+
+**Hard-coded paths.** Episode 1's `scripts/*.sh` hard-code `/home/user/my-sec-wsb/...`. Episode 2's scripts resolve paths relative to themselves.
+
 ## Setup (fresh Linux machine or cloud session)
 
 ```bash
@@ -81,7 +105,7 @@ bash animation/larry/setup_env.sh          # Blender 4.5.16, MPFB 2.0.18 + MakeH
 export LARRY_WORK=~/larry_work             # (default) build files, frames and audio go here, outside git
 B=/opt/blender-4.5.16-linux-x64/blender
 mkdir -p $LARRY_WORK/chars
-for c in you larry larry_b you_sun you_pj cop bodyguard soldier soldier2 larry_soldier; do
+for c in you larry larry_b you_sun you_pj cop bodyguard soldier soldier2 larry_soldier dale dale_tee larry_tee you_old; do
   $B -b --python animation/larry/scripts/build_character.py -- $c $LARRY_WORK/chars/$c.blend; done
 python3 animation/larry/scripts/make_decals.py $LARRY_WORK/decals    # signs/labels/posters (PIL)
 ```
@@ -161,4 +185,4 @@ python3 animation/larry/scripts/make_decals.py $LARRY_WORK/decals    # signs/lab
 
 ## Kickoff prompt for a new session
 
-> I'm continuing my "Larry" 3D animated shorts series. In this repo, check out branch `claude/animation-video-blender-ideas-tdfyh9` and read `animation/larry/HANDOFF.md` first. It has the characters, the pipeline, the setup script and the lessons learned. Run `animation/larry/setup_env.sh`, rebuild the characters, then make Episode 2 (Larry & Dale) with the voiceover I've attached, in exactly the same style as Episode 1. Keep Larry exactly as defined in `build_character.py`, and design Dale once, then save him there too.
+> I'm continuing my "Larry" 3D animated shorts series. In this repo, check out branch `ccr-35ca5e9e-l7qz15` and read `animation/larry/HANDOFF.md` first. It has the characters, the pipeline, the setup script and the lessons learned. Run `animation/larry/setup_env.sh`, rebuild the characters, then make Episode 2 (Larry & Dale) with the voiceover I've attached, in exactly the same style as Episode 1. Keep Larry exactly as defined in `build_character.py`, and design Dale once, then save him there too.

@@ -90,9 +90,66 @@ SPECS = {
         eye_mat="grey.mhmat",
         tint={"cargo": (0.28, 0.31, 0.2), "boots": (0.12, 0.1, 0.08), "moustache": (0.16, 0.12, 0.1)},
     ),
+    # ---------------------------------------------------------------- episode 2
+    # DALE FROM IT: DRAFT, not yet approved by the user. Check with lookdev.py + lineup.py next to Larry, adjust,
+    # then replace each candidate tuple with the asset that was actually picked (the build log prints PICKED ...)
+    # so he can never change between episodes. Silhouette/colour must read opposite to Larry: tall, skinny, younger,
+    # long ginger hair + beard, green hoodie/tee, khaki shorts, no glasses.
+    "dale": dict(
+        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=1.0, proportions=0.45, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="long01.mhclo",
+        clothes=[("*hoodie*male*.mhclo", "*hoodie*.mhclo", "elvs_crude_t-shirt_male.mhclo"),
+                 "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
+                 ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],
+        tint={"long01": (0.72, 0.3, 0.08), "hoodie": (0.12, 0.42, 0.3), "crude_t-shirt": (0.12, 0.42, 0.3),
+              "jeans_shorts": (0.52, 0.46, 0.3), "beard": (0.62, 0.26, 0.07), "goatee": (0.62, 0.26, 0.07)},
+    ),
+    # matching T-shirts (episode 2): plain white tees; the shot attaches the "your face" print to the chest
+    "dale_tee": dict(
+        phenotype=dict(gender=1.0, age=0.56, muscle=0.22, weight=0.12, height=1.0, proportions=0.45, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="long01.mhclo",
+        clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo",
+                 ("*full*beard*.mhclo", "*beard*.mhclo", "*goatee*.mhclo")],
+        tint={"long01": (0.72, 0.3, 0.08), "crude_t-shirt": (0.95, 0.95, 0.95), "jeans_shorts": (0.52, 0.46, 0.3),
+              "beard": (0.62, 0.26, 0.07), "goatee": (0.62, 0.26, 0.07)},
+    ),
+    "larry_tee": dict(
+        phenotype=dict(gender=1.0, age=0.78, muscle=0.3, weight=0.82, height=0.38, proportions=0.35, race=CAU),
+        skin="middleage_caucasian_male.mhmat", hair="short04.mhclo",
+        clothes=["elvs_crude_t-shirt_male.mhclo", "toigo_wool_pants.mhclo", "shoes01.mhclo",
+                 "grinsegold_moustache.mhclo", "frankyaye_glasses_library_male.mhclo"],
+        eye_mat="grey.mhmat",
+        tint={"crude_t-shirt": (0.95, 0.95, 0.95), "wool_pants": (0.3, 0.22, 0.14), "moustache": (0.16, 0.12, 0.1)},
+    ),
+    # you, seventy years later (hospital bed)
+    "you_old": dict(
+        phenotype=dict(gender=1.0, age=1.0, muscle=0.35, weight=0.4, height=0.5, proportions=0.6, race=CAU),
+        skin=("old_caucasian_male.mhmat", "old_*male*.mhmat", "middleage_caucasian_male.mhmat"), hair="short02.mhclo",
+        clothes=["elvs_crude_t-shirt_male.mhclo"],
+        tint={"crude_t-shirt": (0.78, 0.86, 0.95), "short02": (0.75, 0.75, 0.77)},
+    ),
 }
 
-spec = SPECS[NAME]
+
+def _pick(entry):
+    """An asset entry is a file name, or a tuple of candidates (names or glob patterns) tried in order against
+    the MPFB data folder; the first that exists wins (episode-1 recipes only use plain names, so they are unaffected)."""
+    if isinstance(entry, str):
+        return entry
+    import glob
+    root = os.path.expanduser("~/.config/blender/4.5/extensions/.user/user_default/mpfb/data")
+    for cand in entry:
+        hits = sorted(glob.glob(os.path.join(root, "**", cand), recursive=True))
+        if hits:
+            print("PICKED", os.path.basename(hits[0]), "for", entry)
+            return os.path.basename(hits[0])
+    print("NO_MATCH", entry)
+    return None
+
+
+spec = dict(SPECS[NAME])
+spec["skin"] = _pick(spec["skin"])
+spec["clothes"] = [c for c in (_pick(e) for e in spec["clothes"]) if c]
 bpy.ops.wm.read_homefile(use_empty=True)
 
 human_info = HumanService._create_default_human_info_dict()
