@@ -20,6 +20,17 @@ pose_seq, facing = ep4.pose_seq, ep4.facing
 SNIFF = ep4.SNIFF
 
 D6 = os.path.join(lib.SCRATCH, "ep6", "decals")
+FLAGS = {"sd": False}
+_load_char = load_char
+
+
+def load_char(name, loc=(0, 0, 0), rot_z=0.0, subdiv=False, **k):
+    """Render subdivision only in close-ups (closeup() turns it on): measured 17 s vs 45 s a frame, looks the same."""
+    return _load_char(name, loc, rot_z=rot_z, subdiv=bool(subdiv and FLAGS["sd"]), **k)
+
+
+def closeup():
+    FLAGS["sd"] = True
 SHOTS = {}
 
 
@@ -115,6 +126,17 @@ def extrude(name, pts, y0, y1, mat, bevel=0.0, seg=3, parent=None, caps=True):
     return o
 
 
+def bake_mods(o):
+    """Freeze an object's modifier stack (booleans, bevels, smoothing) into plain mesh data, so nothing is
+    re-evaluated per frame when the car moves (the boolean cutters ride along and would retrigger it)."""
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = bpy.data.meshes.new_from_object(o.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+    o.modifiers.clear()
+    o.data = me
+    return o
+
+
 def strut(name, p0, p1, r, mat, parent=None):
     p0, p1 = Vector(p0), Vector(p1)
     d = p1 - p0
@@ -162,6 +184,12 @@ class Car:
             cav.hide_render = True; cav.hide_viewport = True; cav.parent = root
             md = body.modifiers.new("cabin", "BOOLEAN"); md.object = cav; md.operation = "DIFFERENCE"; md.solver = "EXACT"
         body.modifiers.move(body.modifiers.find("bev"), len(body.modifiers) - 1)
+        cut_objs = cutters + ([cav] if interior else [])
+        for c in cut_objs:
+            c.hide_viewport = False                          # make sure the cutters are evaluated for the bake
+        bake_mods(body)
+        for c in cut_objs:
+            bpy.data.objects.remove(c, do_unlink=True)
         yi = W / 2 - 0.1
         gh = [(x_rt - 0.12, belt), (x_ws, belt), (x_ws - rake, roof), (x_rt, roof)]
         self.greenhouse = g = extrude(f"{name}_glass", gh, -yi, yi, glass(), parent=root, caps=not windows_down)
@@ -256,8 +284,10 @@ class Car:
                 g = empty(f"grip{ch.name}{side}", (w.x + 0.02, w.y + dy, w.z + 0.03)); g.parent = self.root
                 hand_ik(ch, side, g)
         elif hands == "lap":
-            for side, dy in (("Left", 0.12), ("Right", -0.12)):
-                g = empty(f"lap{ch.name}{side}", (x + 0.32, y + dy, ztop + 0.18)); g.parent = self.root
+            kid = ch.name.startswith("kid")
+            for side, dy in (("Left", 0.1), ("Right", -0.1)):
+                g = empty(f"lap{ch.name}{side}", (x + (0.2 if kid else 0.3), y + dy, ztop + (0.12 if kid else 0.18)))
+                g.parent = self.root
                 hand_ik(ch, side, g)
         return ch
 
@@ -367,8 +397,8 @@ def family_in(car, you_hands="wheel", sd=True, kids=True):
     girl = load_char("kid_girl", (0, 0, 0), subdiv=sd)
     car.seat_char(you, 0, hands=you_hands)
     car.seat_char(wife, 1, hands="lap")
-    car.seat_char(boy, 2, hands="lap", pose_over=SIT)
-    car.seat_char(girl, 3, hands="lap", pose_over=SIT)
+    car.seat_char(girl, 2, hands="lap", pose_over=SIT)          # your daughter by the left window
+    car.seat_char(boy, 3, hands="lap", pose_over=SIT)
     return you, wife, boy, girl
 
 
@@ -435,7 +465,7 @@ def coast_road(x0=-150.0, x1=950.0, trees_from=None, trees_to=None):
     plane("beach", (L, 40.0), (cx, -28.0, -0.55), mat_tex("bsand", "coast_sand_01", scale=1.0, tint=(1.0, 0.95, 0.85)), uv_scale=0.1,
           rot=(1.3, 0, 0))                                      # slopes down to the waterline
     plane("sea", (L + 2000, 1500), (cx, -797.0, -0.72), water_mat())
-    plane("land", (L, 400), (cx, 207.0, -0.02), mat_tex("lgrass", "leafy_grass", scale=1.0, tint=(0.85, 0.95, 0.75)), uv_scale=0.05)
+    plane("land", (L, 400), (cx, 207.0, -0.02), mat_tex("lgrass", "leafy_grass", scale=1.0, tint=(0.5, 0.75, 0.34)), uv_scale=0.05)
     gr = mat_flat("guard", (0.75, 0.76, 0.78), rough=0.3, metal=0.8)
     post = box("gpost", (0.12, 0.12, 0.8), (x0 + 1, -8.0, 0.4), gr)
     ar = post.modifiers.new("arr", "ARRAY"); ar.use_relative_offset = False; ar.use_constant_offset = True
@@ -533,8 +563,8 @@ def sh03():
     for o in bpy.data.objects:
         if o.name.startswith("family_rvm"):
             o.hide_render = True                                   # keep faces clear in this shot
-    cam = follow(fam.root, Cam(lens=22, loc=(2.85, 0.15, 1.42), target=(-0.7, 0.0, 1.05), clip_end=3000))
-    cam.key(1, loc=(2.85, 0.15, 1.42)); cam.key(n, loc=(2.6, 0.0, 1.38))
+    cam = follow(fam.root, Cam(lens=24, loc=(1.75, 0.12, 1.62), target=(-0.75, 0.0, 1.12), clip_end=3000))
+    cam.key(1, loc=(1.75, 0.12, 1.62)); cam.key(n, loc=(1.55, 0.0, 1.58))
     return n
 
 
@@ -565,12 +595,12 @@ def mirror_feed(car, n, shot_name, lens=24, res=(480, 140)):
             nt.nodes.remove(nd)
     outn = next(nd for nd in nt.nodes if nd.type == "OUTPUT_MATERIAL")
     tc = nt.nodes.new("ShaderNodeTexCoord"); mp = nt.nodes.new("ShaderNodeMapping")
-    mp.inputs["Scale"].default_value = (-1, 1, 1); mp.inputs["Location"].default_value = (1, 0, 0)
+    # Generated coords span the mirror face 0..1; its u runs toward -Y, which already gives the mirror flip
     im = nt.nodes.new("ShaderNodeTexImage")
     im.image = bpy.data.images.load(os.path.join(out, "m_0001.png")); im.image.source = "SEQUENCE"
     im.image_user.frame_duration = n; im.image_user.frame_start = 1; im.image_user.use_auto_refresh = True
     em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 1.0
-    nt.links.new(tc.outputs["UV"], mp.inputs[0]); nt.links.new(mp.outputs[0], im.inputs[0])
+    nt.links.new(tc.outputs["Generated"], mp.inputs[0]); nt.links.new(mp.outputs[0], im.inputs[0])
     nt.links.new(im.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], outn.inputs["Surface"])
     face_obj.data.materials.clear(); face_obj.data.materials.append(m)
     return mc
@@ -618,8 +648,8 @@ def sh04():
     red.drive([(1, (92.0, -1.8), 0), (n, (96.0 + V * n, -1.8), 0)])
     mirror_feed(fam, n, "sh04", lens=26)
     mx, mz, _ = fam.mirror
-    cam = follow(fam.root, Cam(lens=38, loc=(-0.08, 0.16, 1.4), target=(mx, 0.0, mz), dof=2.2, clip_end=3000))
-    cam.key(1, loc=(-0.08, 0.16, 1.4)); cam.key(n, loc=(0.0, 0.12, 1.42))
+    cam = follow(fam.root, Cam(lens=45, loc=(-0.78, 0.22, 1.4), target=(mx, 0.0, mz - 0.01), dof=2.0, clip_end=3000))
+    cam.key(1, loc=(-0.78, 0.22, 1.4)); cam.key(n, loc=(-0.6, 0.18, 1.42))          # over your shoulder onto the mirror
     return n
 
 
@@ -644,6 +674,7 @@ def sh05():
 @shot
 def sh06():
     """matching SUNGLASSES. - tight on both faces: they turn to camera in perfect sync; two lens glints."""
+    closeup()
     n = frames_of("sh06")
     motion_blur()
     coast_road(trees_from=150, trees_to=300)
@@ -689,9 +720,9 @@ def sh08():
     red = Car("tiny", "tiny", (0.75, 0.04, 0.04))
     family_in(fam, sd=False, kids=False); larry_and_dale(red, sd=False)
     fam.drive([(1, (300.0, -1.8), 0), (n, (300 + V * n * 1.7, -1.8), 0)], interp="BEZIER")
-    red.drive([(1, (294.0, -1.8), 0), (n, (294 + V * n, -1.8), 0)])
-    cam = follow(fam.root, Cam(lens=20, loc=(-0.6, -3.0, 0.55), target=(-4.5, -0.2, 0.9), clip_end=3000))
-    cam.key(1, loc=(-0.6, -3.0, 0.55)); cam.key(n, loc=(-1.2, -3.1, 0.6))
+    red.drive([(1, (295.5, -1.8), 0), (n, (295.5 + V * n, -1.8), 0)])
+    cam = follow(red.root, Cam(lens=24, loc=(1.6, -2.4, 0.95), target=(12.0, -0.3, 0.9), clip_end=3000))
+    cam.key(1, loc=(1.6, -2.4, 0.95)); cam.key(n, loc=(1.9, -2.3, 0.9), target=(16.0, -0.2, 0.9))
     return n
 
 
@@ -716,7 +747,7 @@ def sh09():
     return n
 
 
-def side_by_side(n, x0, y_red=1.15):
+def side_by_side(n, x0, y_red=0.8):
     """Your car in the right lane; the red car alongside, hugging the centre line; Dale out of his window."""
     fam = Car("family", "family", (0.08, 0.3, 0.72))
     red = Car("tiny", "tiny", (0.75, 0.04, 0.04), windows_down=True)
@@ -724,11 +755,11 @@ def side_by_side(n, x0, y_red=1.15):
     larry, dale = larry_and_dale(red)
     W = red.P["W"]
     sx, sy, _ = red.seats[1]
-    lean_out(dale, [(1, 48)], side=-1, sill=(sx + 0.05, -W / 2 + 0.12, red.P["belt"] + 0.02))
+    lean_out(dale, [(1, 56)], side=-1, sill=(sx + 0.05, -W / 2 + 0.12, red.P["belt"] + 0.04))
     t = empty("wave", (0, 0, 0)); t.parent = red.root
     for f in range(1, n + 1, 5):
         up = (f // 5) % 2
-        key_loc(t, f, (sx + 0.15, -W / 2 - 0.55, 1.85 + 0.12 * up))
+        key_loc(t, f, (sx + 0.25, -W / 2 - 0.75, 1.75 + 0.14 * up))
     hand_ik(dale, "Right", t)
     face(dale, 1, GRIN)
     fam.drive([(1, (x0, -1.8), 0), (n, (x0 + V * n, -1.8), 0)])
@@ -745,8 +776,8 @@ def sh10():
     fam, red, fam_chars, (larry, dale) = side_by_side(n, 420.0)
     face(larry, 1, GRIN)
     tr = tracker("trk", [(1, (420.0, 0)), (n, (420 + V * n, 0))])
-    cam = follow(tr, Cam(lens=24, loc=(6.8, 0.6, 1.9), target=(-0.2, 0.0, 1.15), clip_end=3000))
-    cam.key(1, loc=(6.8, 0.6, 1.9)); cam.key(n, loc=(5.6, 0.2, 1.7))
+    cam = follow(tr, Cam(lens=26, loc=(3.4, -0.35, 1.75), target=(-0.5, -0.35, 1.2), clip_end=3000))
+    cam.key(1, loc=(3.4, -0.35, 1.75)); cam.key(n, loc=(2.8, -0.4, 1.6))          # in the gap, ahead: Dale front and centre
     look_head(dale, fam_chars[2], 0.7)
     return n
 
@@ -761,13 +792,13 @@ def sh11():
     gx, gy, gz = fam.seats[2]
     t = empty("girlwave", (0, 0, 0)); t.parent = fam.root
     for f in range(1, n + 1, 4):
-        key_loc(t, f, (gx + 0.2, gy + 0.18 + 0.06 * ((f // 4) % 2), gz + 0.75))
+        key_loc(t, f, (gx + 0.15, gy + 0.12 + 0.07 * ((f // 4) % 2), gz + 0.7))
     hand_ik(girl, "Left", t)
     face(girl, 1, TADA); face(boy, 1, SHOCK)
     look_head(girl, dale, 0.6); look_head(boy, dale, 0.6)
     look_head(dale, girl, 0.8)
-    cam = follow(fam.root, Cam(lens=20, loc=(gx - 0.05, -0.55, 1.28), target=(gx + 0.1, 2.2, 1.3), clip_end=3000))
-    cam.key(1, loc=(gx - 0.05, -0.55, 1.28)); cam.key(n, loc=(gx + 0.05, -0.45, 1.3))
+    cam = follow(fam.root, Cam(lens=24, loc=(gx - 0.2, -0.45, 1.32), target=(gx + 0.15, 1.6, 1.35), clip_end=3000))
+    cam.key(1, loc=(gx - 0.2, -0.45, 1.32)); cam.key(n, loc=(gx - 0.1, -0.35, 1.33))
     return n
 
 
@@ -840,8 +871,8 @@ def sh14():
     syl = [(22.40, 22.54, 0.6, 0.0), (22.54, 22.76, 0.45, 0.1), (22.76, 23.14, 0.85, 0.2)]
     lipsync(you, lambda t_: at("sh14", t_), syl, base=RAGE)
     face(larry, 1, DEADPAN); face(dale, 1, DEADPAN)
-    cam = Cam(lens=20, loc=(rx - 0.25, -5.25, 1.05), target=(rx + 0.1, hh.y, hh.z), clip_end=3000)
-    cam.key(1, loc=(rx - 0.25, -5.25, 1.05)); cam.key(n, loc=(rx - 0.2, -5.2, 1.0))
+    cam = Cam(lens=22, loc=(rx + 0.5, -4.78, 0.98), target=(rx + 0.05, hh.y, hh.z - 0.1), clip_end=3000)
+    cam.key(1, loc=(rx + 0.5, -4.78, 0.98)); cam.key(n, loc=(rx + 0.45, -4.8, 0.95))    # low by the windshield, up at you
     cam.shake(1, n, amp=0.008, freq=0.9)
     look_at(you, (rx, -5.3, 1.1), 0.6)
     return n
@@ -855,8 +886,8 @@ def sh15():
     you.clip("137_41", **src(n, 4300))
     face(you, 1, STERN)
     hh = you.world("Head", frame=1)
-    cam = Cam(lens=30, loc=(hh.x + 0.35, hh.y + 0.3, hh.z + 0.12), target=(rx + 0.1, -5.25, 1.15), clip_end=3000)
-    cam.key(1, loc=(hh.x + 0.35, hh.y + 0.3, hh.z + 0.12)); cam.key(n, loc=(hh.x + 0.3, hh.y + 0.22, hh.z + 0.05))
+    cam = Cam(lens=30, loc=(hh.x - 0.5, hh.y + 0.35, hh.z + 0.38), target=(rx + 0.0, -5.15, 1.05), clip_end=3000)
+    cam.key(1, loc=(hh.x - 0.5, hh.y + 0.35, hh.z + 0.38)); cam.key(n, loc=(hh.x - 0.45, hh.y + 0.25, hh.z + 0.3))
     for ch, d in ((larry, 0), (dale, 2)):
         stare_at(ch, empty(f"eyes{ch.name}", (hh.x, hh.y, hh.z + 0.05)), 5 + d, 15 + d)
         face(ch, 1, DEADPAN)
@@ -882,14 +913,15 @@ def sh16():
         nose = empty(f"pocket{ch.name}", (hips.x + (0.05 if ch is larry else -0.08), hips.y - 0.12, hips.z - 0.05))
         look_at(ch, nose, 0.9)
         face(ch, 1, DEADPAN); face(ch, f0 + 12, SNIFF)
-    cam = Cam(lens=26, loc=(rx - 2.9, -2.6, 1.25), target=(rx + 0.1, -4.6, 1.05), clip_end=3000)
-    cam.key(1, loc=(rx - 2.9, -2.6, 1.25)); cam.key(n, loc=(rx - 2.4, -2.9, 1.15))
+    cam = Cam(lens=32, loc=(rx - 2.7, -2.7, 1.3), target=(rx + 0.1, -4.5, 1.1), clip_end=3000)
+    cam.key(1, loc=(rx - 2.7, -2.7, 1.3)); cam.key(n, loc=(rx - 2.2, -3.0, 1.2))
     return n
 
 
 @shot
 def sh17():
     """So you SCREAM - close on your face: a full-body scream; the camera shakes."""
+    closeup()
     n = frames_of("sh17")
     fam, red, larry, dale, you, rx = at_window(n, sd=False)
     you.clip("137_41", **src(n, 4300))
@@ -897,8 +929,8 @@ def sh17():
     hh = you.world("Head", frame=1)
     for side, dx in (("Left", 0.13), ("Right", -0.13)):
         hand_ik(you, side, empty(f"cheek{side}", (hh.x + dx, hh.y - 0.1, hh.z + 0.02)))
-    cam = Cam(lens=40, loc=(hh.x + 0.2, hh.y - 1.15, hh.z + 0.05), target=(hh.x, hh.y, hh.z + 0.05), clip_end=3000)
-    cam.key(1, loc=(hh.x + 0.2, hh.y - 1.15, hh.z + 0.05)); cam.key(n, loc=(hh.x + 0.1, hh.y - 0.85, hh.z + 0.05))
+    cam = Cam(lens=40, loc=(hh.x + 0.2, hh.y - 0.95, hh.z + 0.2), target=(hh.x, hh.y, hh.z + 0.02), clip_end=3000)
+    cam.key(1, loc=(hh.x + 0.2, hh.y - 0.95, hh.z + 0.2)); cam.key(n, loc=(hh.x + 0.1, hh.y - 0.75, hh.z + 0.15))
     cam.shake(4, n, amp=0.025, freq=1.2)
     return n
 
@@ -940,12 +972,13 @@ def junction():
     for k, x in enumerate((JX - 3.6,)):
         cylinder(f"sgnpost{k}", 0.05, 2.2, (x, 5.4, 1.1), mat_flat("sgnpost", (0.3, 0.2, 0.1)))
     decal("sign_short", f"{D6}/sign_shortcut.png", 1.6, (JX - 3.6, 5.35, 2.15), rot=(90, 0, 180))
+    plane("forestfloor", (70, 70), (JX, 44, -0.01), mat_tex("fgrass2", "leafy_grass", scale=1.0, tint=(0.36, 0.58, 0.26)), uv_scale=0.1)
     rnd = random.Random(31)
-    for i in range(70):
-        x = JX + rnd.uniform(-30, 30); y = rnd.uniform(9, 70)
-        if abs(x - JX) < 3.8:
+    for i in range(170):
+        x = JX + rnd.uniform(-34, 34); y = rnd.uniform(8.5, 78)
+        if abs(x - JX) < 3.6:
             continue
-        tree_at((x, y, 0), k=rnd.randint(0, 2), s=rnd.uniform(1.0, 1.5), rz=rnd.uniform(0, 6))
+        tree_at((x, y, 0), k=rnd.randint(0, 2), s=rnd.uniform(1.1, 1.7), rz=rnd.uniform(0, 6))
 
 
 def forest(x0=-40.0, x1=160.0, clearing=None):
@@ -953,7 +986,7 @@ def forest(x0=-40.0, x1=160.0, clearing=None):
     world_hdri("kloofendal_48d_partly_cloudy_puresky", strength=0.8, rot_z=120)
     sun(energy=4.2, rot=(40, 0, 150), color=(1.0, 0.93, 0.82))
     L = x1 - x0; cx = (x0 + x1) / 2
-    plane("fground", (L + 120, 220), (cx, 0, -0.02), mat_tex("fgrass", "leafy_grass", scale=1.0, tint=(0.72, 0.85, 0.6)), uv_scale=0.06)
+    plane("fground", (L + 120, 220), (cx, 0, -0.02), mat_tex("fgrass", "leafy_grass", scale=1.0, tint=(0.42, 0.66, 0.3)), uv_scale=0.06)
     plane("ftrack", (L, 4.2), (cx, 0, 0.004), dirt_mat(), uv_scale=0.3)
     rnd = random.Random(5)
     x = x0
@@ -967,7 +1000,7 @@ def forest(x0=-40.0, x1=160.0, clearing=None):
                 tree_at((tx, y, 0), k=rnd.randint(0, 2), s=rnd.uniform(1.1, 1.7), rz=rnd.uniform(0, 6))
         x += rnd.uniform(3.5, 6.0)
     if clearing:
-        plane("glade", (14, 12), (clearing[0], clearing[1], 0.002), mat_tex("glgrass", "leafy_grass", scale=1.0, tint=(0.9, 1.0, 0.75)),
+        plane("glade", (14, 12), (clearing[0], clearing[1], 0.002), mat_tex("glgrass", "leafy_grass", scale=1.0, tint=(0.55, 0.82, 0.38)),
               uv_scale=0.4)
 
 
@@ -1024,8 +1057,8 @@ def sh19():
     fam.drive([(1, (JX - 24, -1.8), 0), (16, (JX - 4.5, -1.4), 18), (30, (JX, 6.0), 82), (n, (JX + 0.6, 26.0), 90)],
               interp="BEZIER")
     dust(fam, n, f0=24, every=3)
-    cam = Cam(lens=24, loc=(JX + 16, -14, 12), target=(JX - 6, 0, 0), clip_end=3000)
-    cam.key(1, loc=(JX + 16, -14, 12), target=(JX - 10, -1, 0.5)); cam.key(n, loc=(JX + 12, -9, 14), target=(JX + 0.5, 16, 0.5))
+    cam = Cam(lens=26, loc=(JX + 11, -11, 9), target=(JX - 6, 0, 0), clip_end=3000)
+    cam.key(1, loc=(JX + 11, -11, 9), target=(JX - 12, -1.5, 0.5)); cam.key(n, loc=(JX + 8, -6, 11), target=(JX + 0.5, 15, 0.5))
     return n
 
 
@@ -1040,8 +1073,8 @@ def sh20():
     fam.drive([(1, (10.0, 0), 0), (n, (10 + 0.55 * n, 0), 0)])
     face(you, 1, SMUG); face(wife, 1, SMILE)
     sx, sy, sz = fam.seats[0]
-    cam = follow(fam.root, Cam(lens=40, loc=(2.6, sy - 0.25, 1.45), target=(sx - 0.1, sy, 1.32), clip_end=3000))
-    cam.key(1, loc=(2.6, sy - 0.25, 1.45)); cam.key(n, loc=(2.4, sy - 0.2, 1.43))
+    cam = follow(fam.root, Cam(lens=45, loc=(1.35, sy - 0.12, 1.5), target=(sx - 0.1, sy, 1.32), clip_end=3000))
+    cam.key(1, loc=(1.35, sy - 0.12, 1.5)); cam.key(n, loc=(1.2, sy - 0.1, 1.48))
     look_at(you, cam.cam, 0.4)
     return n
 
@@ -1075,7 +1108,7 @@ def sh21():
     red, (larry, dale) = picnickers(sd=False)
     fam.drive([(1, (36.0, 0), 0), (n, (36 + 0.42 * n, 0), 0)], interp="BEZIER")
     dust(fam, n, every=4)
-    cam = follow(fam.root, Cam(lens=26, loc=(-6.0, -1.4, 2.2), target=(14.0, 4.0, 0.8), clip_end=3000))
+    cam = follow(fam.root, Cam(lens=32, loc=(-6.0, -1.4, 2.2), target=(14.0, 4.0, 0.8), clip_end=3000))
     cam.key(1, loc=(-6.0, -1.4, 2.2)); cam.key(n, loc=(-5.5, -1.2, 2.0), target=(20.0, 7.0, 0.8))
     return n
 
@@ -1143,9 +1176,9 @@ def sh23():
     n = frames_of("sh23")
     gas_station()
     fam = Car("family", "family", (0.08, 0.3, 0.72), interior=False)
-    fam.root.location = (-1.0, -3.0, 0)
+    fam.root.location = (-0.8, -3.0, 0)
     blk = Car("sedan", "sedan", (0.02, 0.02, 0.025), interior=False)
-    blk.root.location = (9.5, -3.2, 0)
+    blk.root.location = (7.0, -3.4, 0)
     walkers = []
     for k, (nm, y, sp, dly) in enumerate((("you_casual", -4.4, 1.0, 0), ("wife", -5.1, 1.0, 12), ("kid_boy", -4.1, 1.25, 30),
                                            ("kid_girl", -5.4, 1.25, 50))):
@@ -1153,8 +1186,8 @@ def sh23():
         ch.clip("07_01", **src(n, 60 + dly, speed=sp, in_place=False))
         face(ch, 1, SMILE)
         walkers.append(ch)
-    cam = Cam(lens=24, loc=(5.0, -14.0, 2.4), target=(4.0, -3.5, 1.0), clip_end=3000)
-    cam.key(1, loc=(5.0, -14.0, 2.4)); cam.key(n, loc=(6.5, -13.0, 2.2), target=(6.0, -3.5, 1.0))
+    cam = Cam(lens=22, loc=(3.0, -12.5, 2.1), target=(2.8, -3.3, 1.0), clip_end=3000)
+    cam.key(1, loc=(3.0, -12.5, 2.1)); cam.key(n, loc=(3.6, -11.5, 2.0), target=(3.8, -3.3, 1.0))
     return n
 
 
@@ -1163,6 +1196,7 @@ def sedan_inside(driver=True, kids=True, sd=True):
     gas_station()
     blk = Car("sedan", "sedan", (0.02, 0.02, 0.025))
     blk.root.location = (0, 0, 0)
+    cabin_light(blk, energy=45)
     xr = blk.seats[2][0]
     blk.seats += [(xr, 0.0, blk.seats[2][2])]
     you = load_char("you_casual", (0, 0, 0), subdiv=sd)
@@ -1189,8 +1223,11 @@ def sh24():
     blk, you, wife, boy, dale = sedan_inside(driver=False)
     face(you, 1, SMUG); face(wife, 1, SMILE); face(boy, 1, TADA)
     xr, yr, zr = blk.seats[2]
-    cam = Cam(lens=22, loc=(xr + 1.45, -0.15, 1.35), target=(xr, 0.0, 1.05), clip_end=3000)
-    cam.key(1, loc=(xr + 1.45, -0.15, 1.35)); cam.key(n, loc=(xr + 1.3, -0.05, 1.32))
+    for o in bpy.data.objects:
+        if o.name.startswith("sedan_rest"):
+            o.hide_render = True                                   # front headrests out of the way
+    cam = Cam(lens=20, loc=(xr + 1.35, 0.1, 1.42), target=(xr, 0.12, 1.02), clip_end=3000)
+    cam.key(1, loc=(xr + 1.35, 0.1, 1.42)); cam.key(n, loc=(xr + 1.2, 0.12, 1.38))
     look_at(you, cam.cam, 0.5)
     return n
 
@@ -1211,13 +1248,17 @@ def sh25():
 @shot
 def sh26():
     """and it's DALE. - the chauffeur turns round over his seat: Dale, sunglasses, grin. Wink."""
+    closeup()
     n = frames_of("sh26")
     blk, you, wife, boy, dale = sedan_inside(kids=False)
     xr = blk.seats[2][0]
     cam = Cam(lens=34, loc=(xr + 0.25, 0.25, 1.32), target=(blk.seats[0][0], blk.seats[0][1], 1.36), dof=2.8, clip_end=3000)
     cam.key(1, loc=(xr + 0.25, 0.25, 1.32)); cam.key(n, loc=(xr + 0.45, 0.32, 1.32))
-    stare_at(dale, cam.cam, 2, 9, 0.95)
-    face(dale, 1, DEADPAN); face(dale, 8, GRIN); face(dale, n - 7, WINK)
+    dale.rig.rotation_mode = "XYZ"                                # he turns round in his seat...
+    key_rot(dale.rig, 1, (0, 0, 90)); key_rot(dale.rig, 3, (0, 0, 90)); key_rot(dale.rig, 10, (0, 0, 15))
+    key_rot(dale.rig, n, (0, 0, 12))
+    stare_at(dale, cam.cam, 5, 11, 0.9)                           # ...and his head finishes the turn
+    face(dale, 1, DEADPAN); face(dale, 9, GRIN); face(dale, n - 7, WINK)
     return n
 
 
@@ -1236,11 +1277,8 @@ def plane_model(name="jet", title=True):
     bpy.ops.mesh.primitive_cone_add(vertices=48, radius1=R, radius2=0.35, depth=8.0, location=(-Lf / 2 - 4.0, 0, 0.6),
                                     rotation=(0, math.radians(-90), 0))
     tail = bpy.context.object; tail.data.materials.append(white); bpy.ops.object.shade_smooth(); parts.append(tail)
-    belly = cylinder(f"{name}_belly", R * 1.003, Lf, (0, 0, 0), blue, rot=(0, 90, 0), verts=48)
-    belly.scale = (1, 1, 1); parts.append(belly)
-    cut = box(f"{name}_bellycut", (Lf + 1, 2 * R + 1, 2 * R), (0, 0, R * 0.55), white)
-    cut.hide_render = True; cut.hide_viewport = True
-    md = belly.modifiers.new("cut", "BOOLEAN"); md.object = cut; md.operation = "DIFFERENCE"; md.solver = "EXACT"
+    for s in (-1, 1):                                             # blue cheatline along both sides
+        parts.append(box(f"{name}_stripe{s}", (Lf - 0.5, 0.03, 0.3), (0.3, s * (R + 0.002), -0.25), blue))
     for s in (-1, 1):
         w = extrude(f"{name}_wing{s}", [(-2.0, -0.18), (2.6, -0.18), (2.8, 0.05), (-1.8, 0.12)], 0, s * 15.5, white, bevel=0.05)
         w.location = (0, 0, -1.0); w.rotation_euler = (math.radians(-s * 4), 0, math.radians(s * -24)); parts.append(w)
@@ -1287,8 +1325,8 @@ def sh27():
     jet.rotation_mode = "XYZ"
     for f, x, z, pitch in ((1, -140, 3.6, 0), (24, -40, 3.6, 0), (40, 25, 5.5, 8), (n, 70, 9.5, 10)):
         key_loc(jet, f, (x, 0, z)); key_rot(jet, f, (0, -pitch, 0))            # nose up
-    cam = Cam(lens=22, loc=(10, -42, 1.5), target=(-60, 0, 4.0), clip_end=4000)
-    cam.key(1, target=(-120, 0, 4.0)); cam.key(28, target=(-10, 0, 4.5)); cam.key(n, target=(60, 0, 9.0))
+    cam = Cam(lens=26, loc=(-8, -27, 1.3), target=(-60, 0, 4.0), clip_end=4000)
+    cam.key(1, target=(-110, 0, 4.0)); cam.key(26, target=(-30, 0, 4.5)); cam.key(n, target=(55, 0, 9.0))
     cam.shake(18, 40, amp=0.02, freq=0.9)
     return n
 
@@ -1316,8 +1354,8 @@ def cabin_set(sign_on=None):
             box(f"cb{x}{y}", (0.1, 0.44, 0.7), (x - 0.27, y, 0.82), seat, rot=(0, -8, 0), bevel=0.03)
             seats.append((x, y, 0.49))
         for s in (-1, 1):
-            off = decal(f"belt_off{x}{s}", f"{D6}/seatbelt_off.png", 0.26, (x - 0.1, s * 0.96, 1.8), rot=(180 - 30 * s, 0, 90), emit=0.2)
-            on = decal(f"belt_on{x}{s}", f"{D6}/seatbelt_on.png", 0.26, (x - 0.1, s * 0.959, 1.8), rot=(180 - 30 * s, 0, 90), emit=3.0)
+            off = decal(f"belt_off{x}{s}", f"{D6}/seatbelt_off.png", 0.32, (x - 0.1, s * 0.96, 1.8), rot=(180 - 30 * s, 0, 90), emit=0.2)
+            on = decal(f"belt_on{x}{s}", f"{D6}/seatbelt_on.png", 0.32, (x - 0.1, s * 0.959, 1.8), rot=(180 - 30 * s, 0, 90), emit=3.0)
             if sign_on:
                 on.hide_render = True; on.keyframe_insert("hide_render", frame=sign_on - 1)
                 on.hide_render = False; on.keyframe_insert("hide_render", frame=sign_on)
@@ -1389,8 +1427,8 @@ def sh30():
     neck_pillow(you)
     face(you, 1, dict(SLEEP, mouthSmileLeft=0.45, mouthSmileRight=0.45)); face(you, on + 2, SHOCK)
     hh = you.world("Head", frame=1)
-    cam = Cam(lens=26, loc=(hh.x + 0.55, hh.y + 0.3, hh.z - 0.18), target=(-0.3, -0.95, 1.8), clip_end=200)
-    cam.key(1, loc=(hh.x + 0.55, hh.y + 0.3, hh.z - 0.18)); cam.key(n, loc=(hh.x + 0.5, hh.y + 0.32, hh.z - 0.12))
+    cam = Cam(lens=30, loc=(0.32, -0.72, 1.38), target=(-0.3, -0.95, 1.74), clip_end=200)        # up at the sign; you below
+    cam.key(1, loc=(0.32, -0.72, 1.38)); cam.key(n, loc=(0.22, -0.74, 1.42))
     cam.shake(on, on + 5, amp=0.01, freq=1.0)
     return n
 
@@ -1422,20 +1460,20 @@ def cockpit_set():
     decal("ck_gauges", f"{D6}/cockpit_panel.png", 2.2, (1.04, 0, 1.08), rot=(90, 0, -90), emit=1.2)
     glass_m = glass("ckglass", alpha=0.08, tint=(0.5, 0.6, 0.7))
     box("ck_wind", (0.05, 2.5, 0.75), (1.6, 0, 1.65), glass_m, rot=(0, -25, 0))
-    for y in (-0.62, 0.62):
+    for y in (-0.5, 0.5):
         box(f"ckseat{y}", (0.5, 0.5, 0.12), (-0.1, y, 0.45), mat_flat("ckseat", (0.15, 0.15, 0.17), rough=0.6), bevel=0.03)
         box(f"ckseatb{y}", (0.12, 0.5, 0.85), (-0.38, y, 0.95), mat_flat("ckseat", (0.15, 0.15, 0.17), rough=0.6), bevel=0.03)
         box(f"yoke{y}", (0.04, 0.32, 0.12), (0.7, y, 0.95), dark, bevel=0.02)
         strut(f"yokecol{y}", (0.72, y, 0.9), (1.05, y, 0.7), 0.025, dark)
     for k in range(10):
         ep2.cloud((40 + k * 12, -50 + (k % 4) * 30, -14 - (k % 3) * 3), r=9, seed=k)
-    area("ck_fill", (0.9, 0, 2.0), (-0.3, 0, 1.2), energy=220, size=1.5, color=(0.95, 0.97, 1.0))
+    area("ck_fill", (0.9, 0, 2.0), (-0.3, 0, 1.2), energy=120, size=1.5, color=(0.95, 0.97, 1.0))
 
 
 def pilots(sd=True):
     caps = []
     out = []
-    for nm, y, col in (("larry", 0.62, (0.95, 0.95, 0.96)), ("dale", -0.62, (0.05, 0.08, 0.2))):
+    for nm, y, col in (("larry", 0.5, (0.95, 0.95, 0.96)), ("dale", -0.5, (0.05, 0.08, 0.2))):
         ch = load_char(nm, (-0.04, y, 0), rot_z=90, subdiv=sd, tag=nm)
         pose(ch, SIT)
         settle(ch, "Hips", 0.6)
@@ -1456,15 +1494,15 @@ def sh32():
     hh = larry.world("Head", frame=1)
     hand_ik(larry, "Right", empty("mic", (hh.x + 0.1, hh.y - 0.06, hh.z - 0.08)))
     for side, dy in (("Left", 0.16),):
-        hand_ik(larry, side, empty(f"yokeL{side}", (0.7, 0.62 + dy, 0.95)))
+        hand_ik(larry, side, empty(f"yokeL{side}", (0.7, 0.5 + dy, 0.95)))
     for side, dy in (("Left", 0.14), ("Right", -0.14)):
-        hand_ik(dale, side, empty(f"yokeD{side}", (0.7, -0.62 + dy, 0.95)))
+        hand_ik(dale, side, empty(f"yokeD{side}", (0.7, -0.5 + dy, 0.95)))
     face(dale, 1, GRIN)
     syl = [(52.96, 53.06, 0.3, 0.2), (53.06, 53.4, 0.35, 0.1), (53.4, 53.76, 0.3, 0.0), (53.76, 54.34, 0.25, 0.0),
            (54.34, 54.62, 0.25, 0.1), (54.62, 54.96, 0.35, 0.0), (55.46, 55.54, 0.45, 0.0), (55.54, 55.9, 0.3, 0.0)]
     lipsync(larry, lambda t: at("sh32", t), syl, base=GRIN)
-    cam = Cam(lens=26, loc=(1.0, 0.25, 1.38), target=(-0.1, 0.4, 1.25), clip_end=3000)
-    cam.key(1, loc=(1.0, 0.25, 1.38)); cam.key(n, loc=(0.9, 0.42, 1.36), target=(-0.1, 0.55, 1.28))
+    cam = Cam(lens=26, loc=(1.0, 0.15, 1.4), target=(-0.1, 0.3, 1.26), clip_end=3000)
+    cam.key(1, loc=(1.0, 0.15, 1.4)); cam.key(n, loc=(0.9, 0.3, 1.38), target=(-0.1, 0.45, 1.28))
     look_at(larry, cam.cam, 0.6)
     return n
 
@@ -1477,16 +1515,16 @@ def sh33():
     larry, dale = pilots()
     hh = dale.world("Head", frame=1)
     t = empty("salute", (0, 0, 0))
-    key_loc(t, 1, (hh.x + 0.35, hh.y + 0.1, hh.z - 0.5)); key_loc(t, 16, (hh.x + 0.08, hh.y + 0.06, hh.z + 0.08))
-    key_loc(t, n, (hh.x + 0.08, hh.y + 0.06, hh.z + 0.09))
-    hand_ik(dale, "Left", t)
-    hand_ik(dale, "Right", empty("yokeDR", (0.7, -0.76, 0.95)))
+    key_loc(t, 1, (hh.x + 0.35, hh.y - 0.15, hh.z - 0.5)); key_loc(t, 16, (hh.x + 0.09, hh.y - 0.1, hh.z + 0.07))
+    key_loc(t, n, (hh.x + 0.09, hh.y - 0.1, hh.z + 0.08))
+    hand_ik(dale, "Right", t)                                       # salute with the outer hand, face stays clear
+    hand_ik(dale, "Left", empty("yokeDL", (0.7, -0.36, 0.95)))
     lh = larry.world("Head", frame=1)
     hand_ik(larry, "Right", empty("present", (lh.x + 0.4, lh.y - 0.45, lh.z - 0.25)))
     face(dale, 1, DEADPAN); face(dale, 14, GRIN); face(larry, 1, GRIN)
     lipsync(larry, lambda t_: at("sh33", t_), [(56.16, 56.38, 0.25, 0.1), (56.38, 56.92, 0.3, 0.0), (57.38, 57.5, 0.35, 0.0)], base=GRIN)
-    cam = Cam(lens=30, loc=(0.95, -0.2, 1.38), target=(-0.1, -0.5, 1.28), clip_end=3000)
-    cam.key(1, loc=(0.95, -0.2, 1.38)); cam.key(n, loc=(0.85, -0.38, 1.36))
+    cam = Cam(lens=26, loc=(1.05, -0.1, 1.42), target=(-0.1, -0.45, 1.3), clip_end=3000)
+    cam.key(1, loc=(1.05, -0.1, 1.42)); cam.key(n, loc=(0.95, -0.25, 1.4))
     look_at(dale, cam.cam, 0.7); look_head(larry, dale, 0.6)
     return n
 
@@ -1494,10 +1532,11 @@ def sh33():
 @shot
 def sh34():
     """ARE WE THERE YET? - both turn to camera, lean in together and ask in unison, grinning."""
+    closeup()
     n = frames_of("sh34")
     cockpit_set()
     larry, dale = pilots()
-    for ch, y in ((larry, 0.62), (dale, -0.62)):
+    for ch, y in ((larry, 0.5), (dale, -0.5)):
         pose_seq(ch, [(1, SIT), (10, dict(SIT, lowerback={"rx": 16}, upperback={"rx": 8})), (n, dict(SIT, lowerback={"rx": 18}, upperback={"rx": 9}))], n)
         for side, dy in (("Left", 0.15), ("Right", -0.15)):
             hand_ik(ch, side, empty(f"yk{ch.name}{side}", (0.7, y + dy, 0.95)))
@@ -1505,8 +1544,8 @@ def sh34():
         lipsync(ch, lambda t: at("sh34", t), [(58.18, 58.28, 0.4, 0.0), (58.28, 58.38, 0.2, 0.3), (58.38, 58.54, 0.3, 0.0),
                                              (58.54, 58.74, 0.35, 0.2)], base=GRIN)
         face(ch, at("sh34", 59.0), GRIN)
-    cam = Cam(lens=24, loc=(1.05, 0.0, 1.35), target=(-0.1, 0.0, 1.25), clip_end=3000)
-    cam.key(1, loc=(1.05, 0.0, 1.35)); cam.key(n, loc=(0.85, 0.0, 1.33))
+    cam = Cam(lens=16, loc=(1.22, 0.0, 1.42), target=(-0.1, 0.0, 1.22), clip_end=3000)
+    cam.key(1, loc=(1.22, 0.0, 1.42)); cam.key(n, loc=(1.1, 0.0, 1.4))
     for ch in (larry, dale):
         stare_at(ch, cam.cam, 1, 6)
     return n
