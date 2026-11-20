@@ -79,6 +79,13 @@ This is the approved script:
 - Lessons: alpha glass must not cast shadows (`visible_shadow = False`) or moonlight turns to grain; `hide_after` on an
   empty does not hide its children; hold cloth props with COPY_LOCATION so they hang, not as rigid Child Of boards.
 
+### Episode 5 "Larry's Wood" (done: 46 s, 26 shots; see `ep5/README.md`)
+
+- Premise: Larry begs you to "sit on my wood" (a hand-carved chair). Escalation: stop sitting → oak standing desk
+  with a seat → bean bag full of Larry's wood chips → oak bus seats, Dale driving → astronaut.
+- Twist: a knock on the airlock; Larry and Dale float in with a rocking chair. "Houston… he's gonna sit on my wood."
+- Voiceover: ElevenLabs "Todd". The user rejected another funeral ending ("repetitive"): vary the final escape.
+
 ## Characters: keep them identical
 
 Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The recipe sets the body, skin, hair, clothes and colour tints.
