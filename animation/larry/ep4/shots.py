@@ -288,25 +288,66 @@ def flyer(name, n, path, tag=None):
     return ch
 
 
-def doggy(name, loc, rot_z, tag=None, moving=None):
-    """Dale on all fours (episode-2 pose) with a red collar. moving = [(frame, (x, y))] slides him along."""
+def doggy(name, loc, rot_z, tag=None, moving=None, n=None, stride=0.5):
+    """Dale on all fours (episode-2 pose) with a red collar. moving = [(frame, (x, y))] walks him along with a real
+    crawl: diagonal pairs (left paw + right knee, then the other pair), planted paws stay put on the ground, the
+    swinging paw lifts; the gait phase follows the distance travelled, so he never slides or treads on the spot."""
     ch = load_char(name, loc, rot_z=rot_z, subdiv=True, tag=tag or name)
-    pose(ch, ALL_FOURS)
+    path = None
+    if moving:
+        n = n or moving[-1][0]
+
+        def at_f(f):
+            if f <= moving[0][0]:
+                return Vector(moving[0][1])
+            for (fa, pa), (fb, pb) in zip(moving, moving[1:]):
+                if fa <= f <= fb:
+                    t = (f - fa) / max(fb - fa, 1)
+                    return Vector(pa).lerp(Vector(pb), t)
+            return Vector(moving[-1][1])
+        path, dist = [], [0.0]
+        for f in range(1, n + 1):
+            path.append(at_f(f))
+            if f > 1:
+                dist.append(dist[-1] + (path[-1] - path[-2]).length)
+        A = 20.0
+        keys = []
+        for f in range(1, n + 1, 2):
+            ph = 2 * math.pi * dist[f - 1] / stride
+            keys.append((f, dict(ALL_FOURS, lfemur={"rx": -90 - A * math.sin(ph + math.pi)},
+                                 rfemur={"rx": -90 - A * math.sin(ph)})))
+        pose_seq(ch, keys, n)
+    else:
+        pose(ch, ALL_FOURS)
     bpy.context.scene.frame_set(1)
     knee = min(("LeftLeg", "RightLeg"), key=lambda b: ch.world(b).z)
     settle(ch, knee, 0.06)
     carrier = empty("dogcarrier", (ch.rig.location.x, ch.rig.location.y, 0))
     bpy.context.scene.frame_set(1)
+    paws = []
     for side in ("Left", "Right"):
         sh = ch.world(f"{side}Arm")
         p = empty(f"paw{side}", (sh.x, sh.y, 0.03)); p.parent = carrier
-        p.location = (sh.x - carrier.location.x, sh.y - carrier.location.y, 0.03)
+        base = Vector((sh.x - carrier.location.x, sh.y - carrier.location.y, 0.03))
+        p.location = base
         hand_ik(ch, side, p)
+        paws.append((p, base, 0.0 if side == "Left" else 0.5))
     if moving:
         z = ch.rig.location.z
         for f, (x, y) in moving:
             key_loc(carrier, f, (x, y, 0), interp="LINEAR")
             key_loc(ch.rig, f, (x, y, z), interp="LINEAR")
+        for p, base, off in paws:                   # planted half: drift back exactly as fast as the body moves
+            for f in range(1, n + 1):
+                dvec = (path[min(f, n - 1)] - path[max(f - 2, 0)])
+                d = dvec.normalized() if dvec.length > 1e-5 else facing(rot_z)
+                u = (dist[f - 1] / stride + off) % 1.0
+                if u < 0.5:
+                    o, lift = stride / 4 - u * stride, 0.0
+                else:
+                    v = (u - 0.5) / 0.5
+                    o, lift = -stride / 4 + v * stride / 2, 0.07 * math.sin(math.pi * v)
+                key_loc(p, f, (base.x + d.x * o, base.y + d.y * o, base.z + lift), interp="LINEAR")
     collar(ch)
     return ch
 
@@ -469,7 +510,7 @@ def living_fireplace():
     box("fp_body", (1.8, 0.6, 1.4), (0.0, 2.6, 0.7), brick, uv_scale=1.5)
     box("fp_hole", (1.0, 0.62, 0.85), (0.0, 2.58, 0.47), mat_flat("fphole", (0.02, 0.018, 0.016), rough=1.0))
     box("fp_mantel", (2.0, 0.7, 0.1), (0.0, 2.6, 1.45), mat_flat("mantel", (0.3, 0.18, 0.1), rough=0.4))
-    box("fp_flue", (1.0, 0.4, 1.8), (0.0, 2.75, 2.3), brick, uv_scale=1.5)
+    box("fp_flue", (1.4, 0.8, 1.8), (0.0, 2.75, 2.3), brick, uv_scale=1.5)      # wide/deep: hides the drop
     sofa = model("Sofa_01", (-1.6, -0.6, 0), rot_z=60); fit(sofa, length=2.0)
     point("fp_glow", (0.0, 2.3, 0.4), energy=25, color=(1.0, 0.5, 0.2), radius=0.2)
 
@@ -856,12 +897,14 @@ def sh05():
     you_asleep()
     larry = landed("larry", (1.3, -0.9, 0), 230, n, "larry")
     dale = landed("dale", (2.0, -0.35, 0), 230, n, "dale", start=4150)
-    key_loc(dale.rig, 1, (2.0, -0.35, 0.6)); key_loc(dale.rig, 6, (2.0, -0.35, 0.0), interp="LINEAR")
+    for f, z in ((1, 1.05), (3, 1.0), (5, 0.84), (7, 0.58), (9, 0.24), (10, 0.03)):     # gravity fall, ~0.4 s
+        key_loc(dale.rig, f, (2.0, -0.35, z), interp="LINEAR")
+    key_loc(dale.rig, 11, (2.0, -0.35, 0.0), interp="CONSTANT")
     face(larry, 1, CREEPY); face(dale, 1, CREEPY)
     cam = Cam(lens=28, loc=(0.4, -2.8, 1.1), target=(1.6, -0.6, 1.45))
     cam.key(1, loc=(0.4, -2.8, 1.1))
     cam.key(n, loc=(0.55, -2.45, 1.12))
-    cam.shake(6, 10, amp=0.015, freq=0.7)
+    cam.shake(10, 15, amp=0.018, freq=0.7)
     look_at(larry, cam.cam, 0.7); look_at(dale, cam.cam, 0.7)
     return n
 
@@ -886,16 +929,48 @@ def sniffers(n, drawer=None):
     """Larry and Dale at the open top drawer, each sniffing a pair of heart boxers."""
     out = bedroom_night(window_open=True, drawer_open=drawer)
     larry = load_char("larry", (-1.35, -0.85, 0), rot_z=-95, subdiv=True, tag="larry")
-    larry.clip("137_41", **src(n, 600))
     dale = load_char("dale", (-1.3, -0.25, 0), rot_z=-80, subdiv=True, tag="dale")
-    dale.clip("137_41", **src(n, 1000))
-    for ch in (larry, dale):                     # shorts pressed over nose and mouth like a mask, eyes above
-        bo = boxers(f"sniff_{ch.name}")
-        c = bo.constraints.new("COPY_LOCATION"); c.target = ch.rig; c.subtarget = "Head"; c.use_offset = True
-        bo.location = (-0.13, 0.0, 0.035); bo.rotation_euler = (0, 0, math.radians(90))
-        hh = ch.world("Head", frame=1)
-        hand_ik(ch, "Right", empty(f"nose{ch.name}", (hh.x - 0.14, hh.y + 0.13, hh.z - 0.02)))
+    INHALE = {"upperback": {"rx": -5}, "thorax": {"rx": -3}}
+    for ch, rz in ((larry, -95), (dale, -80)):   # both hands hold the shorts up to the face, a long deep sniff
+        pose_seq(ch, [(1, {}), (int(n * 0.7), INHALE), (n, INHALE)], n)
+        sniff_hold(ch, rz)
     return larry, dale
+
+
+def bunched_boxers(name):
+    """A crumpled handful of heart-print boxers with the white waistband poking out and one leg dangling."""
+    root = empty(name)
+    tx = bpy.data.textures.get("bunch_folds") or bpy.data.textures.new("bunch_folds", "CLOUDS")
+    tx.noise_scale = 0.035
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=14, radius=0.065, location=(0, 0, 0))
+    ball = bpy.context.object; ball.name = name + "_ball"; ball.scale = (1.25, 0.95, 1.05)
+    dm = ball.modifiers.new("folds", "DISPLACE"); dm.texture = tx; dm.strength = 0.03
+    bpy.ops.object.shade_smooth(); ball.data.materials.append(boxers_mat()); ball.parent = root
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.035, depth=0.13, location=(0.035, 0.0, -0.09),
+                                        rotation=(0, math.radians(18), 0))
+    leg = bpy.context.object; leg.name = name + "_leg"; leg.scale = (1.0, 0.55, 1.0)
+    dl = leg.modifiers.new("folds", "DISPLACE"); dl.texture = tx; dl.strength = 0.015
+    sd = leg.modifiers.new("soft", "SUBSURF"); sd.levels = 1; sd.render_levels = 2
+    bpy.ops.object.shade_smooth(); leg.data.materials.append(boxers_mat()); leg.parent = root
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.06, minor_radius=0.011, location=(-0.01, 0, 0.045),
+                                     rotation=(math.radians(70), 0, math.radians(20)))
+    band = bpy.context.object; band.name = name + "_band"; bpy.ops.object.shade_smooth()
+    band.data.materials.append(mat_flat("boxers_band", (0.95, 0.95, 0.97), rough=0.6)); band.parent = root
+    return root
+
+
+def sniff_hold(ch, rot_z, tag="", hand="Right"):
+    """A bunched handful of your heart boxers pressed to the nose in one hand (the other arm stays as posed).
+    Call after the character's pose/action is set."""
+    bpy.context.scene.frame_set(1); bpy.context.view_layer.update()
+    hh = ch.world("Head")
+    fwd = facing(rot_z); side = Vector((-fwd.y, fwd.x, 0.0))      # side = the character's left
+    sgn = -1 if hand == "Right" else 1
+    hand_ik(ch, hand, empty(f"sniffhand{ch.name}{tag}", tuple(hh + fwd * 0.16 + side * (0.03 * sgn) + Vector((0, 0, -0.07)))))
+    bo = bunched_boxers(f"sniff_{ch.name}{tag}")
+    c = bo.constraints.new("COPY_LOCATION"); c.target = ch.rig; c.subtarget = f"{hand}Hand"; c.head_tail = 0.55
+    bo.rotation_euler = (0, 0, math.radians(rot_z))
+    return bo
 
 
 @shot
@@ -1031,14 +1106,22 @@ def sh13():
     sf, hinge, dial = safe_prop(door_open=None, opened=True)
     key_rot(hinge, 1, (0, 0, 105)); key_rot(hinge, int(n * 0.65), (0, 0, 105)); key_rot(hinge, n - 4, (0, 0, 0))
     you = load_char("you_night", (-1.12, -1.05, 0), rot_z=-90, subdiv=True)
-    you.clip("137_41", **src(n, 4200))
+    STAND, REACH = {"lowerback": {"rx": 4}}, {"lowerback": {"rx": 18}, "upperback": {"rx": 9}}
+    pose_seq(you, [(1, STAND), (int(n * 0.45), REACH), (int(n * 0.6), REACH), (n, STAND)], n)
     bo = boxers("hide_boxers")
     hang(you, bo, "RightHand")
     t = empty("stuff", (0, 0, 0))
     key_loc(t, 1, (-1.4, -1.2, 1.2)); key_loc(t, int(n * 0.45), (-1.72, -0.98, 1.05)); key_loc(t, n, (-1.45, -1.2, 1.1))
     hand_ik(you, "Right", t)
-    for o in [bo] + list(bo.children_recursive):          # hide the cloth, not just its empty
-        lib.hide_after(o, int(n * 0.5))
+    rel = int(n * 0.47)                                    # let go inside the vault: they drop onto the pile
+    c = bo.constraints[0]
+    c.influence = 1.0; c.keyframe_insert("influence", frame=rel - 1)
+    c.influence = 0.0; c.keyframe_insert("influence", frame=rel)
+    bpy.context.scene.frame_set(rel - 1); bpy.context.view_layer.update()
+    p0 = tuple(bo.matrix_world.translation)                # exactly where the hand let go
+    bpy.context.scene.frame_set(1)
+    for f, loc, rot in ((rel, p0, (0, 0, 0)), (rel + 5, (-1.9, -0.95, 0.2), (80, 0, 20))):
+        key_loc(bo, f, loc); key_rot(bo, f, rot)
     face(you, 1, DETERMINED)
     cam = Cam(lens=28, loc=(-0.85, -2.9, 1.6), target=(-1.32, -0.95, 1.2))   # your left side: profile + vault, head in
     cam.key(1, loc=(-0.85, -2.9, 1.6))
@@ -1071,7 +1154,7 @@ def sh15():
     sf, hinge, dial = safe_prop(door_open=(n - 8, n))
     for f, r in ((1, 0), (10, 120), (18, -60), (26, 200), (n - 9, 200)):
         key_rot(dial, f, (90, r, 0))
-    larry = load_char("larry", (-1.1, -1.25, 0), rot_z=-82, subdiv=True, tag="larry")   # at the dial, door swings away
+    larry = load_char("larry", (-0.98, -1.25, 0), rot_z=-82, subdiv=True, tag="larry")   # at the dial, door swings away
     pose(larry, LEAN)
     hand_ik(larry, "Right", empty("dialhand", (-1.47, -1.18, 1.1)))
     face(larry, 1, CREEPY)
@@ -1079,25 +1162,27 @@ def sh15():
     cam = Cam(lens=32, loc=(-1.1, -2.7, 1.3), target=(-1.4, -1.05, 1.0))   # Larry's left: ear on the door
     cam.key(1, loc=(-1.1, -2.7, 1.3))
     cam.key(n, loc=(-1.05, -2.5, 1.28))
-    stare_at(larry, cam.cam, n - 13, n - 7, 0.85)          # turns to us for the wink
+    look_at(larry, cam.cam, 0.85)                           # right ear to the door, face to us: listening... wink
     return n
 
 
 @shot
 def sh16():
-    """And Dale is already inside THE SAFE. - the vault door swings open: Dale, curled up inside, boxers on his head, sniffing."""
+    """And Dale is already inside THE SAFE. - the vault door swings open: Dale, curled up inside, sniffing your boxers."""
     n = frames_of("sh16")
     bedroom_night(window_open=False, with_dresser=False)
     sf, hinge, dial = safe_prop(door_open=(1, 8))
     dale = load_char("dale", (-2.2, -0.95, 0.1), rot_z=90, subdiv=True, tag="dale")
-    pose(dale, SQUAT)
-    settle(dale, "Hips", 0.6)
-    hh = dale.world("Head", frame=1)                 # face clear: hugging his knees, eyes closed, savouring
+    pose(dale, {"root": {"rx": -2}, "lfemur": {"rx": -118, "rz": 6}, "rfemur": {"rx": -118, "rz": -6},
+                "ltibia": {"rx": 138}, "rtibia": {"rx": 138}, "lowerneck": {"rx": 8}})      # knees to chest
+    bpy.context.scene.frame_set(1); bpy.context.view_layer.update()
+    settle(dale, min(("Hips", "LeftUpLeg"), key=lambda b: dale.world(b).z), 0.24)
+    sniff_hold(dale, 90, tag="_vault")                 # curled up in the vault, your boxers to his nose
     face(dale, 1, SNIFF)
     face(dale, n - 12, dict(SNIFF, eyeBlinkLeft=0.0, eyeBlinkRight=0.0, eyeWideLeft=0.6, eyeWideRight=0.6))
-    cam = Cam(lens=30, loc=(-0.55, -2.0, 1.4), target=(-2.0, -0.95, 0.85))
-    cam.key(1, loc=(-0.55, -2.0, 1.4))
-    cam.key(n, loc=(-0.75, -1.85, 1.35))
+    cam = Cam(lens=30, loc=(0.15, -1.3, 1.3), target=(-2.1, -0.95, 0.8))      # straight in: the side wall hid his head
+    cam.key(1, loc=(0.15, -1.3, 1.3))
+    cam.key(n, loc=(-0.15, -1.2, 1.22))
     stare_at(dale, cam.cam, n - 14, n - 8, 0.8)            # eyes open... he looks right at you
     return n
 
