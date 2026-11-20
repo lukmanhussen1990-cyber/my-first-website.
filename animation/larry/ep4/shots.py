@@ -50,15 +50,42 @@ def facing(rot_z):
 
 
 # ============================================================================ props
+def boxers_mat():
+    """White cotton with a repeating red-heart print (object-space mapping, so every piece tiles)."""
+    m = bpy.data.materials.get("boxers_cotton")
+    if m:
+        return m
+    m = bpy.data.materials.new("boxers_cotton"); m.use_nodes = True
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; b.inputs["Roughness"].default_value = 0.85
+    tc = nt.nodes.new("ShaderNodeTexCoord"); mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (7, 7, 7)
+    im = nt.nodes.new("ShaderNodeTexImage"); im.image = bpy.data.images.load(f"{D4}/boxers_hearts.png", check_existing=True)
+    im.extension = "REPEAT"; im.projection = "BOX"; im.projection_blend = 0.3
+    nt.links.new(tc.outputs["Object"], mp.inputs[0]); nt.links.new(mp.outputs[0], im.inputs[0])
+    nt.links.new(im.outputs[0], b.inputs["Base Color"])
+    return m
+
+
 def boxers(name="boxers"):
-    """Heart-print boxer shorts; origin at the waistband centre, legs hang toward -Z."""
-    m = bpy.data.materials.get("boxers_m") or lib.mat_image("boxers_m", f"{D4}/boxers_hearts.png", rough=0.8)
+    """Soft heart-print boxer shorts; origin at the waistband centre, legs hang toward -Z."""
+    m = boxers_mat()
+    band = mat_flat("boxers_band", (0.95, 0.95, 0.97), rough=0.6)
     root = empty(name, (0, 0, 0))
-    wb = box(name + "_band", (0.34, 0.12, 0.05), (0, 0, -0.025), m, bevel=0.015, uv_scale=3.0); wb.parent = root
+    parts = []
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.16, depth=0.045, location=(0, 0, -0.022))
+    w = bpy.context.object; w.scale = (1.0, 0.62, 1.0); w.data.materials.append(band); parts.append(w)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.165, depth=0.13, location=(0, 0, -0.11))
+    h = bpy.context.object; h.scale = (1.0, 0.64, 1.0); h.data.materials.append(m); parts.append(h)
     for sx in (-1, 1):
-        lg = cylinder(f"{name}_leg{sx}", 0.095, 0.24, (sx * 0.085, 0, -0.16), m, verts=16)
-        lg.rotation_euler = (0, math.radians(sx * 8), 0); lib._cube_uv(lg, 3.0); lg.parent = root
-    hip = box(name + "_seat", (0.34, 0.13, 0.12), (0, 0, -0.1), m, bevel=0.03, uv_scale=3.0); hip.parent = root
+        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.085, depth=0.17, location=(sx * 0.085, 0, -0.22),
+                                            rotation=(0, math.radians(sx * 7), 0))
+        lg = bpy.context.object; lg.scale = (1.0, 0.85, 1.0); lg.data.materials.append(m); parts.append(lg)
+    for k, o in enumerate(parts):
+        o.name = f"{name}_{k}"
+        sd = o.modifiers.new("soft", "SUBSURF"); sd.levels = 1; sd.render_levels = 2
+        bpy.ops.object.select_all(action="DESELECT"); o.select_set(True); bpy.context.view_layer.objects.active = o
+        bpy.ops.object.shade_smooth()
+        o.parent = root
     return root
 
 
@@ -98,7 +125,7 @@ def sootify(ch, amount=0.6, skip=("eye",)):
             if not m or not m.use_nodes or m.get("sooted"):
                 continue
             nt = m.node_tree
-            out = next((n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"), None)
+            out = nt.get_output_node("EEVEE") or next((n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"), None)
             if not out or not out.inputs["Surface"].links:
                 continue
             sh = out.inputs["Surface"].links[0].from_socket
@@ -113,20 +140,44 @@ def sootify(ch, amount=0.6, skip=("eye",)):
             m["sooted"] = True
 
 
-def soot_cloud(center, n, start=1, count=12, color=(0.08, 0.075, 0.07), seed=4):
-    m = mat_flat("soot", color, rough=1.0, alpha=0.5)
+def clip_below(ch, z_cut):
+    """Make a character invisible below world height z_cut (binary alpha, so no dither noise)."""
+    for o in ch.meshes:
+        for m in o.data.materials:
+            if not m or not m.use_nodes or m.get("clipped"):
+                continue
+            nt = m.node_tree
+            out = nt.get_output_node("EEVEE") or next((n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"), None)
+            if not out or not out.inputs["Surface"].links:
+                continue
+            sh = out.inputs["Surface"].links[0].from_socket
+            geo = nt.nodes.new("ShaderNodeNewGeometry"); sp = nt.nodes.new("ShaderNodeSeparateXYZ")
+            lt = nt.nodes.new("ShaderNodeMath"); lt.operation = "LESS_THAN"; lt.inputs[1].default_value = z_cut
+            tr = nt.nodes.new("ShaderNodeBsdfTransparent"); mix = nt.nodes.new("ShaderNodeMixShader")
+            nt.links.new(geo.outputs["Position"], sp.inputs[0]); nt.links.new(sp.outputs["Z"], lt.inputs[0])
+            nt.links.new(lt.outputs[0], mix.inputs["Fac"]); nt.links.new(sh, mix.inputs[1]); nt.links.new(tr.outputs[0], mix.inputs[2])
+            nt.links.new(mix.outputs[0], out.inputs["Surface"])
+            if hasattr(m, "surface_render_method") and m.surface_render_method != "BLENDED":
+                m.surface_render_method = "DITHERED"
+            m["clipped"] = True
+
+
+def soot_cloud(center, n, start=1, count=26, color=(0.05, 0.045, 0.04), seed=4):
+    """Billowing black soot: many small smooth puffs bursting out of the hearth and spreading forward."""
+    m = mat_flat("soot", color, rough=1.0, alpha=0.38)
     if hasattr(m, "surface_render_method"):
         m.surface_render_method = "BLENDED"
     rnd = random.Random(seed)
     for i in range(count):
-        a = rnd.uniform(0, 6.28)
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=0.25, location=center)
+        a = rnd.uniform(-1.2, 1.2)
+        r0 = rnd.uniform(0.08, 0.16)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, radius=r0, location=center)
         d = bpy.context.object; d.data.materials.append(m); bpy.ops.object.shade_smooth()
-        t0 = start + i % 4
+        t0 = start + i % 5
         key_scale(d, 1, 0.01); key_scale(d, t0, 0.01); key_loc(d, t0, center)
-        r = rnd.uniform(0.6, 1.4)
-        key_scale(d, n, rnd.uniform(1.2, 2.2))
-        key_loc(d, n, (center[0] + math.cos(a) * r, center[1] - abs(math.sin(a)) * r, center[2] + rnd.uniform(0.2, 1.0)))
+        dist = rnd.uniform(0.5, 1.3)
+        key_scale(d, n, rnd.uniform(1.6, 2.8))
+        key_loc(d, n, (center[0] + math.sin(a) * dist, center[1] - math.cos(a) * dist * 0.9, center[2] + rnd.uniform(0.0, 1.1)))
 
 
 def digital_clock(loc, rot_z=0.0, flip_at=None, show="clock_300"):
@@ -198,7 +249,7 @@ def doggy(name, loc, rot_z, tag=None, moving=None):
 def window_panes(open_frames=None, closed=True):
     """Two casement panes in episode 1's bedroom window (right wall x=2.6, opening y 0..1.3 approx, z 0.9..2.3)."""
     frame_m = mat_flat("winframe", (0.92, 0.92, 0.9), rough=0.4)
-    glass = mat_flat("winglass", (0.6, 0.7, 0.9), rough=0.05, alpha=0.25)
+    glass = mat_flat("winglass", (0.25, 0.3, 0.4), rough=0.05, alpha=0.1)
     if hasattr(glass, "surface_render_method"):
         glass.surface_render_method = "BLENDED"
     hinges = []
@@ -240,6 +291,12 @@ def dresser(loc=(-2.25, -0.6, 0), rot_z=90, drawer_open=None):
 
 def bedroom_night(window_open=False, window_frames=None, with_dresser=True, drawer_open=None, clock=True, flip_at=None):
     ep1.bedroom_set()
+    sky = bpy.data.objects["win_sky"].data.materials[0].node_tree.nodes["Principled BSDF"]
+    sky.inputs["Emission Strength"].default_value = 0.7      # a darker night sky through the window
+    sky.inputs["Emission Color"].default_value = (0.12, 0.2, 0.45, 1)
+    moon = bpy.data.objects["moon"].data                    # sharper moonlight: no speckle at 4 samples
+    moon.size = 0.15
+    moon.energy *= 0.9
     window_panes(open_frames=window_frames, closed=not window_open)
     out = {}
     if with_dresser:
@@ -349,22 +406,232 @@ def safe_prop(loc=(-2.05, -0.95, 0), rot_z=90, door_open=None, opened=False):
              box("sf_inner", (W - 0.17, 0.02, H - 0.2), (0, D / 2 - 0.05, H / 2), mat_flat("sf_in", (0.08, 0.08, 0.09)))]
     for p in parts:
         p.parent = root
-    hinge = empty("sf_hinge", (0, 0, 0)); hinge.parent = root; hinge.location = (-W / 2, -D / 2, 0)
-    door = box("sf_door", (W, 0.1, H), (W / 2, -0.05, H / 2), steel, bevel=0.02); door.parent = hinge
-    dial = cylinder("sf_dial", 0.11, 0.05, (W / 2 + 0.15, -0.12, H * 0.62), mat_flat("dial", (0.75, 0.75, 0.78), metal=1.0, rough=0.2),
+    # hinge on the local +X edge (world +Y when rot_z=90): the door swings open away from the -Y side cameras
+    hinge = empty("sf_hinge", (0, 0, 0)); hinge.parent = root; hinge.location = (W / 2, -D / 2, 0)
+    door = box("sf_door", (W, 0.1, H), (-W / 2, -0.05, H / 2), steel, bevel=0.02); door.parent = hinge
+    dial = cylinder("sf_dial", 0.11, 0.05, (-W + 0.27, -0.12, H * 0.62), mat_flat("dial", (0.75, 0.75, 0.78), metal=1.0, rough=0.2),
                     rot=(90, 0, 0)); dial.parent = hinge
-    hdl = box("sf_handle", (0.05, 0.06, 0.32), (W / 2 + 0.15, -0.13, H * 0.4), mat_flat("hdl", (0.75, 0.75, 0.78), metal=1.0)); hdl.parent = hinge
-    pl = decal("sf_plate", f"{D4}/safe_plate.png", 0.6, (W / 2, -0.102, H * 0.88), rot=(90, 0, 0)); pl.parent = hinge
-    nt = decal("sf_note", f"{D4}/note_code.png", 0.17, (W / 2 - 0.25, -0.102, H * 0.62), rot=(90, 0, 3)); nt.parent = hinge
+    hdl = box("sf_handle", (0.05, 0.06, 0.32), (-W + 0.27, -0.13, H * 0.4), mat_flat("hdl", (0.75, 0.75, 0.78), metal=1.0)); hdl.parent = hinge
+    pl = decal("sf_plate", f"{D4}/safe_plate.png", 0.6, (-W / 2, -0.102, H * 0.88), rot=(90, 0, 0)); pl.parent = hinge
+    nt = decal("sf_note", f"{D4}/note_code.png", 0.17, (-W / 2 + 0.22, -0.102, H * 0.62), rot=(90, 0, 3)); nt.parent = hinge
     if door_open:
         f0, f1 = door_open
-        key_rot(hinge, 1, (0, 0, 0)); key_rot(hinge, f0, (0, 0, 0)); key_rot(hinge, f1, (0, 0, -105))
+        key_rot(hinge, 1, (0, 0, 0)); key_rot(hinge, f0, (0, 0, 0)); key_rot(hinge, f1, (0, 0, 105))
     elif opened:
-        hinge.rotation_euler = (0, 0, math.radians(-105))
+        hinge.rotation_euler = (0, 0, math.radians(105))
     for k in range(3):
         bo = boxers(f"safe_boxers{k}"); bo.parent = root
         bo.location = (-0.25 + k * 0.25, 0.1, 0.12); bo.rotation_euler = (math.radians(90), 0, math.radians(k * 30))
     return root, hinge, dial
+
+
+HAMPER = (1.4, 1.6)      # laundry hamper centre in the concrete room
+H_RAD, H_TOP = 0.42, 0.7
+
+
+def pose_seq(ch, keys, n, base=("137_41", 4200), name=None):
+    """Animated pose: keys = [(frame, overrides), ...] (ASF dof names, degrees) eased with smoothstep between keys;
+    the base CMU frame fills every other joint. Retargeted like pose(), one AMC frame per shot frame."""
+    import mocap, tempfile
+    clip, fr = base
+    asf = f"{lib.CMU}/{clip.split('_')[0]}.asf"
+    skel = mocap.parse_asf(asf)
+    b0 = {k: list(v) for k, v in mocap.parse_amc(f"{lib.CMU}/{clip}.amc")[fr].items()}
+    b0["root"] = b0["root"][:3] + [0.0, 0.0, 0.0]
+
+    def apply(ov):
+        f = {k: list(v) for k, v in b0.items()}
+        for bone, vals in ov.items():
+            dofs = ["tx", "ty", "tz", "rx", "ry", "rz"] if bone == "root" else skel["bones"][bone]["dof"]
+            cur = f.get(bone, [0.0] * len(dofs))
+            for k, v in vals.items():
+                cur[dofs.index(k)] = v
+            f[bone] = cur
+        return f
+    keyed = [(k, apply(ov)) for k, ov in keys]
+    bones = set().union(*[set(f) for _, f in keyed])
+    for _, f in keyed:
+        for bn in bones:
+            f.setdefault(bn, list(b0.get(bn, [0.0] * len(skel["bones"][bn]["dof"]))))
+    nm = name or f"{ch.name}_pseq_{abs(hash(str(keys))) % 10**8}"
+    p = os.path.join(tempfile.gettempdir(), nm + ".amc")
+    with open(p, "w") as fh:
+        fh.write(":FULLY-SPECIFIED\n:DEGREES\n")
+        for i in range(1, n + 1):
+            if i <= keyed[0][0]:
+                f = keyed[0][1]
+            elif i >= keyed[-1][0]:
+                f = keyed[-1][1]
+            else:
+                for (ka, fa), (kb, fb) in zip(keyed, keyed[1:]):
+                    if ka <= i <= kb:
+                        t = (i - ka) / max(kb - ka, 1); t = t * t * (3 - 2 * t)
+                        f = {bn: [x + (y - x) * t for x, y in zip(fa[bn], fb[bn])] for bn in fa}
+                        break
+            fh.write(f"{i}\n")
+            for bn in skel["order"]:
+                if bn in f:
+                    fh.write(bn + " " + " ".join(f"{v:.4f}" for v in f[bn]) + "\n")
+    act = mocap.retarget(ch.rig, asf, p, nm, step=1, in_place=True, face=False)
+    ch.rig.animation_data_create()
+    ch.rig.animation_data.action = act
+    return act
+
+
+def wicker_mat():
+    m = bpy.data.materials.get("wicker_weave")
+    if m:
+        return m
+    m = bpy.data.materials.new("wicker_weave"); m.use_nodes = True
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; b.inputs["Roughness"].default_value = 0.72
+    tc = nt.nodes.new("ShaderNodeTexCoord"); mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (3.5, 3.5, 3.5)
+    im = nt.nodes.new("ShaderNodeTexImage"); im.image = bpy.data.images.load(f"{D4}/wicker.png", check_existing=True)
+    im.extension = "REPEAT"; im.projection = "BOX"; im.projection_blend = 0.25
+    bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.7; bump.inputs["Distance"].default_value = 0.01
+    nt.links.new(tc.outputs["Object"], mp.inputs[0]); nt.links.new(mp.outputs[0], im.inputs[0])
+    nt.links.new(im.outputs[0], b.inputs["Base Color"]); nt.links.new(im.outputs[0], bump.inputs["Height"])
+    nt.links.new(bump.outputs[0], b.inputs["Normal"])
+    return m
+
+
+def hamper(loc=HAMPER, rad=H_RAD, h=H_TOP, avoid=(), laundry=True):
+    """Big round wicker laundry hamper with a hinged lid (hinge at the back, +Y). Returns the lid hinge empty
+    (rotate it about X, negative = open). `avoid`: (x, y) spots the laundry heap must keep clear (faces)."""
+    cx, cy = loc
+    wm = wicker_mat()
+    bpy.ops.mesh.primitive_cone_add(vertices=48, radius1=rad * 0.86, radius2=rad, depth=h, end_fill_type="NOTHING",
+                                    location=(cx, cy, h / 2))
+    wall = bpy.context.object; wall.name = "hamper_wall"; wall.data.materials.append(wm)
+    wall.modifiers.new("t", "SOLIDIFY").thickness = 0.022
+    bpy.ops.object.shade_smooth()
+    cylinder("hamper_base", rad * 0.86, 0.02, (cx, cy, 0.01), wm, verts=48)
+    rim_m = mat_flat("hamper_rim", (0.26, 0.16, 0.08), rough=0.65)
+    bpy.ops.mesh.primitive_torus_add(major_radius=rad + 0.004, minor_radius=0.022, major_segments=64, minor_segments=10,
+                                     location=(cx, cy, h))
+    rim = bpy.context.object; rim.name = "hamper_rim"; rim.data.materials.append(rim_m); bpy.ops.object.shade_smooth()
+    hinge = empty("lid_hinge", (cx, cy + rad, h + 0.01))
+    lid = cylinder("hamper_lid", rad * 1.05, 0.035, (0, -rad, 0.018), wm, verts=48); lid.parent = hinge
+    bpy.ops.mesh.primitive_torus_add(major_radius=rad * 1.05, minor_radius=0.02, major_segments=64, minor_segments=10,
+                                     location=(0, -rad, 0.02))
+    lr = bpy.context.object; lr.name = "hamper_lidrim"; lr.data.materials.append(rim_m); bpy.ops.object.shade_smooth()
+    lr.parent = hinge
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.035, minor_radius=0.009, location=(0, -2 * rad + 0.07, 0.05),
+                                     rotation=(math.radians(90), 0, 0))
+    kn = bpy.context.object; kn.name = "hamper_knob"; kn.data.materials.append(rim_m); kn.parent = hinge
+    beta = 17.0
+    rr = rad * (0.86 + 0.14 * (h - 0.15) / h) + 0.012
+    decal("tag_laundry", f"{D4}/tag_laundry.png", 0.2,
+          (cx + math.sin(math.radians(beta)) * rr, cy - math.cos(math.radians(beta)) * rr, h - 0.15), rot=(90, 0, beta))
+    if laundry:
+        lz = h - 0.07
+        import bmesh
+        bpy.ops.mesh.primitive_grid_add(x_subdivisions=36, y_subdivisions=36, size=2 * rad, location=(cx, cy, lz - 0.045))
+        bed = bpy.context.object; bed.name = "laundry_bed"
+        bm = bmesh.new(); bm.from_mesh(bed.data)
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if math.hypot(v.co.x, v.co.y) > rad * 0.95], context="VERTS")
+        bm.to_mesh(bed.data); bm.free()
+        tb = bpy.data.textures.get("laundry_bedn") or bpy.data.textures.new("laundry_bedn", "CLOUDS"); tb.noise_scale = 0.07
+        dm = bed.modifiers.new("wr", "DISPLACE"); dm.texture = tb; dm.strength = 0.06; dm.texture_coords = "GLOBAL"
+        bpy.ops.object.shade_smooth(); bed.data.materials.append(mat_flat("laundry_bed", (0.11, 0.11, 0.13), rough=0.95))
+        cols = [(0.72, 0.72, 0.75), (0.16, 0.22, 0.48), (0.08, 0.08, 0.09), (0.55, 0.56, 0.6), (0.55, 0.08, 0.1),
+                (0.85, 0.8, 0.7), (0.25, 0.36, 0.28)]
+        tex = bpy.data.textures.get("laundry_wr") or bpy.data.textures.new("laundry_wr", "CLOUDS")
+        tex.noise_scale = 0.05; tex.noise_depth = 2
+        rnd = random.Random(11)
+        placed = tries = 0
+        while placed < 55 and tries < 1500:
+            tries += 1
+            sx, sy = rnd.uniform(0.13, 0.26), rnd.uniform(0.12, 0.2)
+            reach = max(sx, sy) * 0.5
+            a = rnd.uniform(0, 2 * math.pi); r = (rad * 0.97 - reach) * math.sqrt(rnd.random())
+            x, y = cx + math.cos(a) * r, cy + math.sin(a) * r
+            if any(math.hypot(x - ax, y - ay) - reach * 0.5 < 0.06 for ax, ay in avoid):
+                continue
+            bpy.ops.mesh.primitive_grid_add(x_subdivisions=20, y_subdivisions=20, size=1,
+                                            location=(x, y, lz + rnd.uniform(-0.035, 0.02)))
+            g = bpy.context.object; g.name = f"laundry{placed}"
+            ph = rnd.uniform(0, 6.28); lobes = rnd.choice((2, 3, 5))
+            def R(v):
+                return 0.5 * (0.85 + 0.15 * math.sin(lobes * math.atan2(v.co.y, v.co.x) + ph))
+            bm = bmesh.new(); bm.from_mesh(g.data)              # ragged round outline, not a square
+            bmesh.ops.delete(bm, geom=[v for v in bm.verts if math.hypot(v.co.x, v.co.y) > R(v)], context="VERTS")
+            for v in bm.verts:                                  # soft mound, edges droop to the heap everywhere
+                q = min(math.hypot(v.co.x, v.co.y) / R(v), 1.0)
+                v.co.z = (1.0 - q * q) ** 1.5
+            bm.to_mesh(g.data); bm.free()
+            g.scale = (sx, sy, rnd.uniform(0.05, 0.09))
+            g.rotation_euler = (rnd.uniform(-0.2, 0.2), rnd.uniform(-0.2, 0.2), rnd.uniform(0, math.pi))
+            dmp = g.modifiers.new("wr", "DISPLACE"); dmp.texture = tex; dmp.strength = 0.045; dmp.texture_coords = "GLOBAL"
+            g.modifiers.new("t", "SOLIDIFY").thickness = 0.008
+            sd = g.modifiers.new("s", "SUBSURF"); sd.levels = 1; sd.render_levels = 1
+            bpy.ops.object.shade_smooth()
+            g.data.materials.append(boxers_mat() if placed % 7 == 3 else
+                                    mat_flat(f"laundry_c{placed % len(cols)}", cols[placed % len(cols)], rough=0.93))
+            placed += 1
+    return hinge
+
+
+def blanket_over(ch, xr, yr, mattress_z, fold_y, color=(0.3, 0.4, 0.72), res=0.025):
+    """A duvet draped over a lying character: height field from the posed body (evaluated meshes), dilated and
+    relaxed so it tents softly over the body, then hung over the mattress edges. Object space = world space."""
+    import numpy as np
+    bpy.context.scene.frame_set(1); bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    nx = int(round((xr[1] - xr[0]) / res)) + 1; ny = int(round((yr[1] - yr[0]) / res)) + 1
+    H = np.full((ny, nx), mattress_z)
+    for o in ch.meshes:
+        oe = o.evaluated_get(dg); me = oe.to_mesh()
+        co = np.empty(len(me.vertices) * 3); me.vertices.foreach_get("co", co)
+        M = np.array(oe.matrix_world); oe.to_mesh_clear()
+        w = co.reshape(-1, 3) @ M[:3, :3].T + M[:3, 3]
+        ix = np.round((w[:, 0] - xr[0]) / res).astype(int); iy = np.round((w[:, 1] - yr[0]) / res).astype(int)
+        ok = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny)
+        np.maximum.at(H, (iy[ok], ix[ok]), w[ok, 2])
+
+    def shift_max(A, k):
+        P = np.pad(A, k, mode="edge"); out = A.copy()
+        for dy in range(-k, k + 1):
+            for dx in range(-k, k + 1):
+                out = np.maximum(out, P[k + dy:k + dy + A.shape[0], k + dx:k + dx + A.shape[1]])
+        return out
+
+    def blur(A):
+        P = np.pad(A, 1, mode="edge")
+        return sum(P[1 + dy:1 + dy + A.shape[0], 1 + dx:1 + dx + A.shape[1]] for dy in (-1, 0, 1) for dx in (-1, 0, 1)) / 9.0
+
+    floor_ = shift_max(H, 2) + 0.03
+    Z = floor_.copy()
+    for _ in range(30):
+        Z = np.maximum(blur(Z), floor_)
+    for _ in range(3):
+        Z = blur(Z)
+    Z = np.maximum(Z, floor_ - 0.005)
+    xs = xr[0] + np.arange(nx) * res; ys = yr[0] + np.arange(ny) * res
+    xc = (xr[0] + xr[1]) / 2
+    dx_out = np.clip(np.abs(xs - xc) - 0.565, 0, None)[None, :]
+    dy_out = np.clip(0.33 - ys, 0, None)[:, None]
+    Z = Z - 3.2 * (dx_out + dy_out)
+    verts = [(float(xs[i]), float(ys[j]), float(Z[j, i])) for j in range(ny) for i in range(nx)]
+    faces = [(j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i) for j in range(ny - 1) for i in range(nx - 1)]
+    me = bpy.data.meshes.new("duvet"); me.from_pydata(verts, [], faces); me.update()
+    bl = bpy.data.objects.new("duvet", me); bpy.context.scene.collection.objects.link(bl)
+    bpy.ops.object.select_all(action="DESELECT"); bl.select_set(True); bpy.context.view_layer.objects.active = bl
+    tex = bpy.data.textures.new("duvet_wr", "CLOUDS"); tex.noise_scale = 0.12
+    dd = bl.modifiers.new("wr", "DISPLACE"); dd.texture = tex; dd.strength = 0.012; dd.texture_coords = "GLOBAL"
+    bl.modifiers.new("t", "SOLIDIFY").thickness = 0.02
+    sd = bl.modifiers.new("s", "SUBSURF"); sd.levels = 1; sd.render_levels = 1
+    bpy.ops.object.shade_smooth()
+    m = bpy.data.materials.new("duvet"); m.use_nodes = True
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; b.inputs["Roughness"].default_value = 0.92
+    tc = nt.nodes.new("ShaderNodeTexCoord"); sp = nt.nodes.new("ShaderNodeSeparateXYZ")
+    gt = nt.nodes.new("ShaderNodeMath"); gt.operation = "GREATER_THAN"; gt.inputs[1].default_value = fold_y
+    mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = "RGBA"
+    mx.inputs["A"].default_value = (*color, 1); mx.inputs["B"].default_value = (0.92, 0.92, 0.95, 1)
+    nt.links.new(tc.outputs["Object"], sp.inputs[0]); nt.links.new(sp.outputs["Y"], gt.inputs[0])
+    nt.links.new(gt.outputs[0], mx.inputs["Factor"]); nt.links.new(mx.outputs["Result"], b.inputs["Base Color"])
+    bl.data.materials.append(m)
+    return bl
 
 
 def bunker_exterior():
@@ -379,8 +646,8 @@ def bunker_exterior():
     sun(energy=3.8, rot=(48, 0, 150), color=(1.0, 0.95, 0.88))
 
 
-def bunker_room(night=False, basket_open=None, basket_opened=False):
-    """Inside the windowless concrete house: bed, lamp, laundry basket at (1.4, 1.6)."""
+def bunker_room(night=False, basket_open=None, basket_opened=False, avoid=(), laundry=True):
+    """Inside the windowless concrete house: bed, lamp, laundry hamper at HAMPER."""
     world_color((0.05, 0.05, 0.06), 0.3)
     conc = mat_tex("broom_conc", "brushed_concrete", scale=1.0, tint=(0.8, 0.8, 0.78))
     plane("bfloor", (12, 12), (0, 0, 0), mat_tex("bfl", "concrete_floor_02", scale=1.0, tint=(0.75, 0.75, 0.72)), uv_scale=0.5)
@@ -393,28 +660,24 @@ def bunker_room(night=False, basket_open=None, basket_opened=False):
     box("bk_mattress", (1.1, 2.0, 0.2), (-1.2, 1.3, 0.5), mat_flat("bksheet", (0.85, 0.85, 0.9), rough=0.9), bevel=0.05)
     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.25, location=(-1.2, 2.15, 0.65)); pw = bpy.context.object
     pw.scale = (1.4, 0.55, 0.35); pw.data.materials.append(mat_flat("bkpillow", (0.92, 0.92, 0.95))); bpy.ops.object.shade_smooth()
-    cylinder("bk_lamp_cord", 0.006, 0.9, (0.3, 0.9, 2.55), mat_flat("cord", (0.05, 0.05, 0.05)))
+    cord = cylinder("bk_lamp_cord", 0.006, 0.9, (0.3, 0.9, 2.55), mat_flat("cord", (0.05, 0.05, 0.05)))
     bpy.ops.mesh.primitive_uv_sphere_add(radius=0.07, location=(0.3, 0.9, 2.05)); bulb = bpy.context.object
     bulb.data.materials.append(mat_flat("bulb", (1, 1, 1), emit=(1.0, 0.85, 0.6), emit_strength=0 if night else 12))
-    b = model("wicker_basket_01", (1.4, 1.6, 0), rot_z=0)
-    fit(b, height=0.6)
-    mn, mx = bbox(b)
-    cx, cy, top = (mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mx.z
-    rad = (mx.x - mn.x) / 2
-    lid_h = empty("lid_hinge", (cx, cy + rad, top))
-    lid = cylinder("lid", rad * 1.02, 0.04, (0, -rad, 0.02), mat_flat("lidm", (0.6, 0.45, 0.25), rough=0.7), verts=32)
-    lid.parent = lid_h
+    for o in (cord, bulb):
+        o.visible_shadow = False          # the light sits inside the bulb: no black blot on the ceiling
+    cx, cy = HAMPER
+    hinge = hamper(avoid=avoid, laundry=laundry)
+    top, rad = H_TOP, H_RAD
     if basket_open:
         f0, f1 = basket_open
-        key_rot(lid_h, 1, (0, 0, 0)); key_rot(lid_h, f0, (0, 0, 0)); key_rot(lid_h, f1, (-110, 0, 0))
+        key_rot(hinge, 1, (0, 0, 0)); key_rot(hinge, f0, (0, 0, 0)); key_rot(hinge, f1, (-112, 0, 0))
     elif basket_opened:
-        lid_h.rotation_euler = (math.radians(-110), 0, 0)
-    tg = decal("tag_laundry", f"{D4}/tag_laundry.png", 0.3, (cx, mn.y - 0.005, top * 0.6), rot=(90, 0, 0))
+        hinge.rotation_euler = (math.radians(-112), 0, 0)
     if night:
         area("night_fill", (0, -2.0, 2.6), (0.6, 1.3, 0.5), energy=110, size=2.5, color=(0.45, 0.55, 1.0))
-        point("clock_red", (1.0, 1.3, 1.0), energy=4, color=(1.0, 0.2, 0.1), radius=0.3)
+        point("clock_red", (-0.3, 1.95, 0.75), energy=2.5, color=(1.0, 0.2, 0.1), radius=0.3)
     else:
-        point("bulb_light", (0.3, 0.9, 1.95), energy=420, color=(1.0, 0.85, 0.65), radius=0.15, shadow=True)
+        point("bulb_light", (0.3, 0.9, 2.05), energy=420, color=(1.0, 0.85, 0.65), radius=0.15, shadow=True)
         area("bfill", (0, -3, 2.4), (0, 1.2, 1.0), energy=280, size=3)
     return (cx, cy, top, rad)
 
@@ -437,11 +700,12 @@ def sh02():
     """two grown men fly - night sky over your house: Larry and Dale soar in, Superman-style, moon behind."""
     n = frames_of("sh02")
     house_exterior(night=True)
-    flyer("larry", n, [(1, (-9.0, -1.0, 6.5)), (n, (0.5, 2.2, 3.4))], tag="larry")
+    larry = flyer("larry", n, [(1, (-9.0, -1.0, 6.5)), (n, (0.5, 2.2, 3.4))], tag="larry")
     flyer("dale", n, [(1, (-10.5, 0.2, 7.3)), (n, (-1.0, 2.8, 4.1))], tag="dale")
-    cam = Cam(lens=24, loc=(5.0, -9.0, 1.6), target=(-2.0, 2.0, 4.5), clip_end=3000)
-    cam.key(1, loc=(5.0, -9.0, 1.6), target=(-4.0, 1.0, 5.0))
-    cam.key(n, loc=(4.6, -8.4, 1.7), target=(0.0, 3.0, 3.5))
+    cam = Cam(lens=28, loc=(2.6, -6.2, 2.0), target=(-3.0, 1.0, 5.0), clip_end=3000)
+    larry.bake_follow(cam.tgt, "Hips", n, offset=(-0.6, 0.6, 0.0))       # pan with the flyers
+    cam.key(1, loc=(2.6, -6.2, 2.0))
+    cam.key(n, loc=(2.0, -5.0, 2.3))
     return n
 
 
@@ -510,9 +774,9 @@ def sh06():
         ch = load_char(nm, loc, rot_z=-80, subdiv=True, tag=nm)
         ch.clip("07_01", **src(n, start, speed=0.55, in_place=False))
         face(ch, 1, CREEPY_ENJOY)
-    cam = Cam(lens=26, loc=(-1.6, -2.4, 1.6), target=(0.2, -0.6, 1.1))
-    cam.key(1, loc=(-1.6, -2.4, 1.6))
-    cam.key(n, loc=(-1.4, -2.1, 1.55), target=(-0.4, -0.6, 1.1))
+    cam = Cam(lens=26, loc=(-1.85, -1.75, 1.35), target=(0.9, -0.5, 1.25))   # from the dresser: they creep toward us
+    cam.key(1, loc=(-1.85, -1.75, 1.35))
+    cam.key(n, loc=(-1.95, -1.9, 1.35), target=(0.3, -0.6, 1.25))
     return n
 
 
@@ -538,9 +802,9 @@ def sh07():
     larry, dale = sniffers(n, drawer=(1, 6))
     for ch in (larry, dale):
         face(ch, 1, CREEPY_ENJOY); face(ch, 8, SNIFF)
-    cam = Cam(lens=34, loc=(-0.2, -1.9, 1.6), target=(-1.4, -0.55, 1.45))
-    cam.key(1, loc=(-0.2, -1.9, 1.6))
-    cam.key(n, loc=(-0.35, -1.65, 1.58))
+    cam = Cam(lens=30, loc=(-2.05, -1.65, 1.7), target=(-1.35, -0.55, 1.4))   # beside the dresser: faces + drawer
+    cam.key(1, loc=(-2.05, -1.65, 1.7))
+    cam.key(n, loc=(-2.0, -1.5, 1.65))
     return n
 
 
@@ -595,7 +859,7 @@ def sh10():
     key_loc(larry.rig, 1, (2.4, 6.0, 4.78)); key_loc(larry.rig, drop, (2.4, 6.0, 4.78))
     key_loc(larry.rig, n, (2.4, 6.0, 2.6), interp="LINEAR")
     face(larry, 1, CREEPY_ENJOY)
-    dale = load_char("dale", (3.4, 5.4, 3.2), rot_z=50, subdiv=True, tag="dale")
+    dale = load_char("dale", (3.2, 6.6, 3.2), rot_z=-50, subdiv=True, tag="dale")      # right of the chimney, facing it
     dale.clip("137_41", **src(n, 1000))
     face(dale, 1, CREEPY)
     look_at(dale, (2.4, 6.0, 4.9), 0.7)
@@ -611,13 +875,15 @@ def fireplace_pair(n, emerge=True):
     larry.clip("137_41", **src(n, 4200))
     dale = load_char("dale", (0.35, 2.35, 0), rot_z=0, subdiv=True, tag="dale")
     dale.clip("137_41", **src(n, 4150))
-    if emerge:
-        key_loc(larry.rig, 1, (-0.25, 2.6, -0.3)); key_loc(larry.rig, 8, (-0.25, 2.1, 0.0))
-        key_loc(dale.rig, 1, (0.35, 2.6, -0.4)); key_loc(dale.rig, 11, (0.35, 2.05, 0.0))
+    if emerge:   # drop down the flue (hidden in the brick), land in the black hearth, step out
+        for ch, x, y1, f in ((larry, -0.25, 2.1, 0), (dale, 0.25, 2.05, 3)):
+            key_loc(ch.rig, 1, (x, 2.68, 1.3)); key_loc(ch.rig, 4 + f, (x, 2.68, 1.3))
+            key_loc(ch.rig, 8 + f, (x, 2.68, 0.0), interp="LINEAR")
+            key_loc(ch.rig, 16 + f, (x, y1, 0.0))
     else:
         larry.rig.location = (-0.25, 2.1, 0); dale.rig.location = (0.35, 2.05, 0)
     for ch in (larry, dale):
-        sootify(ch, 0.6)
+        sootify(ch, 0.8)
     return larry, dale
 
 
@@ -626,13 +892,13 @@ def sh11():
     """Covered in soot. - living room: they burst out of the fireplace in a black cloud, filthy, grinning."""
     n = frames_of("sh11")
     larry, dale = fireplace_pair(n, emerge=True)
-    soot_cloud((0.0, 2.2, 0.6), n, start=2)
+    soot_cloud((0.0, 2.3, 0.45), n, start=7)
     for ch in (larry, dale):
         face(ch, 1, CREEPY)
-    cam = Cam(lens=28, loc=(0.4, -1.4, 1.35), target=(0.05, 2.1, 1.2))
-    cam.key(1, loc=(0.4, -1.4, 1.35))
-    cam.key(n, loc=(0.3, -0.9, 1.35))
-    cam.shake(2, 10, amp=0.02, freq=0.7)
+    cam = Cam(lens=28, loc=(0.3, -0.35, 1.35), target=(0.0, 2.2, 1.05))
+    cam.key(1, loc=(0.3, -0.35, 1.35))
+    cam.key(n, loc=(0.25, -0.1, 1.35))
+    cam.shake(8, 14, amp=0.02, freq=0.7)
     return n
 
 
@@ -658,21 +924,21 @@ def sh12():
 def sh13():
     """So you hide your underwear in a safe. - you stuff your boxers into the UNDERWEAR VAULT; the door swings shut."""
     n = frames_of("sh13")
-    bedroom_night(window_open=False)
+    bedroom_night(window_open=False, with_dresser=False)
     sf, hinge, dial = safe_prop(door_open=None, opened=True)
-    key_rot(hinge, 1, (0, 0, -105)); key_rot(hinge, int(n * 0.65), (0, 0, -105)); key_rot(hinge, n - 4, (0, 0, 0))
-    you = load_char("you_night", (-0.95, -0.7, 0), rot_z=-90, subdiv=True)
+    key_rot(hinge, 1, (0, 0, 105)); key_rot(hinge, int(n * 0.65), (0, 0, 105)); key_rot(hinge, n - 4, (0, 0, 0))
+    you = load_char("you_night", (-0.95, -1.05, 0), rot_z=-90, subdiv=True)
     you.clip("137_41", **src(n, 1000))
     bo = boxers("hide_boxers")
     hold(you, bo, "Right", loc=(0.0, 0.09, 0.04))
     t = empty("stuff", (0, 0, 0))
-    key_loc(t, 1, (-1.15, -0.95, 1.2)); key_loc(t, int(n * 0.45), (-1.75, -0.95, 0.85)); key_loc(t, n, (-1.2, -0.85, 1.05))
+    key_loc(t, 1, (-1.15, -1.1, 1.2)); key_loc(t, int(n * 0.45), (-1.75, -0.95, 0.85)); key_loc(t, n, (-1.2, -1.05, 1.05))
     hand_ik(you, "Right", t)
     lib.hide_after(bo, int(n * 0.5))
     face(you, 1, DETERMINED)
-    cam = Cam(lens=28, loc=(0.6, -2.6, 1.55), target=(-1.6, -0.9, 0.9))
-    cam.key(1, loc=(0.6, -2.6, 1.55))
-    cam.key(n, loc=(0.4, -2.3, 1.5))
+    cam = Cam(lens=28, loc=(-1.15, -2.55, 1.55), target=(-1.5, -0.85, 1.0))   # your left side: profile + vault
+    cam.key(1, loc=(-1.15, -2.55, 1.55))
+    cam.key(n, loc=(-1.1, -2.3, 1.5))
     return n
 
 
@@ -680,15 +946,15 @@ def sh13():
 def sh14():
     """CLEVER! - you pat the locked vault, smug."""
     n = frames_of("sh14")
-    bedroom_night(window_open=False)
+    bedroom_night(window_open=False, with_dresser=False)
     safe_prop()
     you = load_char("you_night", (-1.15, -0.25, 0), rot_z=-60, subdiv=True)
     you.clip("137_41", **src(n, 4300))
     face(you, 1, SMUG)
     hand_ik(you, "Right", empty("pat", (-1.6, -0.6, 1.42)))
-    cam = Cam(lens=30, loc=(-0.3, -1.25, 1.05), target=(-1.2, -0.3, 1.6))
-    cam.key(1, loc=(-0.3, -1.25, 1.05))
-    cam.key(n, loc=(-0.38, -1.15, 1.08))
+    cam = Cam(lens=26, loc=(-0.25, -1.65, 1.25), target=(-1.45, -0.6, 1.3))   # you + the vault in frame
+    cam.key(1, loc=(-0.25, -1.65, 1.25))
+    cam.key(n, loc=(-0.3, -1.5, 1.27))
     look_at(you, cam.cam, 0.6)
     return n
 
@@ -697,18 +963,18 @@ def sh14():
 def sh15():
     """But Larry already knows the code. - Larry, ear to the vault door, spins the dial... click. Wink."""
     n = frames_of("sh15")
-    bedroom_night(window_open=False)
+    bedroom_night(window_open=False, with_dresser=False)
     sf, hinge, dial = safe_prop(door_open=(n - 8, n))
     for f, r in ((1, 0), (10, 120), (18, -60), (26, 200), (n - 9, 200)):
         key_rot(dial, f, (90, r, 0))
-    larry = load_char("larry", (-1.1, -0.55, 0), rot_z=-100, subdiv=True, tag="larry")   # outside the door's swing
+    larry = load_char("larry", (-1.1, -1.25, 0), rot_z=-82, subdiv=True, tag="larry")   # at the dial, door swings away
     pose(larry, LEAN)
-    hand_ik(larry, "Right", empty("dialhand", (-1.5, -0.78, 0.88)))
+    hand_ik(larry, "Right", empty("dialhand", (-1.5, -1.18, 0.88)))
     face(larry, 1, CREEPY)
     face(larry, n - 10, WINK)
-    cam = Cam(lens=34, loc=(-0.45, -1.85, 1.3), target=(-1.35, -0.7, 1.05))
-    cam.key(1, loc=(-0.55, -1.95, 1.3))
-    cam.key(n, loc=(-0.65, -1.75, 1.28))
+    cam = Cam(lens=32, loc=(-1.1, -2.7, 1.3), target=(-1.4, -1.05, 1.0))   # Larry's left: ear on the door
+    cam.key(1, loc=(-1.1, -2.7, 1.3))
+    cam.key(n, loc=(-1.05, -2.5, 1.28))
     return n
 
 
@@ -716,7 +982,7 @@ def sh15():
 def sh16():
     """And Dale is already inside THE SAFE. - the vault door swings open: Dale, curled up inside, boxers on his head, sniffing."""
     n = frames_of("sh16")
-    bedroom_night(window_open=False)
+    bedroom_night(window_open=False, with_dresser=False)
     sf, hinge, dial = safe_prop(door_open=(1, 8))
     dale = load_char("dale", (-2.1, -0.95, 0.1), rot_z=90, subdiv=True, tag="dale")
     pose(dale, SQUAT)
@@ -728,12 +994,9 @@ def sh16():
     hand_ik(dale, "Right", empty("dalenose", (hh.x + 0.18, hh.y, hh.z - 0.02)))
     face(dale, 1, SNIFF)
     face(dale, n - 12, dict(SNIFF, eyeBlinkLeft=0.0, eyeBlinkRight=0.0, eyeWideLeft=0.6, eyeWideRight=0.6))
-    larry = load_char("larry", (-0.9, -0.2, 0), rot_z=-100, subdiv=True, tag="larry")
-    larry.clip("137_41", **src(n, 4200))
-    face(larry, 1, CREEPY_ENJOY)
-    cam = Cam(lens=30, loc=(-0.5, -0.55, 1.35), target=(-2.0, -0.95, 0.95))
-    cam.key(1, loc=(-0.5, -0.55, 1.35))
-    cam.key(n, loc=(-0.75, -0.65, 1.28))
+    cam = Cam(lens=30, loc=(-0.55, -2.0, 1.4), target=(-2.0, -0.95, 0.85))
+    cam.key(1, loc=(-0.55, -2.0, 1.4))
+    cam.key(n, loc=(-0.75, -1.85, 1.35))
     return n
 
 
@@ -749,9 +1012,9 @@ def sh17():
     you = load_char("you_night", (-1.2, 0.6, 0), rot_z=20, subdiv=True)
     you.clip("137_41", **src(n, 4150))
     face(you, 1, SMILE)
-    cam = Cam(lens=26, loc=(1.6, -3.0, 1.5), target=(-2.0, 1.2, 1.0))
-    cam.key(1, loc=(1.6, -3.0, 1.5))
-    cam.key(n, loc=(1.3, -2.6, 1.5))
+    cam = Cam(lens=26, loc=(0.7, -2.1, 1.25), target=(-2.1, 1.2, 0.9))
+    cam.key(1, loc=(0.7, -2.1, 1.25))
+    cam.key(n, loc=(0.5, -1.8, 1.22))
     return n
 
 
@@ -771,11 +1034,13 @@ def sh18():
     return n
 
 
-def dog_from_kennel(n, out_frames):
-    """Dale crawls out of the kennel (kennel at (-2.8, 1.6), door toward -Y)."""
+def dog_from_kennel(n, out_frames, y0=2.15):
+    """Dale crawls out of the kennel (kennel at (-2.8, 1.6), door toward -Y). out_frames=None keeps him inside."""
+    if out_frames is None:
+        return doggy("dale", (-2.75, y0, 0), rot_z=10, tag="dale")
     f0, f1 = out_frames
-    dale = doggy("dale", (-2.75, 1.85, 0), rot_z=10, tag="dale",
-                 moving=[(1, (-2.75, 1.85)), (f0, (-2.75, 1.85)), (f1, (-2.62, 0.9)), (n, (-2.6, 0.82))])
+    dale = doggy("dale", (-2.75, y0, 0), rot_z=10, tag="dale",
+                 moving=[(1, (-2.75, y0)), (f0, (-2.75, y0)), (f1, (-2.62, 0.9)), (n, (-2.6, 0.82))])
     return dale
 
 
@@ -784,9 +1049,9 @@ def sh19():
     """But the guard dog... - low on the kennel's dark doorway: DALE on the nameplate. Something stirs."""
     n = frames_of("sh19")
     yard(n)
-    dale = dog_from_kennel(n, (n - 10, n + 30))
+    dale = dog_from_kennel(n, None, y0=2.3)          # deep in the dark kennel: just a shape and two eyes
     face(dale, 1, SERENE)
-    point("kennel_rim", (-2.0, 0.2, 1.6), energy=50, color=(0.6, 0.7, 1.0), radius=0.4)
+    face(dale, int(n * 0.6), dict(SERENE, eyeBlinkLeft=0.0, eyeBlinkRight=0.0, eyeWideLeft=0.8, eyeWideRight=0.8))
     cam = Cam(lens=30, loc=(-2.3, -1.2, 0.55), target=(-2.75, 0.75, 0.75))
     cam.key(1, loc=(-2.3, -1.2, 0.55))
     cam.key(n, loc=(-2.35, -0.85, 0.55))
@@ -798,7 +1063,7 @@ def sh20():
     """is DALE. - he crawls out: red collar, tongue out, delighted. Good boy."""
     n = frames_of("sh20")
     yard(n)
-    dale = dog_from_kennel(n, (1, int(n * 0.7)))
+    dale = dog_from_kennel(n, (1, int(n * 0.7)), y0=2.3)
     face(dale, 1, SERENE); face(dale, 6, DOGGY)
     point("kennel_rim", (-2.0, 0.2, 1.6), energy=50, color=(0.6, 0.7, 1.0), radius=0.4)
     cam = Cam(lens=32, loc=(-2.45, -0.75, 0.75), target=(-2.65, 0.85, 0.55))
@@ -837,9 +1102,10 @@ def sh22():
                  moving=[(1, (-4.2, -2.6)), (n, (-4.2 + d.x * 2.0, -2.6 + d.y * 2.0))])
     face(larry, 1, SMUG); face(dale, 1, DOGGY)
     rope_between("leash", lambda: larry.world("RightHand"), lambda: dale.world("Neck") + Vector((0, 0, 0.02)), n)
-    cam = Cam(lens=28, loc=(-1.0, -6.0, 1.3), target=(-2.5, -2.4, 0.9))
-    cam.key(1, loc=(-1.0, -6.0, 1.3), target=(-3.0, -2.4, 0.9))
-    cam.key(n, loc=(0.2, -6.0, 1.3), target=(-1.0, -2.4, 0.9))
+    cam = Cam(lens=30, loc=(-2.6, -6.0, 1.3), target=(-3.2, -2.4, 0.9))
+    larry.bake_follow(cam.tgt, "Hips", n, offset=(-0.7, 0.0, -0.2))     # track the pair down the sidewalk
+    cam.key(1, loc=(-2.6, -6.0, 1.3))
+    cam.key(n, loc=(-4.6, -6.0, 1.3))
     return n
 
 
@@ -848,8 +1114,16 @@ def sh23():
     """So you stop wearing underwear. - next morning: you dump an armful of heart boxers into the trash can."""
     n = frames_of("sh23")
     house_exterior(night=False, chimney=True)
-    can = model("metal_trash_can", (0.9, 1.4, 0), rot_z=10); fit(can, height=0.95)
-    you = load_char("you_casual", (0.3, 1.2, 0), rot_z=-70, subdiv=True)
+    can = model("metal_trash_can", (0.9, 1.4, 0), rot_z=10)
+    kids = [o for o in can.children_recursive if o.type == "MESH"]           # the asset holds two cans + lids: keep one
+    bpy.context.view_layer.update()
+    c0 = sum((Vector(o.matrix_world.translation) for o in kids), Vector()) / max(1, len(kids))
+    first = min(kids, key=lambda o: (o.matrix_world.translation - c0).length)
+    for o in kids:
+        if (o.matrix_world.translation - first.matrix_world.translation).length > 0.3:
+            o.hide_render = True
+    fit(can, height=0.95)
+    you = load_char("you_casual", (-0.05, 1.05, 0), rot_z=-70, subdiv=True)
     you.clip("137_41", **src(n, 1000))
     face(you, 1, DETERMINED); face(you, int(n * 0.6), SMILE)
     pile = empty("pile", (0, 0, 0))
@@ -893,12 +1167,12 @@ def sh25():
     blink(you, [int(n * 0.6)])
     bpy.context.scene.frame_set(1)
     hips = you.world("Hips")
-    for nm, x, rz in (("larry", -0.55, -90), ("dale", 0.55, 90)):
-        ch = load_char(nm, (x, 1.05, 0), rot_z=rz, subdiv=True, tag=nm)
+    for nm, x, rz in (("larry", -0.45, 90), ("dale", 0.45, -90)):            # facing you, either side
+        ch = load_char(nm, (x, 1.08, 0), rot_z=rz, subdiv=True, tag=nm)
         pose(ch, SQUAT)
         bpy.context.scene.frame_set(1)
-        settle(ch, "Head", hips.z - 0.05)
-        nose = empty(f"pocket{nm}", (math.copysign(0.18, x), 1.05, hips.z - 0.08))
+        settle(ch, "Head", hips.z - 0.02)
+        nose = empty(f"pocket{nm}", (math.copysign(0.14, x), 0.98, hips.z - 0.1))
         stare_at(ch, nose, 1, 2)
         face(ch, 1, SNIFF)
     cam = Cam(lens=28, loc=(0.25, -1.9, 1.15), target=(0.0, 1.0, 1.0))
@@ -923,23 +1197,31 @@ def sh26():
 
 @shot
 def sh27():
-    """no chimney, and no underwear. - inside the concrete room, arms wide, delighted."""
+    """no chimney, and no underwear. - inside the concrete room: both arms shoot up, victory."""
     n = frames_of("sh27")
     bunker_room(night=False)
     you = load_char("you_casual", (0.0, 0.2, 0), rot_z=0, subdiv=True)
     you.clip("137_41", **src(n, 4200))
-    for side, dx in (("Left", 0.75), ("Right", -0.75)):
-        hand_ik(you, side, empty(f"wide{side}", (dx, 0.1, 1.55)))
-    face(you, 1, TADA)
-    cam = Cam(lens=26, loc=(0.4, -2.3, 1.4), target=(0.0, 0.5, 1.3))
+    for side, sx in (("Left", 1), ("Right", -1)):
+        t = empty(f"cheer{side}", (0, 0, 0))
+        key_loc(t, 1, (sx * 0.34, 0.12, 1.02))
+        key_loc(t, 9, (sx * 0.52, 0.2, 1.96))
+        key_loc(t, 16, (sx * 0.47, 0.18, 1.86))
+        key_loc(t, 23, (sx * 0.53, 0.2, 1.97))
+        key_loc(t, 31, (sx * 0.48, 0.18, 1.88))
+        key_loc(t, n, (sx * 0.52, 0.2, 1.95))
+        hand_ik(you, side, t)
+    face(you, 1, SMILE)
+    face(you, 7, TADA)
+    cam = Cam(lens=26, loc=(0.4, -2.3, 1.4), target=(0.0, 0.5, 1.35))
     cam.key(1, loc=(0.4, -2.3, 1.4))
-    cam.key(n, loc=(0.3, -1.9, 1.4))
+    cam.key(n, loc=(0.3, -1.95, 1.4))
     return n
 
 
 @shot
 def sh28():
-    """Peace at last. - lights off, you asleep in the concrete room, smiling."""
+    """Peace at last. - lights off, you asleep in the concrete room under a duvet, smiling. Slow push in."""
     n = frames_of("sh28")
     bunker_room(night=True)
     you = load_char("you_night", (0, 0, 0), subdiv=True)
@@ -947,15 +1229,11 @@ def sh28():
     you.rig.rotation_euler = (math.radians(-86), 0, 0)
     you.rig.location = (-1.2, 0.35, 0.72)
     face(you, 1, dict(SLEEP, mouthSmileLeft=0.5, mouthSmileRight=0.5))
-    bpy.ops.mesh.primitive_grid_add(x_subdivisions=30, y_subdivisions=30, size=1, location=(-1.2, 1.0, 0.82))
-    bl = bpy.context.object; bl.scale = (1.15, 1.4, 1); bpy.ops.object.transform_apply(scale=True)
-    tex = bpy.data.textures.new("bkbl", "CLOUDS"); tex.noise_scale = 0.25
-    dd = bl.modifiers.new("d", "DISPLACE"); dd.texture = tex; dd.strength = 0.03
-    bl.modifiers.new("s", "SOLIDIFY").thickness = 0.02; bpy.ops.object.shade_smooth()
-    bl.data.materials.append(mat_flat("bkblanket", (0.35, 0.45, 0.75), rough=0.9))
-    cam = Cam(lens=30, loc=(0.6, -0.9, 1.9), target=(-1.2, 1.4, 0.7))
-    cam.key(1, loc=(0.6, -0.9, 1.9))
-    cam.key(n, loc=(0.35, -0.5, 1.8))
+    blanket_over(you, (-1.84, -0.56), (0.24, 1.7), 0.6, fold_y=1.56)
+    point("moonless_fill", (-0.4, 1.6, 1.6), energy=18, color=(0.55, 0.65, 1.0), radius=0.3)
+    cam = Cam(lens=30, loc=(0.35, -0.3, 1.75), target=(-1.2, 1.35, 0.72))
+    cam.key(1, loc=(0.35, -0.3, 1.75), target=(-1.2, 1.35, 0.72))
+    cam.key(n, loc=(-0.1, 0.65, 1.5), target=(-1.2, 1.8, 0.75))
     return n
 
 
@@ -974,58 +1252,63 @@ def sh29():
 
 @shot
 def sh30():
-    """you open your laundry basket - in your pyjamas, half asleep, you lift the lid."""
+    """you open your laundry basket - in your pyjamas, half asleep, you lean in and lift the hamper lid... freeze."""
     n = frames_of("sh30")
-    lift = int(n * 0.6)
-    cx, cy, top, rad = bunker_room(night=True, basket_open=(lift - 8, lift + 4))
-    you = load_char("you_night", (cx - 0.55, cy - 0.45, 0), rot_z=-125, subdiv=True)
-    you.clip("137_41", **src(n, 1000))
+    lift = int(n * 0.45)
+    cx, cy, top, rad = bunker_room(night=True)
+    hinge = bpy.data.objects["lid_hinge"]
+    key_rot(hinge, 1, (0, 0, 0)); key_rot(hinge, lift - 6, (0, 0, 0))
+    key_rot(hinge, lift, (-40, 0, 0)); key_rot(hinge, lift + 6, (-112, 0, 0))
+    you = load_char("you_night", (cx - 0.16, cy - rad - 0.25, 0), rot_z=180, subdiv=True)
+    LEANX = {"lowerback": {"rx": 24}, "upperback": {"rx": 14}, "thorax": {"rx": 8}}
+    UPRIGHT = {"lowerback": {"rx": -4}, "upperback": {"rx": 0}, "thorax": {"rx": 0}}
+    pose_seq(you, [(1, LEANX), (lift - 4, LEANX), (lift + 5, UPRIGHT), (n, UPRIGHT)], n)
     t = empty("lidhand", (0, 0, 0))
-    key_loc(t, 1, (cx - 0.3, cy - 0.35, 1.0)); key_loc(t, lift - 8, (cx, cy - rad * 0.9, top + 0.06))
-    key_loc(t, lift + 4, (cx, cy - 0.05, top + 0.55)); key_loc(t, n, (cx - 0.05, cy - 0.1, top + 0.5))
+    knob = (cx, cy - rad + 0.07, top + 0.07)
+    key_loc(t, 1, knob); key_loc(t, lift - 6, knob)
+    key_loc(t, lift, (cx, cy - 0.18, top + 0.5))
+    key_loc(t, lift + 5, (cx - 0.08, cy - rad - 0.06, 1.3))
+    key_loc(t, n, (cx - 0.08, cy - rad - 0.07, 1.33))
     hand_ik(you, "Right", t)
     face(you, 1, dict(SLEEP, eyeBlinkLeft=0.6, eyeBlinkRight=0.6))
-    face(you, lift + 6, SHOCK)
+    face(you, lift - 1, dict(SLEEP, eyeBlinkLeft=0.5, eyeBlinkRight=0.5))
+    face(you, lift + 3, SHOCK)
     look_at(you, (cx, cy, top), 0.8)
-    cam = Cam(lens=28, loc=(cx - 1.8, cy - 1.7, 1.45), target=(cx - 0.2, cy - 0.1, 0.8))
-    cam.key(1, loc=(cx - 1.8, cy - 1.7, 1.45))
-    cam.key(n, loc=(cx - 1.55, cy - 1.45, 1.4))
+    cam = Cam(lens=28, loc=(cx - 1.9, cy - 0.85, 0.98), target=(cx - 0.15, cy - 0.45, 0.88))
+    cam.key(1, loc=(cx - 1.9, cy - 0.85, 0.98))
+    cam.key(n, loc=(cx - 1.65, cy - 0.8, 0.96))
     return n
 
 
+FACES_XY = [(HAMPER[0] - 0.12, HAMPER[1] - 0.05), (HAMPER[0] + 0.13, HAMPER[1] - 0.05)]
+LOOK_UP = {"lowerneck": {"rx": -20}, "upperneck": {"rx": -16}}
+
+
 def faces_in_basket(n):
-    """POV down into the basket: Larry's and Dale's grinning faces poking up through your laundry."""
-    cx, cy, top, rad = bunker_room(night=True, basket_opened=True)
-    point("basket_light", (cx, cy - 0.3, top + 0.9), energy=25, color=(0.65, 0.72, 1.0), radius=0.3)
+    """You look down into the hamper: Larry's and Dale's heads poke up out of your laundry, hands on the rim."""
+    cx, cy, top, rad = bunker_room(night=True, basket_opened=True, avoid=[(x, y - 0.05) for x, y in FACES_XY])
+    point("basket_light", (cx, cy - 0.5, top + 0.95), energy=24, color=(0.65, 0.72, 1.0), radius=0.3)
     heads = []
-    for nm, dx, tilt in (("larry", -0.1, -78), ("dale", 0.11, -74)):
-        ch = load_char(nm, (cx + dx, cy, 0), rot_z=0, subdiv=True, tag=nm)
-        ch.clip("137_41", **src(n, 4200))
-        ch.rig.rotation_euler = (math.radians(tilt), 0, 0)          # lying back: face up, body under the floor
+    for nm, (hx, hy) in zip(("larry", "dale"), FACES_XY):
+        ch = load_char(nm, (hx, hy, 0), rot_z=0, subdiv=True, tag=nm)
+        pose(ch, LOOK_UP)
         bpy.context.scene.frame_set(1); bpy.context.view_layer.update()
-        h = ch.world("Head")
-        ch.rig.location += Vector((cx + dx, cy + 0.02, top - 0.1)) - h
+        ch.rig.location += Vector((hx, hy, top - 0.01)) - ch.world("Head")
+        clip_below(ch, top - 0.16)        # whatever is buried under the laundry can't poke out through the wicker
         heads.append(ch)
-    rnd = random.Random(7)
-    cols = [(0.9, 0.9, 0.95), (0.3, 0.4, 0.8), (0.85, 0.2, 0.25), (0.25, 0.25, 0.27)]
-    for k in range(14):
-        a = rnd.uniform(0, 6.28); r = rad * rnd.uniform(0.55, 0.85)
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=rnd.uniform(0.07, 0.11), location=(cx + math.cos(a) * r, cy + math.sin(a) * r, top - 0.12))
-        g = bpy.context.object; g.scale = (1.3, 1.0, 0.5); bpy.ops.object.shade_smooth()
-        g.data.materials.append(mat_flat(f"laundry{k}", cols[k % 4], rough=0.9))
     return (cx, cy, top), heads
 
 
 @shot
 def sh31():
-    """and two faces smile up at you... - straight down into the basket: Larry and Dale, packed in your laundry, grinning up."""
+    """and two faces smile up at you... - your POV down into the hamper: Larry and Dale in your laundry, grinning up."""
     n = frames_of("sh31")
     (cx, cy, top), (larry, dale) = faces_in_basket(n)
-    cam = Cam(lens=30, loc=(cx, cy - 0.12, top + 1.25), target=(cx, cy, top - 0.1))
-    cam.key(1, loc=(cx, cy - 0.12, top + 1.25))
-    cam.key(n, loc=(cx, cy - 0.1, top + 0.95))
+    cam = Cam(lens=30, loc=(cx, cy - 0.85, top + 1.05), target=(cx, cy - 0.04, top + 0.03))
+    cam.key(1, loc=(cx, cy - 0.85, top + 1.05))
+    cam.key(n, loc=(cx, cy - 0.7, top + 0.9))
     for ch in (larry, dale):
-        stare_at(ch, cam.cam, 1, 3)
+        look_at(ch, cam.cam, 1.0)
         face(ch, 1, CREEPY)
         blink(ch, [int(n * 0.55) + (3 if ch is dale else 0)])
     return n
@@ -1036,12 +1319,12 @@ def sh32():
     """FRESH BATCH? - closer: both mouth it in unison, then hold the grin. (end)"""
     n = frames_of("sh32")
     (cx, cy, top), (larry, dale) = faces_in_basket(n)
-    cam = Cam(lens=34, loc=(cx, cy - 0.1, top + 0.85), target=(cx, cy, top - 0.1))
-    cam.key(1, loc=(cx, cy - 0.1, top + 0.85))
-    cam.key(n, loc=(cx, cy - 0.08, top + 0.68))
+    cam = Cam(lens=34, loc=(cx, cy - 0.52, top + 0.74), target=(cx, cy - 0.02, top + 0.07))
+    cam.key(1, loc=(cx, cy - 0.52, top + 0.74))
+    cam.key(n, loc=(cx, cy - 0.42, top + 0.62))
     syll = [(50.29, 50.55, 0.28, 0.1), (50.55, 50.87, 0.38, 0.0)]
     for ch in (larry, dale):
-        stare_at(ch, cam.cam, 1, 2)
+        look_at(ch, cam.cam, 1.0)
         face(ch, 1, CREEPY_ENJOY)
         lipsync(ch, lambda t: at("sh32", t), syll)
         face(ch, at("sh32", 51.0), CREEPY)

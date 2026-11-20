@@ -109,4 +109,34 @@ im = Image.new("RGB", (700, 200), (245, 245, 245))
 d = ImageDraw.Draw(im)
 ctext(d, (350, 100), "LAUNDRY", font(FK, 120), (60, 90, 160))
 im.save(f"{OUT}/tag_laundry.png")
+
+# 8. Wicker weave (tileable 512px): 16 horizontal strands woven over/under 8 vertical stakes
+import random
+S, ROWS, STAKES = 512, 16, 8
+rh, sw = S // ROWS, S // STAKES
+rnd = random.Random(3)
+im = Image.new("RGB", (S, S), (30, 19, 10))
+d = ImageDraw.Draw(im)
+for r in range(ROWS):
+    f = rnd.uniform(0.86, 1.06)
+    base = tuple(int(v * f) for v in (178, 130, 76))
+    for k in range(rh - 4):
+        sh = 0.5 + 0.5 * math.sin(math.pi * k / (rh - 5))
+        d.line((0, r * rh + 2 + k, S, r * rh + 2 + k), fill=tuple(int(v * sh) for v in base))
+for s in range(STAKES):
+    x0 = s * sw + sw // 2 - 8
+    for r in range(ROWS):
+        y0 = r * rh
+        if (r + s) % 2 == 0:                     # stake on top of this strand
+            for k in range(16):
+                sh = 0.45 + 0.45 * math.sin(math.pi * k / 15)
+                d.line((x0 + k, y0, x0 + k, y0 + rh - 1), fill=tuple(int(v * sh) for v in (150, 106, 60)))
+        else:                                    # strand on top: soft shadow either side of the hidden stake
+            for k, a in ((-3, 0.55), (-2, 0.7), (-1, 0.85), (16, 0.85), (17, 0.7), (18, 0.55)):
+                for y in range(y0 + 2, y0 + rh - 2):
+                    p = im.getpixel((x0 + k, y))
+                    im.putpixel((x0 + k, y), tuple(int(v * a) for v in p))
+noise = Image.effect_noise((S, S), 22).convert("RGB")
+im = Image.blend(im, Image.composite(im, noise, Image.new("L", (S, S), 200)), 0.35)
+im.save(f"{OUT}/wicker.png")
 print("ep4 decals ->", OUT)
