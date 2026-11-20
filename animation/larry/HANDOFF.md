@@ -67,6 +67,18 @@ This is the approved script:
 - New supporting cast: `hr`, `butcher`, and the `larry_monk` variant.
 - Audio is voice only.
 
+### Episode 4 "Fresh Batch" (done: 52.6 s, 32 shots; see `ep4/README.md`)
+
+- Premise: every night at 3 AM Larry and Dale fly in through your window to sniff your underwear.
+- Escalation: lock the window → chimney (soot) → the UNDERWEAR VAULT safe → guard dog (it's Dale; Larry walks him) →
+  no underwear (they sniff your jeans) → a concrete house with no windows, no chimney, no underwear.
+- Twist: two faces smile up from your laundry hamper: "Fresh batch?"
+- Voiceover: ElevenLabs "Mark". Audio is voice only.
+- Workflow that caught the bugs: `preview_all.sh` stills, then `motion_all.sh` (every 3rd frame, 20%, 1 sample) and a
+  144p preview cut for the user before the full render. Full render ~2.5 h with 2 workers.
+- Lessons: alpha glass must not cast shadows (`visible_shadow = False`) or moonlight turns to grain; `hide_after` on an
+  empty does not hide its children; hold cloth props with COPY_LOCATION so they hang, not as rigid Child Of boards.
+
 ## Characters: keep them identical
 
 Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The recipe sets the body, skin, hair, clothes and colour tints.

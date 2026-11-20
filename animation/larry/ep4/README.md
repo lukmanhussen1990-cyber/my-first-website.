@@ -4,7 +4,11 @@ A 52.6-second vertical short (1080×1920, 24 fps) cut to the user's voiceover (E
 
 Every night at 3 AM, Larry and Dale fly in through your window to sniff your underwear. You lock the window, hide your boxers in a safe, get a guard dog, stop wearing underwear, and finally move into a concrete house with no windows and no chimney. That night you open your laundry hamper and two faces smile up at you: "Fresh batch?"
 
-**Status: in production.** Render outputs live in `$LARRY_WORK/ep4/` and are not committed.
+**Status: done (2026-11-20).** Both videos were delivered to the user:
+- `larry_ep4_final.mp4`: captions burned in.
+- `larry_ep4_clean.mp4`: no captions.
+
+Render outputs live in `$LARRY_WORK/ep4/` and are not committed.
 
 ## Cast
 
@@ -52,3 +56,5 @@ bash animation/larry/ep4/render_all.sh 2 4
 bash animation/larry/ep4/assemble.sh $LARRY_WORK/ep4/larry_ep4_final.mp4 final captions
 bash animation/larry/ep4/assemble.sh $LARRY_WORK/ep4/larry_ep4_clean.mp4 final clean
 ```
+
+The render took 1262 frames × ~12–33 s (bedroom night shots are the slow ones) ÷ 2 workers, about 2.5 hours.
