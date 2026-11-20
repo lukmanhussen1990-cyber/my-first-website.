@@ -51,7 +51,7 @@ while queue or running:
                 print(f"OK {sh} {cuts.frames_of(sh)} secs=0 (already rendered)", flush=True)
                 queue.remove(sh); continue
             args = ["xvfb-run", "-a", "-s", "-screen 0 1280x1024x24", B, "-b", "--python",
-                    os.path.join(HERE, "render_shot.py"), "--", sh, OUT, "full", SPP]
+                    os.path.join(HERE, "render_shot.py"), "--", sh, OUT, os.environ.get("MODE", "full"), SPP]
             if done:
                 args += [str(done + 1), str(cuts.frames_of(sh))]       # resume a partly rendered shot
             p = subprocess.Popen(args, cwd="/tmp", stdout=open(os.path.join(OUT, "logs", f"{sh}.log"), "w"),

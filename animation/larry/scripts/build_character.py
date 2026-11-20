@@ -181,6 +181,13 @@ SPECS = {
         clothes=["joepal_crude_t-shirt_female.mhclo", "cortu_jeans_shorts.mhclo", "toigo_flats.mhclo"],
         tint={"crude_t-shirt": (1.0, 0.45, 0.7)},
     ),
+    # ---------------------------------------------------------------- episode 7 (Dale in prison)
+    "dale_jail": dict(      # same Dale, orange prison jumpsuit (work overalls tinted orange)
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.5, weight=0.42, height=0.68, proportions=0.6, race=AFR),
+        skin="young_african_male.mhmat", hair="short04.mhclo",
+        clothes=["male_worksuit01.mhclo", "shoes01.mhclo"], eye_mat="brown.mhmat",
+        tint={"worksuit": (1.0, 0.4, 0.06)},
+    ),
     # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
     "butcher": dict(
         phenotype=dict(gender=1.0, age=0.6, muscle=0.9, weight=0.85, height=0.85, proportions=0.7, race=MIX),
