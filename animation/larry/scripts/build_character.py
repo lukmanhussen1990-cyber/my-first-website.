@@ -141,6 +141,19 @@ SPECS = {
         eye_mat="grey.mhmat",
         tint={"hooded_sweat": (0.42, 0.24, 0.1), "wool_pants": (0.36, 0.22, 0.1), "moustache": (0.16, 0.12, 0.1)},
     ),
+    # ---------------------------------------------------------------- episode 4 (you: night + casual)
+    "you_night": dict(      # pyjamas: white tee + pale-blue pyjama trousers, barefoot
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.55, weight=0.45, height=0.55, proportions=0.6, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="short02.mhclo",
+        clothes=["elvs_crude_t-shirt_male.mhclo", "toigo_wool_pants.mhclo"],
+        tint={"crude_t-shirt": (0.95, 0.95, 0.95), "wool_pants": (0.5, 0.62, 0.9)},
+    ),
+    "you_casual": dict(     # white tee + jeans (the "no underwear" days)
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.55, weight=0.45, height=0.55, proportions=0.6, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="short02.mhclo",
+        clothes=["male_casualsuit06.mhclo", "shoes04.mhclo"],
+        tint={},
+    ),
     # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
     "butcher": dict(
         phenotype=dict(gender=1.0, age=0.6, muscle=0.9, weight=0.85, height=0.85, proportions=0.7, race=MIX),
