@@ -11,6 +11,9 @@
   by `scripts/glb2amc.py`. Credit stays with CMU ("The data used in this project was obtained from mocap.cs.cmu.edu").
 - Episode 2 (Dale from IT): grinsegold "full beard" (bodyparts06, CC-BY). CC0: elvs crude t-shirt (shirts01), cortu jeans
   shorts (pants01), long01 hair, shoes03 and old_caucasian_male skin (MakeHuman system assets)
+- Episode 4 (Fresh Batch): only CC-BY asset is grinsegold "moustache" (Larry). CC0: elvs crude t-shirt, toigo wool pants,
+  male_casualsuit01/05, short02/short04 hair, shoes01/04 (MakeHuman system assets). Wicker, boxers and signs are made
+  in `ep4/make_decals.py`.
 - Props, textures, HDRIs: Poly Haven (CC0)
 - Tank: "Cimpletoon" Freeciv units (OpenGameArt, CC0); Jets: "fighter jets" basic replacements (OpenGameArt, CC0)
 - Fonts: Montserrat (SIL Open Font License)
