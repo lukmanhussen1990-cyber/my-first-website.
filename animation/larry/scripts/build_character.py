@@ -154,6 +154,14 @@ SPECS = {
         clothes=["male_casualsuit01.mhclo", "shoes04.mhclo"],
         tint={},
     ),
+    # ---------------------------------------------------------------- episode 5 (you in orbit)
+    "you_astro": dict(      # station crew wear: navy polo + khaki cargo pants + boots
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.55, weight=0.45, height=0.55, proportions=0.6, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="short02.mhclo",
+        clothes=["namuhekam_male_polo_shirt.mhclo", "cortu_cargo_pants.mhclo", "culturalibre_male_boots.mhclo"],
+        eye_mat="brownlight.mhmat",
+        tint={"polo": (0.08, 0.14, 0.38), "cargo": (0.55, 0.5, 0.38), "boots": (0.12, 0.1, 0.08)},
+    ),
     # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
     "butcher": dict(
         phenotype=dict(gender=1.0, age=0.6, muscle=0.9, weight=0.85, height=0.85, proportions=0.7, race=MIX),
