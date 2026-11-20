@@ -13,9 +13,10 @@ OUT = os.path.join(S, "ep6", "frames")
 SPP = sys.argv[1] if len(sys.argv) > 1 else "4"
 SHOTS = sys.argv[2:] or cuts.SHOT_NAMES
 # GB of RAM a shot needs while rendering (measured: 6 subdivided characters ~8.5 GB, 2-3 characters ~4-5 GB)
-HEAVY = {"sh03": 9.0, "sh04": 9.0, "sh10": 9.0, "sh11": 9.0, "sh25": 7.0, "sh24": 7.0, "sh28": 7.0, "sh23": 6.0,
-         "sh02": 6.0, "sh12": 6.0, "sh08": 6.0, "sh21": 6.0, "sh26": 6.0}
-NEED = {s: HEAVY.get(s, 4.8) for s in SHOTS}
+# (no render subdivision outside close-ups: ~40% less than the first estimate)
+HEAVY = {"sh03": 7.0, "sh04": 7.0, "sh10": 7.0, "sh11": 7.0, "sh25": 5.5, "sh24": 5.5, "sh28": 5.5, "sh23": 5.0,
+         "sh02": 5.0, "sh12": 5.0, "sh26": 6.0, "sh06": 6.0, "sh17": 5.5, "sh34": 6.0}
+NEED = {s: HEAVY.get(s, 4.2) for s in SHOTS}
 os.makedirs(os.path.join(OUT, "logs"), exist_ok=True)
 
 
