@@ -59,9 +59,11 @@ def load_char(name, *a, **k):
     ch = _load_char(name, *a, **k)
     if name == "you_night":
         plain_cloth(ch, "crude", (0.9, 0.9, 0.91))     # flat white tee
-        for o in ch.meshes:                            # the chest poked through the tight tee (read as a stain)
-            if any(m and "crude" in m.name.lower() for m in o.data.materials):
-                dm = o.modifiers.new("loosen", "DISPLACE"); dm.mid_level = 0.0; dm.strength = 0.006
+        for o in ch.meshes:                            # the chest poked through the tight tee (read as a stain);
+            mats = [m.name.lower() for m in o.data.materials if m]   # pants pushed further so the tee hem stays under
+            amt = 0.004 if any("crude" in m for m in mats) else 0.009 if any("wool_pants" in m for m in mats) else 0
+            if amt:
+                dm = o.modifiers.new("loosen", "DISPLACE"); dm.mid_level = 0.0; dm.strength = amt
     return ch
 
 
@@ -92,26 +94,54 @@ def boxers_mat():
 
 
 def boxers(name="boxers"):
-    """Soft heart-print boxer shorts; origin at the waistband centre, legs hang toward -Z."""
+    """Heart-print boxer shorts as one soft cloth panel (waist + two legs), origin at the waistband centre,
+    legs hanging toward -Z, front facing -Y."""
     m = boxers_mat()
-    band = mat_flat("boxers_band", (0.95, 0.95, 0.97), rough=0.6)
-    root = empty(name, (0, 0, 0))
-    parts = []
-    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.16, depth=0.045, location=(0, 0, -0.022))
-    w = bpy.context.object; w.scale = (1.0, 0.3, 1.0); w.data.materials.append(band); parts.append(w)
-    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.165, depth=0.13, location=(0, 0, -0.11))
-    h = bpy.context.object; h.scale = (1.0, 0.32, 1.0); h.data.materials.append(m); parts.append(h)
-    for sx in (-1, 1):
-        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.085, depth=0.17, location=(sx * 0.085, 0, -0.22),
-                                            rotation=(0, math.radians(sx * 7), 0))
-        lg = bpy.context.object; lg.scale = (1.0, 0.38, 1.0); lg.data.materials.append(m); parts.append(lg)
-    for k, o in enumerate(parts):
-        o.name = f"{name}_{k}"
-        sd = o.modifiers.new("soft", "SUBSURF"); sd.levels = 1; sd.render_levels = 2
-        bpy.ops.object.select_all(action="DESELECT"); o.select_set(True); bpy.context.view_layer.objects.active = o
-        bpy.ops.object.shade_smooth()
-        o.parent = root
+    root = empty(name)
+    RU, RL, C, HU, HL = 6, 6, 12, 0.17, 0.15
+    verts, faces, rows = [], [], []
+
+    def w(z):
+        return 0.18 + 0.03 * (-z / (HU + HL))
+    for r in range(RU + 1):                                   # seat: one strip across the full width
+        z = -HU * r / RU; ww = w(z)
+        rows.append([len(verts) + c for c in range(C + 1)])
+        verts += [(-ww + 2 * ww * c / C, 0.0, z) for c in range(C + 1)]
+    split = rows[-1]
+    left_prev, right_prev = split[:C // 2 + 1], split[C // 2:]
+    for r in range(1, RL + 1):                                # two legs opening from the crotch
+        z = -HU - HL * r / RL; ww = w(z); gap = 0.035 * (r / RL) ** 0.7
+        L = [len(verts) + c for c in range(C // 2 + 1)]
+        verts += [(-ww + (ww - gap) * c / (C // 2), 0.0, z) for c in range(C // 2 + 1)]
+        R = [len(verts) + c for c in range(C // 2 + 1)]
+        verts += [(gap + (ww - gap) * c / (C // 2), 0.0, z) for c in range(C // 2 + 1)]
+        for prev, cur in ((left_prev, L), (right_prev, R)):
+            faces += [(prev[c], prev[c + 1], cur[c + 1], cur[c]) for c in range(C // 2)]
+        left_prev, right_prev = L, R
+    for r in range(RU):
+        faces += [(rows[r][c], rows[r][c + 1], rows[r + 1][c + 1], rows[r + 1][c]) for c in range(C)]
+    me = bpy.data.meshes.new(name + "_cloth"); me.from_pydata(verts, [], faces); me.update()
+    o = bpy.data.objects.new(name + "_cloth", me); bpy.context.scene.collection.objects.link(o)
+    o.data.materials.append(m)
+    sd = o.modifiers.new("soft", "SUBSURF"); sd.levels = 1; sd.render_levels = 2
+    tx = bpy.data.textures.get("boxer_folds") or bpy.data.textures.new("boxer_folds", "CLOUDS")
+    tx.noise_scale = 0.07
+    dp = o.modifiers.new("folds", "DISPLACE"); dp.texture = tx; dp.strength = 0.028; dp.direction = "Y"
+    sol = o.modifiers.new("t", "SOLIDIFY"); sol.thickness = 0.022; sol.offset = 0.0
+    for poly in me.polygons:
+        poly.use_smooth = True
+    o.parent = root
+    band = box(name + "_band", (0.37, 0.036, 0.035), (0, 0, -0.012), mat_flat("boxers_band", (0.95, 0.95, 0.97), rough=0.6),
+               bevel=0.012)
+    band.parent = root
     return root
+
+
+def hang(ch, obj, bone="RightHand", yaw=0.0):
+    """Cloth held in a hand: follows the hand's position but keeps hanging straight down (front toward -Y, yawed)."""
+    c = obj.constraints.new("COPY_LOCATION"); c.target = ch.rig; c.subtarget = bone; c.head_tail = 0.7
+    obj.location = (0, 0, 0); obj.rotation_euler = (0, 0, math.radians(yaw))
+    return obj
 
 
 def collar(ch):
@@ -296,6 +326,7 @@ def window_panes(open_frames=None, closed=True):
                                       ((0.03, 0.03, 1.28), (0, -side * 0.34, 0.68)))):      # 4 bars + a thin mullion
             fr = box(f"pane_frame{side}_{k}", sz, lc, frame_m); fr.parent = h
         gl = box(f"pane_glass{side}", (0.01, 0.6, 1.26), (0, -side * 0.34, 0.68), glass); gl.parent = h
+        gl.visible_shadow = False        # alpha glass cast a stochastic shadow: moonlight came through as grain
         lt = box(f"pane_latch{side}", (0.03, 0.02, 0.08), (-0.03, -side * 0.66, 0.6),
                  mat_flat("latch", (0.75, 0.62, 0.2), metal=1.0, rough=0.3)); lt.parent = h
         if open_frames:
@@ -337,6 +368,8 @@ def bedroom_night(window_open=False, window_frames=None, with_dresser=True, draw
     sky.inputs["Emission Color"].default_value = (0.12, 0.2, 0.45, 1)
     moon = bpy.data.objects["moon"].data                    # sharper moonlight: no speckle at 4 samples
     moon.size = 0.04
+    moon.shadow_filter_radius = 0.3                         # with full-res shadow maps: clean edges, no fizz
+    bpy.context.scene.eevee.shadow_resolution_scale = 1.0
     moon.energy *= 0.9
     wr = bpy.data.objects["wr_a"]                            # episode 1 left a full-height gap at y -0.6..-0.1:
     box("wr_fill", (0.2, 0.52, 3.0), (2.6, -0.35, 1.5), wr.data.materials[0], uv_scale=0.5)   # moonlight leaked through it
@@ -355,7 +388,7 @@ def you_asleep():
     old = bpy.data.objects.get("blanket")
     if old:
         old.hide_render = True; old.hide_viewport = True
-    blanket_over(you, (-0.9, 0.9), (-0.16, 1.6), 0.59, fold_y=1.46, color=(0.28, 0.36, 0.78), half_w=0.815, foot_y=-0.07)
+    blanket_over(you, (-0.9, 0.9), (-0.16, 1.6), 0.59, fold_y=1.46, color=(0.14, 0.2, 0.5), half_w=0.815, foot_y=-0.07)
     return you
 
 
@@ -856,11 +889,12 @@ def sniffers(n, drawer=None):
     larry.clip("137_41", **src(n, 600))
     dale = load_char("dale", (-1.3, -0.25, 0), rot_z=-80, subdiv=True, tag="dale")
     dale.clip("137_41", **src(n, 1000))
-    for ch, dx in ((larry, -0.05), (dale, 0.05)):
+    for ch in (larry, dale):                     # shorts pressed over nose and mouth like a mask, eyes above
         bo = boxers(f"sniff_{ch.name}")
-        hold(ch, bo, "Right", loc=(0.0, 0.09, 0.04), rot=(0, 0, 0))
+        c = bo.constraints.new("COPY_LOCATION"); c.target = ch.rig; c.subtarget = "Head"; c.use_offset = True
+        bo.location = (-0.13, 0.0, 0.035); bo.rotation_euler = (0, 0, math.radians(90))
         hh = ch.world("Head", frame=1)
-        hand_ik(ch, "Right", empty(f"nose{ch.name}", (hh.x - 0.18, hh.y + dx, hh.z - 0.02)))
+        hand_ik(ch, "Right", empty(f"nose{ch.name}", (hh.x - 0.14, hh.y + 0.13, hh.z - 0.02)))
     return larry, dale
 
 
@@ -978,7 +1012,7 @@ def sh12():
     larry, dale = fireplace_pair(n, emerge=False)
     for ch, x in ((larry, -0.45), (dale, 0.55)):
         bo = boxers(f"trophy_{ch.name}")
-        hold(ch, bo, "Right" if ch is larry else "Left", loc=(0.0, 0.09, 0.04), rot=(0, 0, 0))
+        hang(ch, bo, "RightHand" if ch is larry else "LeftHand")
         hand_ik(ch, "Right" if ch is larry else "Left", empty(f"raise{ch.name}", (x, 1.8, 1.72 if ch is dale else 1.6)))
         face(ch, 1, TADA)
     cam = Cam(lens=28, loc=(0.1, 0.2, 1.5), target=(0.05, 2.05, 1.5))       # wide enough for both raised trophies
@@ -996,14 +1030,15 @@ def sh13():
     bedroom_night(window_open=False, with_dresser=False)
     sf, hinge, dial = safe_prop(door_open=None, opened=True)
     key_rot(hinge, 1, (0, 0, 105)); key_rot(hinge, int(n * 0.65), (0, 0, 105)); key_rot(hinge, n - 4, (0, 0, 0))
-    you = load_char("you_night", (-0.95, -1.05, 0), rot_z=-90, subdiv=True)
-    you.clip("137_41", **src(n, 1000))
+    you = load_char("you_night", (-1.12, -1.05, 0), rot_z=-90, subdiv=True)
+    you.clip("137_41", **src(n, 4200))
     bo = boxers("hide_boxers")
-    hold(you, bo, "Right", loc=(0.0, 0.09, 0.04))
+    hang(you, bo, "RightHand")
     t = empty("stuff", (0, 0, 0))
-    key_loc(t, 1, (-1.15, -1.1, 1.2)); key_loc(t, int(n * 0.45), (-1.75, -0.95, 0.85)); key_loc(t, n, (-1.2, -1.05, 1.05))
+    key_loc(t, 1, (-1.4, -1.2, 1.2)); key_loc(t, int(n * 0.45), (-1.72, -0.98, 1.05)); key_loc(t, n, (-1.45, -1.2, 1.1))
     hand_ik(you, "Right", t)
-    lib.hide_after(bo, int(n * 0.5))
+    for o in [bo] + list(bo.children_recursive):          # hide the cloth, not just its empty
+        lib.hide_after(o, int(n * 0.5))
     face(you, 1, DETERMINED)
     cam = Cam(lens=28, loc=(-0.85, -2.9, 1.6), target=(-1.32, -0.95, 1.2))   # your left side: profile + vault, head in
     cam.key(1, loc=(-0.85, -2.9, 1.6))
@@ -1057,16 +1092,13 @@ def sh16():
     dale = load_char("dale", (-2.2, -0.95, 0.1), rot_z=90, subdiv=True, tag="dale")
     pose(dale, SQUAT)
     settle(dale, "Hips", 0.6)
-    hat = boxers("dale_hat"); on_bone(dale, hat, "Head", (0, 0.2, 0.0), rot=(-90, 0, 0))
-    snf = boxers("dale_sniff")
-    hold(dale, snf, "Right", loc=(0.0, 0.09, 0.04))
-    hh = dale.world("Head", frame=1)
-    hand_ik(dale, "Right", empty("dalenose", (hh.x + 0.18, hh.y, hh.z - 0.02)))
+    hh = dale.world("Head", frame=1)                 # face clear: hugging his knees, eyes closed, savouring
     face(dale, 1, SNIFF)
     face(dale, n - 12, dict(SNIFF, eyeBlinkLeft=0.0, eyeBlinkRight=0.0, eyeWideLeft=0.6, eyeWideRight=0.6))
     cam = Cam(lens=30, loc=(-0.55, -2.0, 1.4), target=(-2.0, -0.95, 0.85))
     cam.key(1, loc=(-0.55, -2.0, 1.4))
     cam.key(n, loc=(-0.75, -1.85, 1.35))
+    stare_at(dale, cam.cam, n - 14, n - 8, 0.8)            # eyes open... he looks right at you
     return n
 
 
