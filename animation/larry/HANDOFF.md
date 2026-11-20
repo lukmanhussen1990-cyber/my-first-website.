@@ -59,6 +59,14 @@ This is the approved script:
 >
 > "We've been waiting for you."
 
+### Episode 3 "Larry's Meat" (done: 46.5 s, 31 shots; see `ep3/README.md`)
+
+- Premise: Larry keeps begging you to "beat his meat" (literally a steak).
+- The escalation runs HR → going vegan → a monastery → a professional butcher → faking your own death.
+- Twist: at your funeral, Larry puts a steak in your hands and whispers "Just one last time."
+- New supporting cast: `hr`, `butcher`, and the `larry_monk` variant.
+- Audio is voice only.
+
 ## Characters: keep them identical
 
 Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The recipe sets the body, skin, hair, clothes and colour tints.
@@ -77,7 +85,7 @@ Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The
   - Brown `shoes01`.
   - `dale_tee` wears `male_casualsuit06` (white tee and jeans).
   - All CC0. Never redesign him.
-- **Supporting cast:** `cop`, `bodyguard`, `soldier`, `soldier2`.
+- **Supporting cast:** `cop`, `bodyguard`, `soldier`, `soldier2` (episode 1); `hr` (Brenda from HR) and `butcher` (Big Tony) (episode 3). Larry variants: `larry_b`, `larry_soldier`, `larry_tee`, `larry_monk`.
 
 ## Network (cloud sessions)
 
