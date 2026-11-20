@@ -1260,7 +1260,6 @@ def sh25():
 @shot
 def sh26():
     """and it's DALE. - the chauffeur turns round over his seat: Dale, sunglasses, grin. Wink."""
-    closeup()
     n = frames_of("sh26")
     blk, you, wife, boy, dale = sedan_inside(kids=False)
     xr = blk.seats[2][0]
