@@ -146,12 +146,12 @@ SPECS = {
         phenotype=dict(gender=1.0, age=0.5, muscle=0.55, weight=0.45, height=0.55, proportions=0.6, race=CAU),
         skin="young_caucasian_male.mhmat", hair="short02.mhclo",
         clothes=["elvs_crude_t-shirt_male.mhclo", "toigo_wool_pants.mhclo"],
-        tint={"crude_t-shirt": (0.95, 0.95, 0.95), "wool_pants": (0.5, 0.62, 0.9)},
+        tint={"crude_t-shirt": (0.95, 0.95, 0.95), "wool_pants": (0.68, 0.8, 1.0)},
     ),
-    "you_casual": dict(     # white tee + jeans (the "no underwear" days)
+    "you_casual": dict(     # light-blue shirt + jeans (the "no underwear" days)
         phenotype=dict(gender=1.0, age=0.5, muscle=0.55, weight=0.45, height=0.55, proportions=0.6, race=CAU),
         skin="young_caucasian_male.mhmat", hair="short02.mhclo",
-        clothes=["male_casualsuit06.mhclo", "shoes04.mhclo"],
+        clothes=["male_casualsuit01.mhclo", "shoes04.mhclo"],
         tint={},
     ),
     # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
