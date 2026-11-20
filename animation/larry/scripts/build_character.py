@@ -162,6 +162,25 @@ SPECS = {
         eye_mat="brownlight.mhmat",
         tint={"polo": (0.08, 0.14, 0.38), "cargo": (0.55, 0.5, 0.38), "boots": (0.12, 0.1, 0.08)},
     ),
+    # ---------------------------------------------------------------- episode 6 (the family road trip)
+    "wife": dict(           # your wife: friendly, wavy bob, casual blouse + jeans look
+        phenotype=dict(gender=0.0, age=0.47, muscle=0.4, weight=0.45, height=0.5, proportions=0.6, race=CAU),
+        skin="young_caucasian_female.mhmat", hair=("elvs_wavy_bob*.mhclo", "bob02.mhclo"),
+        clothes=["elvs_ladies_tank1.mhclo", "cortu_jeans_shorts.mhclo", "toigo_flats.mhclo"],
+        tint={"wavy_bob": (0.36, 0.22, 0.12), "ladies_tank": (0.95, 0.38, 0.32)},
+    ),
+    "kid_boy": dict(        # your son, ~9: orange tee, denim shorts
+        phenotype=dict(gender=1.0, age=0.14, muscle=0.5, weight=0.5, height=0.5, proportions=0.5, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="short02.mhclo",
+        clothes=["elvs_crude_t-shirt_male.mhclo", "cortu_jeans_shorts.mhclo", "shoes03.mhclo"],
+        tint={"crude_t-shirt": (1.0, 0.42, 0.05), "short02": (0.45, 0.28, 0.12)},
+    ),
+    "kid_girl": dict(       # your daughter, ~7: pink tee, ponytail
+        phenotype=dict(gender=0.0, age=0.11, muscle=0.5, weight=0.5, height=0.5, proportions=0.5, race=CAU),
+        skin="young_caucasian_female.mhmat", hair=("ponytail01.mhclo", "braid01.mhclo"),
+        clothes=["joepal_crude_t-shirt_female.mhclo", "cortu_jeans_shorts.mhclo", "toigo_flats.mhclo"],
+        tint={"crude_t-shirt": (1.0, 0.45, 0.7)},
+    ),
     # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
     "butcher": dict(
         phenotype=dict(gender=1.0, age=0.6, muscle=0.9, weight=0.85, height=0.85, proportions=0.7, race=MIX),
@@ -204,7 +223,7 @@ human_info["eyes_material_type"] = "PROCEDURAL_EYES"
 BROWN = {"IrisMajorColor": [0.32, 0.17, 0.07, 1.0], "IrisMinorColor": [0.09, 0.045, 0.02, 1.0]}
 GREYBLUE = {"IrisMajorColor": [0.36, 0.45, 0.5, 1.0], "IrisMinorColor": [0.1, 0.13, 0.16, 1.0]}
 human_info["eyes_material_settings"] = GREYBLUE if NAME.startswith("larry") else BROWN
-human_info["hair"] = spec["hair"]
+human_info["hair"] = _pick(spec["hair"]) if spec["hair"] else spec["hair"]
 human_info["clothes"] = spec["clothes"]
 human_info["rig"] = "cmu_mb"
 
