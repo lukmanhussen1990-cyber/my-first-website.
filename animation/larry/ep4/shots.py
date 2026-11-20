@@ -1350,11 +1350,13 @@ def sh25():
     hips = you.world("Hips")
     for nm, x, rz in (("larry", -0.45, 90), ("dale", 0.45, -90)):            # facing you, either side
         ch = load_char(nm, (x, 1.08, 0), rot_z=rz, subdiv=True, tag=nm)
-        pose(ch, SQUAT)
+        ph = 0 if nm == "larry" else 2                                       # sniff-sniff: little forward bobs
+        keys = [(f, dict(SQUAT, lowerback={"rx": 18 + (5 if ((f + ph) // 4) % 2 else 0)})) for f in range(1, n + 1, 4)]
+        pose_seq(ch, keys, n)
         bpy.context.scene.frame_set(1)
         settle(ch, "Head", hips.z - 0.02)
         nose = empty(f"pocket{nm}", (math.copysign(0.14, x), 0.98, hips.z - 0.1))
-        stare_at(ch, nose, 1, 2)
+        look_at(ch, nose, 1.0)                                               # locked on from frame 1: no head snap
         face(ch, 1, SNIFF)
     cam = Cam(lens=28, loc=(0.25, -1.9, 1.15), target=(0.0, 1.0, 1.0))
     cam.key(1, loc=(0.25, -1.9, 1.15))
