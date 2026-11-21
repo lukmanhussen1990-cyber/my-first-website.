@@ -188,6 +188,13 @@ SPECS = {
         clothes=["male_worksuit01.mhclo", "shoes01.mhclo"], eye_mat="brown.mhmat",
         tint={"worksuit": (1.0, 0.4, 0.06)},
     ),
+    # ---------------------------------------------------------------- episode 8 (Dale's deck)
+    "you_work": dict(       # you in blue work overalls + boots (like the reference)
+        phenotype=dict(gender=1.0, age=0.5, muscle=0.55, weight=0.45, height=0.55, proportions=0.6, race=CAU),
+        skin="young_caucasian_male.mhmat", hair="short02.mhclo",
+        clothes=["male_worksuit01.mhclo", "culturalibre_male_boots.mhclo"], eye_mat="brownlight.mhmat",
+        tint={"worksuit": (0.05, 0.16, 0.5), "boots": (0.14, 0.11, 0.08)},
+    ),
     # the professional butcher: huge, bald, butcher whites (work overalls tinted white)
     "butcher": dict(
         phenotype=dict(gender=1.0, age=0.6, muscle=0.9, weight=0.85, height=0.85, proportions=0.7, race=MIX),
