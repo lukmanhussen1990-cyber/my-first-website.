@@ -100,6 +100,14 @@ This is the approved script:
   he spoons you; cat flap; teddy bear (Larry in a bear suit); hammock with nightlight; you get Dale released;
   twist: squeezed between them, "Group hug?". New cast `dale_jail` (orange jumpsuit). Rendered in `MODE=fast`.
 
+### Episode 8 "Dale's Deck" (done: 40 s, 20 shots; see `ep8/`)
+
+- Tool-invention format like the user's reference video: Dale begs you to oil his massive deck → bare hands
+  (splinters) → home-made brush → it's huge → paint roller → drips → ribbed tray → back pain → extension pole →
+  Dale's thumbs up. New cast `you_work` (blue work overalls); Dale is `dale_tee` (white tee, jeans).
+- First-person shots: `head_off()` hides the head (Generated-Z cut on the body + head meshes) and `pov()` puts the
+  camera at the eyes. `finger_pose()` makes a fist with the thumb up. Rendered in `MODE=fast`.
+
 ## Characters: keep them identical
 
 Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The recipe sets the body, skin, hair, clothes and colour tints.
