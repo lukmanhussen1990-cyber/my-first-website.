@@ -86,6 +86,20 @@ This is the approved script:
 - Twist: a knock on the airlock; Larry and Dale float in with a rocking chair. "Houston… he's gonna sit on my wood."
 - Voiceover: ElevenLabs "Todd". The user rejected another funeral ending ("repetitive"): vary the final escape.
 
+### Episode 6 "Road Trip" (done: 61 s, 35 shots; see `ep6/`)
+
+- Larry and Dale tail your family car (wife + two kids); "LEAVE ME ALONE!" → they sniff your pants; forest
+  picnic; gas-station car swap (Dale is the chauffeur); twist: captain Larry and co-pilot Dale, "Are we there yet?"
+- New: procedural car kit (`Car` in ep6/shots.py), coast road, mirror feed, plane; cast `wife`, `kid_boy`, `kid_girl`.
+- Memory: 6 characters ~8.5 GB with subdivision; Ep6 turns render subdivision off outside close-ups and uses
+  `render_sched.py` (memory-aware). Shots 1-14ish at full quality, the rest in `MODE=fast` (75 %, 2 samples).
+
+### Episode 7 "Group Hug" (done: 60 s, 30 shots; see `ep7/`)
+
+- Dale in prison 5 years; Larry's breakouts fail (file in a cake, tunnel into the warden's office, fake guard);
+  he spoons you; cat flap; teddy bear (Larry in a bear suit); hammock with nightlight; you get Dale released;
+  twist: squeezed between them, "Group hug?". New cast `dale_jail` (orange jumpsuit). Rendered in `MODE=fast`.
+
 ## Characters: keep them identical
 
 Every character is a fixed recipe in `scripts/build_character.py` (`SPECS`). The recipe sets the body, skin, hair, clothes and colour tints.
