@@ -34,6 +34,9 @@ elif MODE == "motion":                      # motion check: every 3rd frame, sma
 elif MODE == "blend":
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUTD, NAME + ".blend"))
 else:
+    if MODE == "fast":                       # draft-final: 75% resolution, 2 samples (upscaled at assembly)
+        sc.render.resolution_percentage = 75
+        sc.eevee.taa_render_samples = 2
     sc.render.filepath = os.path.join(OUTD, NAME, "f_")
     if F0:
         sc.frame_start = F0
