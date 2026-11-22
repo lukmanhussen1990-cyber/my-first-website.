@@ -1,6 +1,6 @@
 # Upload kit: "Broke Back In" (Episode 9)
 
-**Post caption.** Dale escaped. Larry helped. 💀 #shorts #funny #animation
+**Post caption.** Dale broke out just to break back in 💀 #shorts #funny #animation
 
 **Description.** Paste it as-is; the CC-BY asset licences require the credits.
 
