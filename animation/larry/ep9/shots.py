@@ -62,7 +62,9 @@ def load_char(name, loc=(0, 0, 0), rot_z=0.0, subdiv=False, tag=None):
 
 
 def closeup():
-    FLAGS["sd"] = True
+    """Render subdivision for close-ups, except in MODE=fast (75% draft-final): not visible at that size, ~40% faster."""
+    if os.environ.get("MODE") != "fast":
+        FLAGS["sd"] = True
 
 
 # ============================================================================ expressions
