@@ -17,6 +17,12 @@ bash animation/larry/setup_env_restricted.sh add-on-mpfb-v2.0.18.zip
 This works even when download.blender.org / mocap.cs.cmu.edu are blocked (Blender comes from PyPI `bpy==4.5.16`,
 mocap from Hugging Face). It also needs `pip install faster-whisper` into `/opt/whisper` for transcribing voiceovers.
 Never try to get around network blocks (no fake User-Agents, no proxies): if something is blocked, tell the user.
+- If `files.makehumancommunity.org` resets every connection (it did on 2026-11-22), fetch the same pack paths from the
+  official second mirror `files2.makehumancommunity.org` (ask the user to allow it in the environment), put the zips in
+  `/opt/mh_assets/packs/`, then run the script: it skips packs that are already there. The mirror is slow per
+  connection (~50 KB/s); downloading the big packs in parallel byte ranges brings it to ~0.5 MB/s.
+- If the whisper model download fails on `cas-server.xethub.hf.co`, run it with `HF_HUB_DISABLE_XET=1` (plain HTTPS
+  through `huggingface.co`). More CMU clips: search `metadata.jsonl` of the HF mirror, then `scripts/glb2amc.py`.
 
 **Step 3: rebuild the cast from the fixed recipes, then CHECK them against the reference pictures.**
 ```bash
@@ -172,6 +178,17 @@ This is the approved script:
   Dale's thumbs up. New cast `you_work` (blue work overalls); Dale is `dale_tee` (white tee, jeans).
 - First-person shots: `head_off()` hides the head (Generated-Z cut on the body + head meshes) and `pov()` puts the
   camera at the eyes. `finger_pose()` makes a fist with the thumb up. Rendered in `MODE=fast`.
+
+### Episode 9 "Broke Back In" (done: 57.6 s, 33 shots; see `ep9/`)
+
+- Cold open the user asked for: midnight, you sprint down the street screaming, escaped Dale (jumpsuit, banana peel)
+  and Larry behind you, to the police station; "Let me explain": you took Dale to court (5 years), he escaped in a
+  garbage truck (the user's reference videos) and walked six days to your window → mom's house (Larry in the washing
+  machine) → hotel (room service is Dale's head under the cloche) → your car (Dale in the trunk, Larry in the
+  glovebox) → the police lock you up in maximum security → twist: a garbage truck pulls in, "We broke back in."
+- `loop_move()` plays a seamless loop (09_01 sprint stride, 132_45 slow walk) in place and slides the rig at the
+  clip's own measured pace: long runs with no foot skating. `face_light()` = soft key riding with the camera for
+  night faces. Voiceover: ElevenLabs "Todd". Rendered in `MODE=fast`.
 
 ## Characters: keep them identical
 
