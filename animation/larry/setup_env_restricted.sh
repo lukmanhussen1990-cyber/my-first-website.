@@ -102,7 +102,8 @@ fi
 echo "== CMU mocap via Hugging Face (skeleton GLBs -> ASF/AMC)"
 mkdir -p /opt/cmu/glb /opt/cmu/amc
 HF=https://huggingface.co/datasets/codepawl/cmu-mocap-glb/resolve/main
-declare -A CLIPS=( [07_01]=07_01-walk [70_01]=70_01-carry-5-5lb-suitcase [137_41]=137_41-strong-man-wait [137_28]=137_28-normal-wait )
+declare -A CLIPS=( [07_01]=07_01-walk [70_01]=70_01-carry-5-5lb-suitcase [137_41]=137_41-strong-man-wait [137_28]=137_28-normal-wait
+                   [09_01]=09_01-run [113_27]=113_27-wave [105_19]=105_19-march )
 for id in "${!CLIPS[@]}"; do
   [ -s /opt/cmu/amc/$id.amc ] && continue
   n=${CLIPS[$id]}

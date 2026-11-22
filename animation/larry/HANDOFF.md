@@ -1,5 +1,70 @@
 # Larry series: handoff (read this first)
 
+## START HERE (new account / new AI session)
+
+You are continuing a finished, working pipeline. **Do not redesign anything and do not rewrite the pipeline.**
+Episodes 1-8 are done. Every episode folder (`ep2/` … `ep8/`) is a complete, working example: copy the newest one.
+
+**Step 1: get the code.** Either unzip the `larry_project.zip` the user gives you, or check out branch
+`ccr-35ca5e9e-l7qz15` of the user's GitHub repo `my-first-website.`; the project is `animation/larry/`.
+
+**Step 2: set up the machine (about 10-15 minutes).** The user will upload MPFB in two parts. Join and check them:
+```bash
+cat mpfb-2.0.18.zip.part0 mpfb-2.0.18.zip.part1 > add-on-mpfb-v2.0.18.zip
+sha256sum add-on-mpfb-v2.0.18.zip   # must be c075b3e9b94b8e5556a5f03f4653602d02ea306de08126e8f55ed6dee28a2dad
+bash animation/larry/setup_env_restricted.sh add-on-mpfb-v2.0.18.zip
+```
+This works even when download.blender.org / mocap.cs.cmu.edu are blocked (Blender comes from PyPI `bpy==4.5.16`,
+mocap from Hugging Face). It also needs `pip install faster-whisper` into `/opt/whisper` for transcribing voiceovers.
+Never try to get around network blocks (no fake User-Agents, no proxies): if something is blocked, tell the user.
+
+**Step 3: rebuild the cast from the fixed recipes, then CHECK them against the reference pictures.**
+```bash
+export LARRY_WORK=~/larry_work; B=/opt/blender-4.5.16-linux-x64/blender; mkdir -p $LARRY_WORK/chars
+for c in you larry dale dale_tee you_night you_casual you_work wife kid_boy kid_girl dale_jail you_astro larry_tee \
+         you_pj you_sun larry_monk hr butcher; do
+  xvfb-run -a $B -b --python animation/larry/scripts/build_character.py -- $c $LARRY_WORK/chars/$c.blend; done
+xvfb-run -a $B -b --python animation/larry/scripts/lineup.py -- $LARRY_WORK/chars /tmp/lineup larry,dale,you_casual
+```
+Compare the lineup with `ref/characters.jpg`, `ref/faces_larry_dale_you_wife_kids.jpg`,
+`ref/cast_family_larry_dale.jpg` and `ref/cast_you_work_dale_tee.jpg`. They must match exactly:
+- **Larry**: short, chubby, older, mustard polo, brown trousers, moustache, round glasses, grey hair.
+- **Dale**: slim Black man, slicked-back short hair, grey utility jacket over a striped shirt + jeans (`dale`),
+  or white tee + jeans (`dale_tee`), or orange jumpsuit (`dale_jail`).
+- **You**: young white man, short brown hair (several outfits: `you`, `you_casual`, `you_night`, `you_work`, ...).
+If a character looks different, the setup went wrong (missing MPFB asset pack). Fix the setup; never edit the recipe.
+
+**Step 4: make the episode** exactly like `ep8/` (see "Making an episode (episodes 2-8)" below).
+
+## Making an episode (episodes 2-8)
+
+1. `mkdir epN`; copy `audio.py normalize.sh render_shot.py preview_all.sh motion_all.sh render_all.sh assemble.sh
+   render_sched.py` from `ep8/` and replace `ep8` with `epN` inside them.
+2. Transcribe the user's voiceover (whisper `small.en`, word timestamps). Check quiet gaps with ffmpeg + numpy energy
+   to place words whisper misses (GENIUS!/CLEVER! often).
+3. `epN/cuts.py`: one shot per 1-2 s phrase. `epN/captions.py`: copy ep8's, rewrite `C` (W white / Y yellow
+   interjection / R red emphasis / L huge last line). Keep captions under ~16 characters in R and ~20 in W, split
+   longer ones. The **character name must be on screen in the first second** (the user's rule).
+4. `epN/shots.py`: import the newest episode's shots module (each one imports the previous) and write one function
+   per shot. Reuse sets/props/helpers; read the previous episodes' `shots.py` for examples.
+5. `W=2 bash epN/preview_all.sh` (3 stills per shot), review EVERY shot with `scripts/tools/sheet.py`, fix, repeat.
+   Then `bash epN/motion_all.sh` + `scripts/tools/motion_sheet.py` on the moving shots (catches lag and pops).
+6. Render: `MODE=fast python3 epN/render_sched.py 2` (memory-aware, 2 workers; fast = 75 % res, 2 samples,
+   ~5 s/frame, ~40-60 min). Full quality: `python3 epN/render_sched.py 4` (~3x slower).
+7. Upscale fast frames to 720x1280 (PIL LANCZOS + light unsharp), then
+   `bash epN/assemble.sh $LARRY_WORK/epN/larry_epN_final.mp4 final captions` and `... clean`.
+8. Send both videos, a one-line post caption, and keep `CREDITS.md` credits for the description. Commit + push.
+If the user asks for "what's done so far", run `python3 scripts/tools/partial_cut.py N /tmp/part` and encode it with
+the mix and captions; never stop the running render.
+
+## Working with this user (most important rules)
+- Very short replies. "No other word" = output only the requested text.
+- Audio is **voice only** (no music, no sound effects).
+- Edgy, absurd humour; Larry and Dale never give up. Vary the final twist (they disliked a repeated funeral).
+- They send screenshots of bugs: fix exactly what they point at, then check the rest.
+- Memory: max 2 Blender workers; 6 characters in one shot need ~8.5 GB, so close-up subdivision only.
+
+
 Everything needed to continue this series in a new session or on a new account. The code is on branch `ccr-35ca5e9e-l7qz15` (originally `claude/animation-video-blender-ideas-tdfyh9`, which is not on this remote), under `animation/larry/`.
 
 ## What this is
@@ -233,4 +298,7 @@ python3 animation/larry/scripts/make_decals.py $LARRY_WORK/decals    # signs/lab
 
 ## Kickoff prompt for a new session
 
-> I'm continuing my "Larry" 3D animated shorts series. In this repo, check out branch `ccr-35ca5e9e-l7qz15` and read `animation/larry/HANDOFF.md` first. It has the characters, the pipeline, the setup script and the lessons learned. Run `animation/larry/setup_env.sh`, rebuild the characters, then make Episode 2 (Larry & Dale) with the voiceover I've attached, in exactly the same style as Episode 1. Keep Larry exactly as defined in `build_character.py`, and design Dale once, then save him there too.
+> I'm continuing my "Larry & Dale" 3D animated shorts series (8 episodes done). Read `animation/larry/HANDOFF.md`
+> first, especially "START HERE", and follow it step by step: set up with my MPFB zip, rebuild the cast and compare it
+> with the pictures in `ref/` before doing anything else. Then make the next episode exactly like `ep8/`, with the
+> voiceover I'm attaching. Same characters, same look, voice only, captions like before. Keep replies short.
