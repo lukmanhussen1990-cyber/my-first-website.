@@ -952,8 +952,8 @@ def sh22():
                                                 (f_hit + 14, (hx, hy - 0.4, 1.7)), (f_hit + 19, (hx, hy - 0.8, 0.95)), (n, (hx, hy - 1.0, 1.0))])
     shards((hx, hy, CEIL_Z - 0.05), (0, 0, -1), f_hit, n, count=26, seed=12, colors=[(0.62, 0.45, 0.3), (0.3, 0.18, 0.1)],
            size=0.35, speed=0.12, name="board")
-    cam = Cam(lens=24, loc=(1.7, -6.2, 0.9), target=(hx, hy, 3.4))
-    cam.key(1, loc=(1.7, -6.2, 0.9), target=(hx, hy, 5.2)); cam.key(n, loc=(1.6, -6.4, 0.9), target=(hx, hy - 0.6, 1.3))
+    cam = Cam(lens=24, loc=(0.35, -6.6, 1.0), target=(hx, hy, 3.4))         # in the aisle, clear of the benches
+    cam.key(1, loc=(0.35, -6.6, 1.0), target=(hx, hy, 5.6)); cam.key(n, loc=(0.35, -6.8, 1.0), target=(hx, hy - 0.6, 1.3))
     return n
 
 
