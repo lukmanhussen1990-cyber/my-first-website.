@@ -395,8 +395,8 @@ def sh06():
 LARRY_PORCH = (0.0, 2.72)
 
 
-def larry_on_porch(n, y=None, sd=True):
-    larry = larry_char((LARRY_PORCH[0], y if y is not None else LARRY_PORCH[1], 0), rot_z=180, sd=sd)
+def larry_on_porch(n, y=None, sd=True, x=None):
+    larry = larry_char((x if x is not None else LARRY_PORCH[0], y if y is not None else LARRY_PORCH[1], 0), rot_z=180, sd=sd)
     idle(larry, n)
     piv = rocker(larry, at="floor")
     crying_larry(larry, n, piv)
@@ -455,8 +455,7 @@ def sh10():
     door_keys(h, [(1, 75)])
     you = you_char((0.14, 3.92, 0), rot_z=0)
     idle(you, n)
-    larry, piv = larry_on_porch(n, y=3.22)
-    larry.rig.location.x = -0.06
+    larry, piv = larry_on_porch(n, y=3.22, x=-0.06)
     hy = head(you)
     for side, dx in (("Left", -0.1), ("Right", 0.1)):                       # Larry faces +Y: left is -X
         t = empty(f"clutch_{side}", Vector((dx, hy.y - 0.16, hy.z - 0.32)))
