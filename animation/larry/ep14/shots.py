@@ -141,7 +141,7 @@ def tape_mat():
 
 def mouth_tape(ch):
     t = box("mouthtape", (0.085, 0.004, 0.035), (0, 0, 0), tape_mat())
-    on_bone(ch, t, "Head", (0.0, -0.038, 0.105), rot=(-90, 0, 0))
+    on_bone(ch, t, "Head", (0.0, -0.05, 0.1), rot=(-90, 0, 0))
     return t
 
 
@@ -266,7 +266,7 @@ def church(doors_open=None, broken_window=None, roof_hole=None):
     ceil = mat_flat("chceil", (0.62, 0.45, 0.3), rough=0.7)
     hx, hy = ROOF_HIT
     for nm, sz, lc in (("cl", (4.0, 17), (-3.0, -2.5)), ("cr", (4.0, 17), (3.0, -2.5)),
-                       ("cf", (2.0, 5.5 + (hy - 1.0) + 5.0), (0, (DOOR_Y + hy - 1.0) / 2)), ("cb", (2.0, 6.0 - hy), (0, (hy + 1.0 + 6.0) / 2))):
+                       ("cf", (2.0, 5.5 + (hy - 1.0) + 5.0), (0, (DOOR_Y + hy - 1.0) / 2)), ("cb", (2.0, 5.0 - (hy + 1.0)), (0, (hy + 1.0 + 5.0) / 2))):
         plane(f"ch_ceil_{nm}", sz, (lc[0], lc[1], CEIL_Z), ceil, rot=(180, 0, 0))
     tiles = []
     for ix in (-0.5, 0.5):
@@ -366,10 +366,10 @@ def at_altar(n, you=True, groom=True, priest=True, taped=True, gag=False, sd=Tru
         p = dale_char(PRIEST_AT, rot_z=0.0, sd=sd, tag="dpriest")
         p.clip("137_41", **src(n, 1500))
         priest_bits(p)
-        book = box("bible", (0.2, 0.15, 0.04), (0, 2.6, 1.3), mat_flat("bible", (0.08, 0.06, 0.05), rough=0.5))
+        book = box("bible", (0.2, 0.15, 0.04), (0, 2.88, 1.29), mat_flat("bible", (0.08, 0.06, 0.05), rough=0.5))
         book.rotation_euler = (math.radians(-30), 0, 0)
         for side, dx in (("Right", -0.09), ("Left", 0.09)):                 # facing -Y: right is -X
-            hold(p, side, (dx, 2.62, 1.3), name=f"book_{side}")
+            hold(p, side, (dx, 2.9, 1.3), name=f"book_{side}")
         out["priest"] = p
     return out
 
@@ -505,12 +505,11 @@ def sh03():
     n = frames_of("sh03")
     closeup()
     ep11.day_street()
-    you = you_char((0.55, -1.0, 0), rot_z=90)                               # facing +X... toward Dale
-    you.rig.rotation_euler = (0, 0, math.radians(-90))                       # facing -X? keep facing Dale below
+    you = you_char((0.55, -1.0, 0), rot_z=-90)                              # facing -X, toward Dale
     you.clip("137_28", **src(n, 2400))
     ypiv = rocker(you, at="floor")
     rock(ypiv, [(1, 0.0), (10, 0.0), (18, -7.0), (n, -6.0)])
-    dale = dale_char((-0.45, -1.0, 0), rot_z=-90)
+    dale = dale_char((-0.45, -1.0, 0), rot_z=90)                             # facing +X, toward you
     pose(dale, KNEEL_LEVEL)
     knee = min(("LeftLeg", "RightLeg"), key=lambda b: dale.world(b).z)
     settle(dale, knee, 0.06)
@@ -597,7 +596,7 @@ def sh06():
     tp = empty("tapehand", (YOU_CH[0] + 0.35, YOU_CH[1] + 0.05, 1.05))
     for k, f in enumerate(range(1, n + 1, 8)):
         key_loc(tp, f, (YOU_CH[0] + 0.32, YOU_CH[1] + (0.12 if k % 2 else -0.05), 1.05 + (0.04 if k % 2 else 0)))
-    hand_ik(dale, "Right", tp)
+    hand_ik(dale, "Left", tp)
     look_keys(dale, you, [(1, 0.7)])
     face(dale, 1, SMILE)
     hy = head(you)
@@ -628,7 +627,7 @@ def sh08():
     church()
     a = at_altar(n, you=False, groom=False)
     p = a["priest"]
-    book_pt = empty("lookbook", (0, 2.6, 1.25))
+    book_pt = empty("lookbook", (0, 2.88, 1.25))
     look_keys(p, book_pt, [(1, 0.8), (8, 0.8), (18, 0.0)])
     face(p, 1, DEADPAN)
     hp = head(p)
@@ -764,7 +763,7 @@ def sh15():
     key_loc(pt, 1, hl + Vector((0.25, 0.1, -0.55))); key_loc(pt, 8, hl + Vector((0.35, 0.55, -0.08)))
     for k, f in enumerate(range(12, n + 1, 6)):
         key_loc(pt, f, hl + Vector((0.35, 0.55 + (0.05 if k % 2 else 0), -0.08)))
-    hand_ik(larry, "Left", pt)                                              # facing +Y: left hand is -X... point with it
+    hand_ik(larry, "Right", pt)                                             # facing +Y: right hand is +X
     talk(larry, 2, n - 4, every=3)
     face(larry, 1, RAGE)
     cam = Cam(lens=40, loc=(hl.x - 0.2, hl.y + 1.3, hl.z + 0.05), target=(hl.x, hl.y, hl.z - 0.1))
@@ -827,11 +826,11 @@ def sh17():
     """Larry throws the PRIEST... - Larry heaves; the priest goes flying over the benches."""
     n = frames_of("sh17")
     church(doors_open=(0, 1))
-    larry = larry_char((-0.9, 1.9, 0), rot_z=150, sd=False)
+    larry = larry_char((-0.9, 1.9, 0), rot_z=-16, sd=False)
     larry.clip("137_28", **src(n, 2400))
     splat_on(larry)
     hl = head(larry)
-    for side, dx in (("Left", -0.2), ("Right", 0.2)):
+    for side, dx in (("Left", 0.2), ("Right", -0.2)):                        # facing ~-Y: left is +X
         t = empty(f"heave_{side}", hl + Vector((dx, 0.2, 0.25)))
         key_loc(t, 1, hl + Vector((dx, 0.15, -0.35))); key_loc(t, 6, hl + Vector((dx, 0.15, 0.35)))
         key_loc(t, 11, hl + Vector((dx * 0.6, -0.45, 0.2))); key_loc(t, n, hl + Vector((dx, -0.2, -0.3)))
@@ -854,6 +853,10 @@ def sh18():
     f_off = 10
     bpy.context.scene.frame_set(f_off); bpy.context.view_layer.update()
     pw = st.matrix_world.translation.copy()
+    loc0, rot0 = st.location.copy(), st.rotation_euler.copy()
+    for f in (1, f_off - 1):
+        st.location = loc0; st.keyframe_insert("location", frame=f)
+        st.rotation_euler = rot0; st.keyframe_insert("rotation_euler", frame=f)
     for c in st.constraints:
         c.influence = 1.0; c.keyframe_insert("influence", frame=f_off - 1)
         c.influence = 0.0; c.keyframe_insert("influence", frame=f_off)
@@ -915,7 +918,6 @@ def sh21():
     vis(root, f_off=f_hit + 4)
     shards(WIN_HIT, (1, 0, 0.3), f_hit, n, count=40)
     shards(WIN_HIT, (-1, 0, 0.2), f_hit, n, count=16, seed=8, speed=0.08, name="shardin")
-    point("winflash", (WIN_HIT[0] - 0.5, WIN_HIT[1], WIN_HIT[2]), energy=0)
     cam = Cam(lens=28, loc=(0.6, -1.2, 2.3), target=(WIN_HIT[0], WIN_HIT[1], WIN_HIT[2] - 0.2))
     cam.key(1, loc=(0.6, -1.2, 2.3)); cam.key(n, loc=(0.9, -1.4, 2.35))
     return n
@@ -1039,7 +1041,7 @@ def sh26():
     closeup()
     church(doors_open=(0, 1))
     rp, feet = real_priest(n)
-    feet.rotation_euler = (0, 0, math.radians(-90)); feet.location = (-0.9, 2.95, 0.3)
+    feet.rotation_euler = (0, 0, 0); feet.location = (-0.9, 2.95, 0.3)
     larry, dale = caked_pair(n, larry_at=(-0.55, 1.95), dale_at=(0.35, 1.95), facing=180.0)
     hr = head(rp)
     t = empty("pronounce")
