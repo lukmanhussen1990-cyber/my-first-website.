@@ -519,7 +519,7 @@ def sh03():
     you = you_char((0.55, -1.0, 0), rot_z=-90)                              # facing -X, toward Dale
     you.clip("137_28", **src(n, 2400))
     ypiv = rocker(you, at="floor")
-    rock(ypiv, [(1, 0.0), (10, 0.0), (18, -7.0), (n, -6.0)])
+    rock(ypiv, [(1, 0.0), (10, 0.0), (18, -5.0), (n, -4.5)])
     dale = dale_char((-0.45, -1.0, 0), rot_z=90)                             # facing +X, toward you
     pose(dale, KNEEL_LEVEL)
     knee = min(("LeftLeg", "RightLeg"), key=lambda b: dale.world(b).z)
@@ -533,8 +533,8 @@ def sh03():
     look_keys(you, dale, [(1, 0.6)])
     face(dale, 1, GRIN)
     face(you, 1, UNEASY); face(you, 12, SHOCK)
-    cam = Cam(lens=30, loc=(0.1, -3.4, 1.25), target=(0.05, -1.0, 1.0))
-    cam.key(1, loc=(0.1, -3.4, 1.25)); cam.key(n, loc=(0.1, -3.0, 1.2))
+    cam = Cam(lens=26, loc=(0.1, -4.3, 1.45), target=(0.05, -1.0, 1.08))     # room for you leaning back
+    cam.key(1, loc=(0.1, -4.3, 1.45)); cam.key(n, loc=(0.1, -4.0, 1.42))
     face_light(cam, energy=30, size=1.2)
     return n
 
