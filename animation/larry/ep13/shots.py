@@ -225,7 +225,10 @@ def meeting(n):
 
 
 def toilet_wall():
-    """A door in the office's back wall, TOILET sign on it."""
+    """A door in the office's back wall, TOILET sign on it (the set's big plant moved out of the doorway)."""
+    pp = bpy.data.objects.get("potted_plant_02")
+    if pp:
+        pp.location = (1.3, 3.4, 0)
     trim = mat_flat("dtrim", (0.96, 0.96, 0.95), rough=0.3)
     box("door", (0.92, 0.05, 2.05), (2.6, 3.875, 1.025), mat_flat("doorm", (0.55, 0.38, 0.22), rough=0.45), bevel=0.01)
     for nm, sz, lc in (("jl", (0.06, 0.1, 2.12), (2.11, 3.88, 1.06)), ("jr", (0.06, 0.1, 2.12), (3.09, 3.88, 1.06)),
@@ -373,7 +376,7 @@ def sh07():
     memo = decal("memo", f"{D13}/memo.png", 0.22, (0, 0, 0), rot=(70, 0, 0))
     hb = head(boss)
     fwd = Vector((math.sin(math.radians(-115)), -math.cos(math.radians(-115)), 0)).normalized()   # boss facing
-    mp = hb + fwd * 0.38 + Vector((0, 0, -0.32))
+    mp = hb + fwd * 0.27 + Vector((0, 0, -0.42))
     memo.location = mp
     memo.rotation_euler = (math.radians(70), 0, math.radians(-115))
     side = fwd.cross(Vector((0, 0, 1))).normalized()
