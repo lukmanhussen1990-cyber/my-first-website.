@@ -589,7 +589,7 @@ def sh05():
     ep9.drive_truck(root, wheels, [(1, (-7.0, -5.0), 0), (n, (2.0, -5.0), 0)], n)
     cam = Cam(lens=22, loc=(0, 0, 0), target=(0, 0, 0))
     cam.cam.parent = root; cam.tgt.parent = root
-    cam.cam.location = (-0.6, 9.2, 2.0); cam.tgt.location = (-0.6, 0.0, 1.7)
+    cam.cam.location = (-0.6, -8.4, 2.1); cam.tgt.location = (-0.6, 0.0, 1.7)            # far side of the street
     return n
 
 
@@ -612,8 +612,8 @@ def sh06():
     look_keys(dale, you, [(1, 0.7)])
     face(dale, 1, SMILE)
     hy = head(you)
-    cam = Cam(lens=28, loc=(hy.x + 0.5, hy.y + 1.0, hy.z + 0.12), target=(hy.x + 0.35, hy.y, hy.z - 0.25))   # in front of the altar table
-    cam.key(1, loc=(hy.x + 0.5, hy.y + 1.0, hy.z + 0.12)); cam.key(n, loc=(hy.x + 0.48, hy.y + 0.9, hy.z + 0.1))
+    cam = Cam(lens=28, loc=(hy.x + 0.35, hy.y + 1.0, hy.z + 0.12), target=(hy.x + 0.15, hy.y, hy.z - 0.22))  # in front of the altar table
+    cam.key(1, loc=(hy.x + 0.35, hy.y + 1.0, hy.z + 0.12)); cam.key(n, loc=(hy.x + 0.33, hy.y + 0.9, hy.z + 0.1))
     face_light(cam, energy=40, size=1.2)
     return n
 
@@ -812,8 +812,8 @@ def sh16():
         hand_ik(dale, side, t)
     splat_on(larry, f_on=f_hit + 1)
     face(dale, 1, RAGE); face(larry, 1, RAGE); face(larry, f_hit + 1, SHOCK)
-    cam = Cam(lens=24, loc=(5.5, -0.3, 1.8), target=(0.3, -0.3, 1.4))
-    cam.key(1, loc=(5.5, -0.3, 1.8)); cam.key(n, loc=(5.2, -0.3, 1.75))
+    cam = Cam(lens=22, loc=(4.55, -0.3, 1.8), target=(0.3, -0.3, 1.4))      # inside the right wall
+    cam.key(1, loc=(4.55, -0.3, 1.8)); cam.key(n, loc=(4.4, -0.3, 1.75))
     return n
 
 
@@ -881,7 +881,7 @@ def sh18():
     sc = bpy.context.scene
     for f in range(1, n + 1, 2):
         sc.frame_set(f)
-        cam.key(f, target=root.matrix_world.translation.copy(), interp="LINEAR")
+        cam.key(f, target=p.world("Spine1"), interp="LINEAR")
     sc.frame_set(1)
     cam.key(1, loc=(1.4, -2.2, 2.3)); cam.key(n, loc=(1.1, -2.6, 2.1))
     return n
@@ -1044,10 +1044,11 @@ def sh25():
     f_up = 24
     rp, feet = real_priest(n, f_up=f_up)
     face(rp, 1, {"eyeBlinkLeft": 1.0, "eyeBlinkRight": 1.0}); face(rp, 14, DAZED); blink(rp, [18])
-    cam = Cam(lens=26, loc=(REAL_PRIEST[0] + 3.2, REAL_PRIEST[1] - 2.6, 1.4), target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.5))
-    cam.key(1, loc=(REAL_PRIEST[0] + 3.2, REAL_PRIEST[1] - 2.6, 1.4), target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.5))
-    cam.key(f_up, target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.6))
-    cam.key(f_up + 10, target=(REAL_PRIEST[0], REAL_PRIEST[1], 1.25)); cam.key(n, loc=(REAL_PRIEST[0] + 3.0, REAL_PRIEST[1] - 2.4, 1.45))
+    c0 = (REAL_PRIEST[0] - 1.6, REAL_PRIEST[1] - 2.6, 1.45)                  # from the left: the arch post stays out of the way
+    cam = Cam(lens=26, loc=c0, target=(REAL_PRIEST[0] + 0.5, REAL_PRIEST[1], 0.55))
+    cam.key(1, loc=c0, target=(REAL_PRIEST[0] + 0.5, REAL_PRIEST[1], 0.55))
+    cam.key(f_up, target=(REAL_PRIEST[0] + 0.5, REAL_PRIEST[1], 0.6))
+    cam.key(f_up + 10, target=(REAL_PRIEST[0], REAL_PRIEST[1], 1.25)); cam.key(n, loc=(c0[0], c0[1] + 0.25, c0[2] + 0.05))
     return n
 
 
