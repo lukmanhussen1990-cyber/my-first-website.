@@ -451,7 +451,7 @@ def shards(center, out_dir, f0, n, count=36, seed=7, colors=GLASS, size=0.09, sp
         vis(b, f_on=f0)
 
 
-def confetti(n, area_xy=((-2.5, 2.5), (-1.0, 3.0)), count=140, seed=9, z0=6.5):
+def confetti(n, area_xy=((-2.5, 2.5), (-1.0, 3.0)), count=140, seed=9, z0=3.4):
     r = rnd(seed)
     cols = [(0.95, 0.3, 0.45), (1.0, 0.85, 0.2), (0.3, 0.7, 1.0), (1.0, 1.0, 1.0), (0.5, 0.9, 0.4)]
     mats = [mat_flat(f"conf{k}", c, rough=0.5) for k, c in enumerate(cols)]
@@ -587,9 +587,9 @@ def sh05():
     n = frames_of("sh05")
     root, wheels, you, dale = truck_with_you(n, sd=False)
     ep9.drive_truck(root, wheels, [(1, (-7.0, -5.0), 0), (n, (2.0, -5.0), 0)], n)
-    cam = Cam(lens=22, loc=(0, 0, 0), target=(0, 0, 0))
+    cam = Cam(lens=26, loc=(0, 0, 0), target=(0, 0, 0))                     # rides behind: you on the back, the cab beyond
     cam.cam.parent = root; cam.tgt.parent = root
-    cam.cam.location = (-0.6, -8.4, 2.1); cam.tgt.location = (-0.6, 0.0, 1.7)            # far side of the street
+    cam.cam.location = (-9.0, -3.2, 2.5); cam.tgt.location = (-2.2, 0.0, 1.7)
     return n
 
 
@@ -1080,12 +1080,12 @@ def sh27():
     n = frames_of("sh27")
     closeup()
     church(doors_open=(0, 1))
-    larry, dale = caked_pair(n, larry_at=(-0.45, 1.15), dale_at=(0.45, 1.15), facing=180.0)
+    larry, dale = caked_pair(n, larry_at=(-0.36, 1.15), dale_at=(0.36, 1.15), facing=180.0)
     look_keys(larry, dale, [(1, 0.0), (8, 0.0), (26, 0.85)]); look_keys(dale, larry, [(1, 0.0), (8, 0.0), (26, 0.85)])
     face(larry, 1, DEADPAN); face(dale, 1, DEADPAN); face(larry, 26, UNEASY); face(dale, 26, UNEASY)
     hl, hd = head(larry), head(dale)
     mid = (hl + hd) / 2
-    cam = Cam(lens=26, loc=(mid.x, 2.38, mid.z + 0.05), target=(mid.x, mid.y, mid.z - 0.12))
+    cam = Cam(lens=19, loc=(mid.x, 2.38, mid.z + 0.05), target=(mid.x, mid.y, mid.z - 0.12))
     cam.key(1, loc=(mid.x, 2.38, mid.z + 0.05)); cam.key(n, loc=(mid.x, 2.3, mid.z + 0.05))
     face_light(cam, energy=50, size=1.4)
     return n
