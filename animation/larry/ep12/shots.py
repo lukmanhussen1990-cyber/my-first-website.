@@ -75,8 +75,8 @@ def head_pos(ch, f=1):
 
 
 # Head-bone space offsets (x = his left, y = up the head, z = face-forward) for the wrist IK target
-PICK_L = (0.03, -0.09, 0.12)       # left wrist in front of the chin: fist, thumb up the nostril (Head base ~ nose level)
-PICK_R = (-0.03, -0.09, 0.12)
+PICK_L = (0.03, -0.045, 0.115)       # left wrist in front of the chin: fist, thumb up the nostril (Head base ~ nose level)
+PICK_R = (-0.03, -0.045, 0.115)
 SCRATCH_L = (0.09, -0.06, 0.07)     # left wrist beside the cheek: fingers on the side of the nose
 
 
@@ -269,8 +269,8 @@ def sh03():
     face(guy, 1, SERENE); face(guy, 5, SHOCK); face(guy, 12, SHOCK); face(guy, 20, INNOCENT)
     blink(guy, [30])
     hg = head_pos(guy)
-    cam = Cam(lens=38, loc=hg + Vector((0.72, 0.8, 0.04)), target=hg + Vector((0.05, 0.0, -0.05)))
-    cam.key(1, loc=hg + Vector((0.72, 0.8, 0.04))); cam.key(n, loc=hg + Vector((0.62, 0.7, 0.04)))
+    cam = Cam(lens=38, loc=hg + Vector((0.75, 0.82, 0.08)), target=hg + Vector((0.05, 0.0, -0.01)))
+    cam.key(1, loc=hg + Vector((0.75, 0.82, 0.08))); cam.key(n, loc=hg + Vector((0.65, 0.72, 0.08)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -318,8 +318,8 @@ def sh06():
     gcar, wcar, guy, wit = red_light()
     face(guy, 1, UNEASY); face(guy, 14, DETERMINED); face(guy, n, STERN)
     hg = head_pos(guy)
-    cam = Cam(lens=42, loc=hg + Vector((0.75, 0.45, 0.04)), target=hg + Vector((0.03, 0, 0.0)))
-    cam.key(1, loc=hg + Vector((0.75, 0.45, 0.04))); cam.key(n, loc=hg + Vector((0.55, 0.33, 0.04)))
+    cam = Cam(lens=42, loc=hg + Vector((0.65, 0.78, 0.05)), target=hg + Vector((0.03, 0, 0.01)))
+    cam.key(1, loc=hg + Vector((0.65, 0.78, 0.05))); cam.key(n, loc=hg + Vector((0.5, 0.62, 0.05)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -337,7 +337,7 @@ def sh07():
     face(guy, 1, STERN); face(guy, 14, DETERMINED)
     look_keys(wit, guy, [(1, 0.9)])
     hw, hg = head_pos(wit), head_pos(guy)
-    cam = Cam(lens=58, loc=hw + Vector((0.1, -0.3, 0.02)), target=hg + Vector((0.04, 0.0, -0.03)))
+    cam = Cam(lens=66, loc=hw + Vector((0.1, -0.3, 0.02)), target=hg + Vector((0.04, 0.0, -0.03)))
     cam.key(1, loc=hw + Vector((0.1, -0.3, 0.02))); cam.key(n, loc=hw + Vector((0.1, -0.5, 0.02)))
     face_light(cam, energy=25, size=1.0)
     return n
@@ -423,17 +423,23 @@ def meeting_room(n):
     decal("slide", f"{D12}/slide_q3.png", 2.2, (0.2, 3.83, 1.75), rot=(90, 0, 0), emit=0.6)
     for k, x in enumerate((-0.95, 1.35)):
         box(f"cup{k}", (0.08, 0.08, 0.1), (x, 1.95, 0.82), mat_flat(f"cup{k}m", (0.95, 0.95, 0.95)))
-    hr = load_char("hr", (1.85, 2.95, 0), rot_z=-55, subdiv=True, tag="hr")
+    hr = load_char("hr", (1.45, 3.3, 0), rot_z=-30, subdiv=True, tag="hr")
     hr.clip("137_41", **src(n, 1000))
-    ptr = empty("hr_point", (1.35, 3.35, 1.55))
+    ptr = empty("hr_point", (1.0, 3.7, 1.6))
     hand_ik(hr, "Right", ptr)
     return hr
+
+
+def sit_level(ch, seat_z):
+    """ep2's sit(), with the same neck correction as SEATED (the base pose tips the head back)."""
+    pose(ch, dict(ep2.SIT, lowerneck={"rx": 18}, upperneck={"rx": 16}))
+    settle(ch, "Hips", seat_z + 0.1)
 
 
 def seat_at_table(ch, x, y=2.95, chair_color=(0.08, 0.08, 0.09)):
     piv, sz = ep2.chair((x, y, 0), rot_z=0, seat_h=0.5, color=chair_color)
     ch.rig.location = (x, y - 0.02, 0); ch.rig.rotation_euler = (0, 0, 0)
-    sit(ch, sz)
+    sit_level(ch, sz)
     return piv
 
 
@@ -461,8 +467,8 @@ def sh11():
     look_keys(hr, guy, [(1, 0.0), (14, 0.0), (24, 0.8)])
     face(wit, 1, UNEASY); face(guy, 1, LOCKED); face(hr, 1, SMILE); face(hr, 24, SHOCK)
     blink(wit, [10, 28])
-    cam = Cam(lens=30, loc=(0.0, -0.9, 1.5), target=(0.15, 2.8, 1.15))
-    cam.key(1, loc=(0.0, -0.9, 1.5)); cam.key(n, loc=(0.0, -0.3, 1.45))
+    cam = Cam(lens=28, loc=(0.35, -0.6, 1.55), target=(0.45, 2.9, 1.2))
+    cam.key(1, loc=(0.35, -0.6, 1.55)); cam.key(n, loc=(0.35, 0.0, 1.5))
     return n
 
 
@@ -533,14 +539,14 @@ def sh13():
     n = frames_of("sh13")
     closeup()
     car, note, bg = parked(n, note_frame=30, bogey_frame=50)
-    guy = bald_guy((PX + 0.95, -2.62, 0), rot_z=-20)
+    guy = bald_guy((PX + 0.78, -2.86, 0), rot_z=-12)
     guy.clip("137_41", **src(n, 1000))
     held = decal("note_hand", f"{D12}/note.png", 0.15, (0, 0, 0), rot=(0, 0, 0))
     on_bone(guy, held, "LeftHand", (0.0, 0.09, 0.03), rot=(-90, 0, 0))
     held.hide_render = False; held.keyframe_insert("hide_render", frame=1)
     held.hide_render = False; held.keyframe_insert("hide_render", frame=29)
     held.hide_render = True; held.keyframe_insert("hide_render", frame=30)
-    rest = Vector((PX + 1.05, -2.85, 0.95))
+    rest = Vector((PX + 0.92, -3.05, 0.95))
     tgt = empty("reach", rest)
     key_loc(tgt, 1, rest)
     key_loc(tgt, 22, note.location + Vector((0.04, 0.12, 0.08)))
@@ -553,8 +559,8 @@ def sh13():
     fingers(guy, "Left", [(1, 60, 30), (40, 60, 30), (44, 110, 0), (56, 110, 0), (62, 50, 30)])
     look_at(guy, note, 0.6)
     face(guy, 1, STERN); face(guy, 56, SMUG)
-    cam = Cam(lens=30, loc=(PX + 3.6, -4.9, 1.55), target=(PX + 0.65, -3.25, 1.2))
-    cam.key(1, loc=(PX + 3.6, -4.9, 1.55)); cam.key(n, loc=(PX + 3.2, -4.6, 1.5))
+    cam = Cam(lens=30, loc=(PX + 2.9, -1.75, 1.6), target=(PX + 0.6, -3.3, 1.2))
+    cam.key(1, loc=(PX + 2.9, -1.75, 1.6)); cam.key(n, loc=(PX + 2.55, -1.95, 1.55))
     return n
 
 
@@ -579,9 +585,9 @@ def sh15():
     seats = ep2.bus_interior_set()
     row_y = -0.3
     wit = load_char("dale", (-0.85, row_y, 0), rot_z=0, subdiv=True, tag="wit")
-    sit(wit, 0.53)
+    sit_level(wit, 0.53)
     guy = bald_guy((-0.38, row_y, 0), rot_z=0)
-    sit(guy, 0.53)
+    sit_level(guy, 0.53)
     for side, x in (("Right", -1.0), ("Left", -0.72)):
         g = empty(f"lapwit{side}", (x, row_y - 0.3, 0.68)); hand_ik(wit, side, g)
     look_keys(guy, wit, [(1, 0.9)])
