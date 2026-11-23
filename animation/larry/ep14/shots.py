@@ -607,8 +607,8 @@ def sh06():
     look_keys(dale, you, [(1, 0.7)])
     face(dale, 1, SMILE)
     hy = head(you)
-    cam = Cam(lens=34, loc=(hy.x + 0.55, hy.y + 2.2, hy.z + 0.05), target=(hy.x + 0.45, hy.y, hy.z - 0.2))
-    cam.key(1, loc=(hy.x + 0.55, hy.y + 2.2, hy.z + 0.05)); cam.key(n, loc=(hy.x + 0.5, hy.y + 1.9, hy.z + 0.04))
+    cam = Cam(lens=28, loc=(hy.x + 0.5, hy.y + 1.0, hy.z + 0.12), target=(hy.x + 0.35, hy.y, hy.z - 0.25))   # in front of the altar table
+    cam.key(1, loc=(hy.x + 0.5, hy.y + 1.0, hy.z + 0.12)); cam.key(n, loc=(hy.x + 0.48, hy.y + 0.9, hy.z + 0.1))
     face_light(cam, energy=40, size=1.2)
     return n
 
@@ -977,8 +977,8 @@ def sh23():
     face(larry, 1, RAGE); face(dale, 1, RAGE)
     hl, hd = head(larry), head(dale)
     mid = (hl + hd) / 2
-    cam = Cam(lens=34, loc=(mid.x, mid.y - 2.3, mid.z - 0.05), target=(mid.x, mid.y, mid.z - 0.3))
-    cam.key(1, loc=(mid.x, mid.y - 2.3, mid.z - 0.05)); cam.key(n, loc=(mid.x, mid.y - 2.0, mid.z - 0.05))
+    cam = Cam(lens=26, loc=(mid.x, mid.y - 2.4, mid.z - 0.05), target=(mid.x, mid.y, mid.z - 0.3))
+    cam.key(1, loc=(mid.x, mid.y - 2.4, mid.z - 0.05)); cam.key(n, loc=(mid.x, mid.y - 2.15, mid.z - 0.05))
     face_light(cam, energy=50, size=1.4)
     return n
 
@@ -1001,8 +1001,8 @@ def sh24():
     face(larry, f0, SCREAM); face(dale, f0, SCREAM)
     look_keys(larry, you, [(1, 0.6)]); look_keys(dale, you, [(1, 0.6)])
     hy = head(you)
-    cam = Cam(lens=30, loc=(hy.x + 0.25, hy.y - 0.75, hy.z + 0.15), target=(hy.x, hy.y + 1.2, hy.z + 0.1))
-    cam.key(1, loc=(hy.x + 0.25, hy.y - 0.75, hy.z + 0.15)); cam.key(n, loc=(hy.x + 0.22, hy.y - 0.6, hy.z + 0.12))
+    cam = Cam(lens=22, loc=(hy.x + 0.15, hy.y - 0.95, hy.z + 0.2), target=(hy.x, hy.y + 1.2, hy.z + 0.15))
+    cam.key(1, loc=(hy.x + 0.15, hy.y - 0.95, hy.z + 0.2)); cam.key(n, loc=(hy.x + 0.14, hy.y - 0.8, hy.z + 0.18))
     face_light(cam, energy=50, size=1.4, offset=(0.0, 0.4, 0.0))
     return n
 
@@ -1039,10 +1039,10 @@ def sh25():
     f_up = 24
     rp, feet = real_priest(n, f_up=f_up)
     face(rp, 1, {"eyeBlinkLeft": 1.0, "eyeBlinkRight": 1.0}); face(rp, 14, DAZED); blink(rp, [18])
-    cam = Cam(lens=28, loc=(REAL_PRIEST[0] + 2.4, REAL_PRIEST[1] - 2.0, 1.2), target=(REAL_PRIEST[0] + 0.4, REAL_PRIEST[1], 0.8))
-    cam.key(1, loc=(REAL_PRIEST[0] + 2.4, REAL_PRIEST[1] - 2.0, 1.2), target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.5))
-    cam.key(f_up, target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.55))
-    cam.key(f_up + 10, target=(REAL_PRIEST[0], REAL_PRIEST[1], 1.5)); cam.key(n, loc=(REAL_PRIEST[0] + 2.2, REAL_PRIEST[1] - 1.8, 1.3))
+    cam = Cam(lens=26, loc=(REAL_PRIEST[0] + 3.2, REAL_PRIEST[1] - 2.6, 1.4), target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.5))
+    cam.key(1, loc=(REAL_PRIEST[0] + 3.2, REAL_PRIEST[1] - 2.6, 1.4), target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.5))
+    cam.key(f_up, target=(REAL_PRIEST[0] + 0.6, REAL_PRIEST[1], 0.6))
+    cam.key(f_up + 10, target=(REAL_PRIEST[0], REAL_PRIEST[1], 1.25)); cam.key(n, loc=(REAL_PRIEST[0] + 3.0, REAL_PRIEST[1] - 2.4, 1.45))
     return n
 
 
