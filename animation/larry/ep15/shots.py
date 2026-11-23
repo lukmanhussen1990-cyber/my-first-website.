@@ -762,8 +762,8 @@ def sh22():
     face(dale, 1, GRIN)
     face(you, 1, SLEEP); face(you, 8, SHOCK); blink(you, [5])
     look_keys(you, empty("lookdale", head(dale)), [(1, 0.0), (9, 0.55)])
-    cam = Cam(lens=30, loc=(-1.2, 0.85, 1.5), target=(0.3, 1.75, 0.9))        # your side: you, then Dale's grin
-    cam.key(1, loc=(-1.2, 0.85, 1.5)); cam.key(n, loc=(-1.05, 0.95, 1.45))
+    cam = Cam(lens=30, loc=(-1.1, 1.15, 1.45), target=(0.28, 1.98, 0.86))     # your side: both faces on the pillows
+    cam.key(1, loc=(-1.1, 1.15, 1.45)); cam.key(n, loc=(-0.95, 1.25, 1.4))
     face_light(cam, energy=50, size=1.2, color=(0.75, 0.82, 1.0))
     return n
 
