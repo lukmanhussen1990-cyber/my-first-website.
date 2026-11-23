@@ -255,8 +255,8 @@ def sh01():
     look_keys(boss, guy, [(1, 0.3), (20, 0.6)])
     talk(boss, 1, 14); face(boss, 1, SMUG); face(boss, 20, DEADPAN)
     face(hr, 1, DEADPAN); blink(hr, [40])
-    cam = Cam(lens=26, loc=(-0.55, 1.5, 1.38), target=(0.6, 2.8, 1.22))     # across the table: him big, boss at right
-    cam.key(1, loc=(-0.55, 1.5, 1.38)); cam.key(n, loc=(-0.45, 1.65, 1.36))
+    cam = Cam(lens=24, loc=(-1.4, 1.2, 1.5), target=(0.55, 2.75, 1.3))      # front-left: him (laughing), HR, the boss
+    cam.key(1, loc=(-1.4, 1.2, 1.5)); cam.key(n, loc=(-1.2, 1.35, 1.48))
     return n
 
 
