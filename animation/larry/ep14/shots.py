@@ -293,8 +293,13 @@ def church(doors_open=None, broken_window=None, roof_hole=None):
         for k in range(6):
             bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.13, location=(s * 1.6, 2.35, 0.6 + k * 0.42))
             f = bpy.context.object; f.data.materials.append(mat_flat(f"archflower{k % 2}", [(0.98, 0.98, 0.98), (0.95, 0.5, 0.6)][k % 2], rough=0.6))
-    bpy.ops.mesh.primitive_torus_add(major_radius=1.6, minor_radius=0.07, location=(0, 2.35, 3.1), rotation=(math.radians(90), 0, 0))
+    bpy.ops.mesh.primitive_torus_add(major_radius=1.6, minor_radius=0.07, major_segments=64, location=(0, 0, 0))
     arch = bpy.context.object; arch.data.materials.append(white)
+    import bmesh
+    bm = bmesh.new(); bm.from_mesh(arch.data)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.y < -0.02], context="VERTS")   # keep the top half only
+    bm.to_mesh(arch.data); bm.free()
+    arch.rotation_euler = (math.radians(90), 0, 0); arch.location = (0, 2.35, 3.1)
     flame = mat_flat("flame14", (1.0, 0.7, 0.3), emit=(1.0, 0.6, 0.2), emit_strength=6)
     for s in (-1, 1):
         cylinder(f"candle{s}", 0.03, 0.3, (s * 0.5, 2.6, 1.4), white, verts=12)
@@ -1054,7 +1059,7 @@ def sh26():
     church(doors_open=(0, 1))
     rp, feet = real_priest(n)
     feet.rotation_euler = (0, 0, 0); feet.location = (-0.9, 2.95, 0.3)
-    larry, dale = caked_pair(n, larry_at=(-0.55, 1.95), dale_at=(0.35, 1.95), facing=180.0)
+    larry, dale = caked_pair(n, larry_at=(-0.5, 1.15), dale_at=(0.4, 1.15), facing=180.0)
     hr = head(rp)
     t = empty("pronounce")
     for k, f in enumerate(range(1, n + 1, 12)):
@@ -1063,8 +1068,8 @@ def sh26():
     talk(rp, 1, n - 8, every=4)
     face(rp, 1, DAZED)
     face(larry, 1, SMUG); face(dale, 1, SMUG)
-    cam = Cam(lens=28, loc=(2.6, 0.2, 1.7), target=(-0.3, 2.5, 1.4))
-    cam.key(1, loc=(2.6, 0.2, 1.7)); cam.key(n, loc=(2.3, 0.45, 1.65))
+    cam = Cam(lens=28, loc=(1.0, -1.3, 1.85), target=(-0.45, 2.6, 1.5))
+    cam.key(1, loc=(1.0, -1.3, 1.85)); cam.key(n, loc=(0.9, -1.0, 1.8))
     return n
 
 
@@ -1074,13 +1079,13 @@ def sh27():
     n = frames_of("sh27")
     closeup()
     church(doors_open=(0, 1))
-    larry, dale = caked_pair(n, larry_at=(-0.45, 1.95), dale_at=(0.45, 1.95), facing=180.0)
+    larry, dale = caked_pair(n, larry_at=(-0.45, 1.15), dale_at=(0.45, 1.15), facing=180.0)
     look_keys(larry, dale, [(1, 0.0), (8, 0.0), (26, 0.85)]); look_keys(dale, larry, [(1, 0.0), (8, 0.0), (26, 0.85)])
     face(larry, 1, DEADPAN); face(dale, 1, DEADPAN); face(larry, 26, UNEASY); face(dale, 26, UNEASY)
     hl, hd = head(larry), head(dale)
     mid = (hl + hd) / 2
-    cam = Cam(lens=38, loc=(mid.x, mid.y + 1.9, mid.z), target=(mid.x, mid.y, mid.z - 0.1))
-    cam.key(1, loc=(mid.x, mid.y + 1.9, mid.z)); cam.key(n, loc=(mid.x, mid.y + 1.6, mid.z))
+    cam = Cam(lens=26, loc=(mid.x, 2.38, mid.z + 0.05), target=(mid.x, mid.y, mid.z - 0.12))
+    cam.key(1, loc=(mid.x, 2.38, mid.z + 0.05)); cam.key(n, loc=(mid.x, 2.3, mid.z + 0.05))
     face_light(cam, energy=50, size=1.4)
     return n
 
@@ -1090,7 +1095,7 @@ def sh28():
     """They just MARRIED each other. - wide from the aisle: confetti rains on the newlyweds."""
     n = frames_of("sh28")
     church(doors_open=(0, 1))
-    larry, dale = caked_pair(n, larry_at=(-0.45, 1.95), dale_at=(0.45, 1.95), facing=180.0, sd=False)
+    larry, dale = caked_pair(n, larry_at=(-0.45, 1.15), dale_at=(0.45, 1.15), facing=180.0, sd=False)
     look_keys(larry, dale, [(1, 0.85)]); look_keys(dale, larry, [(1, 0.85)])
     face(larry, 1, UNEASY); face(dale, 1, UNEASY)
     confetti(n)
@@ -1110,8 +1115,8 @@ def sh29():
     rock(piv, [(f, 5.0 * abs(math.sin(f * 0.6))) for f in range(1, n + 1)])
     face(you, 1, TADA)
     hy = head(you)
-    cam = Cam(lens=40, loc=(hy.x + 0.1, hy.y + 1.5, hy.z + 0.02), target=(hy.x, hy.y, hy.z - 0.12))
-    cam.key(1, loc=(hy.x + 0.1, hy.y + 1.5, hy.z + 0.02)); cam.key(n, loc=(hy.x + 0.1, hy.y + 1.25, hy.z + 0.02))
+    cam = Cam(lens=32, loc=(hy.x + 0.1, hy.y + 0.95, hy.z + 0.08), target=(hy.x, hy.y, hy.z - 0.14))
+    cam.key(1, loc=(hy.x + 0.1, hy.y + 0.95, hy.z + 0.08)); cam.key(n, loc=(hy.x + 0.1, hy.y + 0.85, hy.z + 0.08))
     face_light(cam, energy=45, size=1.2)
     return n
 
@@ -1122,7 +1127,7 @@ def sh30():
     n = frames_of("sh30")
     closeup()
     church(doors_open=(0, 1))
-    larry, dale = caked_pair(n, larry_at=(-0.45, 2.45), dale_at=(0.45, 2.45), facing=180.0)
+    larry, dale = caked_pair(n, larry_at=(-0.45, 2.05), dale_at=(0.45, 2.05), facing=180.0)
     for ch in (larry, dale):
         piv = rocker(ch, at="floor")
         yaw = piv.parent
@@ -1130,8 +1135,8 @@ def sh30():
         for f, a in ((1, 0.0), (6, 0.0), (28, 180.0)):
             yaw.rotation_euler = (0, 0, z0 + math.radians(a)); yaw.keyframe_insert("rotation_euler", frame=f)
         face(ch, 1, DEADPAN); face(ch, 22, DEADPAN); face(ch, 30, CREEPY)
-    cam = Cam(lens=30, loc=(YOU_CH[0] + 0.25, YOU_CH[1] - 0.1, 1.2), target=(0.0, 2.45, 1.45))
-    cam.key(1, loc=(YOU_CH[0] + 0.25, YOU_CH[1] - 0.1, 1.2)); cam.key(n, loc=(YOU_CH[0] + 0.25, YOU_CH[1] + 0.15, 1.2))
+    cam = Cam(lens=26, loc=(YOU_CH[0] + 0.3, YOU_CH[1] - 0.35, 1.25), target=(0.0, 2.05, 1.45))
+    cam.key(1, loc=(YOU_CH[0] + 0.3, YOU_CH[1] - 0.35, 1.25)); cam.key(n, loc=(YOU_CH[0] + 0.3, YOU_CH[1] - 0.15, 1.25))
     face_light(cam, energy=50, size=1.4)
     return n
 
@@ -1154,7 +1159,7 @@ def sh31():
     face(larry, 1, CREEPY); face(dale, 1, SMILE); face(dale, f_a, CREEPY)
     hl, hd = head(larry), head(dale)
     mid = (hl + hd) / 2
-    cam = Cam(lens=34, loc=(mid.x, mid.y - 1.7, mid.z), target=(mid.x, mid.y, mid.z - 0.08))
-    cam.key(1, loc=(mid.x, mid.y - 1.7, mid.z)); cam.key(n, loc=(mid.x, mid.y - 1.25, mid.z - 0.05))
+    cam = Cam(lens=26, loc=(mid.x, mid.y - 1.9, mid.z), target=(mid.x, mid.y, mid.z - 0.1))
+    cam.key(1, loc=(mid.x, mid.y - 1.9, mid.z)); cam.key(n, loc=(mid.x, mid.y - 1.5, mid.z - 0.04))
     face_light(cam, energy=55, size=1.4)
     return n
