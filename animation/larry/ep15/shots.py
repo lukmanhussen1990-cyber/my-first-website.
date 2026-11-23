@@ -452,7 +452,7 @@ def sh10():
     n = frames_of("sh10")
     closeup()
     h = front_door()
-    door_keys(h, [(1, 75)])
+    door_keys(h, [(1, 100)])                                # swung right back, out of the camera's way
     you = you_char((0.14, 3.92, 0), rot_z=0)
     idle(you, n)
     larry, piv = larry_on_porch(n, y=3.22, x=-0.06)
