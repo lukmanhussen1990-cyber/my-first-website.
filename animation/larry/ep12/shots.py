@@ -75,9 +75,9 @@ def head_pos(ch, f=1):
 
 
 # Head-bone space offsets (x = his left, y = up the head, z = face-forward) for the wrist IK target
-PICK_L = (0.04, -0.005, 0.15)      # left wrist under the nose: fist, thumb up the nostril
-PICK_R = (-0.04, -0.005, 0.15)
-SCRATCH_L = (0.085, 0.0, 0.125)     # left wrist beside the cheek: fingers on the side of the nose
+PICK_L = (0.03, -0.09, 0.12)       # left wrist in front of the chin: fist, thumb up the nostril (Head base ~ nose level)
+PICK_R = (-0.03, -0.09, 0.12)
+SCRATCH_L = (0.09, -0.06, 0.07)     # left wrist beside the cheek: fingers on the side of the nose
 
 
 def follow_head(ch, n, keys, name):
@@ -152,6 +152,9 @@ def look_keys(ch, other, keys, lift=0.08):
 
 
 # ============================================================================ the red light
+SEATED = dict(ep6.DRIVE, lowerneck={"rx": 18}, upperneck={"rx": 16})   # DRIVE tips the head back ~34 deg
+
+
 GX, GY = 0.0, -7.9        # the bald guy's red hatchback, right lane
 WX, WY = -0.28, -5.1      # the guy in the next car: silver sedan, left lane (heads level with each other)
 
@@ -173,9 +176,9 @@ def red_light(sd=True):
     gcar = ep6.Car("guycar", "family", (0.62, 0.07, 0.05), windows_down=True)
     wcar = ep6.Car("witcar", "sedan", (0.6, 0.62, 0.66), windows_down=True)
     guy = bald_guy(sd=sd)
-    gcar.seat_char(guy, 0)
+    gcar.seat_char(guy, 0, pose_over=SEATED)
     wit = load_char("dale", (0, 0, 0), subdiv=sd, tag="wit")
-    wcar.seat_char(wit, 0)
+    wcar.seat_char(wit, 0, pose_over=SEATED)
     gcar.root.location = (GX, GY, 0)
     wcar.root.location = (WX, WY, 0)
     bpy.context.view_layer.update()
@@ -189,8 +192,29 @@ def pick_pose(guy, n, keys, side="Left"):
     return t
 
 
-def wheel_grip(car, side="Left"):
-    return bpy.data.objects.get(f"grip{'guy'}{side}")
+def raise_to_nose(guy, n, side, rest, f0, f1, keys=None):
+    """Hand IK target that travels from a rest point (world point or object, e.g. the wheel grip or the lap) to the
+    head-riding pick target between frames f0 and f1."""
+    pk = PICK_L if side == "Left" else PICK_R
+    t = follow_head(guy, n, keys or [(1, pk)], f"pick_{guy.name}_{side}")
+    mix = empty(f"pickmix_{guy.name}_{side}")
+    sc = bpy.context.scene
+    for f in range(1, n + 1):
+        sc.frame_set(f)
+        u = min(1.0, max(0.0, (f - f0) / max(1, f1 - f0))); u = u * u * (3 - 2 * u)
+        r = rest.matrix_world.translation.copy() if hasattr(rest, "matrix_world") else Vector(rest)
+        mix.location = r.lerp(t.matrix_world.translation, u)
+        mix.keyframe_insert("location", frame=f)
+    sc.frame_set(1)
+    aim_hand(guy, side, mix)
+    return mix
+
+
+def eye(ch, f=1):
+    """World point between the eyes (Head-bone base is at about nose level)."""
+    bpy.context.scene.frame_set(f)
+    pb = ch.rig.pose.bones["Head"]
+    return (ch.rig.matrix_world @ pb.matrix) @ Vector((0, 0.035, 0.09))
 
 
 # ============================================================================ SHOTS
@@ -204,8 +228,8 @@ def sh01():
     fingers(guy, "Left", [(1, 80, 0)])
     face(guy, 1, SERENE)
     hw, hg = head_pos(wit), head_pos(guy)
-    cam = Cam(lens=40, loc=hw + Vector((0.12, -0.32, -0.02)), target=hg + Vector((0.06, 0.0, -0.05)))
-    cam.key(1, loc=hw + Vector((0.12, -0.32, -0.02))); cam.key(n, loc=hw + Vector((0.2, -0.5, -0.03)))
+    cam = Cam(lens=62, loc=hw + Vector((0.1, -0.3, 0.02)), target=hg + Vector((0.04, 0.0, -0.03)))
+    cam.key(1, loc=hw + Vector((0.1, -0.3, 0.02))); cam.key(n, loc=hw + Vector((0.1, -0.45, 0.02)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -222,8 +246,8 @@ def sh02():
     face(wit, 1, DEADPAN); face(wit, 13, DEADPAN); face(wit, 20, GROSSED)
     blink(wit, [24])
     hw = head_pos(wit)
-    cam = Cam(lens=42, loc=hw + Vector((0.6, -0.55, 0.0)), target=hw + Vector((0.0, 0.0, -0.03)))
-    cam.key(1, loc=hw + Vector((0.6, -0.55, 0.0))); cam.key(n, loc=hw + Vector((0.5, -0.45, 0.0)))
+    cam = Cam(lens=50, loc=Vector((hw.x + 0.3, -6.4, hw.z + 0.04)), target=hw + Vector((0.0, 0.0, 0.0)))
+    cam.key(1, loc=Vector((hw.x + 0.3, -6.4, hw.z + 0.04))); cam.key(n, loc=Vector((hw.x + 0.25, -6.0, hw.z + 0.04)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -245,8 +269,8 @@ def sh03():
     face(guy, 1, SERENE); face(guy, 5, SHOCK); face(guy, 12, SHOCK); face(guy, 20, INNOCENT)
     blink(guy, [30])
     hg = head_pos(guy)
-    cam = Cam(lens=36, loc=hg + Vector((0.62, 0.72, 0.02)), target=hg + Vector((0.04, 0.0, -0.06)))
-    cam.key(1, loc=hg + Vector((0.62, 0.72, 0.02))); cam.key(n, loc=hg + Vector((0.55, 0.62, 0.02)))
+    cam = Cam(lens=38, loc=hg + Vector((0.72, 0.8, 0.04)), target=hg + Vector((0.05, 0.0, -0.05)))
+    cam.key(1, loc=hg + Vector((0.72, 0.8, 0.04))); cam.key(n, loc=hg + Vector((0.62, 0.7, 0.04)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -278,8 +302,10 @@ def sh05():
     face(wit, 1, DEADPAN)
     face(guy, 1, INNOCENT); face(guy, 30, UNEASY)
     hw, hg = head_pos(wit), head_pos(guy)
-    cam = Cam(lens=45, loc=hg + Vector((-0.8, -0.32, 0.12)), target=hw + Vector((0, 0, -0.05)))
-    cam.key(1, loc=hg + Vector((-0.8, -0.32, 0.12))); cam.key(n, loc=hg + Vector((-0.65, -0.28, 0.1)))
+    d = (hw - hg).normalized()
+    c0 = hg - d * 0.6 + Vector((-0.22, 0, 0.07))
+    cam = Cam(lens=40, loc=c0, target=hw + Vector((0, 0, 0.02)))
+    cam.key(1, loc=c0); cam.key(n, loc=c0 + d * 0.15)
     face_light(cam, energy=20, size=1.0)
     return n
 
@@ -292,8 +318,8 @@ def sh06():
     gcar, wcar, guy, wit = red_light()
     face(guy, 1, UNEASY); face(guy, 14, DETERMINED); face(guy, n, STERN)
     hg = head_pos(guy)
-    cam = Cam(lens=42, loc=hg + Vector((0.75, 0.45, 0.0)), target=hg + Vector((0, 0, -0.03)))
-    cam.key(1, loc=hg + Vector((0.75, 0.45, 0.0))); cam.key(n, loc=hg + Vector((0.55, 0.33, 0.0)))
+    cam = Cam(lens=42, loc=hg + Vector((0.75, 0.45, 0.04)), target=hg + Vector((0.03, 0, 0.0)))
+    cam.key(1, loc=hg + Vector((0.75, 0.45, 0.04))); cam.key(n, loc=hg + Vector((0.55, 0.33, 0.04)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -306,23 +332,13 @@ def sh07():
     gcar, wcar, guy, wit = red_light()
     look_keys(guy, wit, [(1, 0.0), (4, 0.0), (14, 0.9)])
     grip = bpy.data.objects[f"grip{guy.name}Left"]
-    t = follow_head(guy, n, [(1, PICK_L)] + dig(PICK_L, 24, n, amp=0.006, every=4), "pick_guy_Left")
-    # blend the hand from the wheel to the nose: IK target = the wheel grip until frame 10, then the nose target
-    mix = empty("pickmix")
-    sc = bpy.context.scene
-    for f in range(1, n + 1):
-        sc.frame_set(f)
-        u = min(1.0, max(0.0, (f - 10) / 14.0)); u = u * u * (3 - 2 * u)
-        mix.location = grip.matrix_world.translation.lerp(t.matrix_world.translation, u)
-        mix.keyframe_insert("location", frame=f)
-    sc.frame_set(1)
-    aim_hand(guy, "Left", mix)
+    raise_to_nose(guy, n, "Left", grip, 10, 24, keys=[(1, PICK_L)] + dig(PICK_L, 24, n, amp=0.006, every=4))
     fingers(guy, "Left", [(1, 30, 30), (12, 30, 30), (20, 110, 0)])
     face(guy, 1, STERN); face(guy, 14, DETERMINED)
     look_keys(wit, guy, [(1, 0.9)])
     hw, hg = head_pos(wit), head_pos(guy)
-    cam = Cam(lens=40, loc=hw + Vector((0.12, -0.32, -0.02)), target=hg + Vector((0.05, 0.0, -0.05)))
-    cam.key(1, loc=hw + Vector((0.12, -0.32, -0.02))); cam.key(n, loc=hw + Vector((0.12, -0.5, -0.02)))
+    cam = Cam(lens=58, loc=hw + Vector((0.1, -0.3, 0.02)), target=hg + Vector((0.04, 0.0, -0.03)))
+    cam.key(1, loc=hw + Vector((0.1, -0.3, 0.02))); cam.key(n, loc=hw + Vector((0.1, -0.5, 0.02)))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -359,8 +375,8 @@ def sh09():
     face(guy, 1, LOCKED); face(guy, 12, CREEPY_ENJOY)
     look_keys(wit, guy, [(1, 0.9)])
     hw, hg = head_pos(wit), head_pos(guy)
-    cam = Cam(lens=50, loc=hw + Vector((0.12, -0.32, -0.02)), target=hg + Vector((0.05, 0.0, -0.04)))
-    cam.key(1, loc=hw + Vector((0.12, -0.32, -0.02))); cam.key(n, loc=hw + Vector((0.12, -0.55, -0.02)), lens=58)
+    cam = Cam(lens=70, loc=hw + Vector((0.1, -0.3, 0.02)), target=hg + Vector((0.04, 0.0, -0.03)))
+    cam.key(1, loc=hw + Vector((0.1, -0.3, 0.02))); cam.key(n, loc=hw + Vector((0.1, -0.55, 0.02)), lens=85)
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -375,19 +391,19 @@ def sh10():
     ep11.day_street()
     wcar = ep6.Car("witcar", "sedan", (0.6, 0.62, 0.66))
     gcar = ep6.Car("guycar", "family", (0.62, 0.07, 0.05))
-    wit = load_char("dale", (0, 0, 0), subdiv=False, tag="wit"); wcar.seat_char(wit, 0)
-    guy = bald_guy(sd=False); gcar.seat_char(guy, 0)
+    wit = load_char("dale", (0, 0, 0), subdiv=False, tag="wit"); wcar.seat_char(wit, 0, pose_over=SEATED)
+    guy = bald_guy(sd=False); gcar.seat_char(guy, 0, pose_over=SEATED)
     guy.bone_rot("Spine1", 1, (12, 0, 0))                     # hunched over the wheel, staring
     face(guy, 1, STERN); face(wit, 1, UNEASY)
     y = -5.0
     gap = wcar.P["L"] / 2 + gcar.P["L"] / 2 + 0.3
     x0 = -6.0
     wcar.drive([(1, (x0, y), 0), (n, (x0 + V12 * n, y), 0)])
-    gcar.drive([(1, (x0 - gap, y), 0), (n, (x0 - gap + V12 * n, y), 0)])
+    gcar.drive([(1, (x0 - gap, y + 0.55), 0), (n, (x0 - gap + V12 * n, y + 0.55), 0)])
     ep6.cabin_light(gcar, 40)
     tr = ep6.tracker("trk", [(1, (x0, 0)), (n, (x0 + V12 * n, 0))])
-    cam = ep6.follow(tr, Cam(lens=50, loc=(14.0, -3.5, 1.25), target=(-4.0, -5.0, 1.0), clip_end=800))
-    cam.key(1, loc=(14.0, -3.5, 1.25)); cam.key(n, loc=(12.5, -3.6, 1.2))
+    cam = ep6.follow(tr, Cam(lens=75, loc=(17.0, -3.3, 1.35), target=(-3.2, -4.75, 1.05), clip_end=800))
+    cam.key(1, loc=(17.0, -3.3, 1.35)); cam.key(n, loc=(15.5, -3.35, 1.3))
     ep6.cabin_light(wcar, 40)
     return n
 
@@ -457,7 +473,7 @@ def sh12():
     closeup()
     hr, wit, guy = meeting(n)
     hg = head_pos(guy)
-    pick_pose(guy, n, [(1, (PICK_R[0] - 0.06, PICK_R[1] - 0.12, PICK_R[2] + 0.05)), (22, PICK_R)], side="Right")
+    raise_to_nose(guy, n, "Right", (-0.42, 2.55, 0.79), 2, 24)
     fingers(guy, "Right", [(1, 80, 0)])
     look_keys(wit, guy, [(1, 0.15), (10, 0.35)])
     face(wit, 1, UNEASY); face(wit, 14, GROSSED); face(guy, 1, LOCKED)
@@ -570,8 +586,7 @@ def sh15():
         g = empty(f"lapwit{side}", (x, row_y - 0.3, 0.68)); hand_ik(wit, side, g)
     look_keys(guy, wit, [(1, 0.9)])
     look_keys(wit, guy, [(1, 0.0), (18, 0.0), (26, 0.8)])
-    lift_from = (PICK_L[0] + 0.1, PICK_L[1] - 0.28, PICK_L[2] + 0.1)
-    pick_pose(guy, n, [(1, lift_from), (28, lift_from), (n - 4, PICK_L)])
+    raise_to_nose(guy, n, "Left", (-0.28, row_y - 0.3, 0.68), 30, n - 3)
     fingers(guy, "Left", [(1, 80, 0)])
     g = empty("lapguyRight", (-0.48, row_y - 0.3, 0.68)); hand_ik(guy, "Right", g)
     face(wit, 1, SERENE); face(wit, 22, SERENE); face(wit, 28, SHOCK)
