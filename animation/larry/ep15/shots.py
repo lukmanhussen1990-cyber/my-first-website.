@@ -410,12 +410,10 @@ def sh07():
     closeup()
     h = front_door()
     door_keys(h, [(1, 0), (4, 0), (12, 75)])
-    you = you_char((0.3, 4.4, 0), rot_z=0)
-    idle(you, n)
-    larry, piv = larry_on_porch(n)
-    face(you, 1, UNEASY)
-    cam = Cam(lens=28, loc=(0.02, 5.6, 1.55), target=(0.0, 2.72, 1.25))
-    cam.key(1, loc=(0.02, 5.6, 1.55)); cam.key(n, loc=(0.02, 5.35, 1.52))
+    larry, piv = larry_on_porch(n, y=2.55)                                  # skirt clear of the closed door
+    cam = Cam(lens=30, loc=(0.1, 4.68, 1.6), target=(0.0, 2.55, 1.32))       # your eyes (outside the door's swing)
+    cam.key(1, loc=(0.1, 4.68, 1.6)); cam.key(n, loc=(0.08, 4.55, 1.58))
+    face_light(cam, energy=40, size=1.0)
     return n
 
 
