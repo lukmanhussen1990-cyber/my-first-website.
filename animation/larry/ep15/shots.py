@@ -488,7 +488,7 @@ def sh11():
         edge.location = h.matrix_world @ Vector((0.85, 0.08, 1.05)); edge.keyframe_insert("location", frame=f)
     sc.frame_set(1)
     hand_ik(you, "Left", edge)
-    larry, piv = larry_on_porch(n)
+    larry, piv = larry_on_porch(n, y=2.45)                                  # skirt clear of the shut door
     face(you, 1, DEADPAN)
     cam = Cam(lens=26, loc=(0.32, 5.6, 1.6), target=(0.0, 3.4, 1.25))
     cam.key(1, loc=(0.32, 5.6, 1.6)); cam.key(n, loc=(0.3, 5.5, 1.6))
