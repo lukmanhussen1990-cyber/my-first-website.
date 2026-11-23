@@ -405,12 +405,12 @@ def sh08():
     hp = guy.world("Hips", frame=1)
     for side, dy in (("Left", 0.09), ("Right", -0.09)):
         hold(guy, side, hp + Vector((0.2, dy, 0.12)), piv=piv, name=f"belly_{side}")
-    laugh(guy, piv, 1, n, amp=10, period=8, lean=-6, ramp=3)
+    laugh(guy, piv, 1, n, amp=6, period=8, lean=-4, ramp=3)
     boss = boss_char((0.75, 0.55, 0), rot_z=-90)
     boss.clip("137_41", **src(n, 1000))
     mug = ep2.mug((0.95, 0.95, 0.95))
     hb = head(boss)
-    mp = hb + Vector((-0.28, 0.12, -0.38))
+    mp = hb + Vector((-0.2, 0.15, -0.46))
     mug.location = mp
     hold(boss, "Right", mp + Vector((0.03, 0.0, 0.03)), name="mug_hand")
     g0, g1 = at("sh08", 13.62), at("sh08", 14.32)
@@ -418,8 +418,8 @@ def sh08():
     face(boss, 1, SMILE)
     look_keys(boss, guy, [(1, 0.3), (g1 + 4, 0.6)])
     look_keys(guy, boss, [(1, 0.4)])
-    cam = Cam(lens=30, loc=(0.2, -2.0, 1.15), target=(0.15, 0.55, 0.95))
-    cam.key(1, loc=(0.2, -2.0, 1.15)); cam.key(n, loc=(0.18, -1.7, 1.12))
+    cam = Cam(lens=28, loc=(0.15, -2.75, 1.35), target=(0.15, 0.55, 1.08))
+    cam.key(1, loc=(0.15, -2.75, 1.35)); cam.key(n, loc=(0.15, -2.45, 1.33))
     return n
 
 
