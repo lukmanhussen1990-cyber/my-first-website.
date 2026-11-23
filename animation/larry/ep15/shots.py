@@ -78,7 +78,9 @@ def dale_char(loc=(0, 0, 0), rot_z=0.0, sd=True):
     return load_char("dale", loc, rot_z=rot_z, subdiv=sd, tag="dale")
 
 
-def idle(ch, n, start=2400):
+def idle(ch, n, start=3700):
+    """Standing idle. 137_28 from 3700 keeps the head facing forward (within 3 degrees) for 90 frames; the 2400 range
+    used before turns the head 90 degrees to one side."""
     ch.clip("137_28", **src(n, start))
 
 
@@ -235,19 +237,19 @@ def living_room():
         if o:
             for c in [o] + list(o.children_recursive):
                 c.hide_render = True; c.hide_viewport = True
-    world_color((0.55, 0.62, 0.75), 0.6)
+    world_color((0.55, 0.62, 0.75), 0.42)
     sky = bpy.data.objects["win_sky"].data.materials[0].node_tree.nodes["Principled BSDF"]
     sky.inputs["Emission Color"].default_value = (0.75, 0.88, 1.0, 1)
-    sky.inputs["Emission Strength"].default_value = 2.6
-    for nm, col, en in (("moon", (1.0, 0.93, 0.8), 1800), ("fill", (1.0, 0.95, 0.88), 520), ("bedkey", (1.0, 0.95, 0.88), 260)):
+    sky.inputs["Emission Strength"].default_value = 2.2
+    for nm, col, en in (("moon", (1.0, 0.93, 0.8), 950), ("fill", (1.0, 0.95, 0.88), 280), ("bedkey", (1.0, 0.95, 0.88), 140)):
         o = bpy.data.objects.get(nm)
         if o:
             o.data.color = col; o.data.energy = en
     lg = bpy.data.objects.get("lampglow")
     if lg:
         lg.data.energy = 0.0
-    area("roomtop", (0, 0.6, 2.9), (0, 0.6, 0), energy=420, size=3.0, color=(1.0, 0.96, 0.9))
-    fab = mat_flat("couchfab", (0.62, 0.36, 0.12), rough=0.85)
+    area("roomtop", (0, 0.6, 2.9), (0, 0.6, 0), energy=230, size=3.0, color=(1.0, 0.96, 0.9))
+    fab = mat_flat("couchfab", (0.5, 0.24, 0.07), rough=0.85)
     box("couch_base", (2.1, 0.86, 0.3), (0, 2.18, 0.15), fab, bevel=0.03)
     for k, x in enumerate((-0.62, 0.0, 0.62)):
         box(f"couch_cush{k}", (0.6, 0.78, 0.17), (x, 2.14, 0.4), fab, bevel=0.05)
@@ -322,20 +324,20 @@ def sh04():
     closeup()
     f0, f1 = 8, 16
     front = bathroom(curtain_keys=[(1, 0.0), (f0, 0.0), (f1, 1.0)])
-    you = you_char((-0.32, 0.45, 0), rot_z=150)
+    you = you_char((-0.8, 0.32, 0), rot_z=180)
     idle(you, n)
     sc = bpy.context.scene
     edge = empty("curtain_edge")
     for f in range(1, n + 1):
         sc.frame_set(f)
         e = front.matrix_world @ Vector((0.92, 0, 0.05))
-        edge.location = e + Vector((0.04, -0.06, 0)); edge.keyframe_insert("location", frame=f)
+        edge.location = e + Vector((0.0, -0.08, 0)); edge.keyframe_insert("location", frame=f)
     sc.frame_set(1)
-    hand_ik(you, "Right", edge)
-    look_keys(you, empty("lookshower", (-1.1, 1.3, 1.2)), [(1, 0.6)])
+    hand_ik(you, "Left", edge)
+    look_keys(you, empty("lookshower", (-1.15, 1.45, 1.35)), [(1, 0.6)])
     face(you, 1, UNEASY); face(you, f1 + 2, SMILE)
-    cam = Cam(lens=26, loc=(0.85, -1.15, 1.6), target=(-0.8, 1.0, 1.15))
-    cam.key(1, loc=(0.85, -1.15, 1.6)); cam.key(n, loc=(0.75, -0.95, 1.58))
+    cam = Cam(lens=26, loc=(-1.2, 1.62, 1.45), target=(-0.8, 0.3, 1.45))      # inside the (empty) shower
+    cam.key(1, loc=(-1.2, 1.62, 1.45)); cam.key(n, loc=(-1.18, 1.58, 1.45))
     face_light(cam, energy=30, size=1.0)
     return n
 
@@ -346,16 +348,16 @@ def sh05():
     n = frames_of("sh05")
     closeup()
     street_day()
-    ep11.lounger((1.8, 0.6, 0), rot_z=0)
-    you = you_char(sd=True)
-    you.hold("137_41", 2800)
-    you.rig.rotation_euler = (math.radians(-58), 0, 0)
-    you.rig.location = (1.8, -0.35, 0.45)
-    look_at(you, empty("skylook", (2.6, -2.4, 2.4)), 0.8)
-    ep6.wear_shades(you)
-    face(you, 1, BLISS)
-    cam = Cam(lens=30, loc=(3.4, -1.8, 1.3), target=(1.8, 0.35, 0.72))
-    cam.key(1, loc=(3.4, -1.8, 1.3)); cam.key(n, loc=(3.1, -1.5, 1.25))
+    you = you_char((1.8, 0.3, 0), rot_z=0)
+    idle(you, n)
+    piv = rocker(you, at="floor")
+    hp = you.world("Hips", frame=1)
+    for side, dx in (("Left", 0.2), ("Right", -0.2)):                      # facing -Y: left is +X
+        hold(you, side, hp + Vector((dx, 0.02, 0.06)), piv=piv, name=f"peace_{side}")
+    rock(piv, [(1, 0.0), (int(n * 0.45), -4.0), (n, -2.5)])                # a long, deep breath
+    face(you, 1, dict(SERENE, eyeBlinkLeft=1.0, eyeBlinkRight=1.0, mouthSmileLeft=0.6, mouthSmileRight=0.6))
+    cam = Cam(lens=32, loc=(1.45, -2.0, 1.2), target=(1.8, 0.3, 1.45))
+    cam.key(1, loc=(1.45, -2.0, 1.2)); cam.key(n, loc=(1.5, -1.75, 1.22))
     face_light(cam, energy=25, size=1.0)
     return n
 
@@ -401,12 +403,12 @@ def sh07():
     closeup()
     h = front_door()
     door_keys(h, [(1, 0), (4, 0), (12, 75)])
-    you = you_char((0.15, 4.3, 0), rot_z=0)
+    you = you_char((0.3, 4.4, 0), rot_z=0)
     idle(you, n)
     larry, piv = larry_on_porch(n)
     face(you, 1, UNEASY)
-    cam = Cam(lens=26, loc=(0.3, 5.6, 1.62), target=(0.0, 3.0, 1.3))
-    cam.key(1, loc=(0.3, 5.6, 1.62)); cam.key(n, loc=(0.28, 5.4, 1.6))
+    cam = Cam(lens=28, loc=(0.02, 5.6, 1.55), target=(0.0, 2.72, 1.25))
+    cam.key(1, loc=(0.02, 5.6, 1.55)); cam.key(n, loc=(0.02, 5.35, 1.52))
     return n
 
 
@@ -509,8 +511,8 @@ def sh12():
     key_loc(mover, 1, (4.75, 0.6, 1.08)); key_loc(mover, n, (3.25, 0.6, 1.08))
     look_keys(larry, empty("lookcam12", (0.2, -0.9, 1.5)), [(1, 0.75)])
     sob(larry, 1, n)
-    cam = Cam(lens=26, loc=(0.2, -0.95, 1.5), target=(2.6, 0.6, 1.15))
-    cam.key(1, loc=(0.2, -0.95, 1.5)); cam.key(n, loc=(0.4, -0.8, 1.45))
+    cam = Cam(lens=26, loc=(1.0, -0.55, 1.45), target=(2.55, 0.6, 1.12))
+    cam.key(1, loc=(1.0, -0.55, 1.45)); cam.key(n, loc=(1.1, -0.45, 1.42))
     face_light(cam, energy=30, size=1.2)
     return n
 
@@ -601,8 +603,8 @@ def sh15():
     sob(larry, 1, n); tears(larry, n)
     face(you, 1, DEADPAN)
     hl = head(larry)
-    cam = Cam(lens=30, loc=(-1.55, 0.95, 1.62), target=(hl.x, hl.y, hl.z - 0.25))
-    cam.key(1, loc=(-1.55, 0.95, 1.62)); cam.key(n, loc=(-1.35, 0.9, 1.6))
+    cam = Cam(lens=30, loc=(-1.25, 1.75, 1.5), target=(0.25, 0.55, 1.18))
+    cam.key(1, loc=(-1.25, 1.75, 1.5)); cam.key(n, loc=(-1.1, 1.6, 1.48))
     face_light(cam, energy=30, size=1.0)
     return n
 
@@ -650,7 +652,7 @@ def sh17():
     p0 = hl + Vector((-0.3, 0.0, -0.12))
     for k, f in enumerate(range(1, n + 1, 3)):
         key_loc(st, f, p0 + Vector((0, 0, 0.006 if k % 2 else -0.006)))
-    st.rotation_euler = (math.radians(90), 0, math.radians(-90))
+    st.rotation_euler = (0, 0, math.radians(-90))
     for side, dy in (("Left", -0.07), ("Right", 0.07)):
         t = empty(f"stache_{side}", p0 + Vector((0.02, dy, -0.04)))
         glue(t, st)
@@ -687,7 +689,7 @@ def sh19():
     ep4.house_exterior(night=True, chimney=True)
     point("lamplight", (4.5, -2.6, 3.05), energy=320, color=(1.0, 0.8, 0.5), radius=0.2, shadow=True)
     dale = dale_char((3.75, -2.15, 0), rot_z=0)
-    idle(dale, n, start=2600)
+    idle(dale, n)
     hd = head(dale)
     t = empty("wave19")
     for k, f in enumerate(range(1, n + 1, 8)):
@@ -707,7 +709,7 @@ def sh20():
     closeup()
     bedroom()
     dale = dale_char((3.0, 0.6, 0), rot_z=-90)
-    idle(dale, n, start=2600)
+    idle(dale, n)
     hd = head(dale)
     t = empty("wave20")
     for k, f in enumerate(range(1, n + 1, 8)):
@@ -728,11 +730,11 @@ def sh21():
     closeup()
     bathroom(curtain_keys=[(1, 0.0), (4, 0.0), (10, 1.0)])
     dale = dale_char((-1.05, 1.3, 0), rot_z=0)
-    idle(dale, n, start=2600)
+    idle(dale, n)
     face(dale, 1, GRIN)
-    look_keys(dale, empty("lookcam21", (0.3, -1.1, 1.55)), [(1, 0.6)])
-    cam = Cam(lens=30, loc=(0.3, -1.15, 1.6), target=(-1.0, 1.15, 1.42))
-    cam.key(1, loc=(0.3, -1.15, 1.6)); cam.key(n, loc=(0.2, -0.95, 1.58))
+    look_keys(dale, empty("lookcam21", (-1.0, -1.2, 1.55)), [(1, 0.6)])
+    cam = Cam(lens=30, loc=(-1.0, -1.2, 1.55), target=(-1.08, 1.2, 1.42))
+    cam.key(1, loc=(-1.0, -1.2, 1.55)); cam.key(n, loc=(-1.0, -1.0, 1.53))
     face_light(cam, energy=40, size=1.0)
     return n
 
@@ -890,7 +892,7 @@ def sh28():
     ch_ = cw * 560 / 800
     for k, (img, dx, side) in enumerate(((f"{D15}/card_yes.png", -0.3, "Right"), (f"{D15}/card_no.png", 0.3, "Left"))):
         c = decal(f"card{k}", img, cw, (0, 0, 0), rot=(90, 0, 0))
-        base = hy + Vector((dx, -0.36, -0.2))
+        base = hy + Vector((dx, -0.4, -0.3))
         for j, f in enumerate(range(1, n + 1, 10)):
             key_loc(c, f, base + Vector((0, 0, 0.04 if (j + k) % 2 else 0.0)))
         t = empty(f"cardhand{k}", base + Vector((0, 0.03, -ch_ / 2 + 0.02)))
