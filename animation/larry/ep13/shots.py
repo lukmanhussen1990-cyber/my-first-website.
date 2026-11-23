@@ -248,15 +248,15 @@ def sh01():
     piv = rocker(guy)
     slapper(guy, piv, "Left", (0.12, 2.5, 0.79), 12, n - 4)
     hold(guy, "Right", (-0.3, 2.55, 0.79), name="tbl_guy_R")
-    laugh(guy, piv, 9, n, amp=8, period=8, lean=4)
+    laugh(guy, piv, 9, n, amp=10, period=8, lean=4)
     face(guy, 1, SMILE)
     look_keys(guy, boss, [(1, 0.55)])
     look_keys(hr, guy, [(1, 0.0), (12, 0.0), (22, 0.7)])
     look_keys(boss, guy, [(1, 0.3), (20, 0.6)])
     talk(boss, 1, 14); face(boss, 1, SMUG); face(boss, 20, DEADPAN)
     face(hr, 1, DEADPAN); blink(hr, [40])
-    cam = Cam(lens=30, loc=(0.45, -0.25, 1.5), target=(0.6, 2.6, 1.15))
-    cam.key(1, loc=(0.45, -0.25, 1.5)); cam.key(n, loc=(0.45, 0.25, 1.48))
+    cam = Cam(lens=26, loc=(-0.55, 1.5, 1.38), target=(0.6, 2.8, 1.22))     # across the table: him big, boss at right
+    cam.key(1, loc=(-0.55, 1.5, 1.38)); cam.key(n, loc=(-0.45, 1.65, 1.36))
     return n
 
 
