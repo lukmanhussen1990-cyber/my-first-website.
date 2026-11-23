@@ -715,7 +715,7 @@ def sh20():
     n = frames_of("sh20")
     closeup()
     bedroom()
-    dale = dale_char((3.0, 0.6, 0), rot_z=-90)
+    dale = dale_char((3.0, 0.97, 0), rot_z=-90)                            # in the right-hand pane, clear of the centre bars
     idle(dale, n)
     hd = head(dale)
     t = empty("wave20")
@@ -724,8 +724,8 @@ def sh20():
     hand_ik(dale, "Right", t)
     look_keys(dale, empty("lookbed", (0.3, 0.6, 1.2)), [(1, 0.6)])
     face(dale, 1, GRIN)
-    cam = Cam(lens=34, loc=(0.4, 0.15, 1.35), target=(2.75, 0.62, 1.55))
-    cam.key(1, loc=(0.4, 0.15, 1.35)); cam.key(n, loc=(0.75, 0.25, 1.4))
+    cam = Cam(lens=34, loc=(0.4, 0.35, 1.35), target=(2.75, 0.92, 1.58))
+    cam.key(1, loc=(0.4, 0.35, 1.35)); cam.key(n, loc=(0.75, 0.42, 1.4))
     face_light(cam, energy=60, size=1.0, color=(0.75, 0.82, 1.0))
     return n
 
