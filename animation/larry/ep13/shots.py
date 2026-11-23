@@ -385,8 +385,9 @@ def sh07():
     talk(boss, 1, n - 6)
     face(boss, 1, DEADPAN)
     blink(boss, [20])
-    cam = Cam(lens=32, loc=(0.45, -2.1, 1.45), target=(0.45, 0.9, 1.1))
-    cam.key(1, loc=(0.45, -2.1, 1.45)); cam.key(n, loc=(0.42, -1.75, 1.42))
+    look_keys(boss, guy, [(1, 0.6)])
+    cam = Cam(lens=30, loc=(0.75, -0.95, 1.5), target=(0.55, 1.0, 1.18))     # both in frame, the laugh up close
+    cam.key(1, loc=(0.75, -0.95, 1.5)); cam.key(n, loc=(0.72, -0.7, 1.48))
     return n
 
 
