@@ -368,7 +368,7 @@ def sh09():
     closeup()
     gcar, wcar, guy, wit = red_light()
     look_keys(guy, wit, [(1, 0.9)])
-    deep = (PICK_L[0] - 0.005, PICK_L[1] + 0.03, PICK_L[2] - 0.01)
+    deep = (PICK_L[0] - 0.005, PICK_L[1] + 0.014, PICK_L[2] - 0.008)
     pick_pose(guy, n, [(1, PICK_L), (12, deep)] + dig(deep, 14, n, amp=0.004, every=3))
     fingers(guy, "Left", [(1, 80, 0)])
     guy.bone_rot("Neck", 1, (0, 0, 0)); guy.bone_rot("Neck", 12, (-8, 0, 0))
