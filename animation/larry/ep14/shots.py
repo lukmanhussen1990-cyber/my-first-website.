@@ -1148,10 +1148,10 @@ def sh31():
     n = frames_of("sh31")
     closeup()
     church(doors_open=(0, 1))
-    larry, dale = caked_pair(n, larry_at=(-0.38, 2.2), dale_at=(0.38, 2.2), facing=0.0)
+    larry, dale = caked_pair(n, larry_at=(-0.3, 2.2), dale_at=(0.3, 2.2), facing=0.0)
     lp, dp = rocker(larry, at="floor"), rocker(dale, at="floor")
     for p in (lp, dp):
-        rock(p, [(1, 0.0), (20, 0.0), (36, 9.0), (n, 10.0)])
+        rock(p, [(1, 0.0), (20, 0.0), (36, 4.5), (n, 5.0)])
     f_h, f_a = at("sh31", 47.3), at("sh31", 48.1)
     talk(dale, f_h, f_h + 6, every=3)
     talk(larry, f_a, f_a + 10, every=3); talk(dale, f_a, f_a + 10, every=3)
@@ -1160,7 +1160,7 @@ def sh31():
     face(larry, 1, CREEPY); face(dale, 1, SMILE); face(dale, f_a, CREEPY)
     hl, hd = head(larry), head(dale)
     mid = (hl + hd) / 2
-    cam = Cam(lens=26, loc=(mid.x, mid.y - 1.9, mid.z), target=(mid.x, mid.y, mid.z - 0.1))
-    cam.key(1, loc=(mid.x, mid.y - 1.9, mid.z)); cam.key(n, loc=(mid.x, mid.y - 1.5, mid.z - 0.04))
+    cam = Cam(lens=26, loc=(mid.x + 0.1, mid.y - 2.1, mid.z - 0.05), target=(mid.x + 0.1, mid.y, mid.z - 0.15))
+    cam.key(1, loc=(mid.x + 0.1, mid.y - 2.1, mid.z - 0.05)); cam.key(n, loc=(mid.x + 0.1, mid.y - 1.9, mid.z - 0.07))
     face_light(cam, energy=55, size=1.4)
     return n
