@@ -129,6 +129,13 @@ def crying_larry(larry, n, piv=None, amp=2.0, period=6):
         rock(piv, [(f, amp * math.sin(2 * math.pi * f / period)) for f in range(1, n + 1)])
 
 
+def hide_bouquet():
+    b = bpy.data.objects.get("bouquet")
+    if b:
+        for o in [b] + list(b.children_recursive):
+            o.hide_render = True; o.hide_viewport = True
+
+
 def hide_moustache(ch):
     for o in ch.meshes:
         if "moustache" in o.name.lower():
@@ -646,7 +653,7 @@ def sh17():
     n = frames_of("sh17")
     closeup()
     you, larry = standoff(n, kneel=False, larry_x=0.5)
-    hide_moustache(larry)
+    hide_moustache(larry); hide_bouquet()
     hl = head(larry)
     st = moustache_prop()
     p0 = hl + Vector((-0.3, 0.0, -0.12))
@@ -755,8 +762,8 @@ def sh22():
     face(dale, 1, GRIN)
     face(you, 1, SLEEP); face(you, 8, SHOCK); blink(you, [5])
     look_keys(you, empty("lookdale", head(dale)), [(1, 0.0), (9, 0.55)])
-    cam = Cam(lens=30, loc=(0.35, -0.75, 1.75), target=(0.3, 1.55, 0.85))
-    cam.key(1, loc=(0.35, -0.75, 1.75)); cam.key(n, loc=(0.32, -0.5, 1.7))
+    cam = Cam(lens=30, loc=(-1.2, 0.85, 1.5), target=(0.3, 1.75, 0.9))        # your side: you, then Dale's grin
+    cam.key(1, loc=(-1.2, 0.85, 1.5)); cam.key(n, loc=(-1.05, 0.95, 1.45))
     face_light(cam, energy=50, size=1.2, color=(0.75, 0.82, 1.0))
     return n
 
@@ -838,6 +845,7 @@ def sh26():
     living_room()
     larry = larry_char((0.0, 0.7, 0), rot_z=0)
     idle(larry, n)
+    hide_bouquet()
     hl = head(larry)
     for side, dx in (("Left", 0.04), ("Right", -0.04)):
         hold(larry, side, hl + Vector((dx, -0.2, -0.24)), name=f"clasp_{side}")
