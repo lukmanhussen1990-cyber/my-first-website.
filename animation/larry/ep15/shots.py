@@ -453,9 +453,10 @@ def sh10():
     closeup()
     h = front_door()
     door_keys(h, [(1, 75)])
-    you = you_char((0.0, 3.92, 0), rot_z=0)
+    you = you_char((0.14, 3.92, 0), rot_z=0)
     idle(you, n)
     larry, piv = larry_on_porch(n, y=3.22)
+    larry.rig.location.x = -0.06
     hy = head(you)
     for side, dx in (("Left", -0.1), ("Right", 0.1)):                       # Larry faces +Y: left is -X
         t = empty(f"clutch_{side}", Vector((dx, hy.y - 0.16, hy.z - 0.32)))
@@ -465,8 +466,8 @@ def sh10():
     look_keys(larry, you, [(1, 0.7)])
     face(you, 1, DEADPAN)
     hl = head(larry)
-    cam = Cam(lens=34, loc=(0.32, 4.95, 1.72), target=(hl.x, hl.y, hl.z - 0.08))
-    cam.key(1, loc=(0.32, 4.95, 1.72)); cam.key(n, loc=(0.3, 4.8, 1.7))
+    cam = Cam(lens=34, loc=(-0.3, 4.95, 1.68), target=(hl.x, hl.y, hl.z - 0.1))   # past your other shoulder
+    cam.key(1, loc=(-0.3, 4.95, 1.68)); cam.key(n, loc=(-0.28, 4.8, 1.66))
     face_light(cam, energy=40, size=1.0)
     return n
 
