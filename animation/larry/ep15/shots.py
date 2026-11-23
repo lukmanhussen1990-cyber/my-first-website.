@@ -652,6 +652,8 @@ def sh17():
     closeup()
     you, larry = standoff(n, kneel=False, larry_x=0.5)
     hide_moustache(larry); hide_bouquet()
+    for o in you.meshes:                                    # the close-up sits where you stand: you are off-screen
+        o.hide_render = True; o.hide_viewport = True
     hl = head(larry)
     st = moustache_prop()
     p0 = hl + Vector((-0.3, 0.0, -0.12))
@@ -664,8 +666,8 @@ def sh17():
         hand_ik(larry, side, t)
     look_keys(larry, you, [(1, 0.6)])
     face(larry, 1, CRY); tears(larry, n, drops=3)
-    cam = Cam(lens=45, loc=(hl.x - 1.05, hl.y - 0.3, hl.z + 0.0), target=(hl.x - 0.12, hl.y, hl.z - 0.1))
-    cam.key(1, loc=(hl.x - 1.05, hl.y - 0.3, hl.z + 0.0)); cam.key(n, loc=(hl.x - 0.9, hl.y - 0.25, hl.z))
+    cam = Cam(lens=45, loc=(hl.x - 1.2, hl.y - 0.05, hl.z - 0.02), target=(hl.x - 0.12, hl.y, hl.z - 0.1))   # straight on: the veil hangs behind
+    cam.key(1, loc=(hl.x - 1.2, hl.y - 0.05, hl.z - 0.02)); cam.key(n, loc=(hl.x - 1.0, hl.y - 0.05, hl.z - 0.02))
     face_light(cam, energy=35, size=1.0)
     return n
 
