@@ -330,7 +330,7 @@ def moms_house():
 def stepdad(loc=(0, 3.62, 0), sd=True):
     """Dale in Mom's doorway: STEPDAD apron, spatula."""
     d = load_char("dale", loc, rot_z=0, subdiv=sd)
-    ep2.chest_print(d, f"{D11}/apron_stepdad.png", width=0.48, y=-0.04, z=0.18, name="apron")
+    ep2.chest_print(d, f"{D11}/apron_stepdad.png", width=0.48, y=-0.04, z=0.31, name="apron")
     on_bone(d, spatula(), "RightHand", (0.0, 0.08, 0.02), rot=(0, 0, 0))
     return d
 
