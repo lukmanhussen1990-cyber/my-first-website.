@@ -104,9 +104,15 @@ def wedding_dress(ch):
     bt = bpy.context.object; bt.name = "skirt_band"; bt.data.materials.append(satin)
     on_bone(ch, bt, "Hips", (0.0, 0.08, 0.0), rot=(-90, 0, 0))
     veil_m = mat_flat("veil", (1.0, 1.0, 1.0), rough=0.6, alpha=0.55)
-    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.34, radius2=0.09, depth=0.75, location=(0, 0, 0))
-    v = bpy.context.object; v.name = "veil"; v.data.materials.append(veil_m); bpy.ops.object.shade_smooth()
-    on_bone(ch, v, "Head", (0.0, -0.18, -0.12), rot=(-90, 0, 0))
+    bpy.ops.mesh.primitive_grid_add(x_subdivisions=8, y_subdivisions=12, size=1.0, location=(0, 0, 0))
+    v = bpy.context.object; v.name = "veil"; v.data.materials.append(veil_m)
+    v.scale = (0.42, 0.8, 1.0); bpy.ops.object.transform_apply(scale=True)
+    for vt in v.data.vertices:                                              # a soft fold: wider and curved lower down
+        u = 0.5 - vt.co.y / 0.8                                             # 0 at the crown, 1 at the hem
+        vt.co.x *= 0.55 + 0.6 * u
+        vt.co.z = -0.12 * u * u + 0.05 * abs(vt.co.x)
+    bpy.ops.object.shade_smooth()
+    on_bone(ch, v, "Head", (0.0, -0.24, -0.11), rot=(0, 0, 0))
     bpy.ops.mesh.primitive_torus_add(major_radius=0.1, minor_radius=0.018, location=(0, 0, 0))
     tiara = bpy.context.object; tiara.name = "tiara"; tiara.data.materials.append(mat_flat("tiara", (0.95, 0.85, 0.5), metal=1.0, rough=0.2))
     on_bone(ch, tiara, "Head", (0.0, 0.13, -0.01), rot=(-90, 0, 0))
@@ -348,7 +354,7 @@ def at_altar(n, you=True, groom=True, priest=True, taped=True, gag=False, sd=Tru
     out = {}
     if you:
         y = you_char(sd=sd)
-        seat_in(y, YOU_CH, 180.0)
+        seat_in(y, (YOU_CH[0], YOU_CH[1], 0.0), 180.0)
         piv = rocker(y)
         for side, dx in (("Left", -0.21), ("Right", 0.21)):                 # facing +Y: left is -X
             hold(y, side, (YOU_CH[0] + dx, YOU_CH[1] + 0.32, 0.6), piv=piv, name=f"you_lap_{side}")
@@ -576,8 +582,9 @@ def sh05():
     n = frames_of("sh05")
     root, wheels, you, dale = truck_with_you(n, sd=False)
     ep9.drive_truck(root, wheels, [(1, (-7.0, -5.0), 0), (n, (2.0, -5.0), 0)], n)
-    cam = Cam(lens=26, loc=(-1.0, 3.0, 2.4), target=(-2.0, -5.0, 1.8))
-    cam.key(1, loc=(-1.0, 3.0, 2.4), target=(-4.5, -5.0, 1.8)); cam.key(n, loc=(-0.6, 3.0, 2.4), target=(-0.5, -5.0, 1.8))
+    cam = Cam(lens=22, loc=(0, 0, 0), target=(0, 0, 0))
+    cam.cam.parent = root; cam.tgt.parent = root
+    cam.cam.location = (-0.6, 9.2, 2.0); cam.tgt.location = (-0.6, 0.0, 1.7)
     return n
 
 
@@ -800,8 +807,8 @@ def sh16():
         hand_ik(dale, side, t)
     splat_on(larry, f_on=f_hit + 1)
     face(dale, 1, RAGE); face(larry, 1, RAGE); face(larry, f_hit + 1, SHOCK)
-    cam = Cam(lens=26, loc=(3.4, -0.4, 1.7), target=(0.0, -0.3, 1.4))
-    cam.key(1, loc=(3.4, -0.4, 1.7)); cam.key(n, loc=(3.2, -0.4, 1.65))
+    cam = Cam(lens=24, loc=(5.5, -0.3, 1.8), target=(0.3, -0.3, 1.4))
+    cam.key(1, loc=(5.5, -0.3, 1.8)); cam.key(n, loc=(5.2, -0.3, 1.75))
     return n
 
 
@@ -837,8 +844,8 @@ def sh17():
         hand_ik(larry, side, t)
     face(larry, 1, RAGE)
     flying_priest(n, 9, n + 6, (-1.0, 1.4, 1.6), (-3.0, -5.5, 1.0), height=2.4)
-    cam = Cam(lens=24, loc=(2.8, -3.0, 2.0), target=(-1.2, -1.0, 1.8))
-    cam.key(1, loc=(2.8, -3.0, 2.0)); cam.key(n, loc=(2.6, -3.3, 2.1))
+    cam = Cam(lens=22, loc=(3.2, -3.2, 2.2), target=(-1.3, 0.2, 2.0))
+    cam.key(1, loc=(3.2, -3.2, 2.2)); cam.key(n, loc=(3.0, -3.4, 2.3))
     return n
 
 
@@ -865,8 +872,13 @@ def sh18():
         st.location = pw + Vector((0.03 * t, 0.06 * t, 0.02 * t - 0.002 * t * t)); st.keyframe_insert("location", frame=f)
         st.rotation_euler = (math.radians(40 * t), 0, math.radians(25 * t)); st.keyframe_insert("rotation_euler", frame=f)
     bpy.context.scene.frame_set(1)
-    cam = Cam(lens=30, loc=(-0.3, -1.6, 2.4), target=(-1.6, -1.0, 2.2))
-    cam.key(1, loc=(-0.3, -1.6, 2.4), target=(-1.3, 0.2, 2.7)); cam.key(n, loc=(-0.4, -1.8, 2.3), target=(-2.4, -3.6, 1.4))
+    cam = Cam(lens=30, loc=(1.4, -2.2, 2.3), target=(-1.2, 0.5, 3.2))
+    sc = bpy.context.scene
+    for f in range(1, n + 1, 2):
+        sc.frame_set(f)
+        cam.key(f, target=root.matrix_world.translation.copy(), interp="LINEAR")
+    sc.frame_set(1)
+    cam.key(1, loc=(1.4, -2.2, 2.3)); cam.key(n, loc=(1.1, -2.6, 2.1))
     return n
 
 
