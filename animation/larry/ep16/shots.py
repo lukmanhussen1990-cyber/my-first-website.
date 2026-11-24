@@ -737,7 +737,7 @@ def sh22():
     fb = box("fill", (2 * HX, 2 * HY, 1.0), (0, 0, 0.5), dm, uv_scale=0.6); fb.parent = fill_root
     key_scale(fill_root, 1, (1, 1, 0.02))
     key_scale(fill_root, n, (1, 1, 1.67))
-    you, sp = digger(n, 0.0, yaw=-90, x=1.0, y=0.1, period=18, lean=10)
+    you, sp = digger(n, 0.0, yaw=90, x=1.0, y=0.1, period=18, lean=10)          # facing -X, toward the grave
     cam = Cam(lens=26, loc=(-1.9, -2.6, 1.55), target=(0.4, 0.1, 0.25))
     cam.key(1, loc=(-1.9, -2.6, 1.55)); cam.key(n, loc=(-1.75, -2.45, 1.5))
     face_light(cam, energy=30, size=1.2, color=(0.75, 0.82, 1.0))
