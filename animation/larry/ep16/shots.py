@@ -503,8 +503,8 @@ def sh09():
     you, dale, larry = in_bed_trio(n)
     for f in range(12, n, 14):
         you.expr(f, {"eyeBlinkLeft": 0.0}); you.expr(f + 2, {"eyeSquintLeft": 0.8}); you.expr(f + 5, {"eyeSquintLeft": 0.0})
-    cam = Cam(lens=26, loc=(0.0, 0.15, 2.1), target=(0.0, 1.75, 0.74))
-    cam.key(1, loc=(0.0, 0.15, 2.1)); cam.key(n, loc=(0.0, 0.35, 2.0))
+    cam = Cam(lens=40, loc=(0.0, 0.35, 2.6), target=(0.0, 1.72, 0.72))       # high, tighter on the three heads; slow creep
+    cam.key(1, loc=(0.0, 0.35, 2.6)); cam.key(n, loc=(0.0, 0.6, 2.45))
     face_light(cam, energy=35, size=1.6, color=(0.75, 0.82, 1.0), offset=(0.0, 0.0, 0.0))
     return n
 
