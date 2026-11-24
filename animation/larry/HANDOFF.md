@@ -3,75 +3,151 @@
 ## START HERE (new account / new AI session)
 
 You are continuing a finished, working pipeline. **Do not redesign anything and do not rewrite the pipeline.**
-Episodes 1-8 are done. Every episode folder (`ep2/` … `ep8/`) is a complete, working example: copy the newest one.
+Episodes 1-17 are done (list below). Every episode folder is a complete, working example: **copy the newest (`ep17/`).**
 
-**Step 1: get the code.** Either unzip the `larry_project.zip` the user gives you, or check out branch
-`ccr-35ca5e9e-l7qz15` of the user's GitHub repo `my-first-website.`; the project is `animation/larry/`.
+**Step 1: get the code.** Branch `claude/character-setup-lineup-4cq7u3` of the user's GitHub repo
+`my-first-website.`; the project is `animation/larry/`. If you cannot reach the repo, the user uploads
+`larry_project.zip` (the same folder): unzip it and work from there.
 
-**Step 2: set up the machine (about 10-15 minutes).** The user will upload MPFB in two parts. Join and check them:
+**Step 2: set up the machine (about 15-30 minutes).** The user uploads MPFB in two parts. Join and check them:
 ```bash
-cat mpfb-2.0.18.zip.part0 mpfb-2.0.18.zip.part1 > add-on-mpfb-v2.0.18.zip
+cat add-on-mpfb-v2.0.18.zip.part0 add-on-mpfb-v2.0.18.zip.part1 > add-on-mpfb-v2.0.18.zip
 sha256sum add-on-mpfb-v2.0.18.zip   # must be c075b3e9b94b8e5556a5f03f4653602d02ea306de08126e8f55ed6dee28a2dad
 bash animation/larry/setup_env_restricted.sh add-on-mpfb-v2.0.18.zip
+pip install faster-whisper            # voiceover word timestamps (scripts/tools/words.py)
 ```
-This works even when download.blender.org / mocap.cs.cmu.edu are blocked (Blender comes from PyPI `bpy==4.5.16`,
-mocap from Hugging Face). It also needs `pip install faster-whisper` into `/opt/whisper` for transcribing voiceovers.
-Never try to get around network blocks (no fake User-Agents, no proxies): if something is blocked, tell the user.
-- If `files.makehumancommunity.org` resets every connection (it did on 2026-11-22), fetch the same pack paths from the
-  official second mirror `files2.makehumancommunity.org` (ask the user to allow it in the environment), put the zips in
-  `/opt/mh_assets/packs/`, then run the script: it skips packs that are already there. The mirror is slow per
-  connection (~50 KB/s); downloading the big packs in parallel byte ranges brings it to ~0.5 MB/s.
-- If the whisper model download fails on `cas-server.xethub.hf.co`, run it with `HF_HUB_DISABLE_XET=1` (plain HTTPS
-  through `huggingface.co`). More CMU clips: search `metadata.jsonl` of the HF mirror, then `scripts/glb2amc.py`.
+Blender comes from PyPI (`bpy==4.5.16`, plus a `blender` stand-in at `/opt/blender-4.5.16-linux-x64/blender`); mocap
+comes from the Hugging Face mirror `codepawl/cmu-mocap-glb`. Hosts the environment must allow:
+`files.makehumancommunity.org` (or the mirror `files2.makehumancommunity.org`), `huggingface.co`, `pypi.org` /
+`files.pythonhosted.org`, `api.polyhaven.com` + `dl.polyhaven.org`, `fonts.googleapis.com` + `fonts.gstatic.com`.
+**Never try to get around network blocks (no fake User-Agents, no proxies): if something is blocked, tell the user.**
+- If `files.makehumancommunity.org` resets every connection, fetch the same pack paths from `files2.` (ask the user
+  to allow it), put the zips in `/opt/mh_assets/packs/`, then rerun the script (it skips packs already there). The
+  mirror is slow per connection; parallel byte ranges make it ~10x faster.
+- Whisper model download failing on `cas-server.xethub.hf.co`: run it with `HF_HUB_DISABLE_XET=1`.
+- More CMU clips: search `metadata.jsonl` of the HF mirror, then `scripts/glb2amc.py` (see the end of the setup script).
+- A container restart keeps `/opt` and `~/larry_work` but wipes pip packages: re-run `pip install faster-whisper`.
 
 **Step 3: rebuild the cast from the fixed recipes, then CHECK them against the reference pictures.**
 ```bash
 export LARRY_WORK=~/larry_work; B=/opt/blender-4.5.16-linux-x64/blender; mkdir -p $LARRY_WORK/chars
-for c in you larry dale dale_tee you_night you_casual you_work wife kid_boy kid_girl dale_jail you_astro larry_tee \
-         you_pj you_sun larry_monk hr butcher; do
-  xvfb-run -a $B -b --python animation/larry/scripts/build_character.py -- $c $LARRY_WORK/chars/$c.blend; done
+for c in you you_casual you_night you_pj you_old larry dale dale_jail wife kid_boy kid_girl hr butcher cop bodyguard; do
+  $B -b --python animation/larry/scripts/build_character.py -- $c $LARRY_WORK/chars/$c.blend; done
 xvfb-run -a $B -b --python animation/larry/scripts/lineup.py -- $LARRY_WORK/chars /tmp/lineup larry,dale,you_casual
 ```
+(Older episodes also use `dale_tee you_work you_astro larry_tee you_sun larry_monk soldier larry_soldier`.)
 Compare the lineup with `ref/characters.jpg`, `ref/faces_larry_dale_you_wife_kids.jpg`,
 `ref/cast_family_larry_dale.jpg` and `ref/cast_you_work_dale_tee.jpg`. They must match exactly:
-- **Larry**: short, chubby, older, mustard polo, brown trousers, moustache, round glasses, grey hair.
+- **Larry**: short, chubby, older man; mustard polo, brown trousers, moustache, glasses.
 - **Dale**: slim Black man, slicked-back short hair, grey utility jacket over a striped shirt + jeans (`dale`),
   or white tee + jeans (`dale_tee`), or orange jumpsuit (`dale_jail`).
-- **You**: young white man, short brown hair (several outfits: `you`, `you_casual`, `you_night`, `you_work`, ...).
+- **You**: young white man, short hair (`you` light-blue shirt + tie, `you_casual` light-blue shirt + jeans, `you_night` pyjamas).
 If a character looks different, the setup went wrong (missing MPFB asset pack). Fix the setup; never edit the recipe.
+Never create a new character or a new tool: costumes and props are scene objects made in the episode's `shots.py`
+(e.g. Larry's wedding dress and veil, the priest's collar, the stepdad apron, the bald guy = `you` with the hair hidden).
 
-**Step 4: make the episode** exactly like `ep8/` (see "Making an episode (episodes 2-8)" below).
+**Step 4: wait for the user.** Don't make any episode, script or video until they give you an idea and a voiceover.
 
-## Making an episode (episodes 2-8)
+## The user's workflow (every episode)
+1. They ask "top 5 idea(s)": give 5 short numbered premises with escalation + twist, then **wait** for their pick.
+2. They pick one and say "give voiceover, no other word": write only the spoken script (no title, no notes; every word
+   is read aloud by their TTS). ~45-55 s for Larry episodes, ~25 s for the stand-alone "If you..." shorts.
+3. They record it with their TTS voice and upload the mp3, usually with "make": make the whole video.
+4. While it renders they ask "Time left" (answer with a quick estimate) or "give what's done so far, don't stop the
+   render" (`scripts/tools/so_far.sh`, send it, keep rendering) or a "144p preview" (`p144_all.sh` + `p144_mux.sh`).
+5. Deliver: `*_final.mp4` (captions) and `*_clean.mp4`, then they ask "caption, no other word": one line + emoji +
+   `#shorts #funny #animation`. Write `epN/UPLOAD.md` (caption, description, CC-BY credits), commit and push.
 
+## Making an episode (episodes 9-17 workflow)
 1. `mkdir epN`; copy `audio.py normalize.sh render_shot.py preview_all.sh motion_all.sh render_all.sh assemble.sh
-   render_sched.py` from `ep8/` and replace `ep8` with `epN` inside them.
-2. Transcribe the user's voiceover (whisper `small.en`, word timestamps). Check quiet gaps with ffmpeg + numpy energy
-   to place words whisper misses (GENIUS!/CLEVER! often).
-3. `epN/cuts.py`: one shot per 1-2 s phrase. `epN/captions.py`: copy ep8's, rewrite `C` (W white / Y yellow
-   interjection / R red emphasis / L huge last line). Keep captions under ~16 characters in R and ~20 in W, split
-   longer ones. The **character name must be on screen in the first second** (the user's rule).
-4. `epN/shots.py`: import the newest episode's shots module (each one imports the previous) and write one function
-   per shot. Reuse sets/props/helpers; read the previous episodes' `shots.py` for examples.
-5. `W=2 bash epN/preview_all.sh` (3 stills per shot), review EVERY shot with `scripts/tools/sheet.py`, fix, repeat.
-   Then `bash epN/motion_all.sh` + `scripts/tools/motion_sheet.py` on the moving shots (catches lag and pops).
-6. Render: `MODE=fast python3 epN/render_sched.py 2` (memory-aware, 2 workers; fast = 75 % res, 2 samples,
-   ~5 s/frame, ~40-60 min). Full quality: `python3 epN/render_sched.py 4` (~3x slower).
-7. Upscale fast frames to 720x1280 (PIL LANCZOS + light unsharp), then
-   `bash epN/assemble.sh $LARRY_WORK/epN/larry_epN_final.mp4 final captions` and `... clean`.
-8. Send both videos, a one-line post caption, and keep `CREDITS.md` credits for the description. Commit + push.
-If the user asks for "what's done so far", run `python3 scripts/tools/partial_cut.py N /tmp/part` and encode it with
-the mix and captions; never stop the running render.
+   render_sched.py` from `ep17/` and replace `ep17`/`Episode 17` with `epN`/`Episode N` inside them.
+2. Audio: `ffmpeg -i vo.mp3 -ac 1 -ar 16000 -f s16le vo16k.pcm; HF_HUB_DISABLE_XET=1 python3 scripts/tools/words.py
+   vo16k.pcm words.json` (word timestamps; check quiet gaps with numpy energy for words whisper misses, e.g. "Mmmph!").
+   `python3 -I epN/audio.py vo.mp3 $LARRY_WORK/epN/mix_raw.wav && bash epN/normalize.sh ... mix.wav` (voice only, -14 LUFS).
+3. `epN/cuts.py`: one shot per 1-2 s phrase (end = VO length + ~0.1 s). `epN/captions.py`: copy, rewrite `C`
+   (W white / Y yellow / R red / L huge last line), short chunks (~16 chars in R, ~20 in W).
+4. `epN/make_decals.py` (Pillow signs, posters, cards) -> `$LARRY_WORK/epN/decals`.
+5. `epN/shots.py`: `_load` the newest episode (each imports the previous chain) and write one function per shot,
+   reusing sets/props/helpers (see "Helper map" below).
+6. `MODE=fast W=2 bash epN/preview_all.sh` (3 stills per shot), then `python3 scripts/tools/overview.py
+   $LARRY_WORK/epN/preview sheet.png mid` and LOOK at every shot; fix; re-preview the changed shots. Test single frames
+   with `xvfb-run -a $B -b --python epN/render_shot.py -- shN <dir> fast 2 F F` before re-rendering a whole shot.
+7. Final: `MODE=fast python3 epN/render_sched.py 2` (2 workers, 75 % res, 2 samples, ~4-8 s/frame/worker; a 50 s
+   episode takes 60-120 min). Watch each finished shot with `scripts/tools/frames_sheet.py` and queue redos with
+   `scripts/tools/redo_queue.sh`. Then `python3 -I scripts/tools/upscale.py $LARRY_WORK/epN/frames $LARRY_WORK/epN/frames720` and
+   `FRAMES=.../frames720 bash epN/assemble.sh .../NAME_final.mp4 final captions` (and `... clean`).
+8. **Background jobs are killed after 2 hours**: keep each chain under 2 h (render first; a separate finisher for
+   redos/upscale/assemble). `render_sched.py` resumes partly rendered shots when re-run.
+
+## Helper map (where things live)
+- Face presets (SMILE, SMUG, CREEPY, SHOCK, DEADPAN, TADA, RAGE...) come from Episode 1 (`scripts/shots.py`, imported
+  as `ep1shots`); `look_at` and the `Char` class are in `scripts/lib.py`.
+- `ep2`: `face`, `lipsync`, `pose`, `sit`, `settle`, `on_bone`, `stare_at`, `chair`, `chest_print`, `heaven_set`,
+  `angelify`, `newcorp_set` (office), `bus_interior_set`, `airport_set`, `hospital_set`.
+- `ep3`: `kneel`/KNEEL. `ep4`: `house_exterior`, `bedroom_night`, `you_asleep`, `blanket_over`, `sootify`.
+- `ep5`: `earth`, `stars`, `rocket`. `ep6`: `Car`, `family_in`, `larry_and_dale`, `wear_shades`, `coast_road`, `mirror_feed`.
+- `ep7`: prison sets, `bedroom` with door. `ep9`: `garbage_truck`, `drive_truck`, `loop_move` (seamless run/walk),
+  `face_light`, `spot`, `stamp` (rubber stamp on the lens). `ep10`: bathroom/theatre, toilet.
+- `ep11`: `day_street`, `moms_house` (real doorway), `stepdad` apron, `tank_prop`, `muzzle_flash`, sun/moon/ocean/
+  North Pole/hell sets, `lounger`. `ep12`: `look_keys` (keyed head look-at), `sit_level`, `follow_head`.
+- `ep13`: `rocker` (whole-body pivot), `glue`, `rock`, `laugh`, `talk`, `hold`, `desk`, office meeting room.
+- `ep14`: church set, `wedding_dress`, `priest_bits`, `cake`, `splat_on`, `fight_cloud`, `shards`, `confetti`, `vis`.
+- `ep15`: `you_char`/`larry_char`/`dale_char`, `idle`, `tears`, `sob`, living room, shower, front door, `couch_sit`.
+- `ep16`: `ak47`, `hold_rifle`, `shovel`+`dig`, `backyard` grave/mound/gravestone, `churn`, `in_bed_trio`, lightning.
+- `ep17`: dining room + family table (`table_scene`, `seat`, `eating`), `explosion`, `rubble`, `puffs`,
+  `tank_with_larry`, `flung`, `basement`.
+
+## Review and delivery tools (`scripts/tools/`, usage line at the top of each)
+- `words.py`: voiceover word timestamps. `overview.py`: one tile per shot from the preview stills.
+- `sheet.py` / `motion_sheet.py` / `frames_sheet.py`: detail sheets of stills, motion frames or final frames (pop score).
+- `so_far.sh`: "what's done so far" video from the fully rendered shots, without touching the running render.
+- `partial_cut.py`: rendered frames where they exist, preview stills elsewhere (quick rough cut).
+- `p144.py` + `p144_all.sh` + `p144_mux.sh`: 144p motion preview of the whole episode with voice and captions.
+- `redo_queue.sh`: re-render fixed shots into `frames_fix` while the main render runs (then swap them in).
+- `upscale.py`: MODE=fast frames (540x960) to 720x1280 before `assemble.sh` (which outputs 1080x1920).
+
+## Smoothness and quality rules (learned the hard way in episodes 12-17)
+- No finger close-ups: the hand rig moves all four fingers together (only FingerBase + HandFinger1 bones).
+- Standing idle: `137_28` from frame **3700** (`ep15.idle`); the 2400 range turns the head 90 degrees to one side.
+- Seated / kneeling / driving poses tip the head back ~34 degrees: add `{"lowerneck": rx 18, "upperneck": rx 16}`
+  (`ep12.sit_level`, `ep12.SEATED`, `ep14.KNEEL_LEVEL`).
+- Laughs, rocking, leaning, falling: rotate a pivot (`ep13.rocker`) and parent hand targets to it (`glue`).
+- Head look-at must aim at a fixed empty at the other person's eye level (`look_keys`), never at their head bone:
+  two heads tracking each other is a dependency cycle (frozen heads).
+- Check where the camera is: inside a character, a veil, a wall or a door gives white or blank frames. Hide people
+  who are off-screen in close-ups and point-of-view shots (also halves the render time with 5-6 people).
+- Bright emission washes to white/peach under AgX: saturated colours, low strength; `face_light` energy ~15-40.
+- Prop costumes (veil, bouquet, skirt) can block faces: hide them per shot (`ep15.hide_bouquet`).
+- `upscale.py` skips frames whose upscaled copy is newer: after re-rendering a shot, delete `frames720/<shot>` first.
+- Max 2 Blender processes at once (RAM); the full dinner table (6 people) is the heaviest kind of shot.
+
+## Story so far (series canon, keep continuity)
+- Ep 1-9: Larry from accounting and Dale from IT are obsessed with you; ep9 Dale escaped prison and "broke back in".
+- Ep10 "The Show": Dale watches you on the toilet like a theatre show (front-row ticket, popcorn).
+- Ep11 "Stepdad": you flee Dale everywhere (tank, sun, moon, ocean, North Pole, heaven, hell, a hitman he folds like a
+  lawn chair); you run home to Mom: "Honey, meet your new stepdad." "Hi, son." (Dale in a WORLD'S BEST STEPDAD apron)
+- Ep12 "Nose" and Ep13 "Head of Laughing": stand-alone shorts in the reference format ("If you ..., most people ...
+  That's a mistake. You see, ... There are three steps. First ... Second ... Third ... because..."), bald guy = `you`.
+- Ep14 "Husband and Husband": Dale kidnaps you in a garbage truck, tapes you to a chair at the altar; the priest is
+  Dale in a fake moustache; Larry bursts in wearing a wedding dress; cake fight cloud; the real priest pronounces
+  Larry and Dale husband and husband; "Honey... let's adopt."
+- Ep15 "Missing" part 1: Dale missing 2 days; Larry (still in the dress) begs you for help; vote YES/NO (viewers: NO).
+- Ep16 "Here Lies Dale" part 1: Dale was never missing (their cuddle plan); you shoot him (cut away on BANG), bury him
+  in the garden, "HERE LIES DALE. FINALLY."; 3 days later the dirt moves; vote: is Dale really dead?
+- Ep17 part 2: family dinner with your crush (`wife` model); Dale is at the table and only you can see him; he throws
+  your crush out of the window; Larry blows up the house with a tank; they lock you in their basement and cuddle you.
+- The user likes: start with annoyance; escalation; Larry and Dale never give up; varied twists (no repeated
+  funerals); viewer-vote endings ("Comment YES or NO. Part 2 is up to you."); cartoon violence cut away, never gore.
 
 ## Working with this user (most important rules)
 - Very short replies. "No other word" = output only the requested text.
 - Audio is **voice only** (no music, no sound effects).
-- Edgy, absurd humour; Larry and Dale never give up. Vary the final twist (they disliked a repeated funeral).
-- They send screenshots of bugs: fix exactly what they point at, then check the rest.
-- Memory: max 2 Blender workers; 6 characters in one shot need ~8.5 GB, so close-up subdivision only.
+- Edgy, absurd humour; Larry and Dale never give up. Vary the final twist.
+- They send screenshots or say "glitch": fix exactly what they point at, then check the rest.
+- They hate visible glitches (they skipped episode 12 for that): preview everything, check every finished shot.
+- Memory: max 2 Blender workers.
 
-
-Everything needed to continue this series in a new session or on a new account. The code is on branch `ccr-35ca5e9e-l7qz15` (originally `claude/animation-video-blender-ideas-tdfyh9`, which is not on this remote), under `animation/larry/`.
+Everything below is the original reference (episodes 1-9); where it disagrees with the sections above, the sections above win. The code is on branch `claude/character-setup-lineup-4cq7u3` (earlier: `ccr-35ca5e9e-l7qz15`), under `animation/larry/`.
 
 ## What this is
 
@@ -315,7 +391,7 @@ python3 animation/larry/scripts/make_decals.py $LARRY_WORK/decals    # signs/lab
 
 ## Kickoff prompt for a new session
 
-> I'm continuing my "Larry & Dale" 3D animated shorts series (8 episodes done). Read `animation/larry/HANDOFF.md`
+> I'm continuing my "Larry & Dale" 3D animated shorts series (17 episodes done). Read `animation/larry/HANDOFF.md`
 > first, especially "START HERE", and follow it step by step: set up with my MPFB zip, rebuild the cast and compare it
-> with the pictures in `ref/` before doing anything else. Then make the next episode exactly like `ep8/`, with the
-> voiceover I'm attaching. Same characters, same look, voice only, captions like before. Keep replies short.
+> with the pictures in `ref/` before doing anything else. Then wait for my idea and voiceover. Same characters, same
+> look, voice only, captions like before, no glitches. Keep replies short.
