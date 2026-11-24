@@ -72,8 +72,8 @@ WARM = (1.0, 0.82, 0.6)
 TABLE = Vector((0.0, 0.95, 0.0))      # table centre (top at 0.76); long axis X
 TOP_Z = 0.76
 # seats: (name, chair x, chair y, facing degrees: 0 = facing -Y (the camera side), 180 = facing +Y, 90 = facing +X ...)
-SEATS = {"you": (-0.38, 1.62, 0.0), "crush": (0.38, 1.62, 0.0), "grandpa": (-1.4, 0.95, -90.0),
-         "dale": (1.4, 0.95, 90.0), "mom": (-0.42, 0.28, 180.0), "boy": (0.42, 0.28, 180.0)}
+SEATS = {"you": (-0.38, 1.62, 0.0), "crush": (0.38, 1.62, 0.0), "grandpa": (-1.4, 0.95, 90.0),
+         "dale": (1.4, 0.95, -90.0), "mom": (-0.42, 0.28, 180.0), "boy": (0.42, 0.28, 180.0)}
 
 
 def dining_room(window_burst=None):
@@ -98,8 +98,8 @@ def dining_room(window_burst=None):
         if o:
             o.data.energy = en
     world_color((0.12, 0.1, 0.09), 0.4)
-    area("dinner_top", (0.0, 0.95, 2.8), (0.0, 0.95, 0.0), energy=420, size=1.6, color=WARM, shadow=True)
-    area("dinner_fill", (0.0, -2.2, 2.0), (0.0, 1.0, 1.0), energy=140, size=3.0, color=WARM)
+    area("dinner_top", (0.0, 0.95, 2.8), (0.0, 0.95, 0.0), energy=200, size=1.6, color=WARM, shadow=True)
+    area("dinner_fill", (0.0, -2.2, 2.0), (0.0, 1.0, 1.0), energy=80, size=3.0, color=WARM)
     plane("rug17", (3.4, 2.4), (0.0, 0.95, 0.006), mat_flat("rug17m", (0.42, 0.12, 0.1), rough=1.0))
     wood = mat_flat("dtable", (0.3, 0.17, 0.08), rough=0.35)
     box("dt_top", (2.3, 1.05, 0.05), (TABLE.x, TABLE.y, TOP_Z - 0.025), wood, bevel=0.01)
@@ -158,7 +158,7 @@ def seat(ch, nm, hands_on_table=True):
     sit_level(ch, sz)
     if hands_on_table:
         d = Vector((math.sin(math.radians(f)), -math.cos(math.radians(f)), 0))
-        s = Vector((d.y, -d.x, 0))                                  # the character's left
+        s = Vector((-d.y, d.x, 0))                                  # the character's left
         base = Vector((x, y, 0)) + d * 0.33
         for side, k in (("Left", 1), ("Right", -1)):
             p = base + s * (0.17 * k)
@@ -282,8 +282,8 @@ def puffs(center, count, spread=(2.0, 2.0), seed=5, rise=0.012, n=200, scale=1.0
 
 def explosion(center, f0, n, size=4.0):
     """Fireball (expanding, fading emissive spheres), a white flash, flying debris, then smoke."""
-    hot = mat_flat("fireball", (1.0, 0.55, 0.15), emit=(1.0, 0.5, 0.1), emit_strength=8.0)
-    core = mat_flat("fireball_core", (1.0, 0.9, 0.6), emit=(1.0, 0.85, 0.5), emit_strength=14.0)
+    hot = mat_flat("fireball", (1.0, 0.25, 0.02), emit=(1.0, 0.22, 0.01), emit_strength=4.0)
+    core = mat_flat("fireball_core", (1.0, 0.55, 0.08), emit=(1.0, 0.5, 0.05), emit_strength=6.0)
     r = random.Random(9)
     for k in range(7):
         off = Vector((r.uniform(-1.2, 1.2), r.uniform(-0.8, 0.8), r.uniform(0.0, 1.4))) * (size / 4.0)
@@ -361,7 +361,7 @@ def basement(bulb=True):
     bpy.ops.mesh.primitive_torus_add(major_radius=0.03, minor_radius=0.007, location=(0, 0, 0.06), rotation=(0, math.radians(90), 0))
     sh = bpy.context.object; sh.data.materials.append(mat_flat("shackle", (0.8, 0.8, 0.82), metal=1.0, rough=0.2)); sh.parent = lock
     if bulb:
-        sw = empty("bulb_swing", (0.0, 1.0, 2.6))
+        sw = empty("bulb_swing", (1.05, 0.1, 2.6))
         cylinder("cord", 0.006, 0.7, (0, 0, -0.35), mat_flat("cord", (0.05, 0.05, 0.05)), verts=8).parent = sw
         bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.05, location=(0, 0, -0.74))
         b = bpy.context.object; b.data.materials.append(mat_flat("bulb", (1, 1, 0.9), emit=(1.0, 0.85, 0.6), emit_strength=12)); b.parent = sw
@@ -441,7 +441,7 @@ def sh05():
     hc = head(crush)
     cam = Cam(lens=45, loc=(hc.x - 0.15, hc.y - 1.05, hc.z + 0.02), target=(hc.x, hc.y, hc.z - 0.04))
     cam.key(1, loc=(hc.x - 0.15, hc.y - 1.05, hc.z + 0.02)); cam.key(n, loc=(hc.x - 0.12, hc.y - 0.85, hc.z + 0.02))
-    face_light(cam, energy=40, size=1.0, color=WARM)
+    face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
 
@@ -460,9 +460,9 @@ def sh06():
     look_keys(you, crush, [(1, 0.0), (10, 0.6)])
     face(crush, 1, LOVE); face(you, 1, SMILE); face(you, 12, BEAM)
     mid = (head(you) + head(crush)) / 2
-    cam = Cam(lens=38, loc=(mid.x, mid.y - 1.4, mid.z + 0.02), target=(mid.x, mid.y, mid.z - 0.1))
-    cam.key(1, loc=(mid.x, mid.y - 1.4, mid.z + 0.02)); cam.key(n, loc=(mid.x, mid.y - 1.2, mid.z + 0.02))
-    face_light(cam, energy=40, size=1.2, color=WARM)
+    cam = Cam(lens=30, loc=(mid.x, mid.y - 1.25, mid.z + 0.12), target=(mid.x, mid.y, mid.z - 0.18))
+    cam.key(1, loc=(mid.x, mid.y - 1.25, mid.z + 0.12)); cam.key(n, loc=(mid.x, mid.y - 1.1, mid.z + 0.1))
+    face_light(cam, energy=18, size=1.2, color=WARM)
     return n
 
 
@@ -476,7 +476,7 @@ def sh07():
     hy = head(you)
     cam = Cam(lens=45, loc=(hy.x + 0.1, hy.y - 1.0, hy.z + 0.02), target=(hy.x, hy.y, hy.z - 0.04))
     cam.key(1, loc=(hy.x + 0.1, hy.y - 1.0, hy.z + 0.02)); cam.key(n, loc=(hy.x + 0.08, hy.y - 0.8, hy.z + 0.02))
-    face_light(cam, energy=40, size=1.0, color=WARM)
+    face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
 
@@ -492,7 +492,7 @@ def sh08():
     hy = head(you)
     cam = Cam(lens=40, loc=(hy.x + 0.55, hy.y - 1.05, hy.z + 0.02), target=(hy.x, hy.y, hy.z - 0.05))
     cam.key(1, loc=(hy.x + 0.55, hy.y - 1.05, hy.z + 0.02)); cam.key(n, loc=(hy.x + 0.45, hy.y - 0.88, hy.z + 0.02))
-    face_light(cam, energy=40, size=1.0, color=WARM)
+    face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
 
@@ -505,7 +505,7 @@ def sh09():
     hd = head(dale)
     wave = empty("wave09")
     for k, f in enumerate(range(1, n + 1, 6)):
-        key_loc(wave, f, hd + Vector((-0.1 + (0.06 if k % 2 else 0.0), -0.38, 0.12)))
+        key_loc(wave, f, hd + Vector((-0.3, 0.16 + (0.07 if k % 2 else 0.0), 0.12)))
     for c in dale.rig.pose.bones["RightForeArm"].constraints:
         if c.type == "IK":
             dale.rig.pose.bones["RightForeArm"].constraints.remove(c)
@@ -513,7 +513,7 @@ def sh09():
     look_keys(dale, you, [(1, 0.8)])
     cam = Cam(lens=34, loc=(-0.2, -0.2, 1.45), target=(hd.x, hd.y, hd.z - 0.15))
     cam.key(1, loc=(-0.2, -0.2, 1.45)); cam.key(n, loc=(0.05, -0.05, 1.42))
-    face_light(cam, energy=35, size=1.0, color=WARM)
+    face_light(cam, energy=16, size=1.0, color=WARM)
     return n
 
 
@@ -528,7 +528,7 @@ def sh10():
     hd = head(dale)
     cam = Cam(lens=42, loc=(hd.x - 1.1, hd.y - 0.35, hd.z + 0.0), target=(hd.x, hd.y, hd.z - 0.12))
     cam.key(1, loc=(hd.x - 1.1, hd.y - 0.35, hd.z + 0.0)); cam.key(n, loc=(hd.x - 0.9, hd.y - 0.3, hd.z))
-    face_light(cam, energy=35, size=1.0, color=WARM)
+    face_light(cam, energy=16, size=1.0, color=WARM)
     return n
 
 
@@ -554,7 +554,7 @@ def sh11():
     cam = Cam(lens=34, loc=(hy.x - 0.25, hy.y - 1.25, hy.z - 0.05), target=(hy.x + 0.05, hy.y, hy.z - 0.15))
     cam.key(1, loc=(hy.x - 0.25, hy.y - 1.25, hy.z - 0.05)); cam.key(n, loc=(hy.x - 0.2, hy.y - 1.05, hy.z - 0.05))
     cam.shake(1, 10, amp=0.02, freq=1.5)
-    face_light(cam, energy=40, size=1.0, color=WARM)
+    face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
 
@@ -566,7 +566,7 @@ def sh12():
     hd = head(dale)
     wave = empty("wave12")
     for k, f in enumerate(range(1, n + 1, 6)):
-        key_loc(wave, f, hd + Vector((-0.1 + (0.06 if k % 2 else 0.0), -0.38, 0.12)))
+        key_loc(wave, f, hd + Vector((-0.3, 0.16 + (0.07 if k % 2 else 0.0), 0.12)))
     for c in dale.rig.pose.bones["RightForeArm"].constraints:
         if c.type == "IK":
             dale.rig.pose.bones["RightForeArm"].constraints.remove(c)
@@ -594,7 +594,7 @@ def sh13():
     dirv = (hy - hd).normalized()
     cam = Cam(lens=45, loc=hd + dirv * 0.9 + Vector((0, 0, 0.03)), target=hd + Vector((0, 0, -0.02)))
     cam.key(1, loc=hd + dirv * 0.9 + Vector((0, 0, 0.03))); cam.key(n, loc=hd + dirv * 0.72 + Vector((0, 0, 0.03)))
-    face_light(cam, energy=40, size=1.0, color=WARM)
+    face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
 
@@ -620,9 +620,9 @@ def sh14():
     face(you, 1, WIDE)
     look_keys(you, empty("dale_spot14", (SEATS["dale"][0], SEATS["dale"][1], 1.15)), [(1, 0.7)])
     mid = (head(you) + Vector((x + 0.3, y, head(you).z))) / 2
-    cam = Cam(lens=32, loc=(mid.x, mid.y - 1.75, mid.z), target=(mid.x, mid.y, mid.z - 0.15))
-    cam.key(1, loc=(mid.x, mid.y - 1.75, mid.z)); cam.key(n, loc=(mid.x, mid.y - 1.55, mid.z))
-    face_light(cam, energy=40, size=1.2, color=WARM)
+    cam = Cam(lens=28, loc=(mid.x, 0.5, mid.z + 0.12), target=(mid.x, mid.y, mid.z - 0.2))
+    cam.key(1, loc=(mid.x, 0.5, mid.z + 0.12)); cam.key(n, loc=(mid.x, 0.62, mid.z + 0.1))
+    face_light(cam, energy=18, size=1.2, color=WARM)
     return n
 
 
@@ -637,7 +637,7 @@ def sh15():
     hd = head(dale)
     cam = Cam(lens=50, loc=(hd.x - 0.95, hd.y - 0.45, hd.z + 0.02), target=(hd.x, hd.y, hd.z - 0.02))
     cam.key(1, loc=(hd.x - 0.95, hd.y - 0.45, hd.z + 0.02)); cam.key(n, loc=(hd.x - 0.7, hd.y - 0.33, hd.z + 0.02))
-    face_light(cam, energy=40, size=0.9, color=WARM)
+    face_light(cam, energy=18, size=0.9, color=WARM)
     return n
 
 
@@ -678,7 +678,7 @@ def sh16():
     look_keys(you, crush, [(1, 0.6)]); face(you, 1, WIDE)
     cam = Cam(lens=28, loc=(0.1, -1.0, 1.55), target=(x + 0.1, y + 0.2, 1.25))
     cam.key(1, loc=(0.1, -1.0, 1.55)); cam.key(n, loc=(0.15, -0.85, 1.6))
-    face_light(cam, energy=40, size=1.2, color=WARM)
+    face_light(cam, energy=18, size=1.2, color=WARM)
     return n
 
 
@@ -708,10 +708,16 @@ def sh17():
            colors=[(1.0, 0.8, 0.5), (0.8, 0.85, 0.9)], size=0.12, speed=0.16, name="frontshard")
     point("windowlight", (2.8, 3.8, 1.6), energy=120, color=WARM, radius=0.4)
     crush = load_char("wife", (0, 0, 0), subdiv=False, tag="crush")
-    root = flung(crush, n, f_hit, n - 2, (2.8, 3.6, 1.7), (-1.5, -3.5, 0.4), height=2.2)
+    root = flung(crush, n, f_hit, n - 2, (2.8, 3.6, 1.7), (0.4, -2.6, 0.4), height=2.0)
     face(crush, 1, SCREAM)
-    cam = Cam(lens=24, loc=(-2.0, -6.5, 1.3), target=(1.2, 1.0, 1.9))
-    cam.key(1, loc=(-2.0, -6.5, 1.3), target=(2.4, 3.0, 1.9)); cam.key(n, loc=(-2.2, -6.8, 1.3), target=(-0.6, -2.0, 1.5))
+    cam = Cam(lens=26, loc=(-1.6, -5.2, 1.4), target=(2.8, 3.4, 1.7))
+    sc = bpy.context.scene
+    for f in range(1, n + 1, 2):
+        sc.frame_set(f)
+        p = root.matrix_world.translation.copy() if f >= f_hit else Vector((2.8, 3.4, 1.7))
+        cam.key(f, target=p, interp="LINEAR")
+    sc.frame_set(1)
+    cam.key(1, loc=(-1.6, -5.2, 1.4)); cam.key(n, loc=(-1.9, -5.6, 1.4))
     return n
 
 
@@ -750,9 +756,12 @@ def sh19():
     key_loc(tk, 1, (-9.0, -6.4, 0)); key_loc(tk, n, (-2.5, -6.4, 0))
     key_rot(piv, 1, (0, 0, 0)); key_rot(piv, int(n * 0.6), (0, 0, 0)); key_rot(piv, n, (0, 0, 60))
     face(larry, 1, RAGE)
-    cam = Cam(lens=26, loc=(3.0, -10.2, 1.2), target=(-4.0, -6.4, 1.9))
-    cam.key(1, loc=(3.0, -10.2, 1.2)); cam.key(n, loc=(2.6, -9.8, 1.25))
-    face_light(cam, energy=0, size=1.0, color=NIGHT)
+    area("tankkey", (0.5, -10.5, 3.5), (-4.0, -6.4, 1.2), energy=900, size=3.0, color=NIGHT)
+    cam = Cam(lens=30, loc=(1.0, -9.6, 1.5), target=(-5.5, -6.4, 1.9))
+    for f in range(1, n + 1, 3):
+        u = (f - 1) / max(1, n - 1)
+        cam.key(f, target=(-9.0 + 6.5 * u + 0.4, -6.4, 2.0), interp="LINEAR")
+    cam.key(1, loc=(1.0, -9.6, 1.5)); cam.key(n, loc=(0.6, -9.3, 1.5))
     return n
 
 
@@ -806,8 +815,8 @@ def sh22():
         if o.type in ("MESH", "LIGHT"):
             vis(o, f_on=f_boom + 2)
     explosion((0.0, 6.5, 1.2), f_boom, n, size=5.0)
-    cam = Cam(lens=22, loc=(0.0, -12.5, 1.6), target=(0.0, 4.0, 2.4))
-    cam.key(1, loc=(0.0, -12.5, 1.6)); cam.key(n, loc=(0.0, -13.2, 1.7))
+    cam = Cam(lens=22, loc=(0.0, -8.0, 1.7), target=(0.0, 5.0, 2.6))
+    cam.key(1, loc=(0.0, -8.0, 1.7)); cam.key(n, loc=(0.0, -8.8, 1.8))
     cam.shake(f_boom, f_boom + 14, amp=0.09, freq=1.6)
     return n
 
@@ -897,8 +906,8 @@ def sh25():
     for k, f in enumerate(range(1, n + 1, 4)):
         you.rig.location = (0, 0, 0.18 + (0.04 if k % 2 else 0.0)); you.rig.keyframe_insert("location", frame=f)
     face(you, 1, SCREAM); face(larry, 1, SNUG); face(dale, 1, GRIN)
-    cam = Cam(lens=28, loc=(2.4, -6.5, 1.5), target=(0.4, -2.5, 1.1))
-    cam.key(1, loc=(2.4, -6.5, 1.5)); cam.key(n, loc=(2.2, -6.9, 1.45), target=(0.4, -3.4, 1.1))
+    cam = Cam(lens=28, loc=(1.6, -4.6, 1.45), target=(0.4, -1.9, 1.1))
+    cam.key(1, loc=(1.6, -4.6, 1.45)); cam.key(n, loc=(1.6, -5.4, 1.45), target=(0.4, -3.0, 1.1))
     face_light(cam, energy=40, size=1.4, color=NIGHT)
     return n
 
