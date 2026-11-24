@@ -488,8 +488,8 @@ def sh08():
     bedroom()
     you, dale, larry = in_bed_trio(n)
     blink(you, [26])
-    cam = Cam(lens=26, loc=(0.0, -0.35, 2.3), target=(0.0, 1.62, 0.72))
-    cam.key(1, loc=(0.0, -0.35, 2.3)); cam.key(n, loc=(0.0, -0.15, 2.22))
+    cam = Cam(lens=30, loc=(0.0, 0.25, 2.55), target=(0.0, 1.7, 0.72))       # high over the foot of the bed: three heads
+    cam.key(1, loc=(0.0, 0.25, 2.55)); cam.key(n, loc=(0.0, 0.45, 2.45))
     face_light(cam, energy=40, size=1.4, color=(0.75, 0.82, 1.0))
     return n
 
