@@ -438,9 +438,10 @@ def sh05():
     you, crush, fam, _ = table_scene(n)
     look_keys(crush, you, [(1, 0.0), (6, 0.7)])
     face(crush, 1, SMILE); face(crush, 10, LOVE)
-    hc = head(crush)
-    cam = Cam(lens=60, loc=(hc.x - 0.25, hc.y - 1.05, hc.z + 0.04), target=(hc.x, hc.y, hc.z + 0.02))
-    cam.key(1, loc=(hc.x - 0.25, hc.y - 1.05, hc.z + 0.04)); cam.key(n, loc=(hc.x - 0.22, hc.y - 0.9, hc.z + 0.04))
+    hc, hy = head(crush), head(you)
+    eye = hy + Vector((0.06, -0.1, 0.08))                                   # your point of view: she smiles at the lens
+    cam = Cam(lens=40, loc=eye, target=(hc.x, hc.y, hc.z + 0.02))
+    cam.key(1, loc=eye); cam.key(n, loc=eye + Vector((0.08, 0.0, 0.0)))
     face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
