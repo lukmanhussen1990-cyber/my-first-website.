@@ -404,8 +404,8 @@ def sh03():
     living_room_day()
     box("cork", (1.66, 0.04, 1.16), (0.0, 2.62, 1.8), mat_flat("corkframe", (0.36, 0.24, 0.13), rough=0.7))
     decal("plan", f"{D16}/plan_board.png", 1.6, (0.0, 2.595, 1.8), rot=(90, 0, 0))
-    cam = Cam(lens=30, loc=(0.0, -0.4, 1.75), target=(0.0, 2.6, 1.8))
-    cam.key(1, loc=(0.0, -0.4, 1.75)); cam.key(n, loc=(0.0, 0.3, 1.77))
+    cam = Cam(lens=30, loc=(0.0, 0.3, 1.78), target=(0.0, 2.6, 1.8))
+    cam.key(1, loc=(0.0, 0.3, 1.78)); cam.key(n, loc=(0.0, 1.05, 1.8))
     return n
 
 
@@ -450,8 +450,11 @@ def sh06():
     ep15.door_keys(h, [(1, 75)])
     you = you_char((0.15, 4.25, 0), rot_z=0)
     idle(you, n)
-    chest = you.world("Spine1", frame=1)
-    hold(you, "Right", chest + Vector((0.07, -0.12, 0.05)), name="heart_hand")
+    hd = head(you)
+    scratch = empty("scratch_hand")                                          # guilty scratch of the back of the head
+    for k, f in enumerate(range(1, frames_of("sh06") + 1, 5)):
+        key_loc(scratch, f, hd + Vector((-0.11, 0.06 + (0.02 if k % 2 else 0.0), 0.05)))
+    hand_ik(you, "Right", scratch)
     face(you, 1, SAD)
     hy = head(you)
     cam = Cam(lens=40, loc=(hy.x - 0.05, hy.y - 1.3, hy.z - 0.02), target=(hy.x, hy.y, hy.z - 0.12))
@@ -485,8 +488,8 @@ def sh08():
     bedroom()
     you, dale, larry = in_bed_trio(n)
     blink(you, [26])
-    cam = Cam(lens=32, loc=(0.0, -0.35, 2.3), target=(0.0, 1.72, 0.72))
-    cam.key(1, loc=(0.0, -0.35, 2.3)); cam.key(n, loc=(0.0, -0.1, 2.2))
+    cam = Cam(lens=26, loc=(0.0, -0.35, 2.3), target=(0.0, 1.62, 0.72))
+    cam.key(1, loc=(0.0, -0.35, 2.3)); cam.key(n, loc=(0.0, -0.15, 2.22))
     face_light(cam, energy=40, size=1.4, color=(0.75, 0.82, 1.0))
     return n
 
@@ -500,8 +503,8 @@ def sh09():
     you, dale, larry = in_bed_trio(n)
     for f in range(12, n, 14):
         you.expr(f, {"eyeBlinkLeft": 0.0}); you.expr(f + 2, {"eyeSquintLeft": 0.8}); you.expr(f + 5, {"eyeSquintLeft": 0.0})
-    cam = Cam(lens=34, loc=(0.0, 0.55, 1.85), target=(0.0, 1.78, 0.74))
-    cam.key(1, loc=(0.0, 0.55, 1.85)); cam.key(n, loc=(0.0, 0.75, 1.75))
+    cam = Cam(lens=26, loc=(0.0, 0.15, 2.1), target=(0.0, 1.75, 0.74))
+    cam.key(1, loc=(0.0, 0.15, 2.1)); cam.key(n, loc=(0.0, 0.35, 2.0))
     face_light(cam, energy=35, size=1.6, color=(0.75, 0.82, 1.0), offset=(0.0, 0.0, 0.0))
     return n
 
@@ -896,8 +899,8 @@ def sh31():
     idle(you, n)
     face(you, 1, WIDE); blink(you, [30])
     hy = head(you)
-    cam = Cam(lens=36, loc=(1.15, -0.55, hy.z + 0.02), target=(hy.x + 0.1, hy.y + 0.05, hy.z - 0.05))
-    cam.key(1, loc=(1.15, -0.55, hy.z + 0.02)); cam.key(n, loc=(1.3, -0.35, hy.z + 0.02))
+    cam = Cam(lens=30, loc=(2.45, -0.3, hy.z + 0.02), target=(hy.x, hy.y + 0.05, hy.z - 0.06))   # by the window, on your face
+    cam.key(1, loc=(2.45, -0.3, hy.z + 0.02)); cam.key(n, loc=(2.45, -0.2, hy.z + 0.02))
     face_light(cam, energy=50, size=1.0, color=(0.75, 0.82, 1.0))
     return n
 
