@@ -102,7 +102,7 @@ def hold_rifle(ch, piv=None, yaw_body=0.0, aim=25.0, fwd=0.18, side=-0.1, up=0.2
     R = Euler((0, 0, math.radians(yaw_body))).to_matrix()
     off = R @ Vector((side, -fwd, up))
     rifle.location = hp + off
-    rifle.rotation_euler = (math.radians(-8), 0, math.radians(yaw_body + aim))
+    rifle.rotation_euler = (math.radians(6), 0, math.radians(yaw_body + aim))
     if piv is not None:
         glue(rifle, piv)
     tr = empty(f"{name}_tr", (0, 0, 0)); tr.parent = rifle; tr.location = GRIP_R
@@ -175,7 +175,7 @@ def gravestone(loc=(0, HY + 0.12, 0), name="stone"):
     return root
 
 
-def flashlight(loc=(-0.85, -1.45, 0.05), target=(0.0, 0.0, -0.3), energy=1400):
+def flashlight(loc=(-0.85, -1.45, 0.05), target=(0.0, 0.2, -0.8), energy=450):
     body = cylinder("torch", 0.035, 0.2, loc, mat_flat("torchm", (0.85, 0.12, 0.08), rough=0.4), verts=16)
     d = Vector(target) - Vector(loc)
     body.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
@@ -349,7 +349,7 @@ def dale_on_couch(n, eat=True, wave_from=None):
     sp = spoon(); sp.parent = tr; sp.location = (-0.02, -0.06, 0.0)
     ep6.retarget_hand(dale, "Right", tr)
     low = bowl.location + Vector((-0.03, 0.0, 0.1))
-    mouth = hd + Vector((-0.02, -0.14, -0.08))
+    mouth = hd + Vector((-0.04, -0.2, -0.17))
     f = 1
     k = 0
     while f <= n:
@@ -393,7 +393,7 @@ def sh02():
     point("posterlight", (4.4, -3.4, 2.2), energy=60, color=(1.0, 0.85, 0.6), radius=0.2)
     cam = Cam(lens=40, loc=(4.42, -3.75, 1.6), target=(4.5, -2.7, 1.6))
     cam.key(1, loc=(4.42, -3.75, 1.6)); cam.key(n, loc=(4.46, -3.4, 1.6))
-    stamp(cam, f"{D16}/stamp_fake.png", at("sh02", 4.25), width=0.13, dist=0.25, y=0.0)
+    stamp(cam, f"{D16}/stamp_fake.png", at("sh02", 4.25), width=0.085, dist=0.25, y=0.0)
     return n
 
 
@@ -402,10 +402,10 @@ def sh03():
     """It was all a PLAN. - the plan board on the living-room wall: red string, steps 1 to 4, hearts."""
     n = frames_of("sh03")
     living_room_day()
-    box("cork", (1.66, 0.04, 1.16), (0.0, 2.69, 1.75), mat_flat("corkframe", (0.36, 0.24, 0.13), rough=0.7))
-    decal("plan", f"{D16}/plan_board.png", 1.6, (0.0, 2.665, 1.75), rot=(90, 0, 0))
-    cam = Cam(lens=30, loc=(0.0, 0.4, 1.7), target=(0.0, 2.68, 1.75))
-    cam.key(1, loc=(0.0, 0.4, 1.7)); cam.key(n, loc=(0.0, 1.0, 1.72))
+    box("cork", (1.66, 0.04, 1.16), (0.0, 2.62, 1.8), mat_flat("corkframe", (0.36, 0.24, 0.13), rough=0.7))
+    decal("plan", f"{D16}/plan_board.png", 1.6, (0.0, 2.595, 1.8), rot=(90, 0, 0))
+    cam = Cam(lens=30, loc=(0.0, -0.4, 1.75), target=(0.0, 2.6, 1.8))
+    cam.key(1, loc=(0.0, -0.4, 1.75)); cam.key(n, loc=(0.0, 0.3, 1.77))
     return n
 
 
@@ -451,7 +451,7 @@ def sh06():
     you = you_char((0.15, 4.25, 0), rot_z=0)
     idle(you, n)
     chest = you.world("Spine1", frame=1)
-    hold(you, "Right", chest + Vector((0.04, -0.17, 0.08)), name="heart_hand")
+    hold(you, "Right", chest + Vector((0.07, -0.12, 0.05)), name="heart_hand")
     face(you, 1, SAD)
     hy = head(you)
     cam = Cam(lens=40, loc=(hy.x - 0.05, hy.y - 1.3, hy.z - 0.02), target=(hy.x, hy.y, hy.z - 0.12))
@@ -485,8 +485,8 @@ def sh08():
     bedroom()
     you, dale, larry = in_bed_trio(n)
     blink(you, [26])
-    cam = Cam(lens=30, loc=(0.0, -0.45, 1.65), target=(0.0, 1.62, 0.85))
-    cam.key(1, loc=(0.0, -0.45, 1.65)); cam.key(n, loc=(0.0, -0.2, 1.6))
+    cam = Cam(lens=32, loc=(0.0, -0.35, 2.3), target=(0.0, 1.72, 0.72))
+    cam.key(1, loc=(0.0, -0.35, 2.3)); cam.key(n, loc=(0.0, -0.1, 2.2))
     face_light(cam, energy=40, size=1.4, color=(0.75, 0.82, 1.0))
     return n
 
@@ -500,8 +500,8 @@ def sh09():
     you, dale, larry = in_bed_trio(n)
     for f in range(12, n, 14):
         you.expr(f, {"eyeBlinkLeft": 0.0}); you.expr(f + 2, {"eyeSquintLeft": 0.8}); you.expr(f + 5, {"eyeSquintLeft": 0.0})
-    cam = Cam(lens=24, loc=(0.0, 1.05, 2.85), target=(0.0, 1.15, 0.7))
-    cam.key(1, loc=(0.0, 1.05, 2.85)); cam.key(n, loc=(0.0, 1.1, 2.65))
+    cam = Cam(lens=34, loc=(0.0, 0.55, 1.85), target=(0.0, 1.78, 0.74))
+    cam.key(1, loc=(0.0, 0.55, 1.85)); cam.key(n, loc=(0.0, 0.75, 1.75))
     face_light(cam, energy=35, size=1.6, color=(0.75, 0.82, 1.0), offset=(0.0, 0.0, 0.0))
     return n
 
@@ -541,8 +541,8 @@ def sh11():
     tl.location = GRIP_L; tl.keyframe_insert("location", frame=26)
     face(you, 1, STERN); face(you, 16, RAGE)
     hy = head(you)
-    cam = Cam(lens=26, loc=(hy.x + 0.35, hy.y - 1.5, 0.75), target=(hy.x, hy.y, 1.25))
-    cam.key(1, loc=(hy.x + 0.35, hy.y - 1.5, 0.75)); cam.key(n, loc=(hy.x + 0.3, hy.y - 1.3, 0.78))
+    cam = Cam(lens=28, loc=(hy.x + 1.25, hy.y - 1.15, 1.2), target=(hy.x + 0.1, hy.y - 0.25, 1.22))
+    cam.key(1, loc=(hy.x + 1.25, hy.y - 1.15, 1.2)); cam.key(n, loc=(hy.x + 1.1, hy.y - 1.0, 1.22))
     face_light(cam, energy=40, size=1.0, color=(0.75, 0.82, 1.0))
     return n
 
@@ -554,13 +554,13 @@ def sh12():
     closeup()
     living_room_day()
     dale, bowl = dale_on_couch(n)
-    you = you_char((0.38, -0.25, 0), rot_z=180)
+    you = you_char((0.3, -0.25, 0), rot_z=180)
     idle(you, n)
     piv = rocker(you, at="floor")
     hold_rifle(you, piv, yaw_body=180)
     face(dale, 1, SMILE)
-    cam = Cam(lens=30, loc=(0.85, -1.45, 1.7), target=(0.0, 2.1, 1.0))
-    cam.key(1, loc=(0.85, -1.45, 1.7)); cam.key(n, loc=(0.8, -1.2, 1.68))
+    cam = Cam(lens=28, loc=(1.3, -1.05, 1.55), target=(0.0, 1.9, 0.95))
+    cam.key(1, loc=(1.3, -1.05, 1.55)); cam.key(n, loc=(1.2, -0.85, 1.53))
     return n
 
 
@@ -791,8 +791,8 @@ def sh25():
     bedroom()
     you = ep4.you_asleep()
     face(you, 1, PEACEFUL)
-    cam = Cam(lens=30, loc=(-0.9, 0.2, 1.55), target=(0.0, 1.55, 0.8))
-    cam.key(1, loc=(-0.9, 0.2, 1.55)); cam.key(n, loc=(-0.75, 0.45, 1.45))
+    cam = Cam(lens=34, loc=(-0.85, 1.05, 1.35), target=(0.0, 1.78, 0.74))
+    cam.key(1, loc=(-0.85, 1.05, 1.35)); cam.key(n, loc=(-0.7, 1.2, 1.28))
     face_light(cam, energy=30, size=1.2, color=(0.75, 0.82, 1.0))
     return n
 
@@ -825,8 +825,8 @@ def sh28():
     bedroom()
     you = ep4.you_asleep()
     face(you, 1, PEACEFUL)
-    cam = Cam(lens=28, loc=(0.0, -0.3, 1.9), target=(0.0, 1.3, 0.75))
-    cam.key(1, loc=(0.0, -0.3, 1.9)); cam.key(n, loc=(0.0, -0.9, 2.1))
+    cam = Cam(lens=30, loc=(1.05, 0.45, 1.85), target=(0.2, 1.62, 0.72))       # your face and the empty half
+    cam.key(1, loc=(1.05, 0.45, 1.85)); cam.key(n, loc=(1.35, 0.05, 2.05))
     face_light(cam, energy=30, size=1.4, color=(0.75, 0.82, 1.0))
     return n
 
@@ -896,12 +896,9 @@ def sh31():
     idle(you, n)
     face(you, 1, WIDE); blink(you, [30])
     hy = head(you)
-    cam = Cam(lens=34, loc=(3.6, 0.45, hy.z + 0.0), target=(hy.x, hy.y, hy.z - 0.05))
-    cam.key(1, loc=(3.6, 0.45, hy.z + 0.0)); cam.key(n, loc=(3.4, 0.5, hy.z))
-    face_light(cam, energy=60, size=1.0, color=(0.75, 0.82, 1.0))
-    sky = bpy.data.objects.get("win_sky")
-    if sky:
-        sky.hide_render = True
+    cam = Cam(lens=36, loc=(1.15, -0.55, hy.z + 0.02), target=(hy.x + 0.1, hy.y + 0.05, hy.z - 0.05))
+    cam.key(1, loc=(1.15, -0.55, hy.z + 0.02)); cam.key(n, loc=(1.3, -0.35, hy.z + 0.02))
+    face_light(cam, energy=50, size=1.0, color=(0.75, 0.82, 1.0))
     return n
 
 
@@ -914,9 +911,9 @@ def sh32():
     you = you_char((0.0, -0.6, 0), rot_z=0)
     idle(you, n)
     hy = head(you)
-    cw = 0.34
+    cw = 0.29
     ch_ = cw * 560 / 800
-    for k, (img, dx, side) in enumerate(((f"{D15}/card_yes.png", -0.3, "Right"), (f"{D15}/card_no.png", 0.3, "Left"))):
+    for k, (img, dx, side) in enumerate(((f"{D15}/card_yes.png", -0.25, "Right"), (f"{D15}/card_no.png", 0.25, "Left"))):
         c = decal(f"card{k}", img, cw, (0, 0, 0), rot=(90, 0, 0), emit=0.4)
         base = hy + Vector((dx, -0.4, -0.3))
         for j, f in enumerate(range(1, n + 1, 10)):
@@ -926,8 +923,8 @@ def sh32():
         hand_ik(you, side, t)
     face(you, 1, UNEASY)
     look_keys(you, empty("lookcam32", (0.0, -2.0, 1.5)), [(1, 0.7)])
-    cam = Cam(lens=30, loc=(0.0, -2.05, 1.5), target=(0.0, -0.6, 1.35))
-    cam.key(1, loc=(0.0, -2.05, 1.5)); cam.key(n, loc=(0.0, -1.9, 1.5))
+    cam = Cam(lens=30, loc=(0.0, -2.35, 1.5), target=(0.0, -0.6, 1.35))
+    cam.key(1, loc=(0.0, -2.35, 1.5)); cam.key(n, loc=(0.0, -2.2, 1.5))
     face_light(cam, energy=50, size=1.2)
     return n
 
