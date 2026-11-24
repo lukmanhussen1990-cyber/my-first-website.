@@ -624,8 +624,8 @@ def sh14():
     face(you, 1, WIDE)
     look_keys(you, empty("dale_spot14", (SEATS["dale"][0], SEATS["dale"][1], 1.15)), [(1, 0.7)])
     mid = (head(you) + Vector((x + 0.3, y, head(you).z))) / 2
-    cam = Cam(lens=24, loc=(0.25, -0.2, 1.45), target=(0.25, 1.62, 1.0))
-    cam.key(1, loc=(0.25, -0.2, 1.45)); cam.key(n, loc=(0.25, -0.05, 1.43))
+    cam = Cam(lens=24, loc=(0.3, -0.75, 1.45), target=(0.3, 1.65, 1.08))     # across the table: both of them, her chair sliding
+    cam.key(1, loc=(0.3, -0.75, 1.45)); cam.key(n, loc=(0.35, -0.6, 1.44))
     face_light(cam, energy=18, size=1.2, color=WARM)
     return n
 
