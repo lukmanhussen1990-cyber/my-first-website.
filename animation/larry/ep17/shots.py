@@ -187,10 +187,11 @@ def you_and_crush(n, sd=True):
     return you, crush
 
 
-def table_scene(n, dale=False, sd=True):
+def table_scene(n, dale=False, sd=True, fam_on=True):
+    """fam_on=False for close-ups: the family is off-screen (and it renders ~2x faster)."""
     dining_room()
     you, crush = you_and_crush(n, sd=sd)
-    fam = family(n)
+    fam = family(n) if fam_on else {}
     d = None
     if dale:
         d = dale_char(sd=sd)
@@ -435,7 +436,9 @@ def sh05():
     """And your CRUSH. - close on her: she smiles at you."""
     n = frames_of("sh05")
     closeup()
-    you, crush, fam, _ = table_scene(n)
+    you, crush, fam, _ = table_scene(n, fam_on=False)
+    for o in you.meshes:                                    # the camera is your eyes
+        o.hide_render = True; o.hide_viewport = True
     look_keys(crush, you, [(1, 0.0), (6, 0.7)])
     face(crush, 1, SMILE); face(crush, 10, LOVE)
     hc, hy = head(crush), head(you)
@@ -451,7 +454,7 @@ def sh06():
     """She sits right next to you. - two-shot: she leans her head toward you; you can't stop grinning."""
     n = frames_of("sh06")
     closeup()
-    you, crush, fam, _ = table_scene(n)
+    you, crush, fam, _ = table_scene(n, fam_on=False)
     cp = rocker(crush)
     rock(cp, [(1, 0.0), (12, 0.0), (26, 3.0)])
     yaw = cp.parent
@@ -472,7 +475,7 @@ def sh07():
     """Best night of your LIFE. - close on you, the happiest man alive."""
     n = frames_of("sh07")
     closeup()
-    you, crush, fam, _ = table_scene(n)
+    you, crush, fam, _ = table_scene(n, fam_on=False)
     face(you, 1, BEAM); blink(you, [20])
     hy = head(you)
     cam = Cam(lens=45, loc=(hy.x + 0.1, hy.y - 1.0, hy.z + 0.02), target=(hy.x, hy.y, hy.z - 0.04))
@@ -486,7 +489,7 @@ def sh08():
     """Then you look up... - your smile slowly drops as your eyes turn to the end of the table."""
     n = frames_of("sh08")
     closeup()
-    you, crush, fam, _ = table_scene(n)
+    you, crush, fam, _ = table_scene(n, fam_on=False)
     endp = empty("table_end", (SEATS["dale"][0], SEATS["dale"][1], 1.15))
     look_keys(you, endp, [(1, 0.0), (8, 0.0), (22, 0.85)])
     face(you, 1, BEAM); face(you, 14, BEAM); face(you, 28, UNEASY)
@@ -587,7 +590,7 @@ def sh13():
     """Only YOU. - close on Dale: he winks at you."""
     n = frames_of("sh13")
     closeup()
-    you, crush, fam, dale = table_scene(n, dale=True)
+    you, crush, fam, dale = table_scene(n, dale=True, fam_on=False)
     look_keys(dale, you, [(1, 0.85)])
     face(dale, 1, GRIN); face(dale, 10, WINK); face(dale, 18, GRIN)
     hd = head(dale)
@@ -632,7 +635,7 @@ def sh15():
     """Dale smiles. - slow push on Dale's creepy smile."""
     n = frames_of("sh15")
     closeup()
-    you, crush, fam, dale = table_scene(n, dale=True)
+    you, crush, fam, dale = table_scene(n, dale=True, fam_on=False)
     look_keys(dale, crush, [(1, 0.0), (6, 0.8)])
     face(dale, 1, DEADPAN); face(dale, 10, CREEPY)
     hd = head(dale)
