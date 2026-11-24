@@ -14,7 +14,7 @@ SPP = sys.argv[1] if len(sys.argv) > 1 else "4"
 SHOTS = sys.argv[2:] or cuts.SHOT_NAMES
 # GB of RAM a shot needs while rendering (measured: 6 subdivided characters ~8.5 GB, 2-3 characters ~4-5 GB)
 # (no render subdivision outside close-ups: ~40% less than the first estimate)
-HEAVY = {}
+HEAVY = {s: 6.0 for s in ("sh04", "sh05", "sh06", "sh07", "sh08", "sh09", "sh10", "sh12", "sh13", "sh15", "sh18")}   # the full dinner table
 NEED = {s: HEAVY.get(s, 4.2) for s in SHOTS}
 os.makedirs(os.path.join(OUT, "logs"), exist_ok=True)
 

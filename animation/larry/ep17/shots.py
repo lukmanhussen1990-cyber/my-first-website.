@@ -267,7 +267,7 @@ def rubble(y=6.5, smoke=True, fires=True):
 
 def puffs(center, count, spread=(2.0, 2.0), seed=5, rise=0.012, n=200, scale=1.0):
     """Drifting grey smoke puffs (displaced spheres rising slowly)."""
-    m = mat_flat("smoke17", (0.3, 0.3, 0.32), rough=1.0, alpha=0.8)
+    m = mat_flat("smoke17", (0.1, 0.1, 0.11), rough=1.0, alpha=0.85)
     r = random.Random(seed)
     tx = bpy.data.textures.get("puff17") or bpy.data.textures.new("puff17", "CLOUDS"); tx.noise_scale = 0.4
     for k in range(count):
@@ -295,7 +295,7 @@ def explosion(center, f0, n, size=4.0):
         key_scale(b, f0 + 1, s1 * 0.4); key_scale(b, f0 + 6, s1); key_scale(b, f0 + 16, s1 * 1.1); key_scale(b, f0 + 22, 0.0)
         key_loc(b, f0, Vector(center) + off); key_loc(b, f0 + 22, Vector(center) + off + Vector((0, 0, 1.5)))
     lt = point("boomlight", Vector(center) + Vector((0, -3.0, 2.0)), energy=0, color=(1.0, 0.65, 0.3), radius=1.0)
-    for f, e in ((1, 0), (f0 - 1, 0), (f0, 120000), (f0 + 6, 60000), (f0 + 20, 6000), (n, 1500)):
+    for f, e in ((1, 0), (f0 - 1, 0), (f0, 30000), (f0 + 6, 15000), (f0 + 20, 2000), (n, 600)):
         lt.data.energy = e; lt.data.keyframe_insert("energy", frame=max(1, f))
     shards(Vector(center) + Vector((0, 0, 1.2)), (0, -1, 0.9), f0, n, count=40, seed=12,
            colors=[(0.85, 0.8, 0.72), (0.25, 0.22, 0.22), (0.45, 0.12, 0.1), (0.3, 0.18, 0.1)], size=0.45, speed=0.35,
@@ -303,7 +303,7 @@ def explosion(center, f0, n, size=4.0):
     puffs(Vector(center), 12, spread=(size * 0.6, size * 0.4), seed=8, rise=0.02, n=n, scale=1.4)
 
 
-def tank_with_larry(loc=(0, 0, 0), yaw=0.0, sd=True):
+def tank_with_larry(loc=(0, 0, 0), yaw=0.0, sd=True, larry_yaw=-90.0):
     """Episode 11's tank; Larry (still in his wedding-dress top, veil and tiara) standing in the hatch."""
     tk, piv, mz = ep11.tank_prop()
     tk.location = loc; tk.rotation_euler = (0, 0, math.radians(yaw))
@@ -315,8 +315,8 @@ def tank_with_larry(loc=(0, 0, 0), yaw=0.0, sd=True):
     ep15.hide_bouquet()
     larry.hold("137_28", 3700)
     larry.rig.parent = piv
-    larry.rig.location = (-0.5, 0.35, -0.42)
-    larry.rig.rotation_euler = (0, 0, math.radians(-90))
+    larry.rig.location = (-0.5, 0.35, -0.02)                                # shorter than you: raised to stand half out
+    larry.rig.rotation_euler = (0, 0, math.radians(larry_yaw))
     bpy.context.view_layer.update()
     return tk, piv, mz, larry
 
@@ -439,8 +439,8 @@ def sh05():
     look_keys(crush, you, [(1, 0.0), (6, 0.7)])
     face(crush, 1, SMILE); face(crush, 10, LOVE)
     hc = head(crush)
-    cam = Cam(lens=45, loc=(hc.x - 0.15, hc.y - 1.05, hc.z + 0.02), target=(hc.x, hc.y, hc.z - 0.04))
-    cam.key(1, loc=(hc.x - 0.15, hc.y - 1.05, hc.z + 0.02)); cam.key(n, loc=(hc.x - 0.12, hc.y - 0.85, hc.z + 0.02))
+    cam = Cam(lens=60, loc=(hc.x - 0.25, hc.y - 1.05, hc.z + 0.04), target=(hc.x, hc.y, hc.z + 0.02))
+    cam.key(1, loc=(hc.x - 0.25, hc.y - 1.05, hc.z + 0.04)); cam.key(n, loc=(hc.x - 0.22, hc.y - 0.9, hc.z + 0.04))
     face_light(cam, energy=18, size=1.0, color=WARM)
     return n
 
@@ -460,8 +460,8 @@ def sh06():
     look_keys(you, crush, [(1, 0.0), (10, 0.6)])
     face(crush, 1, LOVE); face(you, 1, SMILE); face(you, 12, BEAM)
     mid = (head(you) + head(crush)) / 2
-    cam = Cam(lens=30, loc=(mid.x, mid.y - 1.25, mid.z + 0.12), target=(mid.x, mid.y, mid.z - 0.18))
-    cam.key(1, loc=(mid.x, mid.y - 1.25, mid.z + 0.12)); cam.key(n, loc=(mid.x, mid.y - 1.1, mid.z + 0.1))
+    cam = Cam(lens=26, loc=(mid.x, mid.y - 1.4, mid.z + 0.1), target=(mid.x, mid.y, mid.z - 0.08))
+    cam.key(1, loc=(mid.x, mid.y - 1.4, mid.z + 0.1)); cam.key(n, loc=(mid.x, mid.y - 1.25, mid.z + 0.08))
     face_light(cam, energy=18, size=1.2, color=WARM)
     return n
 
@@ -576,8 +576,8 @@ def sh12():
         face(ch, 1, DEADPAN)
     face(you, 1, WIDE)
     look_keys(you, dale, [(1, 0.7)])
-    cam = Cam(lens=24, loc=(0.0, -1.55, 1.8), target=(0.2, 1.05, 0.95))
-    cam.key(1, loc=(0.0, -1.55, 1.8)); cam.key(n, loc=(0.1, -1.3, 1.75))
+    cam = Cam(lens=22, loc=(0.35, -1.75, 1.85), target=(0.45, 1.0, 0.95))
+    cam.key(1, loc=(0.35, -1.75, 1.85)); cam.key(n, loc=(0.4, -1.55, 1.82))
     return n
 
 
@@ -620,8 +620,8 @@ def sh14():
     face(you, 1, WIDE)
     look_keys(you, empty("dale_spot14", (SEATS["dale"][0], SEATS["dale"][1], 1.15)), [(1, 0.7)])
     mid = (head(you) + Vector((x + 0.3, y, head(you).z))) / 2
-    cam = Cam(lens=28, loc=(mid.x, 0.5, mid.z + 0.12), target=(mid.x, mid.y, mid.z - 0.2))
-    cam.key(1, loc=(mid.x, 0.5, mid.z + 0.12)); cam.key(n, loc=(mid.x, 0.62, mid.z + 0.1))
+    cam = Cam(lens=24, loc=(0.25, -0.2, 1.45), target=(0.25, 1.62, 1.0))
+    cam.key(1, loc=(0.25, -0.2, 1.45)); cam.key(n, loc=(0.25, -0.05, 1.43))
     face_light(cam, energy=18, size=1.2, color=WARM)
     return n
 
@@ -752,16 +752,18 @@ def sh19():
     n = frames_of("sh19")
     closeup()
     house_night()
-    tk, piv, mz, larry = tank_with_larry(loc=(-9.0, -6.4, 0), yaw=0.0)
+    tk, piv, mz, larry = tank_with_larry(loc=(-9.0, -6.4, 0), yaw=0.0, larry_yaw=90.0)   # riding forward
     key_loc(tk, 1, (-9.0, -6.4, 0)); key_loc(tk, n, (-2.5, -6.4, 0))
     key_rot(piv, 1, (0, 0, 0)); key_rot(piv, int(n * 0.6), (0, 0, 0)); key_rot(piv, n, (0, 0, 60))
     face(larry, 1, RAGE)
     area("tankkey", (0.5, -10.5, 3.5), (-4.0, -6.4, 1.2), energy=900, size=3.0, color=NIGHT)
-    cam = Cam(lens=30, loc=(1.0, -9.6, 1.5), target=(-5.5, -6.4, 1.9))
-    for f in range(1, n + 1, 3):
-        u = (f - 1) / max(1, n - 1)
-        cam.key(f, target=(-9.0 + 6.5 * u + 0.4, -6.4, 2.0), interp="LINEAR")
-    cam.key(1, loc=(1.0, -9.6, 1.5)); cam.key(n, loc=(0.6, -9.3, 1.5))
+    cam = Cam(lens=55, loc=(1.8, -8.6, 2.3), target=(-5.5, -6.4, 2.2))
+    sc = bpy.context.scene
+    for f in range(1, n + 1, 2):
+        sc.frame_set(f)
+        cam.key(f, target=larry.world("Spine1") + Vector((0.0, 0.0, -0.05)), interp="LINEAR")
+    sc.frame_set(1)
+    cam.key(1, loc=(1.8, -8.6, 2.3)); cam.key(n, loc=(1.6, -8.4, 2.25))
     return n
 
 
